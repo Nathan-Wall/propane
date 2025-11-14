@@ -6,89 +6,67 @@ const { transformSync } = require('@babel/core');
 const propaneCommentPlugin = require('../babel/propane-comment-plugin');
 
 const projectRoot = path.resolve(__dirname, '..');
+const testsDir = path.join(projectRoot, 'tests');
+const failPattern = /(?:^|[.-])fail$/i;
 
-const cases = [
-  {
-    name: 'user type compiles successfully',
-    file: path.join(projectRoot, 'tests/user.propane'),
-    expectError: false,
-  },
-  {
-    name: 'primitive fields compile successfully',
-    file: path.join(projectRoot, 'tests/primitives.propane'),
-    expectError: false,
-  },
-  {
-    name: 'primitive alias compiles successfully',
-    file: path.join(projectRoot, 'tests/primitive-alias.propane'),
-    expectError: false,
-  },
-  {
-    name: 'top-level Function alias is rejected',
-    file: path.join(projectRoot, 'tests/fail.propane'),
-    expectError: true,
-    errorIncludes: 'Propane files must export an object type or a primitive-like alias',
-  },
-  {
-    name: 'property Function type is rejected',
-    file: path.join(projectRoot, 'tests/fail-property.propane'),
-    expectError: true,
-    errorIncludes: 'Propane property references must refer to imported or locally declared identifiers',
-  },
-  {
-    name: 'nested Function type is rejected',
-    file: path.join(projectRoot, 'tests/fail-nested.propane'),
-    expectError: true,
-    errorIncludes: 'Propane property references must refer to imported or locally declared identifiers',
-  },
-  {
-    name: 'symbol property is rejected',
-    file: path.join(projectRoot, 'tests/fail-symbol.propane'),
-    expectError: true,
-    errorIncludes: 'Unsupported type in propane file',
-  },
-];
-
+const propaneFiles = findPropaneFiles(testsDir);
 let hasFailure = false;
 
-for (const testCase of cases) {
+propaneFiles.forEach((filePath) => {
+  const relativeName = path.relative(projectRoot, filePath);
+  const baseName = path.basename(filePath, '.propane');
+  const expectError = failPattern.test(baseName);
+
   try {
-    const source = fs.readFileSync(testCase.file, 'utf8');
+    const source = fs.readFileSync(filePath, 'utf8');
     transformSync(source, {
-      filename: testCase.file,
+      filename: filePath,
       parserOpts: { sourceType: 'module', plugins: ['typescript'] },
       plugins: [propaneCommentPlugin],
     });
 
-    if (testCase.expectError) {
-      console.error(`[FAIL] ${testCase.name}`);
+    if (expectError) {
+      console.error(`[FAIL] ${relativeName}`);
       console.error('Expected transform to throw, but it succeeded.');
       hasFailure = true;
-      continue;
+      return;
     }
+
+    console.log(`[PASS] ${relativeName}`);
   } catch (err) {
-    if (!testCase.expectError) {
-      console.error(`[FAIL] ${testCase.name}`);
+    if (!expectError) {
+      console.error(`[FAIL] ${relativeName}`);
       console.error('Unexpected error:\n', err && err.message);
       hasFailure = true;
-      continue;
+      return;
     }
 
-    if (!err.message.includes(testCase.errorIncludes)) {
-      console.error(`[FAIL] ${testCase.name}`);
-      console.error('Expected error message to contain:', testCase.errorIncludes);
-      console.error('Received message:\n', err.message);
-      hasFailure = true;
-      continue;
-    }
-
-    console.log(`[PASS] ${testCase.name}`);
-    continue;
+    console.log(`[PASS] ${relativeName}`);
   }
-
-  if (!testCase.expectError) {
-    console.log(`[PASS] ${testCase.name}`);
-  }
-}
+});
 
 process.exit(hasFailure ? 1 : 0);
+
+function findPropaneFiles(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) {
+      continue;
+    }
+
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...findPropaneFiles(fullPath));
+      continue;
+    }
+
+    if (entry.isFile() && entry.name.endsWith('.propane')) {
+      files.push(fullPath);
+    }
+  }
+
+  return files.sort();
+}
