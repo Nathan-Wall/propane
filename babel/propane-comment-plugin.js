@@ -16,6 +16,9 @@ module.exports = function propaneCommentPlugin() {
         }
       },
       ExportNamedDeclaration(path) {
+        if (!path.parentPath.isProgram()) {
+          return;
+        }
         const { declaration } = path.node;
         if (!t.isTSTypeAliasDeclaration(declaration)) {
           return;
@@ -58,28 +61,15 @@ module.exports = function propaneCommentPlugin() {
       return null;
     }
 
-    const interfaceBody = t.tsInterfaceBody(
-      typeLiteral.members.map((member) => t.cloneNode(member))
-    );
-
-    const interfaceDecl = t.tsInterfaceDeclaration(
-      t.identifier(typeAlias.id.name),
-      typeAlias.typeParameters,
-      [],
-      interfaceBody
-    );
-
-    interfaceDecl.declare = typeAlias.declare;
-
+    const typeNamespace = buildTypeNamespace(typeAlias, typeLiteral, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
 
     if (exported) {
-      const interfaceExport = t.exportNamedDeclaration(interfaceDecl, []);
       const classExport = t.exportNamedDeclaration(classDecl, []);
-      return [interfaceExport, classExport];
+      return [typeNamespace, classExport];
     }
 
-    return [interfaceDecl, classDecl];
+    return [typeNamespace, classDecl];
   }
 
   function extractProperties(members) {
@@ -167,6 +157,35 @@ module.exports = function propaneCommentPlugin() {
     return t.isTSStringKeyword(first);
   }
 
+  function buildTypeNamespace(typeAlias, typeLiteral, exported) {
+    const namespaceId = t.identifier(typeAlias.id.name);
+    const typeId = t.identifier('Type');
+    const literalMembers = typeLiteral.members.map((member) =>
+      t.cloneNode(member)
+    );
+    const literalClone = t.tsTypeLiteral(literalMembers);
+
+    const typeDecl = t.tsTypeAliasDeclaration(
+      typeId,
+      typeAlias.typeParameters ? t.cloneNode(typeAlias.typeParameters) : null,
+      literalClone
+    );
+
+    const exportedTypeDecl = t.exportNamedDeclaration(typeDecl, []);
+    exportedTypeDecl.exportKind = 'type';
+
+    const moduleBlock = t.tsModuleBlock([exportedTypeDecl]);
+    const namespaceDecl = t.tsModuleDeclaration(namespaceId, moduleBlock);
+    namespaceDecl.declare = typeAlias.declare;
+    namespaceDecl.kind = 'namespace';
+
+    if (exported) {
+      return t.exportNamedDeclaration(namespaceDecl, []);
+    }
+
+    return namespaceDecl;
+  }
+
   function buildClassFromProperties(typeName, properties) {
     const backingFields = [];
     const getters = [];
@@ -198,7 +217,9 @@ module.exports = function propaneCommentPlugin() {
 
     const constructorParam = t.identifier('props');
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
-      t.tsTypeReference(t.identifier(typeName))
+      t.tsTypeReference(
+        t.tsQualifiedName(t.identifier(typeName), t.identifier('Type'))
+      )
     );
 
     const constructorBody = propDescriptors.map((prop) =>
