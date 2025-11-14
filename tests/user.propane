@@ -3,10 +3,10 @@ import { Email } from './email.propane';
 import { Hash } from './hash.propane';
 
 export type User = {
-  id: number;
-  name: string;
-  email: Email;
-  passwordHash: Hash;
+  '1:id': number;
+  '2:name': string;
+  '3:email': Email;
+  '4:passwordHash': Hash;
   created: Date;
   updated: Date;
   active: boolean;

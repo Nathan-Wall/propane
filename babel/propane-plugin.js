@@ -3,6 +3,8 @@
 const t = require('@babel/types');
 
 module.exports = function propanePlugin() {
+  const declaredTypeNames = new Set();
+
   return {
     name: 'propane-plugin',
     visitor: {
@@ -24,6 +26,8 @@ module.exports = function propanePlugin() {
           return;
         }
 
+        registerTypeAlias(declarationPath.node);
+
         const replacement = buildDeclarations(declarationPath, { exported: true });
 
         if (replacement) {
@@ -34,6 +38,8 @@ module.exports = function propanePlugin() {
         if (path.parentPath.isExportNamedDeclaration()) {
           return;
         }
+
+        registerTypeAlias(path.node);
 
         const replacement = buildDeclarations(path, { exported: false });
 
@@ -62,7 +68,7 @@ module.exports = function propanePlugin() {
 
     const properties = extractProperties(typeLiteralPath.get('members'));
 
-    const typeNamespace = buildTypeNamespace(typeAlias, typeLiteralPath.node, exported);
+    const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
 
     if (exported) {
@@ -75,6 +81,8 @@ module.exports = function propanePlugin() {
 
   function extractProperties(memberPaths) {
     const props = [];
+    const usedFieldNumbers = new Set();
+    const usedNames = new Set();
 
     for (const memberPath of memberPaths) {
       if (!memberPath.isTSPropertySignature()) {
@@ -83,11 +91,35 @@ module.exports = function propanePlugin() {
         );
       }
 
-      const keyPath = memberPath.get('key');
-      if (!keyPath.isIdentifier() || memberPath.node.computed) {
+      if (memberPath.node.computed) {
         throw memberPath.buildCodeFrameError(
-          'Propane properties must use simple identifier names.'
+          'Propane properties cannot use computed keys.'
         );
+      }
+
+      const { name, fieldNumber } = normalizePropertyKey(memberPath);
+
+      if (usedNames.has(name)) {
+        throw memberPath.buildCodeFrameError(
+          `Duplicate propane property name "${name}".`
+        );
+      }
+      usedNames.add(name);
+
+      if (fieldNumber !== null) {
+        if (fieldNumber <= 0) {
+          throw memberPath.buildCodeFrameError(
+            'Propane property numbers must be positive integers.'
+          );
+        }
+
+        if (usedFieldNumbers.has(fieldNumber)) {
+          throw memberPath.buildCodeFrameError(
+            `Propane property number ${fieldNumber} is already in use.`
+          );
+        }
+
+        usedFieldNumbers.add(fieldNumber);
       }
 
       const typeAnnotationPath = memberPath.get('typeAnnotation');
@@ -107,7 +139,10 @@ module.exports = function propanePlugin() {
       assertSupportedType(propTypePath);
 
       props.push({
-        name: keyPath.node.name,
+        name,
+        fieldNumber,
+        optional: Boolean(memberPath.node.optional),
+        readonly: Boolean(memberPath.node.readonly),
         typeAnnotation: t.cloneNode(propTypePath.node),
       });
     }
@@ -278,15 +313,57 @@ module.exports = function propanePlugin() {
     );
   }
 
+  function normalizePropertyKey(memberPath) {
+    const keyPath = memberPath.get('key');
+
+    if (keyPath.isIdentifier()) {
+      return { name: keyPath.node.name, fieldNumber: null };
+    }
+
+    if (keyPath.isStringLiteral()) {
+      const rawValue = keyPath.node.value;
+      const match = /^(\d+):([A-Za-z_][A-Za-z0-9_]*)$/.exec(rawValue);
+
+      if (!match) {
+        throw keyPath.buildCodeFrameError(
+          'Numbered propane properties must follow the "<positive-integer>:<identifier>" format, e.g. \'1:name\'.'
+        );
+      }
+
+      const [, numberPart, identifierPart] = match;
+      const fieldNumber = Number(numberPart);
+
+      if (!Number.isSafeInteger(fieldNumber)) {
+        throw keyPath.buildCodeFrameError(
+          'Propane property numbers must be integers.'
+        );
+      }
+
+      return { name: identifierPart, fieldNumber };
+    }
+
+    throw memberPath.buildCodeFrameError(
+      'Propane properties must use identifier names or numbered keys like \'1:name\'.'
+    );
+  }
+
   function isAllowedTypeReference(typePath) {
     const typeName = typePath.node.typeName;
 
     if (t.isIdentifier(typeName)) {
+      if (declaredTypeNames.has(typeName.name)) {
+        return true;
+      }
+
       return Boolean(typePath.scope.getBinding(typeName.name));
     }
 
     if (t.isTSQualifiedName(typeName)) {
       const root = resolveQualifiedRoot(typeName);
+      if (root && declaredTypeNames.has(root.name)) {
+        return true;
+      }
+
       return root ? Boolean(typePath.scope.getBinding(root.name)) : false;
     }
 
@@ -305,12 +382,27 @@ module.exports = function propanePlugin() {
     return null;
   }
 
-  function buildTypeNamespace(typeAlias, typeLiteral, exported) {
+  function registerTypeAlias(typeAlias) {
+    if (t.isIdentifier(typeAlias.id)) {
+      declaredTypeNames.add(typeAlias.id.name);
+    }
+  }
+
+  function buildTypeNamespace(typeAlias, properties, exported) {
     const namespaceId = t.identifier(typeAlias.id.name);
     const typeId = t.identifier('Type');
-    const literalMembers = typeLiteral.members.map((member) =>
-      t.cloneNode(member)
-    );
+
+    const literalMembers = properties.map((prop) => {
+      const key = t.identifier(prop.name);
+      const propSignature = t.tsPropertySignature(
+        key,
+        t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation))
+      );
+      propSignature.optional = prop.optional;
+      propSignature.readonly = prop.readonly;
+      return propSignature;
+    });
+
     const literalClone = t.tsTypeLiteral(literalMembers);
 
     const typeDecl = t.tsTypeAliasDeclaration(
