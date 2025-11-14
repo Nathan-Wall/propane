@@ -170,13 +170,15 @@ module.exports = function propaneCommentPlugin() {
   function buildClassFromProperties(typeName, properties) {
     const backingFields = [];
     const getters = [];
+    const propDescriptors = properties.map((prop) => ({
+      ...prop,
+      privateName: t.privateName(t.identifier(prop.name)),
+    }));
 
-    properties.forEach((prop) => {
-      const backingId = t.identifier(`_${prop.name}`);
+    propDescriptors.forEach((prop) => {
       const typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
-      const field = t.classProperty(backingId, null, typeAnnotation, null);
-      field.accessibility = 'private';
-      field.readonly = true;
+      const field = t.classPrivateProperty(t.cloneNode(prop.privateName));
+      field.typeAnnotation = typeAnnotation;
       backingFields.push(field);
 
       const getter = t.classMethod(
@@ -185,7 +187,7 @@ module.exports = function propaneCommentPlugin() {
         [],
         t.blockStatement([
           t.returnStatement(
-            t.memberExpression(t.thisExpression(), backingId)
+            t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
           ),
         ])
       );
@@ -199,11 +201,14 @@ module.exports = function propaneCommentPlugin() {
       t.tsTypeReference(t.identifier(typeName))
     );
 
-    const constructorBody = properties.map((prop) =>
+    const constructorBody = propDescriptors.map((prop) =>
       t.expressionStatement(
         t.assignmentExpression(
           '=',
-          t.memberExpression(t.thisExpression(), t.identifier(`_${prop.name}`)),
+          t.memberExpression(
+            t.thisExpression(),
+            t.cloneNode(prop.privateName)
+          ),
           t.memberExpression(t.identifier('props'), t.identifier(prop.name))
         )
       )

@@ -1,0 +1,4 @@
+export type Foo = {
+  name: string;
+  _name: string;
+};
