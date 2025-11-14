@@ -1,0 +1,2 @@
+// Some types can't be serialized.
+export type Fail = Function;

@@ -19,12 +19,12 @@ module.exports = function propaneCommentPlugin() {
         if (!path.parentPath.isProgram()) {
           return;
         }
-        const { declaration } = path.node;
-        if (!t.isTSTypeAliasDeclaration(declaration)) {
+        const declarationPath = path.get('declaration');
+        if (!declarationPath.isTSTypeAliasDeclaration()) {
           return;
         }
 
-        const replacement = buildDeclarations(declaration, { exported: true });
+        const replacement = buildDeclarations(declarationPath, { exported: true });
 
         if (replacement) {
           path.replaceWithMultiple(replacement);
@@ -35,7 +35,7 @@ module.exports = function propaneCommentPlugin() {
           return;
         }
 
-        const replacement = buildDeclarations(path.node, { exported: false });
+        const replacement = buildDeclarations(path, { exported: false });
 
         if (replacement) {
           path.replaceWithMultiple(replacement);
@@ -44,24 +44,25 @@ module.exports = function propaneCommentPlugin() {
     },
   };
 
-  function buildDeclarations(typeAlias, { exported }) {
+  function buildDeclarations(typeAliasPath, { exported }) {
+    const typeAlias = typeAliasPath.node;
+
     if (!t.isIdentifier(typeAlias.id)) {
+      throw typeAliasPath.buildCodeFrameError(
+        'Propane type aliases must have identifier names.'
+      );
+    }
+
+    const typeLiteralPath = typeAliasPath.get('typeAnnotation');
+
+    if (!typeLiteralPath.isTSTypeLiteral()) {
+      assertSupportedTopLevelType(typeLiteralPath);
       return null;
     }
 
-    const typeLiteral = typeAlias.typeAnnotation;
+    const properties = extractProperties(typeLiteralPath.get('members'));
 
-    if (!t.isTSTypeLiteral(typeLiteral)) {
-      return null;
-    }
-
-    const properties = extractProperties(typeLiteral.members);
-
-    if (!properties) {
-      return null;
-    }
-
-    const typeNamespace = buildTypeNamespace(typeAlias, typeLiteral, exported);
+    const typeNamespace = buildTypeNamespace(typeAlias, typeLiteralPath.node, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
 
     if (exported) {
@@ -72,72 +73,140 @@ module.exports = function propaneCommentPlugin() {
     return [typeNamespace, classDecl];
   }
 
-  function extractProperties(members) {
+  function extractProperties(memberPaths) {
     const props = [];
 
-    for (const member of members) {
-      if (!t.isTSPropertySignature(member)) {
-        return null;
+    for (const memberPath of memberPaths) {
+      if (!memberPath.isTSPropertySignature()) {
+        throw memberPath.buildCodeFrameError(
+          'Propane object types can only contain property signatures.'
+        );
       }
 
-      if (!t.isIdentifier(member.key) || member.computed) {
-        return null;
+      const keyPath = memberPath.get('key');
+      if (!keyPath.isIdentifier() || memberPath.node.computed) {
+        throw memberPath.buildCodeFrameError(
+          'Propane properties must use simple identifier names.'
+        );
       }
 
-      if (!member.typeAnnotation) {
-        return null;
+      const typeAnnotationPath = memberPath.get('typeAnnotation');
+      if (!typeAnnotationPath || !typeAnnotationPath.node) {
+        throw memberPath.buildCodeFrameError(
+          'Propane properties must include a type annotation.'
+        );
       }
 
-      const propType = member.typeAnnotation.typeAnnotation;
-
-      if (!isSupportedType(propType)) {
-        return null;
+      const propTypePath = typeAnnotationPath.get('typeAnnotation');
+      if (!propTypePath || !propTypePath.node) {
+        throw memberPath.buildCodeFrameError(
+          'Propane properties must include a type annotation.'
+        );
       }
+
+      assertSupportedType(propTypePath);
 
       props.push({
-        name: member.key.name,
-        typeAnnotation: propType,
+        name: keyPath.node.name,
+        typeAnnotation: t.cloneNode(propTypePath.node),
       });
     }
 
     return props;
   }
 
-  function isSupportedType(node) {
-    if (!node) {
+  function assertSupportedTopLevelType(typePath) {
+    if (isPrimitiveLikeType(typePath)) {
+      return;
+    }
+
+    throw typePath.buildCodeFrameError(
+      'Propane files must export an object type or a primitive-like alias (string, number, Date, Brand).'
+    );
+  }
+
+  function isPrimitiveLikeType(typePath) {
+    if (!typePath || !typePath.node) {
       return false;
     }
 
-    if (t.isTSStringKeyword(node) || t.isTSNumberKeyword(node)) {
+    if (typePath.isTSParenthesizedType()) {
+      return isPrimitiveLikeType(typePath.get('typeAnnotation'));
+    }
+
+    if (typePath.isTSStringKeyword() || typePath.isTSNumberKeyword()) {
       return true;
     }
 
-    if (t.isTSTypeReference(node)) {
-      if (isDateReference(node)) {
-        return true;
-      }
-
-      if (isBrandReference(node)) {
-        return true;
-      }
-
-      return t.isIdentifier(node.typeName);
-    }
-
-    if (t.isTSParenthesizedType(node)) {
-      return isSupportedType(node.typeAnnotation);
-    }
-
-    if (t.isTSTypeLiteral(node)) {
-      return node.members.every((member) =>
-        t.isTSPropertySignature(member) &&
-        t.isIdentifier(member.key) &&
-        member.typeAnnotation &&
-        isSupportedType(member.typeAnnotation.typeAnnotation)
-      );
+    if (typePath.isTSTypeReference()) {
+      return isDateReference(typePath.node) || isBrandReference(typePath.node);
     }
 
     return false;
+  }
+
+  function assertSupportedType(typePath) {
+    if (!typePath || !typePath.node) {
+      throw new Error('Missing type information for propane property.');
+    }
+
+    if (typePath.isTSStringKeyword() || typePath.isTSNumberKeyword()) {
+      return;
+    }
+
+    if (typePath.isTSTypeReference()) {
+      if (isDateReference(typePath.node)) {
+        return;
+      }
+
+      if (isBrandReference(typePath.node)) {
+        return;
+      }
+
+      if (isAllowedTypeReference(typePath)) {
+        return;
+      }
+
+      throw typePath.buildCodeFrameError(
+        'Propane property references must refer to imported or locally declared identifiers.'
+      );
+    }
+
+    if (typePath.isTSParenthesizedType()) {
+      assertSupportedType(typePath.get('typeAnnotation'));
+      return;
+    }
+
+    if (typePath.isTSTypeLiteral()) {
+      typePath.get('members').forEach((memberPath) => {
+        if (!memberPath.isTSPropertySignature()) {
+          throw memberPath.buildCodeFrameError(
+            'Propane nested object types can only contain property signatures.'
+          );
+        }
+
+        const keyPath = memberPath.get('key');
+        if (!keyPath.isIdentifier() || memberPath.node.computed) {
+          throw memberPath.buildCodeFrameError(
+            'Propane nested object properties must use simple identifier names.'
+          );
+        }
+
+        const nestedTypeAnnotation = memberPath.get('typeAnnotation');
+        if (!nestedTypeAnnotation || !nestedTypeAnnotation.node) {
+          throw memberPath.buildCodeFrameError(
+            'Propane nested object properties must include type annotations.'
+          );
+        }
+
+        assertSupportedType(nestedTypeAnnotation.get('typeAnnotation'));
+      });
+      return;
+    }
+
+    throw typePath.buildCodeFrameError(
+      'Unsupported type in propane file. Only primitives, identifiers, Date, Brand, or object literals are allowed.'
+    );
   }
 
   function isDateReference(node) {
@@ -155,6 +224,33 @@ module.exports = function propaneCommentPlugin() {
 
     const [first] = node.typeParameters.params;
     return t.isTSStringKeyword(first);
+  }
+
+  function isAllowedTypeReference(typePath) {
+    const typeName = typePath.node.typeName;
+
+    if (t.isIdentifier(typeName)) {
+      return Boolean(typePath.scope.getBinding(typeName.name));
+    }
+
+    if (t.isTSQualifiedName(typeName)) {
+      const root = resolveQualifiedRoot(typeName);
+      return root ? Boolean(typePath.scope.getBinding(root.name)) : false;
+    }
+
+    return false;
+  }
+
+  function resolveQualifiedRoot(qualifiedName) {
+    if (t.isIdentifier(qualifiedName.left)) {
+      return qualifiedName.left;
+    }
+
+    if (t.isTSQualifiedName(qualifiedName.left)) {
+      return resolveQualifiedRoot(qualifiedName.left);
+    }
+
+    return null;
   }
 
   function buildTypeNamespace(typeAlias, typeLiteral, exported) {
