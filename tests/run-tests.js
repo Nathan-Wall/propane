@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { transformSync } = require('@babel/core');
-const propaneCommentPlugin = require('../babel/propane-comment-plugin');
+const propanePlugin = require('../babel/propane-plugin');
 
 const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
@@ -22,7 +22,7 @@ propaneFiles.forEach((filePath) => {
     transformSync(source, {
       filename: filePath,
       parserOpts: { sourceType: 'module', plugins: ['typescript'] },
-      plugins: [propaneCommentPlugin],
+      plugins: [propanePlugin],
     });
 
     if (expectError) {

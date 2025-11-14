@@ -1,0 +1,7 @@
+import { Email } from './email.propane';
+
+export type Unions = {
+  username: string | null;
+  email: Email | null;
+  metadata: { created: Date } | { updated: Date };
+};

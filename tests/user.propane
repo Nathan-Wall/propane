@@ -1,11 +1,15 @@
-import { Brand } from '../common/types/brand';
+import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
 
 export type User = {
+  id: number;
   name: string;
   email: Email;
   passwordHash: Hash;
   created: Date;
   updated: Date;
+  active: boolean;
+  eyeColor: 'blue'|'green'|'brown'|'hazel';
+  height: Distance;
 };

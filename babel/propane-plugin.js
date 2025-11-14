@@ -2,9 +2,9 @@
 
 const t = require('@babel/types');
 
-module.exports = function propaneCommentPlugin() {
+module.exports = function propanePlugin() {
   return {
-    name: 'propane-comment-plugin',
+    name: 'propane-plugin',
     visitor: {
       Program(path) {
         const existing = (path.node.leadingComments || []).some(
@@ -134,8 +134,13 @@ module.exports = function propaneCommentPlugin() {
       return isPrimitiveLikeType(typePath.get('typeAnnotation'));
     }
 
-    if (isPrimitiveKeyword(typePath)) {
+    if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {
       return true;
+    }
+
+    if (typePath.isTSUnionType()) {
+      const unionTypes = typePath.get('types');
+      return unionTypes.length > 0 && unionTypes.every((member) => isPrimitiveLikeType(member));
     }
 
     if (typePath.isTSTypeReference()) {
@@ -150,7 +155,14 @@ module.exports = function propaneCommentPlugin() {
       throw new Error('Missing type information for propane property.');
     }
 
-    if (isPrimitiveKeyword(typePath)) {
+    if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {
+      return;
+    }
+
+    if (typePath.isTSUnionType()) {
+      typePath.get('types').forEach((memberPath) => {
+        assertSupportedType(memberPath);
+      });
       return;
     }
 
@@ -241,6 +253,28 @@ module.exports = function propaneCommentPlugin() {
       typePath.isTSBigIntKeyword() ||
       typePath.isTSNullKeyword() ||
       typePath.isTSUndefinedKeyword()
+    );
+  }
+
+  function isPrimitiveLiteral(typePath) {
+    if (!typePath || typeof typePath.isTSLiteralType !== 'function') {
+      return false;
+    }
+
+    if (!typePath.isTSLiteralType()) {
+      return false;
+    }
+
+    const literal = typePath.node.literal;
+    if (!literal || typeof literal.type !== 'string') {
+      return false;
+    }
+
+    return (
+      literal.type === 'StringLiteral' ||
+      literal.type === 'NumericLiteral' ||
+      literal.type === 'BooleanLiteral' ||
+      literal.type === 'BigIntLiteral'
     );
   }
 

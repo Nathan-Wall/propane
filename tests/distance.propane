@@ -1,0 +1,6 @@
+export type DistanceUnit = 'm'|'ft';
+
+export type Distance = {
+  unit: DistanceUnit;
+  value: number;
+};

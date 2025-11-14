@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { transformSync } = require('@babel/core');
-const propaneCommentPlugin = require('../babel/propane-comment-plugin');
+const propanePlugin = require('../babel/propane-plugin');
 
 const targets = process.argv.slice(2);
 
@@ -41,7 +41,7 @@ function transpileFile(sourcePath) {
       retainLines: false,
       compact: false,
     },
-    plugins: [propaneCommentPlugin],
+    plugins: [propanePlugin],
     ast: false,
   });
 
