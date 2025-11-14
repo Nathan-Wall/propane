@@ -1,0 +1,3 @@
+import { Brand } from '../common/types/brand';
+
+export type Hash = Brand<string, 'Hash'>;

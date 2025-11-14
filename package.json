@@ -1,0 +1,30 @@
+{
+  "name": "propane",
+  "version": "1.0.0",
+  "description": "Materialized types for TypeScript",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nathan-Wall/propane.git"
+  },
+  "keywords": [
+    "propane",
+    "propane.js",
+    "propanejs"
+  ],
+  "author": "Nathan Wall",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Nathan-Wall/propane/issues"
+  },
+  "homepage": "https://github.com/Nathan-Wall/propane#readme",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
