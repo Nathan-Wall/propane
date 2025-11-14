@@ -1,0 +1,8 @@
+export type Primitives = {
+  flag: boolean;
+  count: number;
+  label: string;
+  size: bigint;
+  empty: null;
+  missing: undefined;
+};

@@ -121,7 +121,7 @@ module.exports = function propaneCommentPlugin() {
     }
 
     throw typePath.buildCodeFrameError(
-      'Propane files must export an object type or a primitive-like alias (string, number, Date, Brand).'
+      'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, Brand).'
     );
   }
 
@@ -134,7 +134,7 @@ module.exports = function propaneCommentPlugin() {
       return isPrimitiveLikeType(typePath.get('typeAnnotation'));
     }
 
-    if (typePath.isTSStringKeyword() || typePath.isTSNumberKeyword()) {
+    if (isPrimitiveKeyword(typePath)) {
       return true;
     }
 
@@ -150,7 +150,7 @@ module.exports = function propaneCommentPlugin() {
       throw new Error('Missing type information for propane property.');
     }
 
-    if (typePath.isTSStringKeyword() || typePath.isTSNumberKeyword()) {
+    if (isPrimitiveKeyword(typePath)) {
       return;
     }
 
@@ -224,6 +224,24 @@ module.exports = function propaneCommentPlugin() {
 
     const [first] = node.typeParameters.params;
     return t.isTSStringKeyword(first);
+  }
+
+  function isPrimitiveKeyword(typePath) {
+    if (
+      !typePath ||
+      typeof typePath.isTSStringKeyword !== 'function'
+    ) {
+      return false;
+    }
+
+    return (
+      typePath.isTSStringKeyword() ||
+      typePath.isTSNumberKeyword() ||
+      typePath.isTSBooleanKeyword() ||
+      typePath.isTSBigIntKeyword() ||
+      typePath.isTSNullKeyword() ||
+      typePath.isTSUndefinedKeyword()
+    );
   }
 
   function isAllowedTypeReference(typePath) {

@@ -9,6 +9,21 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const cases = [
   {
+    name: 'user type compiles successfully',
+    file: path.join(projectRoot, 'tests/user.propane'),
+    expectError: false,
+  },
+  {
+    name: 'primitive fields compile successfully',
+    file: path.join(projectRoot, 'tests/primitives.propane'),
+    expectError: false,
+  },
+  {
+    name: 'primitive alias compiles successfully',
+    file: path.join(projectRoot, 'tests/primitive-alias.propane'),
+    expectError: false,
+  },
+  {
     name: 'top-level Function alias is rejected',
     file: path.join(projectRoot, 'tests/fail.propane'),
     expectError: true,
@@ -25,6 +40,12 @@ const cases = [
     file: path.join(projectRoot, 'tests/fail-nested.propane'),
     expectError: true,
     errorIncludes: 'Propane property references must refer to imported or locally declared identifiers',
+  },
+  {
+    name: 'symbol property is rejected',
+    file: path.join(projectRoot, 'tests/fail-symbol.propane'),
+    expectError: true,
+    errorIncludes: 'Unsupported type in propane file',
   },
 ];
 
