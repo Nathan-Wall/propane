@@ -1,11 +1,11 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm');
-const ts = require('typescript');
+import fs from 'fs';
+import path from 'path';
+import vm from 'vm';
+import ts from 'typescript';
 
-module.exports = function runSerializationTests({ projectRoot, transform }) {
+export default function runSerializationTests({ projectRoot, transform }) {
   const simplePath = path.join(projectRoot, 'tests/simple.propane');
   const source = fs.readFileSync(simplePath, 'utf8');
   const transformed = transform(source, simplePath);
@@ -92,7 +92,7 @@ module.exports = function runSerializationTests({ projectRoot, transform }) {
       }),
     'Invalid field types should throw.'
   );
-};
+}
 
 function transpileTs(source, fileName) {
   const result = ts.transpileModule(source, {

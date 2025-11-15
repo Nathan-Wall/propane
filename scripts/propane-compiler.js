@@ -1,10 +1,14 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const { transformSync } = require('@babel/core');
-const propanePlugin = require('../babel/propane-plugin');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { transformSync } from '@babel/core';
+import propanePlugin from '../babel/propane-plugin.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const targets = process.argv.slice(2);
 

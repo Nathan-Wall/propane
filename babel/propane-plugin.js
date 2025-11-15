@@ -1,11 +1,9 @@
-'use strict';
-
-const path = require('path');
-const t = require('@babel/types');
+import path from 'path';
+import * as t from '@babel/types';
 
 const MESSAGE_SOURCE = '@propanejs/runtime';
 
-module.exports = function propanePlugin() {
+export default function propanePlugin() {
   const declaredTypeNames = new Set();
 
   return {
@@ -965,4 +963,4 @@ module.exports = function propanePlugin() {
       t.newExpression(t.identifier('Error'), [t.stringLiteral(message)])
     );
   }
-};
+}

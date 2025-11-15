@@ -2,6 +2,7 @@
   "name": "propanejs",
   "version": "1.0.0",
   "description": "Materialized types for TypeScript",
+  "type": "module",
   "main": "index.js",
   "directories": {
     "test": "tests"

@@ -1,11 +1,14 @@
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const { transformSync } = require('@babel/core');
-const propanePlugin = require('../babel/propane-plugin');
-const runSerializationTests = require('./serialization-tests');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { transformSync } from '@babel/core';
+import propanePlugin from '../babel/propane-plugin.js';
+import runSerializationTests from './serialization-tests.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
 const failPattern = /(?:^|[.-])fail$/i;
