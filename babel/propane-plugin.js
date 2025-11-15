@@ -3,7 +3,7 @@
 const path = require('path');
 const t = require('@babel/types');
 
-const MESSAGE_SOURCE = '@/message';
+const MESSAGE_SOURCE = '@propanejs/runtime';
 
 module.exports = function propanePlugin() {
   const declaredTypeNames = new Set();

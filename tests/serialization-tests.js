@@ -10,14 +10,21 @@ module.exports = function runSerializationTests({ projectRoot, transform }) {
   const source = fs.readFileSync(simplePath, 'utf8');
   const transformed = transform(source, simplePath);
 
-  const messagePath = path.join(projectRoot, 'message.ts');
+  const messagePath = path.join(projectRoot, 'runtime/src/index.ts');
   const messageTs = fs.readFileSync(messagePath, 'utf8');
-  const messageJs = transpileTs(messageTs, 'message.ts');
-  const messageExports = evaluateModule(messageJs);
+  const messageJs = transpileTs(messageTs, 'runtime/src/index.ts');
+  const messageExports = evaluateModule(messageJs, {
+    './message': evaluateModule(
+      transpileTs(
+        fs.readFileSync(path.join(projectRoot, 'runtime/src/message.ts'), 'utf8'),
+        'runtime/src/message.ts'
+      )
+    ),
+  });
 
   const simpleJs = transpileTs(transformed, 'tests/simple.propane.ts');
   const simpleExports = evaluateModule(simpleJs, {
-    '@/message': messageExports,
+    '@propanejs/runtime': messageExports,
   });
 
   const Simple = simpleExports.Simple;

@@ -48,7 +48,7 @@ export abstract class Message<T extends object> {
   }
 }
 
-function parseCerealString<T extends object>(value: string): Cereal<T> {
+export function parseCerealString<T extends object>(value: string): Cereal<T> {
   if (!value.startsWith(':')) {
     throw new Error('Invalid Propane message. Expected ":" prefix.');
   }

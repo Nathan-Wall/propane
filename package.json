@@ -1,5 +1,5 @@
 {
-  "name": "propane",
+  "name": "propanejs",
   "version": "1.0.0",
   "description": "Materialized types for TypeScript",
   "main": "index.js",
@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "node tests/run-tests.js",
-    "propane:compile": "node scripts/propane-compiler.js"
+    "propane:compile": "node scripts/propane-compiler.js",
+    "runtime:build": "npm --prefix runtime run build",
+    "runtime:publish": "node scripts/publish-runtime.js"
   },
   "repository": {
     "type": "git",
