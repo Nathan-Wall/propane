@@ -1,12 +1,10 @@
 export type MessagePropDescriptor<T extends object> = {
-  name: keyof T & string;
+  name: keyof T;
   fieldNumber: number | null;
   getValue: () => T[keyof T];
 };
 
-export type Cereal<T extends object> =
-  | (Partial<T> & Record<string, unknown>)
-  | unknown[];
+export type Cereal<T extends object> = T | unknown[];
 
 type MessageConstructor<T extends object> = {
   new (props: T): Message<T>;
@@ -18,7 +16,18 @@ export abstract class Message<T extends object> {
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
 
-  cerealize(): Cereal<T> {
+  private cerealize(): T {
+    return this.cerealizeWithDescriptors(this.$getPropDescriptors());
+  }
+
+  private cerealizeWithDescriptors(descriptors: MessagePropDescriptor<T>[]): T {
+    return descriptors.reduce((acc, descriptor) => {
+      acc[descriptor.name] = descriptor.getValue();
+      return acc;
+    }, {} as T);
+  }
+
+  private preserialize(): Cereal<T> {
     const descriptors = this.$getPropDescriptors();
     const useOrderedArray = shouldUseOrderedSerialization(descriptors);
 
@@ -30,17 +39,11 @@ export abstract class Message<T extends object> {
       }, []);
     }
 
-    return descriptors.reduce<Partial<T> & Record<string, unknown>>(
-      (acc, descriptor) => {
-        acc[descriptor.name] = descriptor.getValue() as T[keyof T];
-        return acc;
-      },
-      {} as Partial<T> & Record<string, unknown>
-    );
+    return this.cerealizeWithDescriptors(descriptors);
   }
 
   serialize(): string {
-    const payload = this.cerealize();
+    const payload = this.preserialize();
     const serialized = Array.isArray(payload)
       ? serializeArrayLiteral(payload)
       : JSON.stringify(payload);
