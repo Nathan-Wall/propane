@@ -62,7 +62,11 @@ try {
   console.log('[PASS] serialization roundtrip');
 } catch (err) {
   console.error('[FAIL] serialization roundtrip');
-  console.error(err && err.message);
+  if (err && err.stack) {
+    console.error(err.stack);
+  } else {
+    console.error(err && err.message);
+  }
   hasFailure = true;
 }
 
