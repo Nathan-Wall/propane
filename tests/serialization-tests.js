@@ -10,16 +10,14 @@ module.exports = function runSerializationTests({ projectRoot, transform }) {
   const source = fs.readFileSync(simplePath, 'utf8');
   const transformed = transform(source, simplePath);
 
-  const messageTs = fs.readFileSync(
-    path.join(projectRoot, 'types/message.ts'),
-    'utf8'
-  );
-  const messageJs = transpileTs(messageTs, 'types/message.ts');
+  const messagePath = path.join(projectRoot, 'message.ts');
+  const messageTs = fs.readFileSync(messagePath, 'utf8');
+  const messageJs = transpileTs(messageTs, 'message.ts');
   const messageExports = evaluateModule(messageJs);
 
   const simpleJs = transpileTs(transformed, 'tests/simple.propane.ts');
   const simpleExports = evaluateModule(simpleJs, {
-    '@/types/message': messageExports,
+    '@/message': messageExports,
   });
 
   const Simple = simpleExports.Simple;
@@ -41,12 +39,27 @@ module.exports = function runSerializationTests({ projectRoot, transform }) {
   assert(cereal.nickname === 'Al', 'Optional field incorrect.');
 
   const serialized = instance.serialize();
-  assert(serialized.startsWith(':'), 'Serialized string missing prefix.');
+  const expectedSerialized =
+    ':{"1":1,"name":"Alice","age":30,"active":true,"nickname":"Al"}';
+  assert(
+    serialized === expectedSerialized,
+    'Serialized string did not match expected.'
+  );
 
   const hydrated = Simple.deserialize(serialized);
   assert(hydrated instanceof Simple, 'Deserialize should produce class instance.');
   const hydratedCereal = hydrated.cerealize();
   assert(hydratedCereal.name === 'Alice', 'Roundtrip lost data.');
+
+  const rawString =
+    ':{"1":3,"name":"Chris","age":24,"active":false,"nickname":"CJ"}';
+  const hydratedFromString = Simple.deserialize(rawString);
+  const hydratedFromStringCereal = hydratedFromString.cerealize();
+  assert(hydratedFromStringCereal['1'] === 3, 'Raw string deserialize failed.');
+  assert(
+    hydratedFromStringCereal.name === 'Chris',
+    'Raw string deserialize lost name.'
+  );
 
   const cerealInput = {
     '1': 2,
