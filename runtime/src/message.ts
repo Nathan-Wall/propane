@@ -6,6 +6,12 @@ export type MessagePropDescriptor<T extends object> = {
 
 export type Cereal<T extends object> = Partial<T> & Record<string, unknown>;
 
+type MessageConstructor<T extends object> = {
+  new (props: T): Message<T>;
+  decerealize(cereal: Cereal<T>): Message<T>;
+  prototype: Message<T>;
+};
+
 export abstract class Message<T extends object> {
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
@@ -31,7 +37,7 @@ export abstract class Message<T extends object> {
   }
 
   static deserialize<T extends object>(
-    this: new (props: T) => Message<T>,
+    this: MessageConstructor<T>,
     message: string
   ): Message<T> {
     const payload = parseCerealString<T>(message);
@@ -39,7 +45,7 @@ export abstract class Message<T extends object> {
   }
 
   static decerealize<T extends object>(
-    this: new (props: T) => Message<T>,
+    this: MessageConstructor<T>,
     cereal: Cereal<T>
   ): Message<T> {
     const proto = this.prototype as Message<T>;
