@@ -1,0 +1,7 @@
+export type Simple = {
+  '1:id': number;
+  name: string;
+  age: number;
+  active: boolean;
+  nickname?: string;
+};

@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { transformSync } = require('@babel/core');
 const propanePlugin = require('../babel/propane-plugin');
+const runSerializationTests = require('./serialization-tests');
 
 const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
@@ -44,6 +45,23 @@ propaneFiles.forEach((filePath) => {
     console.log(`[PASS] ${relativeName}`);
   }
 });
+
+try {
+  runSerializationTests({
+    projectRoot,
+    transform: (source, filename) =>
+      transformSync(source, {
+        filename,
+        parserOpts: { sourceType: 'module', plugins: ['typescript'] },
+        plugins: [propanePlugin],
+      }).code,
+  });
+  console.log('[PASS] serialization roundtrip');
+} catch (err) {
+  console.error('[FAIL] serialization roundtrip');
+  console.error(err && err.message);
+  hasFailure = true;
+}
 
 process.exit(hasFailure ? 1 : 0);
 

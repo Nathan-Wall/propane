@@ -1,6 +1,9 @@
 'use strict';
 
+const path = require('path');
 const t = require('@babel/types');
+
+const MESSAGE_SOURCE = '@/types/message';
 
 module.exports = function propanePlugin() {
   const declaredTypeNames = new Set();
@@ -8,16 +11,32 @@ module.exports = function propanePlugin() {
   return {
     name: 'propane-plugin',
     visitor: {
-      Program(path) {
-        const existing = (path.node.leadingComments || []).some(
-          (comment) => comment.value.trim() === 'transpiled'
-        );
+      Program: {
+        enter(path, state) {
+          state.usesPropaneBase = false;
 
-        if (!existing) {
-          path.addComment('leading', ' transpiled', true);
-        }
+          const fileOpts = (state.file && state.file.opts) || {};
+          const filename = fileOpts.filename || '';
+          const relative = filename
+            ? pathTransform(filename)
+            : 'unknown';
+          const commentText = `Generated from ${relative}`;
+
+          const existing = (path.node.leadingComments || []).some(
+            (comment) => comment.value.trim() === commentText
+          );
+
+          if (!existing) {
+            path.addComment('leading', ` ${commentText}`, true);
+          }
+        },
+        exit(path, state) {
+          if (state.usesPropaneBase) {
+            ensureBaseImport(path);
+          }
+        },
       },
-      ExportNamedDeclaration(path) {
+      ExportNamedDeclaration(path, state) {
         if (!path.parentPath.isProgram()) {
           return;
         }
@@ -28,20 +47,20 @@ module.exports = function propanePlugin() {
 
         registerTypeAlias(declarationPath.node);
 
-        const replacement = buildDeclarations(declarationPath, { exported: true });
+        const replacement = buildDeclarations(declarationPath, { exported: true, state });
 
         if (replacement) {
           path.replaceWithMultiple(replacement);
         }
       },
-      TSTypeAliasDeclaration(path) {
+      TSTypeAliasDeclaration(path, state) {
         if (path.parentPath.isExportNamedDeclaration()) {
           return;
         }
 
         registerTypeAlias(path.node);
 
-        const replacement = buildDeclarations(path, { exported: false });
+        const replacement = buildDeclarations(path, { exported: false, state });
 
         if (replacement) {
           path.replaceWithMultiple(replacement);
@@ -50,7 +69,7 @@ module.exports = function propanePlugin() {
     },
   };
 
-  function buildDeclarations(typeAliasPath, { exported }) {
+  function buildDeclarations(typeAliasPath, { exported, state }) {
     const typeAlias = typeAliasPath.node;
 
     if (!t.isIdentifier(typeAlias.id)) {
@@ -70,6 +89,8 @@ module.exports = function propanePlugin() {
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
+
+    state.usesPropaneBase = true;
 
     if (exported) {
       const classExport = t.exportNamedDeclaration(classDecl, []);
@@ -317,7 +338,9 @@ module.exports = function propanePlugin() {
     const keyPath = memberPath.get('key');
 
     if (keyPath.isIdentifier()) {
-      return { name: keyPath.node.name, fieldNumber: null };
+      const name = keyPath.node.name;
+      assertValidPropertyName(name, keyPath);
+      return { name, fieldNumber: null };
     }
 
     if (keyPath.isStringLiteral()) {
@@ -339,12 +362,21 @@ module.exports = function propanePlugin() {
         );
       }
 
+      assertValidPropertyName(identifierPart, keyPath);
       return { name: identifierPart, fieldNumber };
     }
 
     throw memberPath.buildCodeFrameError(
       'Propane properties must use identifier names or numbered keys like \'1:name\'.'
     );
+  }
+
+  function assertValidPropertyName(name, keyPath) {
+    if (name.includes('$')) {
+      throw keyPath.buildCodeFrameError(
+        'Propane property names cannot contain "$".'
+      );
+    }
   }
 
   function isAllowedTypeReference(typePath) {
@@ -433,6 +465,9 @@ module.exports = function propanePlugin() {
       ...prop,
       privateName: t.privateName(t.identifier(prop.name)),
     }));
+    const propsTypeRef = t.tsTypeReference(
+      t.tsQualifiedName(t.identifier(typeName), t.identifier('Type'))
+    );
 
     propDescriptors.forEach((prop) => {
       const typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
@@ -457,12 +492,10 @@ module.exports = function propanePlugin() {
 
     const constructorParam = t.identifier('props');
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
-      t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Type'))
-      )
+      t.cloneNode(propsTypeRef)
     );
 
-    const constructorBody = propDescriptors.map((prop) =>
+    const constructorAssignments = propDescriptors.map((prop) =>
       t.expressionStatement(
         t.assignmentExpression(
           '=',
@@ -475,6 +508,11 @@ module.exports = function propanePlugin() {
       )
     );
 
+    const constructorBody = [
+      t.expressionStatement(t.callExpression(t.super(), [])),
+      ...constructorAssignments,
+    ];
+
     const constructor = t.classMethod(
       'constructor',
       t.identifier('constructor'),
@@ -482,12 +520,449 @@ module.exports = function propanePlugin() {
       t.blockStatement(constructorBody)
     );
 
+    const fromEntriesMethod = buildFromEntriesMethod(propDescriptors, propsTypeRef);
+
+    const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
+
     const classBody = t.classBody([
       ...backingFields,
       constructor,
       ...getters,
+      descriptorMethod,
+      fromEntriesMethod,
     ]);
 
-    return t.classDeclaration(t.identifier(typeName), null, classBody, []);
+    const classDecl = t.classDeclaration(
+      t.identifier(typeName),
+      t.identifier('Message'),
+      classBody,
+      []
+    );
+
+    classDecl.superTypeParameters = t.tsTypeParameterInstantiation([
+      t.cloneNode(propsTypeRef),
+    ]);
+
+    return classDecl;
+  }
+
+  function buildDescriptorMethod(propDescriptors, propsTypeRef) {
+    const descriptorEntries = propDescriptors.map((prop) =>
+      t.objectExpression([
+        t.objectProperty(t.identifier('name'), t.stringLiteral(prop.name)),
+        t.objectProperty(
+          t.identifier('fieldNumber'),
+          prop.fieldNumber === null
+            ? t.nullLiteral()
+            : t.numericLiteral(prop.fieldNumber)
+        ),
+        t.objectProperty(
+          t.identifier('getValue'),
+          t.arrowFunctionExpression(
+            [],
+            t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
+          )
+        ),
+      ])
+    );
+
+    const body = t.blockStatement([
+      t.returnStatement(t.arrayExpression(descriptorEntries)),
+    ]);
+
+    const method = t.classMethod(
+      'method',
+      t.identifier('$getPropDescriptors'),
+      [],
+      body
+    );
+
+    method.accessibility = 'protected';
+
+    method.returnType = t.tsTypeAnnotation(
+      t.tsArrayType(
+        t.tsTypeReference(
+          t.identifier('MessagePropDescriptor'),
+          t.tsTypeParameterInstantiation([t.cloneNode(propsTypeRef)])
+        )
+      )
+    );
+
+    return method;
+  }
+
+  function buildFromEntriesMethod(propDescriptors, propsTypeRef) {
+    const argsId = t.identifier('entries');
+    argsId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('Record'),
+        t.tsTypeParameterInstantiation([t.tsStringKeyword(), t.tsUnknownKeyword()])
+      )
+    );
+    const propsId = t.identifier('props');
+
+    const statements = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          propsId,
+          t.tsAsExpression(
+            t.objectExpression([]),
+            t.tsTypeReference(
+              t.identifier('Partial'),
+              t.tsTypeParameterInstantiation([t.cloneNode(propsTypeRef)])
+            )
+          )
+        ),
+      ]),
+    ];
+
+    propDescriptors.forEach((prop) => {
+      const valueId = t.identifier(`${prop.name}Value`);
+      const valueExpr = buildEntryAccessExpression(prop, argsId);
+      statements.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(valueId, valueExpr),
+        ])
+      );
+
+      const undefinedCheck = t.binaryExpression(
+        '===',
+        valueId,
+        t.identifier('undefined')
+      );
+
+      if (!prop.optional) {
+        statements.push(
+          t.ifStatement(
+            undefinedCheck,
+            buildErrorThrow(`Missing required property "${prop.name}".`)
+          )
+        );
+      }
+
+      const typeCheckExpr = buildRuntimeTypeCheckExpression(
+        prop.typeAnnotation,
+        valueId
+      );
+
+      if (typeCheckExpr && !t.isBooleanLiteral(typeCheckExpr, { value: true })) {
+        const shouldValidate = prop.optional
+          ? t.logicalExpression(
+              '&&',
+              t.binaryExpression(
+                '!==',
+                valueId,
+                t.identifier('undefined')
+              ),
+              t.unaryExpression('!', typeCheckExpr)
+            )
+          : t.unaryExpression('!', typeCheckExpr);
+
+        statements.push(
+          t.ifStatement(
+            shouldValidate,
+            buildErrorThrow(`Invalid value for property "${prop.name}".`)
+          )
+        );
+      }
+
+      statements.push(
+        t.expressionStatement(
+          t.assignmentExpression(
+            '=',
+            t.memberExpression(propsId, t.identifier(prop.name)),
+            valueId
+          )
+        )
+      );
+    });
+
+    statements.push(
+      t.returnStatement(
+        t.tsAsExpression(
+          propsId,
+          t.cloneNode(propsTypeRef)
+        )
+      )
+    );
+
+    const body = t.blockStatement(statements);
+
+    const method = t.classMethod(
+      'method',
+      t.identifier('$fromEntries'),
+      [argsId],
+      body
+    );
+
+    method.accessibility = 'protected';
+    method.returnType = t.tsTypeAnnotation(t.cloneNode(propsTypeRef));
+
+    return method;
+  }
+
+  function ensureBaseImport(programPath) {
+    const program = programPath.node;
+    const existingImport = program.body.find(
+      (stmt) =>
+        t.isImportDeclaration(stmt) &&
+        stmt.source.value === MESSAGE_SOURCE
+    );
+
+    if (existingImport) {
+      const existingSpecifiers = new Set(
+        existingImport.specifiers
+          .filter((spec) => t.isImportSpecifier(spec))
+          .map((spec) => spec.imported.name)
+      );
+      ['Message', 'MessagePropDescriptor'].forEach((name) => {
+        if (!existingSpecifiers.has(name)) {
+          existingImport.specifiers.push(
+            t.importSpecifier(t.identifier(name), t.identifier(name))
+          );
+        }
+      });
+      return;
+    }
+
+    const importDecl = t.importDeclaration(
+      [
+        t.importSpecifier(t.identifier('Message'), t.identifier('Message')),
+        t.importSpecifier(
+          t.identifier('MessagePropDescriptor'),
+          t.identifier('MessagePropDescriptor')
+        ),
+      ],
+      t.stringLiteral(MESSAGE_SOURCE)
+    );
+
+    const insertionIndex = program.body.findIndex(
+      (stmt) => !t.isImportDeclaration(stmt)
+    );
+
+    if (insertionIndex === -1) {
+      program.body.push(importDecl);
+    } else {
+      program.body.splice(insertionIndex, 0, importDecl);
+    }
+  }
+
+  function pathTransform(filename) {
+    const relative = path.relative(process.cwd(), filename);
+    const normalized = relative && !relative.startsWith('..')
+      ? relative
+      : filename;
+    return normalized.split(path.sep).join('/');
+  }
+
+  function buildEntryAccessExpression(prop, entriesId) {
+    const namedAccess = t.memberExpression(
+      entriesId,
+      t.stringLiteral(prop.name),
+      true
+    );
+
+    if (prop.fieldNumber === null) {
+      return namedAccess;
+    }
+
+    const numberedAccess = t.memberExpression(
+      entriesId,
+      t.stringLiteral(String(prop.fieldNumber)),
+      true
+    );
+
+    return t.logicalExpression('??', numberedAccess, namedAccess);
+  }
+
+  function buildRuntimeTypeCheckExpression(typeNode, valueId) {
+    if (!typeNode) {
+      return null;
+    }
+
+    if (t.isTSParenthesizedType(typeNode)) {
+      return buildRuntimeTypeCheckExpression(
+        typeNode.typeAnnotation,
+        valueId
+      );
+    }
+
+    if (t.isTSStringKeyword(typeNode)) {
+      return typeofCheck(valueId, 'string');
+    }
+
+    if (t.isTSNumberKeyword(typeNode)) {
+      return typeofCheck(valueId, 'number');
+    }
+
+    if (t.isTSBooleanKeyword(typeNode)) {
+      return typeofCheck(valueId, 'boolean');
+    }
+
+    if (t.isTSBigIntKeyword(typeNode)) {
+      return typeofCheck(valueId, 'bigint');
+    }
+
+    if (t.isTSNullKeyword(typeNode)) {
+      return t.binaryExpression('===', valueId, t.nullLiteral());
+    }
+
+    if (t.isTSUndefinedKeyword(typeNode)) {
+      return t.binaryExpression('===', valueId, t.identifier('undefined'));
+    }
+
+    if (t.isTSLiteralType(typeNode)) {
+      return buildLiteralTypeCheck(typeNode, valueId);
+    }
+
+    if (t.isTSUnionType(typeNode)) {
+      const checks = typeNode.types
+        .map((subType) => buildRuntimeTypeCheckExpression(subType, valueId))
+        .filter(Boolean);
+
+      if (!checks.length) {
+        return null;
+      }
+
+      return checks.reduce((acc, expr) =>
+        acc ? t.logicalExpression('||', acc, expr) : expr
+      );
+    }
+
+    if (t.isTSTypeReference(typeNode)) {
+      if (isDateReference(typeNode)) {
+        return t.binaryExpression(
+          'instanceof',
+          valueId,
+          t.identifier('Date')
+        );
+      }
+
+      if (isBrandReference(typeNode)) {
+        return typeofCheck(valueId, 'string');
+      }
+
+      return null;
+    }
+
+    if (t.isTSTypeLiteral(typeNode)) {
+      return buildTypeLiteralCheckExpression(typeNode, valueId);
+    }
+
+    return null;
+  }
+
+  function typeofCheck(valueId, type) {
+    return t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', valueId),
+      t.stringLiteral(type)
+    );
+  }
+
+  function buildLiteralTypeCheck(typeNode, valueId) {
+    const literal = typeNode.literal;
+
+    if (t.isStringLiteral(literal)) {
+      return t.binaryExpression('===', valueId, t.stringLiteral(literal.value));
+    }
+
+    if (t.isNumericLiteral(literal)) {
+      return t.binaryExpression('===', valueId, t.numericLiteral(literal.value));
+    }
+
+    if (t.isBooleanLiteral(literal)) {
+      return t.binaryExpression('===', valueId, t.booleanLiteral(literal.value));
+    }
+
+    if (t.isBigIntLiteral(literal)) {
+      return t.binaryExpression(
+        '===',
+        valueId,
+        t.bigIntLiteral(literal.value)
+      );
+    }
+
+    return null;
+  }
+
+  function buildNonNullObjectCheck(valueId) {
+    return t.logicalExpression(
+      '&&',
+      typeofCheck(valueId, 'object'),
+      t.binaryExpression('!==', valueId, t.nullLiteral())
+    );
+  }
+
+  function buildTypeLiteralCheckExpression(typeLiteral, valueId) {
+    const baseCheck = buildNonNullObjectCheck(valueId);
+
+    const propertyChecks = typeLiteral.members.map((member) => {
+      if (
+        !t.isTSPropertySignature(member) ||
+        !member.typeAnnotation ||
+        !t.isTSType(member.typeAnnotation.typeAnnotation)
+      ) {
+        return null;
+      }
+
+      if (!t.isIdentifier(member.key)) {
+        return null;
+      }
+
+      const propertyValue = t.memberExpression(
+        valueId,
+        t.identifier(member.key.name)
+      );
+
+      const typeCheck = buildRuntimeTypeCheckExpression(
+        member.typeAnnotation.typeAnnotation,
+        propertyValue
+      );
+
+      if (member.optional) {
+        if (!typeCheck) {
+          return null;
+        }
+
+        return t.logicalExpression(
+          '||',
+          t.binaryExpression(
+            '===',
+            propertyValue,
+            t.identifier('undefined')
+          ),
+          typeCheck
+        );
+      }
+
+      const definedCheck = t.binaryExpression(
+        '!==',
+        propertyValue,
+        t.identifier('undefined')
+      );
+
+      if (!typeCheck) {
+        return definedCheck;
+      }
+
+      return t.logicalExpression('&&', definedCheck, typeCheck);
+    }).filter(Boolean);
+
+    if (!propertyChecks.length) {
+      return baseCheck;
+    }
+
+    const combinedChecks = propertyChecks.reduce((acc, expr) =>
+      t.logicalExpression('&&', acc, expr)
+    );
+
+    return t.logicalExpression('&&', baseCheck, combinedChecks);
+  }
+
+  function buildErrorThrow(message) {
+    return t.throwStatement(
+      t.newExpression(t.identifier('Error'), [t.stringLiteral(message)])
+    );
   }
 };
