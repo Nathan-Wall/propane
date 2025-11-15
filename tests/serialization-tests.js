@@ -11,7 +11,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
     projectRoot,
     transform,
     runtimeExports,
-    fixture: 'tests/simple.propane',
+    fixture: 'tests/indexed.propane',
     exportName: 'Simple',
   });
   if (typeof Simple !== 'function') {
