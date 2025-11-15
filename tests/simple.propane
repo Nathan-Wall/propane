@@ -3,6 +3,8 @@ export type Simple = {
   '2:name': string;
   '3:age': number;
   '4:active': boolean;
-  '5:nickname'?: string | null;
-  '6:status': string;
+  '5:nickname'?: string;
+  '6:score': number | null;
+  '7:alias'?: string | null;
+  '8:status': string;
 };

@@ -40,7 +40,11 @@ export abstract class Message<T extends object> {
   }
 
   serialize(): string {
-    return `:${JSON.stringify(this.cerealize())}`;
+    const payload = this.cerealize();
+    const serialized = Array.isArray(payload)
+      ? serializeArrayLiteral(payload)
+      : JSON.stringify(payload);
+    return `:${serialized}`;
   }
 
   static deserialize<T extends object>(
@@ -67,10 +71,15 @@ export function parseCerealString<T extends object>(value: string): Cereal<T> {
     throw new Error('Invalid Propane message. Expected ":" prefix.');
   }
 
-  const json = value.slice(1);
-  const parsed = JSON.parse(json);
+  const payload = value.slice(1);
 
-  if (!parsed || (typeof parsed !== 'object' && !Array.isArray(parsed))) {
+  if (payload.trim().startsWith('[')) {
+    return parseArrayLiteral(payload);
+  }
+
+  const parsed = JSON.parse(payload);
+
+  if (!parsed || typeof parsed !== 'object') {
     throw new Error('Invalid Propane message payload.');
   }
 
@@ -121,4 +130,87 @@ function shouldUseOrderedSerialization<T extends object>(
   }
 
   return true;
+}
+
+function serializeArrayLiteral(values: unknown[]): string {
+  return `[${values
+    .map((value) =>
+      value === undefined ? 'undefined' : JSON.stringify(value)
+    )
+    .join(',')}]`;
+}
+
+function parseArrayLiteral(literal: string): unknown[] {
+  const trimmed = literal.trim();
+
+  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) {
+    throw new Error('Invalid array literal.');
+  }
+
+  if (trimmed === '[]') {
+    return [];
+  }
+
+  const values: unknown[] = [];
+  let token = '';
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  const pushToken = () => {
+    const content = token.trim();
+    if (!content) {
+      values.push(undefined);
+    } else if (content === 'undefined') {
+      values.push(undefined);
+    } else {
+      values.push(JSON.parse(content));
+    }
+    token = '';
+  };
+
+  for (let i = 1; i < trimmed.length - 1; i += 1) {
+    const char = trimmed[i];
+
+    if (inString) {
+      token += char;
+      if (escape) {
+        escape = false;
+      } else if (char === '\\') {
+        escape = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      token += char;
+      continue;
+    }
+
+    if (char === '[' || char === '{') {
+      depth += 1;
+      token += char;
+      continue;
+    }
+
+    if (char === ']' || char === '}') {
+      depth -= 1;
+      token += char;
+      continue;
+    }
+
+    if (char === ',' && depth === 0) {
+      pushToken();
+      continue;
+    }
+
+    token += char;
+  }
+
+  pushToken();
+
+  return values;
 }
