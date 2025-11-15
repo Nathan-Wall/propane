@@ -65,14 +65,14 @@ if (!propaneFiles.length) {
   process.exit(1);
 }
 
-propaneFiles.forEach((filePath) => {
+for (const filePath of propaneFiles) {
   try {
     transpileFile(filePath);
   } catch (err) {
     console.error(err.message);
     process.exitCode = 1;
   }
-});
+}
 
 if (process.exitCode) {
   process.exit(process.exitCode);

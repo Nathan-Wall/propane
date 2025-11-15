@@ -214,9 +214,9 @@ export default function propanePlugin() {
     }
 
     if (typePath.isTSUnionType()) {
-      typePath.get('types').forEach((memberPath) => {
+      for (const memberPath of typePath.get('types')) {
         assertSupportedType(memberPath);
-      });
+      }
       return;
     }
 
@@ -244,7 +244,7 @@ export default function propanePlugin() {
     }
 
     if (typePath.isTSTypeLiteral()) {
-      typePath.get('members').forEach((memberPath) => {
+      for (const memberPath of typePath.get('members')) {
         if (!memberPath.isTSPropertySignature()) {
           throw memberPath.buildCodeFrameError(
             'Propane nested object types can only contain property signatures.'
@@ -266,7 +266,7 @@ export default function propanePlugin() {
         }
 
         assertSupportedType(nestedTypeAnnotation.get('typeAnnotation'));
-      });
+      }
       return;
     }
 
@@ -467,7 +467,7 @@ export default function propanePlugin() {
       t.tsQualifiedName(t.identifier(typeName), t.identifier('Type'))
     );
 
-    propDescriptors.forEach((prop) => {
+    for (const prop of propDescriptors) {
       const typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
       const field = t.classPrivateProperty(t.cloneNode(prop.privateName));
       field.typeAnnotation = typeAnnotation;
@@ -486,7 +486,7 @@ export default function propanePlugin() {
 
       getter.returnType = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
       getters.push(getter);
-    });
+    }
 
     const constructorParam = t.identifier('props');
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
@@ -614,7 +614,7 @@ export default function propanePlugin() {
       ]),
     ];
 
-    propDescriptors.forEach((prop) => {
+    for (const prop of propDescriptors) {
       const valueId = t.identifier(`${prop.name}Value`);
       const valueExpr = buildEntryAccessExpression(prop, argsId);
       statements.push(
@@ -638,9 +638,34 @@ export default function propanePlugin() {
         );
       }
 
+      const allowsNull = typeAllowsNull(prop.typeAnnotation);
+      const normalizedValueId =
+        prop.optional && !allowsNull
+          ? t.identifier(`${prop.name}Normalized`)
+          : valueId;
+
+      if (prop.optional && !allowsNull) {
+        statements.push(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              normalizedValueId,
+              t.conditionalExpression(
+                t.binaryExpression(
+                  '===',
+                  valueId,
+                  t.nullLiteral()
+                ),
+                t.identifier('undefined'),
+                valueId
+              )
+            ),
+          ])
+        );
+      }
+
       const typeCheckExpr = buildRuntimeTypeCheckExpression(
         prop.typeAnnotation,
-        valueId
+        normalizedValueId
       );
 
       if (typeCheckExpr && !t.isBooleanLiteral(typeCheckExpr, { value: true })) {
@@ -649,7 +674,7 @@ export default function propanePlugin() {
               '&&',
               t.binaryExpression(
                 '!==',
-                valueId,
+                normalizedValueId,
                 t.identifier('undefined')
               ),
               t.unaryExpression('!', typeCheckExpr)
@@ -669,11 +694,11 @@ export default function propanePlugin() {
           t.assignmentExpression(
             '=',
             t.memberExpression(propsId, t.identifier(prop.name)),
-            valueId
+            normalizedValueId
           )
         )
       );
-    });
+    }
 
     statements.push(
       t.returnStatement(
@@ -713,13 +738,13 @@ export default function propanePlugin() {
           .filter((spec) => t.isImportSpecifier(spec))
           .map((spec) => spec.imported.name)
       );
-      ['Message', 'MessagePropDescriptor'].forEach((name) => {
+      for (const name of ['Message', 'MessagePropDescriptor']) {
         if (!existingSpecifiers.has(name)) {
           existingImport.specifiers.push(
             t.importSpecifier(t.identifier(name), t.identifier(name))
           );
         }
-      });
+      }
       return;
     }
 
@@ -770,7 +795,15 @@ export default function propanePlugin() {
       true
     );
 
-    return t.logicalExpression('??', numberedAccess, namedAccess);
+    return t.conditionalExpression(
+      t.binaryExpression(
+        '===',
+        numberedAccess,
+        t.identifier('undefined')
+      ),
+      namedAccess,
+      numberedAccess
+    );
   }
 
   function buildRuntimeTypeCheckExpression(typeNode, valueId) {
@@ -882,6 +915,26 @@ export default function propanePlugin() {
     }
 
     return null;
+  }
+
+  function typeAllowsNull(typeNode) {
+    if (!typeNode) {
+      return false;
+    }
+
+    if (t.isTSParenthesizedType(typeNode)) {
+      return typeAllowsNull(typeNode.typeAnnotation);
+    }
+
+    if (t.isTSNullKeyword(typeNode)) {
+      return true;
+    }
+
+    if (t.isTSUnionType(typeNode)) {
+      return typeNode.types.some((subType) => typeAllowsNull(subType));
+    }
+
+    return false;
   }
 
   function buildNonNullObjectCheck(valueId) {

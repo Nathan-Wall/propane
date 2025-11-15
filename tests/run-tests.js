@@ -16,7 +16,7 @@ const failPattern = /(?:^|[.-])fail$/i;
 const propaneFiles = findPropaneFiles(testsDir);
 let hasFailure = false;
 
-propaneFiles.forEach((filePath) => {
+for (const filePath of propaneFiles) {
   const relativeName = path.relative(projectRoot, filePath);
   const baseName = path.basename(filePath, '.propane');
   const expectError = failPattern.test(baseName);
@@ -33,7 +33,7 @@ propaneFiles.forEach((filePath) => {
       console.error(`[FAIL] ${relativeName}`);
       console.error('Expected transform to throw, but it succeeded.');
       hasFailure = true;
-      return;
+      continue;
     }
 
     console.log(`[PASS] ${relativeName}`);
@@ -42,12 +42,12 @@ propaneFiles.forEach((filePath) => {
       console.error(`[FAIL] ${relativeName}`);
       console.error('Unexpected error:\n', err && err.message);
       hasFailure = true;
-      return;
+      continue;
     }
 
     console.log(`[PASS] ${relativeName}`);
   }
-});
+}
 
 try {
   runSerializationTests({

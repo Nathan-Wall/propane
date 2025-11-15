@@ -1,7 +1,8 @@
 export type Simple = {
   '1:id': number;
-  name: string;
-  age: number;
-  active: boolean;
-  nickname?: string;
+  '2:name': string;
+  '3:age': number;
+  '4:active': boolean;
+  '5:nickname'?: string | null;
+  '6:status': string;
 };
