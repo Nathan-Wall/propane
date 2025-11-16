@@ -72,6 +72,59 @@ export default function runMapPropaneTests(ctx: TestContext) {
   assert(objectExtrasEntries[0][0] === 'obj', 'Object raw extras lost key.');
   assert(objectExtrasEntries[0][1].note === 'Value', 'Object raw extras lost value.');
 
+  const addedLabelInstance = mapInstance.setLabelsEntry('delta', 8);
+  assert(!mapInstance.labels.has('delta'), 'setLabelsEntry should not mutate original labels.');
+  assert(addedLabelInstance.labels.get('delta') === 8, 'setLabelsEntry should insert new key.');
+
+  const removedLabelInstance = mapInstance.deleteLabelsEntry('one');
+  assert(mapInstance.labels.has('one'), 'deleteLabelsEntry should not mutate original labels.');
+  assert(!removedLabelInstance.labels.has('one'), 'deleteLabelsEntry should remove specified key.');
+
+  const clearedExtrasInstance = mapInstance.clearExtras();
+  assert(clearedExtrasInstance.extras.size === 0, 'clearExtras should remove all entries.');
+
+  const mergedLabelsInstance = mapInstance.mergeLabelsEntries([
+    ['epsilon', 5],
+    ['zeta', 6],
+  ]);
+  assert(mergedLabelsInstance.labels.get('epsilon') === 5, 'mergeLabelsEntries should merge array input.');
+  const mergedLabelsMap = mapInstance.mergeLabelsEntries(new Map([['theta', 9]]));
+  assert(mergedLabelsMap.labels.get('theta') === 9, 'mergeLabelsEntries should merge Map input.');
+
+  const updatedExtrasInstance = mapInstance.updateExtrasEntry('alpha', (entry) => ({
+    note: entry && entry.note ? `${entry.note}!` : 'A!',
+  }));
+  assert(
+    updatedExtrasInstance.extras.get('alpha')?.note === 'A!',
+    'updateExtrasEntry should apply updater to existing entry.'
+  );
+
+  const mappedLabelsInstance = mapInstance.mapLabelsEntries((value, key) => [
+    typeof key === 'number' ? `num-${key}` : key,
+    value * 10,
+  ]);
+  assert(
+    mappedLabelsInstance.labels.get('num-2') === 40,
+    'mapLabelsEntries should remap keys and values.'
+  );
+
+  const filteredLabelsInstance = mapInstance.filterLabelsEntries((_, key) =>
+    typeof key === 'string'
+  );
+  assert(filteredLabelsInstance.labels.has('one'), 'filterLabelsEntries should retain matching entries.');
+  assert(!filteredLabelsInstance.labels.has(2), 'filterLabelsEntries should remove entries that fail predicate.');
+
+  const emptyMetadataInstance = new MapMessage({
+    labels,
+    extras,
+    metadata: undefined,
+  });
+  const metadataSet = emptyMetadataInstance.setMetadataEntry('owner', { value: 'Bob' });
+  assert(
+    metadataSet.metadata && metadataSet.metadata.get('owner')?.value === 'Bob',
+    'setMetadataEntry should initialize optional map.'
+  );
+
   const ImmutableMapCtor = runtimeExports['ImmutableMap'] as new <
     K,
     V

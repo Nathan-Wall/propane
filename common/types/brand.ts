@@ -1,4 +1,4 @@
-export const $brand = Symbol('brand');
+const $brand = Symbol('brand');
 
 export type Brand<T, B> = T & { readonly [$brand]: B };
 

@@ -177,6 +177,7 @@ export default function propanePlugin() {
       assertSupportedType(propTypePath);
 
       const mapType = isMapTypeNode(propTypePath.node);
+      const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
       const arrayType = isArrayTypeNode(propTypePath.node);
       const messageTypeName = getMessageReferenceName(propTypePath);
       const runtimeType = mapType
@@ -208,6 +209,8 @@ export default function propanePlugin() {
         arrayElementType: arrayType
           ? getArrayElementType(propTypePath.node)
           : null,
+        mapKeyType: mapArgs ? mapArgs.keyType : null,
+        mapValueType: mapArgs ? mapArgs.valueType : null,
       });
     }
 
@@ -724,6 +727,10 @@ export default function propanePlugin() {
       typeName,
       propDescriptors
     );
+    const mapMethods = buildMapMutatorMethods(
+      typeName,
+      propDescriptors
+    );
 
     const classBody = t.classBody([
       ...backingFields,
@@ -731,6 +738,7 @@ export default function propanePlugin() {
       ...getters,
       ...setterMethods,
       ...arrayMethods,
+      ...mapMethods,
       descriptorMethod,
       fromEntriesMethod,
     ]);
@@ -1600,6 +1608,432 @@ export default function propanePlugin() {
     ];
 
     return { statements, nextName };
+  }
+
+  function buildMapMutatorMethods(typeName, propDescriptors) {
+    const methods = [];
+
+    for (const prop of propDescriptors) {
+      if (!prop.isMap) {
+        continue;
+      }
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `set${capitalize(prop.name)}Entry`,
+          buildMapSetParams(prop),
+          (mapRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(mapRef(), t.identifier('set')),
+                [t.identifier('key'), t.identifier('value')]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `delete${capitalize(prop.name)}Entry`,
+          buildMapDeleteParams(prop),
+          (mapRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(mapRef(), t.identifier('delete')),
+                [t.identifier('key')]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `clear${capitalize(prop.name)}`,
+          [],
+          (mapRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(mapRef(), t.identifier('clear')),
+                []
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `merge${capitalize(prop.name)}Entries`,
+          buildMapMergeParams(prop),
+          (mapRef) => {
+            const entryId = t.identifier('entry');
+            const mergeKeyId = t.identifier('mergeKey');
+            const mergeValueId = t.identifier('mergeValue');
+            return [
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(t.arrayPattern([mergeKeyId, mergeValueId])),
+                ]),
+                t.identifier('entries'),
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(mapRef(), t.identifier('set')),
+                      [mergeKeyId, mergeValueId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `update${capitalize(prop.name)}Entry`,
+          buildMapUpdateParams(prop),
+          (mapRef) => {
+            const currentId = t.identifier('currentValue');
+            const updatedId = t.identifier('updatedValue');
+            return [
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  currentId,
+                  t.callExpression(
+                    t.memberExpression(mapRef(), t.identifier('get')),
+                    [t.identifier('key')]
+                  )
+                ),
+              ]),
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  updatedId,
+                  t.callExpression(t.identifier('updater'), [currentId])
+                ),
+              ]),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(mapRef(), t.identifier('set')),
+                  [t.identifier('key'), updatedId]
+                )
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `map${capitalize(prop.name)}Entries`,
+          buildMapMapperParams(prop),
+          (mapRef) => {
+            const mappedEntriesId = t.identifier(`${prop.name}MappedEntries`);
+            const keyId = t.identifier('entryKey');
+            const valueId = t.identifier('entryValue');
+            const mappedId = t.identifier('mappedEntry');
+            const newKeyId = t.identifier('newKey');
+            const newValueId = t.identifier('newValue');
+            return [
+              t.variableDeclaration('const', [
+                t.variableDeclarator(mappedEntriesId, t.arrayExpression([])),
+              ]),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(t.arrayPattern([keyId, valueId])),
+                ]),
+                mapRef(),
+                t.blockStatement([
+                  t.variableDeclaration('const', [
+                    t.variableDeclarator(
+                      mappedId,
+                      t.callExpression(t.identifier('mapper'), [valueId, keyId])
+                    ),
+                  ]),
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(mappedEntriesId, t.identifier('push')),
+                      [mappedId]
+                    )
+                  ),
+                ])
+              ),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(mapRef(), t.identifier('clear')),
+                  []
+                )
+              ),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(
+                    t.arrayPattern([newKeyId, newValueId]),
+                    null
+                  ),
+                ]),
+                mappedEntriesId,
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(mapRef(), t.identifier('set')),
+                      [newKeyId, newValueId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildMapMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `filter${capitalize(prop.name)}Entries`,
+          buildMapPredicateParams(prop),
+          (mapRef) => {
+            const keyId = t.identifier('entryKey');
+            const valueId = t.identifier('entryValue');
+            return [
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(t.arrayPattern([keyId, valueId])),
+                ]),
+                mapRef(),
+                t.blockStatement([
+                  t.ifStatement(
+                    t.unaryExpression(
+                      '!',
+                      t.callExpression(t.identifier('predicate'), [valueId, keyId])
+                    ),
+                    t.expressionStatement(
+                      t.callExpression(
+                        t.memberExpression(mapRef(), t.identifier('delete')),
+                        [keyId]
+                      )
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+    }
+
+    return methods;
+  }
+
+  function buildMapMutationMethod(
+    typeName,
+    propDescriptors,
+    prop,
+    methodName,
+    params,
+    buildMutations
+  ) {
+    const { statements, nextName } = buildMapCloneSetup(prop);
+    const nextRef = () => t.identifier(nextName);
+    const mutations = buildMutations(nextRef);
+    const bodyStatements = [
+      ...statements,
+      ...mutations,
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [
+          buildPropsObjectExpression(
+            propDescriptors,
+            prop,
+            nextRef()
+          ),
+        ])
+      ),
+    ];
+
+    const method = t.classMethod(
+      'method',
+      t.identifier(methodName),
+      params,
+      t.blockStatement(bodyStatements)
+    );
+    method.returnType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(typeName))
+    );
+    return method;
+  }
+
+  function buildMapCloneSetup(prop) {
+    const sourceName = `${prop.name}MapSource`;
+    const entriesName = `${prop.name}MapEntries`;
+    const nextName = `${prop.name}MapNext`;
+
+    const fieldExpr = () =>
+      t.memberExpression(
+        t.thisExpression(),
+        t.cloneNode(prop.privateName)
+      );
+
+    const sourceDecl = t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(sourceName), fieldExpr()),
+    ]);
+
+    const entriesExpr = prop.optional
+      ? t.conditionalExpression(
+          t.binaryExpression(
+            '===',
+            t.identifier(sourceName),
+            t.identifier('undefined')
+          ),
+          t.arrayExpression([]),
+          t.callExpression(t.identifier('Array.from'), [
+            t.callExpression(
+              t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
+              []
+            ),
+          ])
+        )
+      : t.callExpression(t.identifier('Array.from'), [
+          t.callExpression(
+            t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
+            []
+          ),
+        ]);
+
+    const entriesDecl = t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(entriesName), entriesExpr),
+    ]);
+
+    const mapDecl = t.variableDeclaration('const', [
+      t.variableDeclarator(
+        t.identifier(nextName),
+        t.newExpression(t.identifier('Map'), [t.identifier(entriesName)])
+      ),
+    ]);
+
+    return { statements: [sourceDecl, entriesDecl, mapDecl], nextName };
+  }
+
+  function cloneMapKeyType(prop) {
+    return prop.mapKeyType ? t.cloneNode(prop.mapKeyType) : t.tsAnyKeyword();
+  }
+
+  function cloneMapValueType(prop) {
+    return prop.mapValueType ? t.cloneNode(prop.mapValueType) : t.tsAnyKeyword();
+  }
+
+  function buildMapSetParams(prop) {
+    const keyId = t.identifier('key');
+    keyId.typeAnnotation = t.tsTypeAnnotation(cloneMapKeyType(prop));
+    const valueId = t.identifier('value');
+    valueId.typeAnnotation = t.tsTypeAnnotation(cloneMapValueType(prop));
+    return [keyId, valueId];
+  }
+
+  function buildMapDeleteParams(prop) {
+    const keyId = t.identifier('key');
+    keyId.typeAnnotation = t.tsTypeAnnotation(cloneMapKeyType(prop));
+    return [keyId];
+  }
+
+  function buildMapMergeParams(prop) {
+    const entriesId = t.identifier('entries');
+    const keyType = cloneMapKeyType(prop);
+    const valueType = cloneMapValueType(prop);
+    const tupleType = t.tsTupleType([keyType, valueType]);
+    const iterableType = t.tsTypeReference(
+      t.identifier('Iterable'),
+      t.tsTypeParameterInstantiation([tupleType])
+    );
+    const mapType = t.tsTypeReference(
+      t.identifier('Map'),
+      t.tsTypeParameterInstantiation([t.cloneNode(keyType), t.cloneNode(valueType)])
+    );
+    const readonlyMapType = t.tsTypeReference(
+      t.identifier('ReadonlyMap'),
+      t.tsTypeParameterInstantiation([keyType, valueType])
+    );
+    entriesId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsUnionType([iterableType, mapType, readonlyMapType])
+    );
+    return [entriesId];
+  }
+
+  function buildMapUpdateParams(prop) {
+    const keyId = t.identifier('key');
+    keyId.typeAnnotation = t.tsTypeAnnotation(cloneMapKeyType(prop));
+    const updaterId = t.identifier('updater');
+    const valueType = cloneMapValueType(prop);
+    const updaterParam = t.identifier('currentValue');
+    updaterParam.typeAnnotation = t.tsTypeAnnotation(
+      t.tsUnionType([t.cloneNode(valueType), t.tsUndefinedKeyword()])
+    );
+    updaterId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [updaterParam],
+        t.tsTypeAnnotation(t.cloneNode(valueType))
+      )
+    );
+    return [keyId, updaterId];
+  }
+
+  function buildMapMapperParams(prop) {
+    const mapperId = t.identifier('mapper');
+    const valueType = cloneMapValueType(prop);
+    const keyType = cloneMapKeyType(prop);
+    const valueParam = t.identifier('value');
+    valueParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(valueType));
+    const keyParam = t.identifier('key');
+    keyParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(keyType));
+    mapperId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [valueParam, keyParam],
+        t.tsTypeAnnotation(
+          t.tsTupleType([t.cloneNode(keyType), t.cloneNode(valueType)])
+        )
+      )
+    );
+    return [mapperId];
+  }
+
+  function buildMapPredicateParams(prop) {
+    const predicateId = t.identifier('predicate');
+    const valueType = cloneMapValueType(prop);
+    const keyType = cloneMapKeyType(prop);
+    const valueParam = t.identifier('value');
+    valueParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(valueType));
+    const keyParam = t.identifier('key');
+    keyParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(keyType));
+    predicateId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [valueParam, keyParam],
+        t.tsTypeAnnotation(t.tsBooleanKeyword())
+      )
+    );
+    return [predicateId];
   }
 
   function buildRuntimeTypeCheckExpression(typeNode, valueId) {
