@@ -365,6 +365,19 @@ export default function runSerializationTests({ projectRoot, transform }) {
 
   const cloned = new ImmutableMap(plainMap);
   assert(cloned.has('gamma'), 'ImmutableMap should accept Map constructor input.');
+
+  const equalsPeer = new ImmutableMap([
+    ['alpha', 1],
+    ['beta', 2],
+  ]);
+  assert(immutable.equals(equalsPeer), 'ImmutableMap equals should match identical entries.');
+  const equalsMap = new Map(equalsPeer);
+  assert(immutable.equals(equalsMap), 'ImmutableMap equals should handle plain Map inputs.');
+  const changedSource = equalsPeer.toMap();
+  changedSource.set('delta', 4);
+  const changedPeer = new ImmutableMap(changedSource);
+  assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
+  assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
 }
 
 function buildRuntimeExports(projectRoot) {
