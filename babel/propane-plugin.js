@@ -355,16 +355,30 @@ export default function propanePlugin() {
       return;
     }
 
+    if (typePath.isTSTypeLiteral()) {
+      throw typePath.buildCodeFrameError(
+        'Propane map keys cannot be objects.'
+      );
+    }
+
     if (typePath.isTSArrayType()) {
       throw typePath.buildCodeFrameError(
         'Propane map keys cannot be arrays.'
       );
     }
 
-    if (typePath.isTSTypeReference() && isMapReference(typePath.node)) {
-      throw typePath.buildCodeFrameError(
-        'Propane map keys cannot be maps.'
-      );
+    if (typePath.isTSTypeReference()) {
+      if (isMapReference(typePath.node)) {
+        throw typePath.buildCodeFrameError(
+          'Propane map keys cannot be maps.'
+        );
+      }
+
+      if (isDateReference(typePath.node)) {
+        throw typePath.buildCodeFrameError(
+          'Propane map keys cannot be Date objects.'
+        );
+      }
     }
 
     assertSupportedType(typePath);

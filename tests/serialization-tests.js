@@ -277,8 +277,8 @@ export default function runSerializationTests({ projectRoot, transform }) {
   ]);
   const metadata = new Map([['owner', { value: 'Alice' }]]);
   const extras = new Map([
-    [{ id: 'alpha' }, 'A'],
-    [{ id: 'beta' }, null],
+    ['alpha', { note: 'A' }],
+    ['beta', { note: null }],
   ]);
 
   const mapInstance = new MapMessage({
@@ -287,7 +287,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
     extras,
   });
   assert(
-    mapInstance.serialize() === ':[[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[{"id":"alpha"},A],[{"id":"beta"},null]]]',
+    mapInstance.serialize() === ':[[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[alpha,{"note":"A"}],[beta,{"note":null}]]]',
     'Map serialization incorrect.'
   );
   const mapCereal = mapInstance.cerealize();
@@ -297,8 +297,8 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(isMapValue(mapCereal.metadata), 'Metadata should stay Map.');
   assert(mapCereal.metadata.get('owner').value === 'Alice', 'Metadata map lost data.');
   const mapExtrasEntries = [...mapCereal.extras.entries()];
-  assert(mapExtrasEntries[0][0].id === 'alpha', 'Extras map lost object key.');
-  assert(mapExtrasEntries[1][1] === null, 'Extras map lost null value.');
+  assert(mapExtrasEntries[0][0] === 'alpha', 'Extras map lost string key.');
+  assert(mapExtrasEntries[1][1].note === null, 'Extras map lost null value.');
   assert(typeof mapCereal.labels.toMap === 'function', 'Immutable map should expose toMap.');
   const labelsCopy = mapCereal.labels.toMap();
   labelsCopy.set('delta', 8);
@@ -315,24 +315,24 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(clearedMetadata.metadata === undefined, 'setMetadata should allow undefined.');
   assert(mapInstance.metadata.get('owner').value === 'Alice', 'setMetadata should not mutate original metadata.');
 
-  const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[{"id":"raw"},null]]]');
+  const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[raw,{"note":null}]]]');
   const mapRawData = mapRaw.cerealize();
   assert(mapRawData.labels.get('alpha') === 10, 'Raw map lost string key.');
   assert(mapRawData.labels.get(5) === 15, 'Raw map lost numeric key.');
   assert(mapRawData.metadata === undefined, 'Raw map optional metadata should be undefined.');
   const rawExtrasEntries = [...mapRawData.extras.entries()];
-  assert(rawExtrasEntries[0][0].id === 'raw', 'Raw map lost object key.');
-  assert(rawExtrasEntries[0][1] === null, 'Raw map lost null value.');
+  assert(rawExtrasEntries[0][0] === 'raw', 'Raw map lost string key.');
+  assert(rawExtrasEntries[0][1].note === null, 'Raw map lost null value.');
 
   const mapObjectRaw = MapMessage.deserialize(
-    ':{\"1\":[[\"owner\",1]],\"2\":[[\"meta\",{\"value\":\"Bob\"}]],\"3\":[[{\"id\":\"obj\"},\"Value\"]]}'
+    ':{\"1\":[[\"owner\",1]],\"2\":[[\"meta\",{\"value\":\"Bob\"}]],\"3\":[[\"obj\",{\"note\":\"Value\"}]]}'
   );
   const mapObjectRawData = mapObjectRaw.cerealize();
   assert(isMapValue(mapObjectRawData.metadata), 'Object raw metadata should be Map.');
   assert(mapObjectRawData.metadata.get('meta').value === 'Bob', 'Object raw metadata missing value.');
   const objectExtrasEntries = [...mapObjectRawData.extras.entries()];
-  assert(objectExtrasEntries[0][0].id === 'obj', 'Object raw extras lost key.');
-  assert(objectExtrasEntries[0][1] === 'Value', 'Object raw extras lost value.');
+  assert(objectExtrasEntries[0][0] === 'obj', 'Object raw extras lost key.');
+  assert(objectExtrasEntries[0][1].note === 'Value', 'Object raw extras lost value.');
 
   const { ImmutableMap } = runtimeExports;
   assert(typeof ImmutableMap === 'function', 'ImmutableMap should be exported.');
