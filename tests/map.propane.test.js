@@ -1,0 +1,113 @@
+export default function runMapPropaneTests(ctx) {
+  const { assert, loadFixtureClass, runtimeExports, isMapValue } = ctx;
+
+  const MapMessage = loadFixtureClass('tests/map.propane', 'MapMessage');
+
+  const labels = new Map([
+    ['one', 1],
+    [2, 4],
+  ]);
+  const metadata = new Map([['owner', { value: 'Alice' }]]);
+  const extras = new Map([
+    ['alpha', { note: 'A' }],
+    ['beta', { note: null }],
+  ]);
+
+  const mapInstance = new MapMessage({
+    labels,
+    metadata,
+    extras,
+  });
+  assert(
+    mapInstance.serialize() === ':[[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[alpha,{"note":"A"}],[beta,{"note":null}]]]',
+    'Map serialization incorrect.'
+  );
+  const mapCereal = mapInstance.cerealize();
+  assert(isMapValue(mapCereal.labels), 'Labels should stay Map.');
+  assert(mapCereal.labels.get('one') === 1, 'Labels map lost string key.');
+  assert(mapCereal.labels.get(2) === 4, 'Labels map lost numeric key.');
+  assert(isMapValue(mapCereal.metadata), 'Metadata should stay Map.');
+  assert(mapCereal.metadata.get('owner').value === 'Alice', 'Metadata map lost data.');
+  const mapExtrasEntries = [...mapCereal.extras.entries()];
+  assert(mapExtrasEntries[0][0] === 'alpha', 'Extras map lost string key.');
+  assert(mapExtrasEntries[1][1].note === null, 'Extras map lost null value.');
+  assert(typeof mapCereal.labels.toMap === 'function', 'Immutable map should expose toMap.');
+  const labelsCopy = mapCereal.labels.toMap();
+  labelsCopy.set('delta', 8);
+  assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
+  const updatedLabelsInstance = mapInstance.setLabels(
+    new Map([
+      ['gamma', 7],
+      [3, 9],
+    ])
+  );
+  assert(mapInstance.labels.has('one'), 'setLabels should not mutate original instance.');
+  assert(updatedLabelsInstance.labels.has('gamma'), 'setLabels result missing new key.');
+  const clearedMetadata = mapInstance.setMetadata(undefined);
+  assert(clearedMetadata.metadata === undefined, 'setMetadata should allow undefined.');
+  assert(mapInstance.metadata.get('owner').value === 'Alice', 'setMetadata should not mutate original metadata.');
+
+  const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[raw,{"note":null}]]]');
+  const mapRawData = mapRaw.cerealize();
+  assert(mapRawData.labels.get('alpha') === 10, 'Raw map lost string key.');
+  assert(mapRawData.labels.get(5) === 15, 'Raw map lost numeric key.');
+  assert(mapRawData.metadata === undefined, 'Raw map optional metadata should be undefined.');
+  const rawExtrasEntries = [...mapRawData.extras.entries()];
+  assert(rawExtrasEntries[0][0] === 'raw', 'Raw map lost string key.');
+  assert(rawExtrasEntries[0][1].note === null, 'Raw map lost null value.');
+
+  const mapObjectRaw = MapMessage.deserialize(
+    ':{\"1\":[[\"owner\",1]],\"2\":[[\"meta\",{\"value\":\"Bob\"}]],\"3\":[[\"obj\",{\"note\":\"Value\"}]]}'
+  );
+  const mapObjectRawData = mapObjectRaw.cerealize();
+  assert(isMapValue(mapObjectRawData.metadata), 'Object raw metadata should be Map.');
+  assert(mapObjectRawData.metadata.get('meta').value === 'Bob', 'Object raw metadata missing value.');
+  const objectExtrasEntries = [...mapObjectRawData.extras.entries()];
+  assert(objectExtrasEntries[0][0] === 'obj', 'Object raw extras lost key.');
+  assert(objectExtrasEntries[0][1].note === 'Value', 'Object raw extras lost value.');
+
+  const { ImmutableMap } = runtimeExports;
+  assert(typeof ImmutableMap === 'function', 'ImmutableMap should be exported.');
+
+  const immutable = new ImmutableMap([
+    ['alpha', 1],
+    ['beta', 2],
+  ]);
+  assert(immutable.size === 2, 'ImmutableMap size incorrect.');
+  assert(immutable.get('alpha') === 1, 'ImmutableMap get failed.');
+  assert(immutable.has('beta'), 'ImmutableMap has failed.');
+  assert(
+    JSON.stringify(Array.from(immutable.entries())) === JSON.stringify([['alpha', 1], ['beta', 2]]),
+    'ImmutableMap entries incorrect.'
+  );
+
+  const seen = [];
+  immutable.forEach((value, key) => {
+    seen.push([key, value]);
+  });
+  assert(seen.length === 2, 'ImmutableMap forEach did not visit entries.');
+
+  assert(typeof immutable.set === 'undefined', 'ImmutableMap should not expose set.');
+  assert(typeof immutable.delete === 'undefined', 'ImmutableMap should not expose delete.');
+  assert(typeof immutable.clear === 'undefined', 'ImmutableMap should not expose clear.');
+
+  const plainMap = immutable.toMap();
+  plainMap.set('gamma', 3);
+  assert(!immutable.has('gamma'), 'ImmutableMap should remain immutable after toMap.');
+
+  const cloned = new ImmutableMap(plainMap);
+  assert(cloned.has('gamma'), 'ImmutableMap should accept Map constructor input.');
+
+  const equalsPeer = new ImmutableMap([
+    ['alpha', 1],
+    ['beta', 2],
+  ]);
+  assert(immutable.equals(equalsPeer), 'ImmutableMap equals should match identical entries.');
+  const equalsMap = new Map(equalsPeer);
+  assert(immutable.equals(equalsMap), 'ImmutableMap equals should handle plain Map inputs.');
+  const changedSource = equalsPeer.toMap();
+  changedSource.set('delta', 4);
+  const changedPeer = new ImmutableMap(changedSource);
+  assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
+  assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
+}
