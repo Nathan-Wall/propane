@@ -255,6 +255,62 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(arrayRawData.names[0] === 'Delta', 'Array raw lost names.');
   assert(arrayRawData.flags === undefined, 'Array raw optional flags should be undefined.');
   assert(arrayRawData.labels[0].name === 'Label B', 'Array raw labels lost.');
+
+  const MapMessage = buildClassFromFixture({
+    projectRoot,
+    transform,
+    runtimeExports,
+    fixture: 'tests/map.propane',
+    exportName: 'MapMessage',
+  });
+
+  const labels = new Map([
+    ['one', 1],
+    [2, 4],
+  ]);
+  const metadata = new Map([['owner', { value: 'Alice' }]]);
+  const extras = new Map([
+    [{ id: 'alpha' }, 'A'],
+    [{ id: 'beta' }, null],
+  ]);
+
+  const mapInstance = new MapMessage({
+    labels,
+    metadata,
+    extras,
+  });
+  assert(
+    mapInstance.serialize() === ':[[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[{"id":"alpha"},A],[{"id":"beta"},null]]]',
+    'Map serialization incorrect.'
+  );
+  const mapCereal = mapInstance.cerealize();
+  assert(isMapValue(mapCereal.labels), 'Labels should stay Map.');
+  assert(mapCereal.labels.get('one') === 1, 'Labels map lost string key.');
+  assert(mapCereal.labels.get(2) === 4, 'Labels map lost numeric key.');
+  assert(isMapValue(mapCereal.metadata), 'Metadata should stay Map.');
+  assert(mapCereal.metadata.get('owner').value === 'Alice', 'Metadata map lost data.');
+  const mapExtrasEntries = [...mapCereal.extras.entries()];
+  assert(mapExtrasEntries[0][0].id === 'alpha', 'Extras map lost object key.');
+  assert(mapExtrasEntries[1][1] === null, 'Extras map lost null value.');
+
+  const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[{"id":"raw"},null]]]');
+  const mapRawData = mapRaw.cerealize();
+  assert(mapRawData.labels.get('alpha') === 10, 'Raw map lost string key.');
+  assert(mapRawData.labels.get(5) === 15, 'Raw map lost numeric key.');
+  assert(mapRawData.metadata === undefined, 'Raw map optional metadata should be undefined.');
+  const rawExtrasEntries = [...mapRawData.extras.entries()];
+  assert(rawExtrasEntries[0][0].id === 'raw', 'Raw map lost object key.');
+  assert(rawExtrasEntries[0][1] === null, 'Raw map lost null value.');
+
+  const mapObjectRaw = MapMessage.deserialize(
+    ':{\"1\":[[\"owner\",1]],\"2\":[[\"meta\",{\"value\":\"Bob\"}]],\"3\":[[{\"id\":\"obj\"},\"Value\"]]}'
+  );
+  const mapObjectRawData = mapObjectRaw.cerealize();
+  assert(isMapValue(mapObjectRawData.metadata), 'Object raw metadata should be Map.');
+  assert(mapObjectRawData.metadata.get('meta').value === 'Bob', 'Object raw metadata missing value.');
+  const objectExtrasEntries = [...mapObjectRawData.extras.entries()];
+  assert(objectExtrasEntries[0][0].id === 'obj', 'Object raw extras lost key.');
+  assert(objectExtrasEntries[0][1] === 'Value', 'Object raw extras lost value.');
 }
 
 function buildRuntimeExports(projectRoot) {
@@ -339,4 +395,10 @@ function assertThrows(fn, message) {
   if (!threw) {
     throw new Error(message);
   }
+}
+
+const MAP_OBJECT_TAG = '[object Map]';
+
+function isMapValue(value) {
+  return Object.prototype.toString.call(value) === MAP_OBJECT_TAG;
 }

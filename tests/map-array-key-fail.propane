@@ -1,0 +1,4 @@
+export type MapArrayKeyFail = {
+  bad: Map<string[], number>;
+};
+

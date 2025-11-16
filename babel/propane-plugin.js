@@ -163,6 +163,7 @@ export default function propanePlugin() {
         optional: Boolean(memberPath.node.optional),
         readonly: Boolean(memberPath.node.readonly),
         isArray: isArrayTypeNode(propTypePath.node),
+        isMap: isMapTypeNode(propTypePath.node),
         typeAnnotation: t.cloneNode(propTypePath.node),
       });
     }
@@ -235,6 +236,11 @@ export default function propanePlugin() {
         return;
       }
 
+      if (isMapReference(typePath.node)) {
+        assertSupportedMapType(typePath);
+        return;
+      }
+
       if (isAllowedTypeReference(typePath)) {
         return;
       }
@@ -285,6 +291,13 @@ export default function propanePlugin() {
     return t.isIdentifier(node.typeName) && node.typeName.name === 'Date';
   }
 
+  function isMapReference(node) {
+    return (
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Map' || node.typeName.name === 'ReadonlyMap')
+    );
+  }
+
   function isBrandReference(node) {
     if (!t.isIdentifier(node.typeName) || node.typeName.name !== 'Brand') {
       return false;
@@ -296,6 +309,55 @@ export default function propanePlugin() {
 
     const [first] = node.typeParameters.params;
     return t.isTSStringKeyword(first);
+  }
+
+  function assertSupportedMapType(typePath) {
+    const typeParametersPath = typePath.get('typeParameters');
+    if (
+      !typeParametersPath ||
+      !typeParametersPath.node ||
+      typeParametersPath.node.params.length !== 2
+    ) {
+      throw typePath.buildCodeFrameError(
+        'Propane Map types must specify both key and value types.'
+      );
+    }
+
+    const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
+    assertSupportedMapKeyType(keyTypePath);
+    assertSupportedType(valueTypePath);
+  }
+
+  function assertSupportedMapKeyType(typePath) {
+    if (!typePath || !typePath.node) {
+      throw typePath.buildCodeFrameError('Missing Map key type.');
+    }
+
+    if (typePath.isTSParenthesizedType()) {
+      assertSupportedMapKeyType(typePath.get('typeAnnotation'));
+      return;
+    }
+
+    if (typePath.isTSUnionType()) {
+      for (const memberPath of typePath.get('types')) {
+        assertSupportedMapKeyType(memberPath);
+      }
+      return;
+    }
+
+    if (typePath.isTSArrayType()) {
+      throw typePath.buildCodeFrameError(
+        'Propane map keys cannot be arrays.'
+      );
+    }
+
+    if (typePath.isTSTypeReference() && isMapReference(typePath.node)) {
+      throw typePath.buildCodeFrameError(
+        'Propane map keys cannot be maps.'
+      );
+    }
+
+    assertSupportedType(typePath);
   }
 
   function isPrimitiveKeyword(typePath) {
@@ -478,8 +540,12 @@ export default function propanePlugin() {
       if (prop.isArray) {
         baseType = wrapReadonlyArrayType(baseType);
       }
+      if (prop.isMap) {
+        baseType = wrapReadonlyMapType(baseType);
+      }
 
-      const fieldTypeAnnotation = prop.optional && prop.isArray
+      const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap);
+      const fieldTypeAnnotation = needsOptionalUnion
         ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
         : baseType;
 
@@ -498,7 +564,7 @@ export default function propanePlugin() {
         ])
       );
 
-      const getterReturnType = prop.optional && prop.isArray
+      const getterReturnType = needsOptionalUnion
         ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
         : baseType;
 
@@ -535,6 +601,8 @@ export default function propanePlugin() {
           ),
           t.cloneNode(propsAccess)
         );
+      } else if (prop.isMap) {
+        valueExpr = buildMapCloneExpression(propsAccess);
       }
 
       return t.expressionStatement(
@@ -706,9 +774,24 @@ export default function propanePlugin() {
         );
       }
 
+      let checkedValueId = normalizedValueId;
+
+      if (prop.isMap) {
+        const mapValueId = t.identifier(`${prop.name}MapValue`);
+        statements.push(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              mapValueId,
+              buildMapCloneExpression(checkedValueId)
+            ),
+          ])
+        );
+        checkedValueId = mapValueId;
+      }
+
       const typeCheckExpr = buildRuntimeTypeCheckExpression(
         prop.typeAnnotation,
-        normalizedValueId
+        checkedValueId
       );
 
       if (typeCheckExpr && !t.isBooleanLiteral(typeCheckExpr, { value: true })) {
@@ -717,7 +800,7 @@ export default function propanePlugin() {
               '&&',
               t.binaryExpression(
                 '!==',
-                normalizedValueId,
+                checkedValueId,
                 t.identifier('undefined')
               ),
               t.unaryExpression('!', typeCheckExpr)
@@ -737,7 +820,7 @@ export default function propanePlugin() {
           t.assignmentExpression(
             '=',
             t.memberExpression(propsId, t.identifier(prop.name)),
-            normalizedValueId
+            checkedValueId
           )
         )
       );
@@ -834,6 +917,27 @@ export default function propanePlugin() {
     return node;
   }
 
+  function wrapReadonlyMapType(node) {
+    if (t.isTSParenthesizedType(node)) {
+      return t.tsParenthesizedType(
+        wrapReadonlyMapType(t.cloneNode(node.typeAnnotation))
+      );
+    }
+
+    if (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      node.typeName.name === 'Map'
+    ) {
+      return t.tsTypeReference(
+        t.identifier('ReadonlyMap'),
+        node.typeParameters ? t.cloneNode(node.typeParameters) : null
+      );
+    }
+
+    return node;
+  }
+
   function buildEntryAccessExpression(prop, entriesId) {
     const namedAccess = t.memberExpression(
       entriesId,
@@ -859,6 +963,32 @@ export default function propanePlugin() {
       ),
       namedAccess,
       numberedAccess
+    );
+  }
+
+  function buildMapCloneExpression(valueExpr) {
+    const arrayCheck = t.callExpression(
+      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+      [t.cloneNode(valueExpr)]
+    );
+
+    const mapCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('Map')
+    );
+
+    const buildNewMap = () =>
+      t.newExpression(t.identifier('Map'), [t.cloneNode(valueExpr)]);
+
+    return t.conditionalExpression(
+      arrayCheck,
+      buildNewMap(),
+      t.conditionalExpression(
+        mapCheck,
+        buildNewMap(),
+        t.cloneNode(valueExpr)
+      )
     );
   }
 
@@ -954,6 +1084,10 @@ export default function propanePlugin() {
         return typeofCheck(valueId, 'string');
       }
 
+      if (isMapReference(typeNode)) {
+        return buildMapTypeCheckExpression(typeNode, valueId);
+      }
+
       return null;
     }
 
@@ -996,6 +1130,66 @@ export default function propanePlugin() {
     }
 
     return null;
+  }
+
+  function buildMapTypeCheckExpression(typeNode, valueId) {
+    const baseCheck = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('Map')
+    );
+
+    const mapArgs = getMapTypeArguments(typeNode);
+
+    if (!mapArgs) {
+      return baseCheck;
+    }
+
+    const keyId = t.identifier('mapKey');
+    const valueElementId = t.identifier('mapValue');
+
+    const keyCheck = buildRuntimeTypeCheckExpression(mapArgs.keyType, keyId);
+    const valueCheck = buildRuntimeTypeCheckExpression(
+      mapArgs.valueType,
+      valueElementId
+    );
+
+    let predicate = null;
+
+    if (keyCheck) {
+      predicate = keyCheck;
+    }
+
+    if (valueCheck) {
+      predicate = predicate
+        ? t.logicalExpression('&&', predicate, valueCheck)
+        : valueCheck;
+    }
+
+    if (!predicate) {
+      return baseCheck;
+    }
+
+    const entriesArray = t.arrayExpression([
+      t.spreadElement(
+        t.callExpression(
+          t.memberExpression(valueId, t.identifier('entries')),
+          []
+        )
+      ),
+    ]);
+
+    const everyCall = t.callExpression(
+      t.memberExpression(entriesArray, t.identifier('every')),
+      [
+        t.arrowFunctionExpression(
+          [t.arrayPattern([keyId, valueElementId])],
+          predicate
+        ),
+      ]
+    );
+
+    return t.logicalExpression('&&', baseCheck, everyCall);
   }
 
   function typeAllowsNull(typeNode) {
@@ -1108,5 +1302,44 @@ export default function propanePlugin() {
     }
 
     return t.isTSArrayType(node);
+  }
+
+  function isMapTypeNode(node) {
+    if (!node) {
+      return false;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return isMapTypeNode(node.typeAnnotation);
+    }
+
+    return (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Map' || node.typeName.name === 'ReadonlyMap')
+    );
+  }
+
+  function getMapTypeArguments(node) {
+    if (!node) {
+      return null;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return getMapTypeArguments(node.typeAnnotation);
+    }
+
+    if (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Map' || node.typeName.name === 'ReadonlyMap') &&
+      node.typeParameters &&
+      node.typeParameters.params.length === 2
+    ) {
+      const [keyType, valueType] = node.typeParameters.params;
+      return { keyType, valueType };
+    }
+
+    return null;
   }
 }

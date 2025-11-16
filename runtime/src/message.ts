@@ -130,6 +130,7 @@ function shouldUseOrderedSerialization<T extends object>(
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
 const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
+const MAP_OBJECT_TAG = '[object Map]';
 
 function serializePrimitive(value: unknown): string {
   if (value === undefined) {
@@ -138,6 +139,10 @@ function serializePrimitive(value: unknown): string {
 
   if (Array.isArray(value)) {
     return serializeArrayLiteral(value);
+  }
+
+  if (isMapValue(value)) {
+    return serializeMapLiteral(value);
   }
 
   if (value && typeof value === 'object') {
@@ -160,6 +165,24 @@ function serializePrimitive(value: unknown): string {
 
 function serializeArrayLiteral(values: unknown[]): string {
   return `[${values.map((value) => serializePrimitive(value)).join(',')}]`;
+}
+
+function serializeMapLiteral(entries: Map<unknown, unknown>): string {
+  const serialized = [...entries.entries()].map(([key, value]) =>
+    serializeArrayLiteral([key, value])
+  );
+  return `[${serialized.join(',')}]`;
+}
+
+function isMapValue(value: unknown): value is Map<unknown, unknown> {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return (
+    value instanceof Map ||
+    Object.prototype.toString.call(value) === MAP_OBJECT_TAG
+  );
 }
 
 function serializeObjectLiteral(record: Record<string, unknown>): string {
