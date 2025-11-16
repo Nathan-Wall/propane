@@ -1,10 +1,15 @@
+import fs from 'fs';
 import path from 'path';
+import { parse } from '@babel/parser';
 import * as t from '@babel/types';
 
 const MESSAGE_SOURCE = '@propanejs/runtime';
+const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
 
 export default function propanePlugin() {
   const declaredTypeNames = new Set();
+  const declaredMessageTypeNames = new Set();
+  const messageModuleCache = new Map();
 
   return {
     name: 'propane-plugin',
@@ -44,6 +49,10 @@ export default function propanePlugin() {
           return;
         }
 
+        if (declarationPath.node && declarationPath.node[GENERATED_ALIAS]) {
+          return;
+        }
+
         registerTypeAlias(declarationPath.node);
 
         const replacement = buildDeclarations(declarationPath, { exported: true, state });
@@ -54,6 +63,10 @@ export default function propanePlugin() {
       },
       TSTypeAliasDeclaration(path, state) {
         if (path.parentPath.isExportNamedDeclaration()) {
+          return;
+        }
+
+        if (path.node && path.node[GENERATED_ALIAS]) {
           return;
         }
 
@@ -81,6 +94,7 @@ export default function propanePlugin() {
 
     if (!typeLiteralPath.isTSTypeLiteral()) {
       assertSupportedTopLevelType(typeLiteralPath);
+      insertPrimitiveTypeAlias(typeAliasPath, exported);
       return null;
     }
 
@@ -88,6 +102,7 @@ export default function propanePlugin() {
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;
     }
+    declaredMessageTypeNames.add(typeAlias.id.name);
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
@@ -162,10 +177,21 @@ export default function propanePlugin() {
       assertSupportedType(propTypePath);
 
       const mapType = isMapTypeNode(propTypePath.node);
-      const clonedType = t.cloneNode(propTypePath.node);
-      const typeAnnotationNode = mapType
-        ? wrapReadonlyMapType(clonedType)
-        : clonedType;
+      const messageTypeName = getMessageReferenceName(propTypePath);
+      const runtimeType = mapType
+        ? wrapReadonlyMapType(t.cloneNode(propTypePath.node))
+        : t.cloneNode(propTypePath.node);
+
+      let inputTypeAnnotation = runtimeType;
+
+      if (messageTypeName) {
+        inputTypeAnnotation = t.tsTypeReference(
+          t.tsQualifiedName(
+            t.identifier(messageTypeName),
+            t.identifier('Value')
+          )
+        );
+      }
 
       props.push({
         name,
@@ -174,7 +200,10 @@ export default function propanePlugin() {
         readonly: Boolean(memberPath.node.readonly),
         isArray: isArrayTypeNode(propTypePath.node),
         isMap: mapType,
-        typeAnnotation: typeAnnotationNode,
+        isMessageType: Boolean(messageTypeName),
+        messageTypeName,
+        typeAnnotation: runtimeType,
+        inputTypeAnnotation,
       });
     }
 
@@ -518,7 +547,7 @@ export default function propanePlugin() {
       const key = t.identifier(prop.name);
       const propSignature = t.tsPropertySignature(
         key,
-        t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation))
+        t.tsTypeAnnotation(t.cloneNode(prop.inputTypeAnnotation))
       );
       propSignature.optional = prop.optional;
       propSignature.readonly = prop.readonly;
@@ -536,7 +565,20 @@ export default function propanePlugin() {
     const exportedTypeDecl = t.exportNamedDeclaration(typeDecl, []);
     exportedTypeDecl.exportKind = 'type';
 
-    const moduleBlock = t.tsModuleBlock([exportedTypeDecl]);
+    const typeUnionDecl = t.tsTypeAliasDeclaration(
+      t.identifier('Value'),
+      null,
+      t.tsUnionType([
+        t.tsTypeReference(t.identifier(typeAlias.id.name)),
+        t.tsTypeReference(
+          t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data'))
+        ),
+      ])
+    );
+    const exportedUnionDecl = t.exportNamedDeclaration(typeUnionDecl, []);
+    exportedUnionDecl.exportKind = 'type';
+
+    const moduleBlock = t.tsModuleBlock([exportedTypeDecl, exportedUnionDecl]);
     const namespaceDecl = t.tsModuleDeclaration(namespaceId, moduleBlock);
     namespaceDecl.declare = typeAlias.declare;
     namespaceDecl.kind = 'namespace';
@@ -557,6 +599,9 @@ export default function propanePlugin() {
     }));
     const propsTypeRef = t.tsTypeReference(
       t.tsQualifiedName(t.identifier(typeName), t.identifier('Data'))
+    );
+    const valueTypeRef = t.tsTypeReference(
+      t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
     );
 
     for (const prop of propDescriptors) {
@@ -598,7 +643,7 @@ export default function propanePlugin() {
 
     const constructorParam = t.identifier('props');
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
-      t.cloneNode(propsTypeRef)
+      t.cloneNode(valueTypeRef)
     );
 
     const constructorAssignments = propDescriptors.map((prop) => {
@@ -627,6 +672,17 @@ export default function propanePlugin() {
         );
       } else if (prop.isMap) {
         valueExpr = buildImmutableMapExpression(propsAccess);
+      }
+
+      if (prop.isMessageType && prop.messageTypeName) {
+        valueExpr = buildMessageNormalizationExpression(
+          valueExpr,
+          prop.messageTypeName,
+          {
+            allowUndefined: Boolean(prop.optional),
+            allowNull: typeAllowsNull(prop.typeAnnotation),
+          }
+        );
       }
 
       return t.expressionStatement(
@@ -816,6 +872,24 @@ export default function propanePlugin() {
           ])
         );
         checkedValueId = mapValueId;
+      } else if (prop.isMessageType && prop.messageTypeName) {
+        const messageValueId = t.identifier(`${prop.name}MessageValue`);
+        statements.push(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              messageValueId,
+              buildMessageNormalizationExpression(
+                checkedValueId,
+                prop.messageTypeName,
+                {
+                  allowUndefined: Boolean(prop.optional),
+                  allowNull: allowsNull,
+                }
+              )
+            ),
+          ])
+        );
+        checkedValueId = messageValueId;
       }
 
       const typeCheckExpr = buildRuntimeTypeCheckExpression(
@@ -1066,18 +1140,76 @@ export default function propanePlugin() {
     );
   }
 
+  function buildMessageNormalizationExpression(
+    valueExpr,
+    className,
+    { allowUndefined = false, allowNull = false } = {}
+  ) {
+    const instanceCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier(className)
+    );
+    const newInstance = t.newExpression(t.identifier(className), [
+      t.cloneNode(valueExpr),
+    ]);
+
+    let normalized = t.conditionalExpression(
+      instanceCheck,
+      t.cloneNode(valueExpr),
+      newInstance
+    );
+
+    if (allowNull) {
+      normalized = t.conditionalExpression(
+        t.binaryExpression(
+          '===',
+          t.cloneNode(valueExpr),
+          t.nullLiteral()
+        ),
+        t.cloneNode(valueExpr),
+        normalized
+      );
+    }
+
+    if (allowUndefined) {
+      normalized = t.conditionalExpression(
+        t.binaryExpression(
+          '===',
+          t.cloneNode(valueExpr),
+          t.identifier('undefined')
+        ),
+        t.cloneNode(valueExpr),
+        normalized
+      );
+    }
+
+    return normalized;
+  }
+
   function buildSetterMethod(typeName, propDescriptors, targetProp) {
     const valueId = t.identifier('value');
     valueId.typeAnnotation = t.tsTypeAnnotation(
-      t.cloneNode(targetProp.typeAnnotation)
+      t.cloneNode(targetProp.inputTypeAnnotation)
     );
+
+    const setterValueExpr = targetProp.isMessageType && targetProp.messageTypeName
+      ? buildMessageNormalizationExpression(
+          valueId,
+          targetProp.messageTypeName,
+          {
+            allowUndefined: Boolean(targetProp.optional),
+            allowNull: typeAllowsNull(targetProp.typeAnnotation),
+          }
+        )
+      : t.cloneNode(valueId);
 
     const propsObject = t.objectExpression(
       propDescriptors.map((prop) =>
         t.objectProperty(
           t.identifier(prop.name),
           prop === targetProp
-            ? t.cloneNode(valueId)
+            ? setterValueExpr
             : t.memberExpression(
                 t.thisExpression(),
                 t.cloneNode(prop.privateName)
@@ -1466,6 +1598,159 @@ export default function propanePlugin() {
     }
 
     return null;
+  }
+
+  function getMessageReferenceName(typePath) {
+    if (!typePath || !typePath.isTSTypeReference()) {
+      return null;
+    }
+
+    const typeName = typePath.node.typeName;
+    if (!t.isIdentifier(typeName)) {
+      return null;
+    }
+
+    const name = typeName.name;
+
+    if (declaredMessageTypeNames.has(name)) {
+      return name;
+    }
+
+    const binding = typePath.scope.getBinding(name);
+
+    if (
+      binding &&
+      (binding.path.isImportSpecifier() || binding.path.isImportDefaultSpecifier()) &&
+      binding.path.parentPath &&
+      binding.path.parentPath.isImportDeclaration()
+    ) {
+      const importSource = binding.path.parentPath.node.source.value;
+      const filename = getFilename(typePath);
+      const resolved = resolveImportPath(importSource, filename);
+
+      if (!resolved) {
+        return null;
+      }
+
+      if (!messageModuleCache.has(resolved)) {
+        messageModuleCache.set(resolved, analyzePropaneModule(resolved));
+      }
+
+      const exportNames = messageModuleCache.get(resolved);
+      const importedName = getImportedName(binding.path);
+
+      if (importedName && exportNames.has(importedName)) {
+        return binding.identifier.name;
+      }
+    }
+
+    return null;
+  }
+
+  function insertPrimitiveTypeAlias(typeAliasPath, exported) {
+    if (!t.isIdentifier(typeAliasPath.node.id)) {
+      return;
+    }
+
+    const aliasId = t.identifier(`${typeAliasPath.node.id.name}Type`);
+    const alias = t.tsTypeAliasDeclaration(
+      aliasId,
+      typeAliasPath.node.typeParameters
+        ? t.cloneNode(typeAliasPath.node.typeParameters)
+        : null,
+      t.tsTypeReference(t.identifier(typeAliasPath.node.id.name))
+    );
+    alias[GENERATED_ALIAS] = true;
+
+    const aliasDecl = exported
+      ? t.exportNamedDeclaration(alias, [])
+      : alias;
+
+    if (exported && aliasDecl) {
+      aliasDecl.exportKind = 'type';
+    }
+
+    const targetPath = exported ? typeAliasPath.parentPath : typeAliasPath;
+    if (targetPath && typeof targetPath.insertAfter === 'function') {
+      targetPath.insertAfter(aliasDecl);
+    }
+  }
+
+  function resolveImportPath(importSource, filename) {
+    if (!filename || typeof importSource !== 'string' || !importSource.startsWith('.')) {
+      return null;
+    }
+
+    const dir = path.dirname(filename);
+    const basePath = path.resolve(dir, importSource);
+
+    const candidates = [
+      basePath,
+      `${basePath}.propane`,
+    ];
+
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  function analyzePropaneModule(filename) {
+    try {
+      const source = fs.readFileSync(filename, 'utf8');
+      const ast = parse(source, {
+        sourceType: 'module',
+        plugins: ['typescript'],
+      });
+
+      const names = new Set();
+
+      for (const node of ast.program.body) {
+        if (
+          node.type === 'ExportNamedDeclaration' &&
+          node.declaration &&
+          node.declaration.type === 'TSTypeAliasDeclaration' &&
+          node.declaration.id &&
+          node.declaration.id.type === 'Identifier' &&
+          node.declaration.typeAnnotation &&
+          node.declaration.typeAnnotation.type === 'TSTypeLiteral'
+        ) {
+          names.add(node.declaration.id.name);
+        }
+      }
+
+      return names;
+    } catch {
+      return new Set();
+    }
+  }
+
+  function getImportedName(importPath) {
+    if (importPath.isImportSpecifier()) {
+      const imported = importPath.node.imported;
+      if (t.isIdentifier(imported)) {
+        return imported.name;
+      }
+      if (t.isStringLiteral(imported)) {
+        return imported.value;
+      }
+      return null;
+    }
+
+    if (importPath.isImportDefaultSpecifier()) {
+      return 'default';
+    }
+
+    return null;
+  }
+
+  function getFilename(typePath) {
+    const file = typePath.hub && typePath.hub.file;
+    const opts = file && file.opts;
+    return (opts && opts.filename) || null;
   }
 
   function capitalize(name) {
