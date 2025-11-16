@@ -177,6 +177,7 @@ export default function propanePlugin() {
       assertSupportedType(propTypePath);
 
       const mapType = isMapTypeNode(propTypePath.node);
+      const arrayType = isArrayTypeNode(propTypePath.node);
       const messageTypeName = getMessageReferenceName(propTypePath);
       const runtimeType = mapType
         ? wrapReadonlyMapType(t.cloneNode(propTypePath.node))
@@ -198,12 +199,15 @@ export default function propanePlugin() {
         fieldNumber,
         optional: Boolean(memberPath.node.optional),
         readonly: Boolean(memberPath.node.readonly),
-        isArray: isArrayTypeNode(propTypePath.node),
+        isArray: arrayType,
         isMap: mapType,
         isMessageType: Boolean(messageTypeName),
         messageTypeName,
         typeAnnotation: runtimeType,
         inputTypeAnnotation,
+        arrayElementType: arrayType
+          ? getArrayElementType(propTypePath.node)
+          : null,
       });
     }
 
@@ -716,12 +720,17 @@ export default function propanePlugin() {
     const setterMethods = propDescriptors.map((prop) =>
       buildSetterMethod(typeName, propDescriptors, prop)
     );
+    const arrayMethods = buildArrayMutatorMethods(
+      typeName,
+      propDescriptors
+    );
 
     const classBody = t.classBody([
       ...backingFields,
       constructor,
       ...getters,
       ...setterMethods,
+      ...arrayMethods,
       descriptorMethod,
       fromEntriesMethod,
     ]);
@@ -1187,6 +1196,22 @@ export default function propanePlugin() {
     return normalized;
   }
 
+  function buildPropsObjectExpression(propDescriptors, targetProp, valueExpr) {
+    return t.objectExpression(
+      propDescriptors.map((prop) =>
+        t.objectProperty(
+          t.identifier(prop.name),
+          prop === targetProp
+            ? t.cloneNode(valueExpr)
+            : t.memberExpression(
+                t.thisExpression(),
+                t.cloneNode(prop.privateName)
+              )
+        )
+      )
+    );
+  }
+
   function buildSetterMethod(typeName, propDescriptors, targetProp) {
     const valueId = t.identifier('value');
     valueId.typeAnnotation = t.tsTypeAnnotation(
@@ -1204,18 +1229,10 @@ export default function propanePlugin() {
         )
       : t.cloneNode(valueId);
 
-    const propsObject = t.objectExpression(
-      propDescriptors.map((prop) =>
-        t.objectProperty(
-          t.identifier(prop.name),
-          prop === targetProp
-            ? setterValueExpr
-            : t.memberExpression(
-                t.thisExpression(),
-                t.cloneNode(prop.privateName)
-              )
-        )
-      )
+    const propsObject = buildPropsObjectExpression(
+      propDescriptors,
+      targetProp,
+      setterValueExpr
     );
 
     const body = t.blockStatement([
@@ -1230,6 +1247,359 @@ export default function propanePlugin() {
       t.tsTypeReference(t.identifier(typeName))
     );
     return method;
+  }
+
+  function buildArrayMutatorMethods(typeName, propDescriptors) {
+    const methods = [];
+
+    for (const prop of propDescriptors) {
+      if (!prop.isArray || !prop.arrayElementType) {
+        continue;
+      }
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `push${capitalize(prop.name)}`,
+          [buildArrayValuesRestParam(prop)],
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('push')),
+                [t.spreadElement(t.identifier('values'))]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `pop${capitalize(prop.name)}`,
+          [],
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('pop')),
+                []
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `shift${capitalize(prop.name)}`,
+          [],
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('shift')),
+                []
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `unshift${capitalize(prop.name)}`,
+          [buildArrayValuesRestParam(prop)],
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('unshift')),
+                [t.spreadElement(t.identifier('values'))]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildSpliceMethod(typeName, propDescriptors, prop)
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `reverse${capitalize(prop.name)}`,
+          [],
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('reverse')),
+                []
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildSortMethod(typeName, propDescriptors, prop)
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `fill${capitalize(prop.name)}`,
+          buildFillParams(prop),
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('fill')),
+                [
+                  t.identifier('value'),
+                  t.identifier('start'),
+                  t.identifier('end'),
+                ]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildArrayMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `copyWithin${capitalize(prop.name)}`,
+          buildCopyWithinParams(),
+          (nextRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(nextRef(), t.identifier('copyWithin')),
+                [
+                  t.identifier('target'),
+                  t.identifier('start'),
+                  t.identifier('end'),
+                ]
+              )
+            ),
+          ]
+        )
+      );
+    }
+
+    return methods;
+  }
+
+  function buildArrayValuesRestParam(prop) {
+    const valuesId = t.identifier('values');
+    valuesId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsArrayType(t.cloneNode(prop.arrayElementType))
+    );
+    return t.restElement(valuesId);
+  }
+
+  function buildFillParams(prop) {
+    const valueId = t.identifier('value');
+    valueId.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(prop.arrayElementType)
+    );
+    const startId = t.identifier('start');
+    startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    startId.optional = true;
+    const endId = t.identifier('end');
+    endId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    endId.optional = true;
+    return [valueId, startId, endId];
+  }
+
+  function buildCopyWithinParams() {
+    const targetId = t.identifier('target');
+    targetId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    const startId = t.identifier('start');
+    startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    const endId = t.identifier('end');
+    endId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    endId.optional = true;
+    return [targetId, startId, endId];
+  }
+
+  function buildSortMethod(typeName, propDescriptors, prop) {
+    const compareId = t.identifier('compareFn');
+    const firstParam = t.identifier('a');
+    firstParam.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(prop.arrayElementType)
+    );
+    const secondParam = t.identifier('b');
+    secondParam.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(prop.arrayElementType)
+    );
+    const compareType = t.tsFunctionType(
+      null,
+      [firstParam, secondParam],
+      t.tsTypeAnnotation(t.tsNumberKeyword())
+    );
+    compareId.typeAnnotation = t.tsTypeAnnotation(compareType);
+    compareId.optional = true;
+
+    return buildArrayMutationMethod(
+      typeName,
+      propDescriptors,
+      prop,
+      `sort${capitalize(prop.name)}`,
+      [compareId],
+      (nextRef) => [
+        t.expressionStatement(
+          t.callExpression(
+            t.memberExpression(nextRef(), t.identifier('sort')),
+            [t.identifier('compareFn')]
+          )
+        ),
+      ]
+    );
+  }
+
+  function buildSpliceMethod(typeName, propDescriptors, prop) {
+    const startId = t.identifier('start');
+    startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    const deleteCountId = t.identifier('deleteCount');
+    deleteCountId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
+    deleteCountId.optional = true;
+    const itemsId = t.identifier('items');
+    itemsId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsArrayType(t.cloneNode(prop.arrayElementType))
+    );
+    const itemsParam = t.restElement(itemsId);
+
+    return buildArrayMutationMethod(
+      typeName,
+      propDescriptors,
+      prop,
+      `splice${capitalize(prop.name)}`,
+      [startId, deleteCountId, itemsParam],
+      (nextRef) => {
+        const argsId = t.identifier('args');
+        return [
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              argsId,
+              t.arrayExpression([t.identifier('start')])
+            ),
+          ]),
+          t.ifStatement(
+            t.binaryExpression(
+              '!==',
+              t.identifier('deleteCount'),
+              t.identifier('undefined')
+            ),
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(argsId, t.identifier('push')),
+                [t.identifier('deleteCount')]
+              )
+            )
+          ),
+          t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(argsId, t.identifier('push')),
+              [t.spreadElement(t.identifier('items'))]
+            )
+          ),
+          t.expressionStatement(
+            t.callExpression(
+              t.memberExpression(nextRef(), t.identifier('splice')),
+              [t.spreadElement(argsId)]
+            )
+          ),
+        ];
+      }
+    );
+  }
+
+  function buildArrayMutationMethod(
+    typeName,
+    propDescriptors,
+    prop,
+    methodName,
+    params,
+    buildMutations
+  ) {
+    const { statements, nextName } = buildArrayCloneSetup(prop);
+    const nextRef = () => t.identifier(nextName);
+    const mutations = buildMutations(nextRef);
+    const bodyStatements = [
+      ...statements,
+      ...mutations,
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [
+          buildPropsObjectExpression(
+            propDescriptors,
+            prop,
+            nextRef()
+          ),
+        ])
+      ),
+    ];
+
+    const method = t.classMethod(
+      'method',
+      t.identifier(methodName),
+      params,
+      t.blockStatement(bodyStatements)
+    );
+    method.returnType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(typeName))
+    );
+    return method;
+  }
+
+  function buildArrayCloneSetup(prop) {
+    const sourceName = `${prop.name}Array`;
+    const nextName = `${prop.name}Next`;
+
+    const fieldExpr = () =>
+      t.memberExpression(
+        t.thisExpression(),
+        t.cloneNode(prop.privateName)
+      );
+
+    const sourceInit = prop.optional
+      ? t.conditionalExpression(
+          t.binaryExpression(
+            '===',
+            fieldExpr(),
+            t.identifier('undefined')
+          ),
+          t.arrayExpression([]),
+          fieldExpr()
+        )
+      : fieldExpr();
+
+    const statements = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(t.identifier(sourceName), sourceInit),
+      ]),
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(nextName),
+          t.arrayExpression([t.spreadElement(t.identifier(sourceName))])
+        ),
+      ]),
+    ];
+
+    return { statements, nextName };
   }
 
   function buildRuntimeTypeCheckExpression(typeNode, valueId) {
@@ -1595,6 +1965,22 @@ export default function propanePlugin() {
     ) {
       const [keyType, valueType] = node.typeParameters.params;
       return { keyType, valueType };
+    }
+
+    return null;
+  }
+
+  function getArrayElementType(node) {
+    if (!node) {
+      return null;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return getArrayElementType(node.typeAnnotation);
+    }
+
+    if (t.isTSArrayType(node)) {
+      return node.elementType;
     }
 
     return null;
