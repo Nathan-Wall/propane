@@ -1,5 +1,8 @@
-export default function runCompoundTests(ctx) {
-  const { assert, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runCompoundTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const UserMessage = loadFixtureClass('tests/user.propane', 'User');
   const Compound = loadFixtureClass('tests/compound.propane', 'Compound');

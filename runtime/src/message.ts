@@ -45,9 +45,9 @@ export abstract class Message<T extends object> {
 
   serialize(): string {
     const payload = this.preserialize();
-  const serialized = Array.isArray(payload)
-    ? serializeArrayLiteral(payload)
-    : serializeObjectLiteral(payload);
+    const serialized = Array.isArray(payload)
+      ? serializeArrayLiteral(payload)
+      : serializeObjectLiteral(payload as Record<string, unknown>);
     return `:${serialized}`;
   }
 

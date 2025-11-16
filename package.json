@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node tests/run-tests.js",
+    "test": "node --loader ./tests/ts-loader.mjs tests/run-tests.ts",
     "propane:compile": "node scripts/propane-compiler.js",
     "runtime:build": "npm --prefix runtime run build",
     "runtime:publish": "node scripts/publish-runtime.js"

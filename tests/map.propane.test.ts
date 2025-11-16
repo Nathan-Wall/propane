@@ -1,12 +1,17 @@
-export default function runMapPropaneTests(ctx) {
-  const { assert, loadFixtureClass, runtimeExports, isMapValue } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runMapPropaneTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
+  const { runtimeExports, isMapValue } = ctx;
 
   const MapMessage = loadFixtureClass('tests/map.propane', 'MapMessage');
 
-  const labels = new Map([
+  const labelEntries: Array<[string | number, number]> = [
     ['one', 1],
     [2, 4],
-  ]);
+  ];
+  const labels = new Map<string | number, number>(labelEntries);
   const metadata = new Map([['owner', { value: 'Alice' }]]);
   const extras = new Map([
     ['alpha', { note: 'A' }],
@@ -35,11 +40,12 @@ export default function runMapPropaneTests(ctx) {
   const labelsCopy = mapCereal.labels.toMap();
   labelsCopy.set('delta', 8);
   assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
+  const updatedLabelEntries: Array<[string | number, number]> = [
+    ['gamma', 7],
+    [3, 9],
+  ];
   const updatedLabelsInstance = mapInstance.setLabels(
-    new Map([
-      ['gamma', 7],
-      [3, 9],
-    ])
+    new Map<string | number, number>(updatedLabelEntries)
   );
   assert(mapInstance.labels.has('one'), 'setLabels should not mutate original instance.');
   assert(updatedLabelsInstance.labels.has('gamma'), 'setLabels result missing new key.');
@@ -66,10 +72,18 @@ export default function runMapPropaneTests(ctx) {
   assert(objectExtrasEntries[0][0] === 'obj', 'Object raw extras lost key.');
   assert(objectExtrasEntries[0][1].note === 'Value', 'Object raw extras lost value.');
 
-  const { ImmutableMap } = runtimeExports;
-  assert(typeof ImmutableMap === 'function', 'ImmutableMap should be exported.');
+  const ImmutableMapCtor = runtimeExports['ImmutableMap'] as new <
+    K,
+    V
+  >(
+    entries?: Iterable<readonly [K, V]>
+  ) => ReadonlyMap<K, V> & {
+    equals(other: unknown): boolean;
+    toMap(): Map<K, V>;
+  };
+  assert(typeof ImmutableMapCtor === 'function', 'ImmutableMap should be exported.');
 
-  const immutable = new ImmutableMap([
+  const immutable = new ImmutableMapCtor([
     ['alpha', 1],
     ['beta', 2],
   ]);
@@ -82,23 +96,28 @@ export default function runMapPropaneTests(ctx) {
   );
 
   const seen = [];
-  immutable.forEach((value, key) => {
+  immutable.forEach((value: number, key: string) => {
     seen.push([key, value]);
   });
   assert(seen.length === 2, 'ImmutableMap forEach did not visit entries.');
 
-  assert(typeof immutable.set === 'undefined', 'ImmutableMap should not expose set.');
-  assert(typeof immutable.delete === 'undefined', 'ImmutableMap should not expose delete.');
-  assert(typeof immutable.clear === 'undefined', 'ImmutableMap should not expose clear.');
+  const mutableCheck = immutable as {
+    set?: unknown;
+    delete?: unknown;
+    clear?: unknown;
+  };
+  assert(typeof mutableCheck.set === 'undefined', 'ImmutableMap should not expose set.');
+  assert(typeof mutableCheck.delete === 'undefined', 'ImmutableMap should not expose delete.');
+  assert(typeof mutableCheck.clear === 'undefined', 'ImmutableMap should not expose clear.');
 
   const plainMap = immutable.toMap();
   plainMap.set('gamma', 3);
   assert(!immutable.has('gamma'), 'ImmutableMap should remain immutable after toMap.');
 
-  const cloned = new ImmutableMap(plainMap);
+  const cloned = new ImmutableMapCtor(plainMap);
   assert(cloned.has('gamma'), 'ImmutableMap should accept Map constructor input.');
 
-  const equalsPeer = new ImmutableMap([
+  const equalsPeer = new ImmutableMapCtor([
     ['alpha', 1],
     ['beta', 2],
   ]);
@@ -107,7 +126,7 @@ export default function runMapPropaneTests(ctx) {
   assert(immutable.equals(equalsMap), 'ImmutableMap equals should handle plain Map inputs.');
   const changedSource = equalsPeer.toMap();
   changedSource.set('delta', 4);
-  const changedPeer = new ImmutableMap(changedSource);
+  const changedPeer = new ImmutableMapCtor(changedSource);
   assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
   assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
 }

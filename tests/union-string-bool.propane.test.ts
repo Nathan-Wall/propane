@@ -1,5 +1,8 @@
-export default function runUnionStringBoolTests(ctx) {
-  const { assert, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runUnionStringBoolTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const UnionStringBool = loadFixtureClass(
     'tests/union-string-bool.propane',

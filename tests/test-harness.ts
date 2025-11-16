@@ -5,11 +5,29 @@ import path from 'path';
 import vm from 'vm';
 import ts from 'typescript';
 
+export type TransformFn = (source: string, filename: string) => string;
+
+export interface TestContext {
+  projectRoot: string;
+  transform: TransformFn;
+  runtimeExports: Record<string, unknown>;
+  assert(condition: unknown, message: string): asserts condition;
+  assertThrows(fn: () => unknown, message: string): void;
+  isMapValue(value: unknown): boolean;
+  loadFixtureClass<T = unknown>(fixture: string, exportName: string): T;
+}
+
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 const PROPANE_MODULE_CACHE = new Map();
 
-export function createTestContext({ projectRoot, transform }) {
+export function createTestContext({
+  projectRoot,
+  transform,
+}: {
+  projectRoot: string;
+  transform: TransformFn;
+}): TestContext {
   const runtimeExports = buildRuntimeExports(projectRoot);
   const loadFixtureClass = (fixture, exportName) =>
     buildClassFromFixture({

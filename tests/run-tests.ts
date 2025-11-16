@@ -1,14 +1,10 @@
-'use strict';
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import vm from 'vm';
-import { createRequire } from 'module';
-import ts from 'typescript';
 import { transformSync } from '@babel/core';
 import propanePlugin from '../babel/propane-plugin.js';
-import { createTestContext } from './test-harness.js';
+import { createTestContext } from './test-harness.ts';
+import type { TestContext } from './test-harness.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,7 +39,7 @@ for (const filePath of propaneFiles) {
   } catch (err) {
     if (!expectError) {
       console.error(`[FAIL] ${relativeName}`);
-      console.error('Unexpected error:\n', err && err.message);
+      console.error('Unexpected error:\n', formatError(err));
       hasFailure = true;
       continue;
     }
@@ -67,7 +63,9 @@ const testFiles = findTestFiles(testsDir);
 for (const testFile of testFiles) {
   const relativeName = path.relative(projectRoot, testFile);
   try {
-    const runTests = await loadTestRunner(testFile);
+    const moduleUrl = pathToFileURL(testFile).href;
+    const mod = (await import(moduleUrl)) as { default?: (ctx: TestContext) => Promise<void> | void };
+    const runTests = mod && mod.default;
     if (typeof runTests !== 'function') {
       throw new Error('Test file must export a default function.');
     }
@@ -75,20 +73,16 @@ for (const testFile of testFiles) {
     console.log(`[PASS] ${relativeName}`);
   } catch (err) {
     console.error(`[FAIL] ${relativeName}`);
-    if (err && err.stack) {
-      console.error(err.stack);
-    } else {
-      console.error(err && err.message);
-    }
+    console.error(formatError(err));
     hasFailure = true;
   }
 }
 
 process.exit(hasFailure ? 1 : 0);
 
-function findPropaneFiles(dir) {
+function findPropaneFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
+  const files: string[] = [];
 
   for (const entry of entries) {
     if (entry.name.startsWith('.')) {
@@ -110,9 +104,9 @@ function findPropaneFiles(dir) {
   return files.sort();
 }
 
-function findTestFiles(dir) {
+function findTestFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
+  const files: string[] = [];
 
   for (const entry of entries) {
     if (entry.name.startsWith('.')) {
@@ -137,46 +131,9 @@ function findTestFiles(dir) {
   return files.sort();
 }
 
-async function loadTestRunner(filename) {
-  if (filename.endsWith('.ts')) {
-    const source = fs.readFileSync(filename, 'utf8');
-    const js = transpileTestSource(source, filename);
-    const exports = evaluateTestModule(js, filename);
-    return exports && exports.default;
+function formatError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.stack ?? error.message;
   }
-
-  const moduleUrl = pathToFileURL(filename).href;
-  const mod = await import(moduleUrl);
-  return mod && mod.default;
-}
-
-function transpileTestSource(source, filename) {
-  const result = ts.transpileModule(source, {
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2019,
-      esModuleInterop: true,
-    },
-    fileName: filename,
-  });
-
-  if (!result.outputText) {
-    throw new Error(`Failed to transpile ${filename}`);
-  }
-
-  return result.outputText;
-}
-
-function evaluateTestModule(code, filename) {
-  const module = { exports: {} };
-  const requireFromFile = createRequire(pathToFileURL(filename));
-  const sandbox = {
-    module,
-    exports: module.exports,
-    console,
-    require: requireFromFile,
-  };
-
-  vm.runInNewContext(code, sandbox, { filename });
-  return module.exports;
+  return String(error);
 }

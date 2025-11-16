@@ -1,5 +1,8 @@
-export default function runObjectOnlyTests(ctx) {
-  const { assert, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runObjectOnlyTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const ObjectOnly = loadFixtureClass('tests/object-only.propane', 'ObjectOnly');
 

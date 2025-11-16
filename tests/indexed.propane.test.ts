@@ -1,5 +1,9 @@
-export default function runIndexedPropaneTests(ctx) {
-  const { assert, assertThrows, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runIndexedPropaneTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const assertThrows = ctx.assertThrows;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const Indexed = loadFixtureClass('tests/indexed.propane', 'Indexed');
   if (typeof Indexed !== 'function') {

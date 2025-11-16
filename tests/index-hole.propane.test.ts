@@ -1,5 +1,8 @@
-export default function runIndexHoleTests(ctx) {
-  const { assert, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runIndexHoleTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const Hole = loadFixtureClass('tests/index-hole.propane', 'Hole');
 

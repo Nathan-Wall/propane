@@ -1,5 +1,8 @@
-export default function runIndexedArrayTests(ctx) {
-  const { assert, loadFixtureClass } = ctx;
+import type { TestContext } from './test-harness.ts';
+
+export default function runIndexedArrayTests(ctx: TestContext) {
+  const assert: TestContext['assert'] = ctx.assert;
+  const loadFixtureClass = ctx.loadFixtureClass;
 
   const ArrayMessage = loadFixtureClass(
     'tests/indexed-array.propane',
@@ -45,7 +48,7 @@ export default function runIndexedArrayTests(ctx) {
   const reversedNames = arrayInstance.reverseNames();
   assert(reversedNames.names[0] === 'Gamma Value', 'reverseNames should reverse order.');
 
-  const sortedScores = arrayInstance.sortScores((a, b) => b - a);
+  const sortedScores = arrayInstance.sortScores((a: number, b: number) => b - a);
   assert(sortedScores.scores[0] === 3 && sortedScores.scores[2] === 1, 'sortScores should reorder values using comparator.');
 
   const filledNames = arrayInstance.fillNames('Filled', 1, 3);
