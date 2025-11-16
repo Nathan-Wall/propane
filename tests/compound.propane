@@ -1,0 +1,7 @@
+import {Indexed} from './indexed.propane';
+import {User} from './user.propane';
+
+export type Compound = {
+  '1:user': User,
+  '2:indexed': Indexed,
+};

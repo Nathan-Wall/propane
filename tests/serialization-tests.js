@@ -7,18 +7,18 @@ import ts from 'typescript';
 
 export default function runSerializationTests({ projectRoot, transform }) {
   const runtimeExports = buildRuntimeExports(projectRoot);
-  const Simple = buildClassFromFixture({
+  const Indexed = buildClassFromFixture({
     projectRoot,
     transform,
     runtimeExports,
     fixture: 'tests/indexed.propane',
-    exportName: 'Simple',
+    exportName: 'Indexed',
   });
-  if (typeof Simple !== 'function') {
-    throw new Error('Simple class was not exported.');
+  if (typeof Indexed !== 'function') {
+    throw new Error('Indexed class was not exported.');
   }
 
-  const instance = new Simple({
+  const instance = new Indexed({
     id: 1,
     name: 'Alice',
     age: 30,
@@ -47,13 +47,13 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(cerealObj.name === 'Alice', 'cerealize lost name.');
   assert(cerealObj.alias === 'Ace', 'cerealize lost alias.');
 
-  const hydrated = Simple.deserialize(serialized);
-  assert(hydrated instanceof Simple, 'Deserialize should produce class instance.');
+  const hydrated = Indexed.deserialize(serialized);
+  assert(hydrated instanceof Indexed, 'Deserialize should produce class instance.');
   const hydratedCereal = hydrated.cerealize();
   assert(hydratedCereal.name === 'Alice', 'Roundtrip lost data.');
 
   const rawString = ':[3,"Chris",24,false,"CJ",99,null,"PENDING"]';
-  const hydratedFromString = Simple.deserialize(rawString);
+  const hydratedFromString = Indexed.deserialize(rawString);
   const hydratedFromStringCereal = hydratedFromString.cerealize();
   assert(hydratedFromStringCereal.name === 'Chris', 'Raw string deserialize lost name.');
   assert(hydratedFromStringCereal.score === 99, 'Raw string deserialize lost score.');
@@ -61,7 +61,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(hydratedFromStringCereal.status === 'PENDING', 'Raw string deserialize lost status.');
 
   const cerealInput = ':[2,"Bob",28,false,"B",80,null,"IDLE"]';
-  const fromCereal = Simple.deserialize(cerealInput);
+  const fromCereal = Indexed.deserialize(cerealInput);
   const fromCerealPayload = fromCereal.cerealize();
   assert(fromCerealPayload.name === 'Bob', 'Decerealize failed.');
   assert(fromCerealPayload.score === 80, 'Decerealize lost score.');
@@ -69,16 +69,16 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(fromCerealPayload.status === 'IDLE', 'Decerealize lost status.');
 
   assertThrows(
-    () => Simple.deserialize(':{\"name\":\"Charlie\",\"age\":22,\"active\":true}'),
+    () => Indexed.deserialize(':{\"name\":\"Charlie\",\"age\":22,\"active\":true}'),
     'Missing required fields should throw.'
   );
 
   assertThrows(
     () =>
-      Simple.deserialize(':{\"1\":\"bad\",\"name\":\"Dana\",\"age\":40,\"active\":true}'),
+      Indexed.deserialize(':{\"1\":\"bad\",\"name\":\"Dana\",\"age\":40,\"active\":true}'),
     'Invalid field types should throw.'
   );
-  const optionalMissing = new Simple({
+  const optionalMissing = new Indexed({
     id: 4,
     name: 'Optional',
     age: 35,
@@ -96,7 +96,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(optionalObject.nickname === undefined, 'Object cerealize should omit nickname.');
 
   const optionalRawWithValue = ':[6,"OptName",31,true,"CJ",12,"CJ-A","RUN"]';
-  const optionalHydrated = Simple.deserialize(optionalRawWithValue);
+  const optionalHydrated = Indexed.deserialize(optionalRawWithValue);
   const optionalHydratedCereal = optionalHydrated.cerealize();
   assert(optionalHydratedCereal.nickname === 'CJ', 'Raw optional value not preserved.');
   assert(optionalHydratedCereal.score === 12, 'Raw score lost.');
@@ -104,13 +104,13 @@ export default function runSerializationTests({ projectRoot, transform }) {
 
   const optionalRawMissing =
     ':{\"1\":7,\"2\":\"OptName\",\"3\":31,\"4\":true,\"6\":5,\"8\":\"RESTING\"}';
-  const optionalHydratedMissing = Simple.deserialize(optionalRawMissing);
+  const optionalHydratedMissing = Indexed.deserialize(optionalRawMissing);
   const optionalHydratedMissingCereal = optionalHydratedMissing.cerealize();
   assert(optionalHydratedMissingCereal.nickname === undefined, 'Missing optional value should stay undefined.');
   assert(optionalHydratedMissingCereal.score === 5, 'Missing optional roundtrip lost score.');
   assert(optionalHydratedMissingCereal.alias === undefined, 'Missing alias should stay undefined.');
 
-  const scoreNullInstance = new Simple({
+  const scoreNullInstance = new Indexed({
     id: 9,
     name: 'Null Score',
     age: 25,
@@ -126,12 +126,12 @@ export default function runSerializationTests({ projectRoot, transform }) {
     'Null score serialization incorrect.'
   );
   const scoreNullRaw = ':[10,"Score Raw",33,true,"NR",null,"AliasRaw","HALT"]';
-  const scoreNullHydrated = Simple.deserialize(scoreNullRaw);
+  const scoreNullHydrated = Indexed.deserialize(scoreNullRaw);
   const scoreNullHydratedCereal = scoreNullHydrated.cerealize();
   assert(scoreNullHydratedCereal.score === null, 'Score null raw not preserved.');
   assert(scoreNullHydratedCereal.alias === 'AliasRaw', 'Score raw alias lost.');
 
-  const aliasNullInstance = new Simple({
+  const aliasNullInstance = new Indexed({
     id: 11,
     name: 'Alias Null',
     age: 40,
@@ -147,7 +147,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
     'Alias null serialization incorrect.'
   );
   const aliasNullRaw = ':[12,Alias Raw,41,true,AR,8,null,alias-raw]';
-  const aliasNullHydrated = Simple.deserialize(aliasNullRaw);
+  const aliasNullHydrated = Indexed.deserialize(aliasNullRaw);
   const aliasNullHydratedCereal = aliasNullHydrated.cerealize();
   assert(aliasNullHydratedCereal.alias === null, 'Alias null raw not preserved.');
   const ObjectOnly = buildClassFromFixture({
