@@ -8,7 +8,6 @@ export type Cereal<T extends object> = T | unknown[];
 
 type MessageConstructor<T extends object> = {
   new (props: T): Message<T>;
-  decerealize(cereal: Cereal<T>): Message<T>;
   prototype: Message<T>;
 };
 
@@ -55,14 +54,7 @@ export abstract class Message<T extends object> {
     message: string
   ): Message<T> {
     const payload = parseCerealString<T>(message);
-    return this.decerealize(payload);
-  }
-
-  static decerealize<T extends object>(
-    this: MessageConstructor<T>,
-    cereal: Cereal<T>
-  ): Message<T> {
-    const normalizedEntries = normalizeCereal(cereal);
+    const normalizedEntries = normalizeCereal(payload);
     const proto = this.prototype as Message<T>;
     const props = proto.$fromEntries(normalizedEntries);
     return new this(props);

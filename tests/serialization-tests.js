@@ -53,17 +53,8 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(hydratedFromStringCereal.alias === null, 'Raw string deserialize lost alias.');
   assert(hydratedFromStringCereal.status === 'PENDING', 'Raw string deserialize lost status.');
 
-  const cerealInput = {
-    '1': 2,
-    '2': 'Bob',
-    '3': 28,
-    '4': false,
-    '5': 'B',
-    '6': 80,
-    '7': null,
-    '8': 'IDLE',
-  };
-  const fromCereal = Simple.decerealize(cerealInput);
+  const cerealInput = ':[2,"Bob",28,false,"B",80,null,"IDLE"]';
+  const fromCereal = Simple.deserialize(cerealInput);
   const fromCerealPayload = fromCereal.cerealize();
   assert(fromCerealPayload.name === 'Bob', 'Decerealize failed.');
   assert(fromCerealPayload.score === 80, 'Decerealize lost score.');
@@ -71,18 +62,13 @@ export default function runSerializationTests({ projectRoot, transform }) {
   assert(fromCerealPayload.status === 'IDLE', 'Decerealize lost status.');
 
   assertThrows(
-    () => Simple.decerealize({ name: 'Charlie', age: 22, active: true }),
+    () => Simple.deserialize(':{\"name\":\"Charlie\",\"age\":22,\"active\":true}'),
     'Missing required fields should throw.'
   );
 
   assertThrows(
     () =>
-      Simple.decerealize({
-        '1': 'bad',
-        name: 'Dana',
-        age: 40,
-        active: true,
-      }),
+      Simple.deserialize(':{\"1\":\"bad\",\"name\":\"Dana\",\"age\":40,\"active\":true}'),
     'Invalid field types should throw.'
   );
   const optionalMissing = new Simple({
