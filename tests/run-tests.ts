@@ -12,6 +12,15 @@ const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
 const failPattern = /(?:^|[.-])fail$/i;
 
+const COLOR_RESET = '\x1b[0m';
+const COLOR_GREEN = '\x1b[32m';
+const COLOR_RED = '\x1b[31m';
+
+function formatStatus(status: 'PASS' | 'FAIL'): string {
+  const color = status === 'PASS' ? COLOR_GREEN : COLOR_RED;
+  return `${color}[${status}]${COLOR_RESET}`;
+}
+
 const propaneFiles = findPropaneFiles(testsDir);
 let hasFailure = false;
 
@@ -35,16 +44,16 @@ for (const filePath of propaneFiles) {
       continue;
     }
 
-    console.log(`[PASS] ${relativeName}`);
+    console.log(`${formatStatus('PASS')} ${relativeName}`);
   } catch (err) {
     if (!expectError) {
-      console.error(`[FAIL] ${relativeName}`);
+      console.error(`${formatStatus('FAIL')} ${relativeName}`);
       console.error('Unexpected error:\n', formatError(err));
       hasFailure = true;
       continue;
     }
 
-    console.log(`[PASS] ${relativeName}`);
+    console.log(`${formatStatus('PASS')} ${relativeName}`);
   }
 }
 
@@ -70,9 +79,9 @@ for (const testFile of testFiles) {
       throw new Error('Test file must export a default function.');
     }
     await runTests(context);
-    console.log(`[PASS] ${relativeName}`);
+    console.log(`${formatStatus('PASS')} ${relativeName}`);
   } catch (err) {
-    console.error(`[FAIL] ${relativeName}`);
+    console.error(`${formatStatus('FAIL')} ${relativeName}`);
     console.error(formatError(err));
     hasFailure = true;
   }
