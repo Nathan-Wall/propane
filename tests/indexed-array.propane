@@ -1,0 +1,8 @@
+export type ArrayMessage = {
+  '1:names': string[];
+  '2:scores': number[];
+  '3:flags'?: boolean[];
+  '4:labels': {
+    name: string;
+  }[];
+};

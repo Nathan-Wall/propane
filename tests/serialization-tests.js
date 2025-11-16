@@ -229,6 +229,32 @@ export default function runSerializationTests({ projectRoot, transform }) {
   const unionBoolRawData = unionBoolRaw.cerealize();
   assert(unionBoolRawData.value === true, 'Union bool raw lost boolean value.');
   assert(unionBoolRawData.optional === 'false', 'Union bool raw lost string optional.');
+
+  const ArrayMessage = buildClassFromFixture({
+    projectRoot,
+    transform,
+    runtimeExports,
+    fixture: 'tests/indexed-array.propane',
+    exportName: 'ArrayMessage',
+  });
+
+  const arrayInstance = new ArrayMessage({
+    names: ['Alpha', 'Beta', 'Gamma Value'],
+    scores: [1, 2, 3],
+    flags: [true, false],
+    labels: [{ name: 'Label A' }],
+  });
+
+  assert(
+    arrayInstance.serialize() === ':[[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{\"name\":\"Label A\"}]]',
+    'Array serialization incorrect.'
+  );
+
+  const arrayRaw = ArrayMessage.deserialize(':[[Delta,Echo],[4,5],undefined,[{\"name\":\"Label B\"}]]');
+  const arrayRawData = arrayRaw.cerealize();
+  assert(arrayRawData.names[0] === 'Delta', 'Array raw lost names.');
+  assert(arrayRawData.flags === undefined, 'Array raw optional flags should be undefined.');
+  assert(arrayRawData.labels[0].name === 'Label B', 'Array raw labels lost.');
 }
 
 function buildRuntimeExports(projectRoot) {

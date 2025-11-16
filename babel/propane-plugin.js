@@ -162,6 +162,7 @@ export default function propanePlugin() {
         fieldNumber,
         optional: Boolean(memberPath.node.optional),
         readonly: Boolean(memberPath.node.readonly),
+        isArray: isArrayTypeNode(propTypePath.node),
         typeAnnotation: t.cloneNode(propTypePath.node),
       });
     }
@@ -217,6 +218,11 @@ export default function propanePlugin() {
       for (const memberPath of typePath.get('types')) {
         assertSupportedType(memberPath);
       }
+      return;
+    }
+
+    if (typePath.isTSArrayType()) {
+      assertSupportedType(typePath.get('elementType'));
       return;
     }
 
@@ -468,9 +474,17 @@ export default function propanePlugin() {
     );
 
     for (const prop of propDescriptors) {
-      const typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
+      let baseType = t.cloneNode(prop.typeAnnotation);
+      if (prop.isArray) {
+        baseType = wrapReadonlyArrayType(baseType);
+      }
+
+      const fieldTypeAnnotation = prop.optional && prop.isArray
+        ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
+        : baseType;
+
       const field = t.classPrivateProperty(t.cloneNode(prop.privateName));
-      field.typeAnnotation = typeAnnotation;
+      field.typeAnnotation = t.tsTypeAnnotation(fieldTypeAnnotation);
       backingFields.push(field);
 
       const getter = t.classMethod(
@@ -484,7 +498,11 @@ export default function propanePlugin() {
         ])
       );
 
-      getter.returnType = t.tsTypeAnnotation(t.cloneNode(prop.typeAnnotation));
+      const getterReturnType = prop.optional && prop.isArray
+        ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
+        : baseType;
+
+      getter.returnType = t.tsTypeAnnotation(getterReturnType);
       getters.push(getter);
     }
 
@@ -493,18 +511,43 @@ export default function propanePlugin() {
       t.cloneNode(propsTypeRef)
     );
 
-    const constructorAssignments = propDescriptors.map((prop) =>
-      t.expressionStatement(
+    const constructorAssignments = propDescriptors.map((prop) => {
+      const propsAccess = t.memberExpression(
+        t.identifier('props'),
+        t.identifier(prop.name)
+      );
+
+      let valueExpr = t.cloneNode(propsAccess);
+
+      if (prop.isArray) {
+        valueExpr = t.conditionalExpression(
+          t.callExpression(
+            t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+            [t.cloneNode(propsAccess)]
+          ),
+          t.callExpression(
+            t.memberExpression(t.identifier('Object'), t.identifier('freeze')),
+            [
+              t.arrayExpression([
+                t.spreadElement(t.cloneNode(propsAccess)),
+              ]),
+            ]
+          ),
+          t.cloneNode(propsAccess)
+        );
+      }
+
+      return t.expressionStatement(
         t.assignmentExpression(
           '=',
           t.memberExpression(
             t.thisExpression(),
             t.cloneNode(prop.privateName)
           ),
-          t.memberExpression(t.identifier('props'), t.identifier(prop.name))
+          valueExpr
         )
-      )
-    );
+      );
+    });
 
     const constructorBody = [
       t.expressionStatement(t.callExpression(t.super(), [])),
@@ -778,6 +821,19 @@ export default function propanePlugin() {
     return normalized.split(path.sep).join('/');
   }
 
+  function wrapReadonlyArrayType(node) {
+    if (t.isTSArrayType(node)) {
+      return t.tsTypeOperator(
+        t.tsArrayType(
+          wrapReadonlyArrayType(t.cloneNode(node.elementType))
+        ),
+        'readonly'
+      );
+    }
+
+    return node;
+  }
+
   function buildEntryAccessExpression(prop, entriesId) {
     const namedAccess = t.memberExpression(
       entriesId,
@@ -857,6 +913,31 @@ export default function propanePlugin() {
 
       return checks.reduce((acc, expr) =>
         acc ? t.logicalExpression('||', acc, expr) : expr
+      );
+    }
+
+    if (t.isTSArrayType(typeNode)) {
+      const elementId = t.identifier('element');
+      const elementCheck = buildRuntimeTypeCheckExpression(
+        typeNode.elementType,
+        elementId
+      );
+      const arrayCheck = t.callExpression(
+        t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+        [valueId]
+      );
+
+      if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+        return arrayCheck;
+      }
+
+      return t.logicalExpression(
+        '&&',
+        arrayCheck,
+        t.callExpression(
+          t.memberExpression(valueId, t.identifier('every')),
+          [t.arrowFunctionExpression([elementId], elementCheck)]
+        )
       );
     }
 
@@ -1015,5 +1096,17 @@ export default function propanePlugin() {
     return t.throwStatement(
       t.newExpression(t.identifier('Error'), [t.stringLiteral(message)])
     );
+  }
+
+  function isArrayTypeNode(node) {
+    if (!node) {
+      return false;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return isArrayTypeNode(node.typeAnnotation);
+    }
+
+    return t.isTSArrayType(node);
   }
 }

@@ -136,6 +136,14 @@ function serializePrimitive(value: unknown): string {
     return 'undefined';
   }
 
+  if (Array.isArray(value)) {
+    return serializeArrayLiteral(value);
+  }
+
+  if (value && typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+
   if (typeof value === 'string') {
     if (
       SIMPLE_STRING_RE.test(value) &&
@@ -250,7 +258,15 @@ function parseLiteralToken(token: string): unknown {
     return num;
   }
 
-  if (trimmed.startsWith('"') || trimmed.startsWith('{') || trimmed.startsWith('[')) {
+  if (trimmed.startsWith('[')) {
+    return parseArrayLiteral(trimmed);
+  }
+
+  if (trimmed.startsWith('{')) {
+    return JSON.parse(trimmed);
+  }
+
+  if (trimmed.startsWith('"')) {
     return JSON.parse(trimmed);
   }
 
