@@ -643,10 +643,15 @@ export default function propanePlugin() {
 
     const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
 
+    const setterMethods = propDescriptors.map((prop) =>
+      buildSetterMethod(typeName, propDescriptors, prop)
+    );
+
     const classBody = t.classBody([
       ...backingFields,
       constructor,
       ...getters,
+      ...setterMethods,
       descriptorMethod,
       fromEntriesMethod,
     ]);
@@ -1047,6 +1052,40 @@ export default function propanePlugin() {
     );
   }
 
+  function buildSetterMethod(typeName, propDescriptors, targetProp) {
+    const valueId = t.identifier('value');
+    valueId.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(targetProp.typeAnnotation)
+    );
+
+    const propsObject = t.objectExpression(
+      propDescriptors.map((prop) =>
+        t.objectProperty(
+          t.identifier(prop.name),
+          prop === targetProp
+            ? t.cloneNode(valueId)
+            : t.memberExpression(
+                t.thisExpression(),
+                t.cloneNode(prop.privateName)
+              )
+        )
+      )
+    );
+
+    const body = t.blockStatement([
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [propsObject])
+      ),
+    ]);
+
+    const methodName = `set${capitalize(targetProp.name)}`;
+    const method = t.classMethod('method', t.identifier(methodName), [valueId], body);
+    method.returnType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(typeName))
+    );
+    return method;
+  }
+
   function buildRuntimeTypeCheckExpression(typeNode, valueId) {
     if (!typeNode) {
       return null;
@@ -1413,5 +1452,12 @@ export default function propanePlugin() {
     }
 
     return null;
+  }
+
+  function capitalize(name) {
+    if (!name) {
+      return '';
+    }
+    return name.charAt(0).toUpperCase() + name.slice(1);
   }
 }

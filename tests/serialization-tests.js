@@ -29,6 +29,13 @@ export default function runSerializationTests({ projectRoot, transform }) {
     status: 'READY',
   });
 
+  const renamed = instance.setName('Bobette');
+  assert(instance.name === 'Alice', 'setName should not mutate original instance.');
+  assert(renamed.name === 'Bobette', 'setName should apply to returned copy.');
+  const aliasCleared = renamed.setAlias(undefined);
+  assert(aliasCleared.alias === undefined, 'setAlias should allow clearing optional field.');
+  assert(renamed.alias === 'Ace', 'setAlias should not mutate source instance.');
+
   const serialized = instance.serialize();
   const expectedSerialized = ':[1,Alice,30,true,Al,42,Ace,READY]';
   assert(
@@ -296,6 +303,17 @@ export default function runSerializationTests({ projectRoot, transform }) {
   const labelsCopy = mapCereal.labels.toMap();
   labelsCopy.set('delta', 8);
   assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
+  const updatedLabelsInstance = mapInstance.setLabels(
+    new Map([
+      ['gamma', 7],
+      [3, 9],
+    ])
+  );
+  assert(mapInstance.labels.has('one'), 'setLabels should not mutate original instance.');
+  assert(updatedLabelsInstance.labels.has('gamma'), 'setLabels result missing new key.');
+  const clearedMetadata = mapInstance.setMetadata(undefined);
+  assert(clearedMetadata.metadata === undefined, 'setMetadata should allow undefined.');
+  assert(mapInstance.metadata.get('owner').value === 'Alice', 'setMetadata should not mutate original metadata.');
 
   const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[{"id":"raw"},null]]]');
   const mapRawData = mapRaw.cerealize();
