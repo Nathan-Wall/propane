@@ -12,6 +12,7 @@ export default function propanePlugin() {
       Program: {
         enter(path, state) {
           state.usesPropaneBase = false;
+          state.usesImmutableMap = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
           const filename = fileOpts.filename || '';
@@ -30,7 +31,7 @@ export default function propanePlugin() {
         },
         exit(path, state) {
           if (state.usesPropaneBase) {
-            ensureBaseImport(path);
+            ensureBaseImport(path, state);
           }
         },
       },
@@ -84,6 +85,9 @@ export default function propanePlugin() {
     }
 
     const properties = extractProperties(typeLiteralPath.get('members'));
+    if (properties.some((prop) => prop.isMap)) {
+      state.usesImmutableMap = true;
+    }
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
@@ -157,14 +161,20 @@ export default function propanePlugin() {
 
       assertSupportedType(propTypePath);
 
+      const mapType = isMapTypeNode(propTypePath.node);
+      const clonedType = t.cloneNode(propTypePath.node);
+      const typeAnnotationNode = mapType
+        ? wrapReadonlyMapType(clonedType)
+        : clonedType;
+
       props.push({
         name,
         fieldNumber,
         optional: Boolean(memberPath.node.optional),
         readonly: Boolean(memberPath.node.readonly),
         isArray: isArrayTypeNode(propTypePath.node),
-        isMap: isMapTypeNode(propTypePath.node),
-        typeAnnotation: t.cloneNode(propTypePath.node),
+        isMap: mapType,
+        typeAnnotation: typeAnnotationNode,
       });
     }
 
@@ -602,7 +612,7 @@ export default function propanePlugin() {
           t.cloneNode(propsAccess)
         );
       } else if (prop.isMap) {
-        valueExpr = buildMapCloneExpression(propsAccess);
+        valueExpr = buildImmutableMapExpression(propsAccess);
       }
 
       return t.expressionStatement(
@@ -782,7 +792,7 @@ export default function propanePlugin() {
           t.variableDeclaration('const', [
             t.variableDeclarator(
               mapValueId,
-              buildMapCloneExpression(checkedValueId)
+              buildImmutableMapExpression(checkedValueId)
             ),
           ])
         );
@@ -850,13 +860,17 @@ export default function propanePlugin() {
     return method;
   }
 
-  function ensureBaseImport(programPath) {
+  function ensureBaseImport(programPath, state) {
     const program = programPath.node;
     const existingImport = program.body.find(
       (stmt) =>
         t.isImportDeclaration(stmt) &&
         stmt.source.value === MESSAGE_SOURCE
     );
+    const requiredSpecifiers = ['Message', 'MessagePropDescriptor'];
+    if (state.usesImmutableMap) {
+      requiredSpecifiers.push('ImmutableMap');
+    }
 
     if (existingImport) {
       const existingSpecifiers = new Set(
@@ -864,7 +878,7 @@ export default function propanePlugin() {
           .filter((spec) => t.isImportSpecifier(spec))
           .map((spec) => spec.imported.name)
       );
-      for (const name of ['Message', 'MessagePropDescriptor']) {
+      for (const name of requiredSpecifiers) {
         if (!existingSpecifiers.has(name)) {
           existingImport.specifiers.push(
             t.importSpecifier(t.identifier(name), t.identifier(name))
@@ -875,13 +889,9 @@ export default function propanePlugin() {
     }
 
     const importDecl = t.importDeclaration(
-      [
-        t.importSpecifier(t.identifier('Message'), t.identifier('Message')),
-        t.importSpecifier(
-          t.identifier('MessagePropDescriptor'),
-          t.identifier('MessagePropDescriptor')
-        ),
-      ],
+      requiredSpecifiers.map((name) =>
+        t.importSpecifier(t.identifier(name), t.identifier(name))
+      ),
       t.stringLiteral(MESSAGE_SOURCE)
     );
 
@@ -938,6 +948,27 @@ export default function propanePlugin() {
     return node;
   }
 
+  function buildMapTagComparison(valueExpr, tag) {
+    return t.binaryExpression(
+      '===',
+      buildObjectToStringCall(valueExpr),
+      t.stringLiteral(tag)
+    );
+  }
+
+  function buildObjectToStringCall(valueExpr) {
+    return t.callExpression(
+      t.memberExpression(
+        t.memberExpression(
+          t.memberExpression(t.identifier('Object'), t.identifier('prototype')),
+          t.identifier('toString')
+        ),
+        t.identifier('call')
+      ),
+      [t.cloneNode(valueExpr)]
+    );
+  }
+
   function buildEntryAccessExpression(prop, entriesId) {
     const namedAccess = t.memberExpression(
       entriesId,
@@ -966,28 +997,52 @@ export default function propanePlugin() {
     );
   }
 
-  function buildMapCloneExpression(valueExpr) {
+  function buildImmutableMapExpression(valueExpr) {
     const arrayCheck = t.callExpression(
       t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
       [t.cloneNode(valueExpr)]
     );
 
-    const mapCheck = t.binaryExpression(
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableMap')
+    );
+    const immutableTagCheck = buildMapTagComparison(
+      valueExpr,
+      '[object ImmutableMap]'
+    );
+    const immutableCheck = t.logicalExpression(
+      '||',
+      immutableInstanceCheck,
+      immutableTagCheck
+    );
+
+    const mapInstanceCheck = t.binaryExpression(
       'instanceof',
       t.cloneNode(valueExpr),
       t.identifier('Map')
     );
+    const mapTagCheck = buildMapTagComparison(
+      valueExpr,
+      '[object Map]'
+    );
+    const mapCheck = t.logicalExpression('||', mapInstanceCheck, mapTagCheck);
 
-    const buildNewMap = () =>
-      t.newExpression(t.identifier('Map'), [t.cloneNode(valueExpr)]);
+    const buildNewImmutableMap = () =>
+      t.newExpression(t.identifier('ImmutableMap'), [t.cloneNode(valueExpr)]);
 
     return t.conditionalExpression(
       arrayCheck,
-      buildNewMap(),
+      buildNewImmutableMap(),
       t.conditionalExpression(
-        mapCheck,
-        buildNewMap(),
-        t.cloneNode(valueExpr)
+        immutableCheck,
+        t.cloneNode(valueExpr),
+        t.conditionalExpression(
+          mapCheck,
+          buildNewImmutableMap(),
+          t.cloneNode(valueExpr)
+        )
       )
     );
   }
@@ -1133,11 +1188,28 @@ export default function propanePlugin() {
   }
 
   function buildMapTypeCheckExpression(typeNode, valueId) {
-    const baseCheck = t.binaryExpression(
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('ImmutableMap')
+    );
+    const immutableTagCheck = buildMapTagComparison(
+      valueId,
+      '[object ImmutableMap]'
+    );
+    const immutableCheck = t.logicalExpression(
+      '||',
+      immutableInstanceCheck,
+      immutableTagCheck
+    );
+    const mapInstanceCheck = t.binaryExpression(
       'instanceof',
       valueId,
       t.identifier('Map')
     );
+    const mapTagCheck = buildMapTagComparison(valueId, '[object Map]');
+    const mapCheck = t.logicalExpression('||', mapInstanceCheck, mapTagCheck);
+    const baseCheck = t.logicalExpression('||', immutableCheck, mapCheck);
 
     const mapArgs = getMapTypeArguments(typeNode);
 

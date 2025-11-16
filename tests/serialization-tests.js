@@ -292,6 +292,10 @@ export default function runSerializationTests({ projectRoot, transform }) {
   const mapExtrasEntries = [...mapCereal.extras.entries()];
   assert(mapExtrasEntries[0][0].id === 'alpha', 'Extras map lost object key.');
   assert(mapExtrasEntries[1][1] === null, 'Extras map lost null value.');
+  assert(typeof mapCereal.labels.toMap === 'function', 'Immutable map should expose toMap.');
+  const labelsCopy = mapCereal.labels.toMap();
+  labelsCopy.set('delta', 8);
+  assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
 
   const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[{"id":"raw"},null]]]');
   const mapRawData = mapRaw.cerealize();
@@ -311,19 +315,63 @@ export default function runSerializationTests({ projectRoot, transform }) {
   const objectExtrasEntries = [...mapObjectRawData.extras.entries()];
   assert(objectExtrasEntries[0][0].id === 'obj', 'Object raw extras lost key.');
   assert(objectExtrasEntries[0][1] === 'Value', 'Object raw extras lost value.');
+
+  const { ImmutableMap } = runtimeExports;
+  assert(typeof ImmutableMap === 'function', 'ImmutableMap should be exported.');
+
+  const immutable = new ImmutableMap([
+    ['alpha', 1],
+    ['beta', 2],
+  ]);
+  assert(immutable.size === 2, 'ImmutableMap size incorrect.');
+  assert(immutable.get('alpha') === 1, 'ImmutableMap get failed.');
+  assert(immutable.has('beta'), 'ImmutableMap has failed.');
+  assert(
+    JSON.stringify(Array.from(immutable.entries())) === JSON.stringify([['alpha', 1], ['beta', 2]]),
+    'ImmutableMap entries incorrect.'
+  );
+
+  const seen = [];
+  immutable.forEach((value, key) => {
+    seen.push([key, value]);
+  });
+  assert(seen.length === 2, 'ImmutableMap forEach did not visit entries.');
+
+  assert(typeof immutable.set === 'undefined', 'ImmutableMap should not expose set.');
+  assert(typeof immutable.delete === 'undefined', 'ImmutableMap should not expose delete.');
+  assert(typeof immutable.clear === 'undefined', 'ImmutableMap should not expose clear.');
+
+  const plainMap = immutable.toMap();
+  plainMap.set('gamma', 3);
+  assert(!immutable.has('gamma'), 'ImmutableMap should remain immutable after toMap.');
+
+  const cloned = new ImmutableMap(plainMap);
+  assert(cloned.has('gamma'), 'ImmutableMap should accept Map constructor input.');
 }
 
 function buildRuntimeExports(projectRoot) {
-  const messagePath = path.join(projectRoot, 'runtime/src/index.ts');
-  const messageTs = fs.readFileSync(messagePath, 'utf8');
-  const messageJs = transpileTs(messageTs, 'runtime/src/index.ts');
-  return evaluateModule(messageJs, {
-    './message': evaluateModule(
-      transpileTs(
-        fs.readFileSync(path.join(projectRoot, 'runtime/src/message.ts'), 'utf8'),
-        'runtime/src/message.ts'
-      )
-    ),
+  const immutableMapJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'runtime/src/immutable-map.ts'), 'utf8'),
+    'runtime/src/immutable-map.ts'
+  );
+  const immutableMapExports = evaluateModule(immutableMapJs);
+
+  const messageJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'runtime/src/message.ts'), 'utf8'),
+    'runtime/src/message.ts'
+  );
+  const messageExports = evaluateModule(messageJs, {
+    './immutable-map': immutableMapExports,
+  });
+
+  const indexJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'runtime/src/index.ts'), 'utf8'),
+    'runtime/src/index.ts'
+  );
+
+  return evaluateModule(indexJs, {
+    './message': messageExports,
+    './immutable-map': immutableMapExports,
   });
 }
 
@@ -398,7 +446,12 @@ function assertThrows(fn, message) {
 }
 
 const MAP_OBJECT_TAG = '[object Map]';
+const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 
 function isMapValue(value) {
-  return Object.prototype.toString.call(value) === MAP_OBJECT_TAG;
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const tag = Object.prototype.toString.call(value);
+  return tag === MAP_OBJECT_TAG || tag === IMMUTABLE_MAP_OBJECT_TAG;
 }
