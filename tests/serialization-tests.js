@@ -30,7 +30,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
   });
 
   const serialized = instance.serialize();
-  const expectedSerialized = ':[1,"Alice",30,true,"Al",42,"Ace","READY"]';
+  const expectedSerialized = ':[1,Alice,30,true,Al,42,Ace,READY]';
   assert(
     serialized === expectedSerialized,
     'Serialized string did not match expected.'
@@ -82,8 +82,8 @@ export default function runSerializationTests({ projectRoot, transform }) {
   });
   const optionalSerial = optionalMissing.serialize();
   assert(
-    optionalSerial === ':[4,"Optional",35,false,undefined,0,undefined,"MISSING"]',
-    'Optional slot should be undefined.'
+    optionalSerial === ':[4,Optional,35,false,undefined,0,undefined,MISSING]',
+    'Optional slot string incorrect.'
   );
   const optionalObject = optionalMissing.cerealize();
   assert(optionalObject.nickname === undefined, 'Object cerealize should omit nickname.');
@@ -115,7 +115,7 @@ export default function runSerializationTests({ projectRoot, transform }) {
   });
   const scoreNullSerialized = scoreNullInstance.serialize();
   assert(
-    scoreNullSerialized === ':[9,"Null Score",25,false,"NS",null,"Alias","testing"]',
+    scoreNullSerialized === ':[9,Null Score,25,false,NS,null,Alias,testing]',
     'Null score serialization incorrect.'
   );
   const scoreNullRaw = ':[10,"Score Raw",33,true,"NR",null,"AliasRaw","HALT"]';
@@ -136,10 +136,10 @@ export default function runSerializationTests({ projectRoot, transform }) {
   });
   const aliasNullSerialized = aliasNullInstance.serialize();
   assert(
-    aliasNullSerialized === ':[11,"Alias Null",40,true,"AN",7,null,"alias-null"]',
+    aliasNullSerialized === ':[11,Alias Null,40,true,AN,7,null,alias-null]',
     'Alias null serialization incorrect.'
   );
-  const aliasNullRaw = ':[12,"Alias Raw",41,true,"AR",8,null,"alias-raw"]';
+  const aliasNullRaw = ':[12,Alias Raw,41,true,AR,8,null,alias-raw]';
   const aliasNullHydrated = Simple.deserialize(aliasNullRaw);
   const aliasNullHydratedCereal = aliasNullHydrated.cerealize();
   assert(aliasNullHydratedCereal.alias === null, 'Alias null raw not preserved.');
@@ -193,6 +193,42 @@ export default function runSerializationTests({ projectRoot, transform }) {
     ':{\"id\":30,\"name\":\"Obj\",\"age\":60,\"active\":true}';
   const objectHydrated = ObjectOnly.deserialize(objectRaw);
   assert(objectHydrated.cerealize().name === 'Obj', 'Object raw deserialize lost name.');
+
+  const UnionStringBool = buildClassFromFixture({
+    projectRoot,
+    transform,
+    runtimeExports,
+    fixture: 'tests/union-string-bool.propane',
+    exportName: 'UnionStringBool',
+  });
+
+  const unionStringInstance = new UnionStringBool({
+    value: 'true',
+    optional: '42',
+  });
+  assert(
+    unionStringInstance.serialize() === ':[\"true\",\"42\"]',
+    'String union serialization failed.'
+  );
+
+  const unionBoolInstance = new UnionStringBool({
+    value: true,
+    optional: false,
+  });
+  assert(
+    unionBoolInstance.serialize() === ':[true,false]',
+    'Boolean union serialization failed.'
+  );
+
+  const unionStringRaw = UnionStringBool.deserialize(':[\"true\",false]');
+  const unionStringRawData = unionStringRaw.cerealize();
+  assert(unionStringRawData.value === 'true', 'Union string raw lost string value.');
+  assert(unionStringRawData.optional === false, 'Union string raw lost optional boolean.');
+
+  const unionBoolRaw = UnionStringBool.deserialize(':[true,\"false\"]');
+  const unionBoolRawData = unionBoolRaw.cerealize();
+  assert(unionBoolRawData.value === true, 'Union bool raw lost boolean value.');
+  assert(unionBoolRawData.optional === 'false', 'Union bool raw lost string optional.');
 }
 
 function buildRuntimeExports(projectRoot) {

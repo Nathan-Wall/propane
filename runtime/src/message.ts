@@ -43,9 +43,9 @@ export abstract class Message<T extends object> {
 
   serialize(): string {
     const payload = this.preserialize();
-    const serialized = Array.isArray(payload)
-      ? serializeArrayLiteral(payload)
-      : JSON.stringify(payload);
+  const serialized = Array.isArray(payload)
+    ? serializeArrayLiteral(payload)
+    : serializeObjectLiteral(payload);
     return `:${serialized}`;
   }
 
@@ -127,12 +127,38 @@ function shouldUseOrderedSerialization<T extends object>(
   return true;
 }
 
+const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
+const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
+const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
+
+function serializePrimitive(value: unknown): string {
+  if (value === undefined) {
+    return 'undefined';
+  }
+
+  if (typeof value === 'string') {
+    if (
+      SIMPLE_STRING_RE.test(value) &&
+      !RESERVED_STRINGS.has(value) &&
+      !NUMERIC_STRING_RE.test(value)
+    ) {
+      return value;
+    }
+    return JSON.stringify(value);
+  }
+
+  return JSON.stringify(value);
+}
+
 function serializeArrayLiteral(values: unknown[]): string {
-  return `[${values
-    .map((value) =>
-      value === undefined ? 'undefined' : JSON.stringify(value)
-    )
-    .join(',')}]`;
+  return `[${values.map((value) => serializePrimitive(value)).join(',')}]`;
+}
+
+function serializeObjectLiteral(record: Record<string, unknown>): string {
+  const entries = Object.entries(record).map(
+    ([key, value]) => `${JSON.stringify(key)}:${serializePrimitive(value)}`
+  );
+  return `{${entries.join(',')}}`;
 }
 
 function parseArrayLiteral(literal: string): unknown[] {
@@ -146,33 +172,30 @@ function parseArrayLiteral(literal: string): unknown[] {
     return [];
   }
 
-  const values: unknown[] = [];
-  let token = '';
+  const content = trimmed.slice(1, -1);
+  const tokens = splitTopLevel(content);
+  return tokens.map((token) => parseLiteralToken(token));
+}
+
+function splitTopLevel(content: string): string[] {
+  const tokens: string[] = [];
   let depth = 0;
   let inString = false;
-  let escape = false;
+  let escaping = false;
+  let start = 0;
 
-  const pushToken = () => {
-    const content = token.trim();
-    if (!content) {
-      values.push(undefined);
-    } else if (content === 'undefined') {
-      values.push(undefined);
-    } else {
-      values.push(JSON.parse(content));
-    }
-    token = '';
+  const push = (end: number) => {
+    tokens.push(content.slice(start, end).trim());
+    start = end + 1;
   };
 
-  for (let i = 1; i < trimmed.length - 1; i += 1) {
-    const char = trimmed[i];
-
+  for (let i = 0; i < content.length; i += 1) {
+    const char = content[i];
     if (inString) {
-      token += char;
-      if (escape) {
-        escape = false;
+      if (escaping) {
+        escaping = false;
       } else if (char === '\\') {
-        escape = true;
+        escaping = true;
       } else if (char === '"') {
         inString = false;
       }
@@ -181,31 +204,59 @@ function parseArrayLiteral(literal: string): unknown[] {
 
     if (char === '"') {
       inString = true;
-      token += char;
       continue;
     }
 
     if (char === '[' || char === '{') {
       depth += 1;
-      token += char;
       continue;
     }
 
     if (char === ']' || char === '}') {
       depth -= 1;
-      token += char;
       continue;
     }
 
     if (char === ',' && depth === 0) {
-      pushToken();
-      continue;
+      push(i);
     }
-
-    token += char;
   }
 
-  pushToken();
+  tokens.push(content.slice(start).trim());
+  return tokens.filter((token) => token.length > 0 || token === '');
+}
 
-  return values;
+function parseLiteralToken(token: string): unknown {
+  const trimmed = token.trim();
+
+  if (!trimmed || trimmed === 'undefined') {
+    return undefined;
+  }
+
+  if (trimmed === 'null') {
+    return null;
+  }
+
+  if (trimmed === 'true') {
+    return true;
+  }
+
+  if (trimmed === 'false') {
+    return false;
+  }
+
+  const num = Number(trimmed);
+  if (!Number.isNaN(num)) {
+    return num;
+  }
+
+  if (trimmed.startsWith('"') || trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    return JSON.parse(trimmed);
+  }
+
+  if (SIMPLE_STRING_RE.test(trimmed)) {
+    return trimmed;
+  }
+
+  throw new Error(`Invalid literal token: ${trimmed}`);
 }
