@@ -378,6 +378,63 @@ export default function runSerializationTests({ projectRoot, transform }) {
   const changedPeer = new ImmutableMap(changedSource);
   assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
   assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
+
+  const UserMessage = buildClassFromFixture({
+    projectRoot,
+    transform,
+    runtimeExports,
+    fixture: 'tests/user.propane',
+    exportName: 'User',
+  });
+  const Compound = buildClassFromFixture({
+    projectRoot,
+    transform,
+    runtimeExports,
+    fixture: 'tests/compound.propane',
+    exportName: 'Compound',
+  });
+  const simpleUser = {
+    id: 99,
+    name: 'CompoundUser',
+    email: 'compound@example.com',
+    passwordHash: 'hash',
+    created: new Date('2020-01-01T00:00:00.000Z'),
+    updated: new Date('2020-01-02T00:00:00.000Z'),
+    active: true,
+    eyeColor: 'blue',
+    height: { unit: 'm', value: 1.8 },
+  };
+  const simpleIndexed = {
+    id: 88,
+    name: 'CompoundIndexed',
+    age: 35,
+    active: true,
+    nickname: 'CI',
+    score: 12,
+    alias: 'Alias',
+    status: 'READY',
+  };
+  const compoundFromData = new Compound({
+    user: simpleUser,
+    indexed: simpleIndexed,
+  });
+  assert(compoundFromData.user instanceof UserMessage, 'Compound ctor should hydrate user data.');
+  assert(compoundFromData.indexed.name === 'CompoundIndexed', 'Compound ctor should keep indexed data.');
+  const updatedCompound = compoundFromData.setUser({
+    ...simpleUser,
+    name: 'Updated User',
+  });
+  assert(updatedCompound.user.name === 'Updated User', 'Compound setter should accept user data.');
+  const updatedIndexed = compoundFromData.setIndexed({
+    ...simpleIndexed,
+    name: 'Updated Indexed',
+  });
+  assert(updatedIndexed.indexed.name === 'Updated Indexed', 'Compound setter should accept indexed data.');
+  const compoundFromMessages = new Compound({
+    user: new UserMessage(simpleUser),
+    indexed: new Indexed(simpleIndexed),
+  });
+  assert(compoundFromMessages.user instanceof UserMessage, 'Compound should accept user instances.');
 }
 
 function buildRuntimeExports(projectRoot) {
@@ -414,13 +471,55 @@ function buildClassFromFixture({
   exportName,
 }) {
   const filePath = path.join(projectRoot, fixture);
-  const source = fs.readFileSync(filePath, 'utf8');
-  const transformed = transform(source, filePath);
-  const js = transpileTs(transformed, `${fixture}.ts`);
-  const exports = evaluateModule(js, {
-    '@propanejs/runtime': runtimeExports,
+  const exports = loadPropaneModule({
+    projectRoot,
+    transform,
+    runtimeExports,
+    filePath,
   });
   return exports[exportName];
+}
+
+function loadPropaneModule({
+  projectRoot,
+  transform,
+  runtimeExports,
+  filePath,
+}) {
+  const normalized = path.resolve(projectRoot, filePath);
+  if (PROPANE_MODULE_CACHE.has(normalized)) {
+    return PROPANE_MODULE_CACHE.get(normalized);
+  }
+
+  const source = fs.readFileSync(normalized, 'utf8');
+  const transformed = transform(source, normalized);
+  const relative = path.relative(projectRoot, normalized) || path.basename(normalized);
+  const js = transpileTs(transformed, `${relative}.ts`);
+  const dir = path.dirname(normalized);
+
+  const exports = evaluateModule(js, (id) => {
+    if (id === '@propanejs/runtime') {
+      return runtimeExports;
+    }
+
+    if (id.startsWith('.')) {
+      const resolved = path.resolve(dir, id);
+      const withExt = resolved.endsWith('.propane') ? resolved : `${resolved}.propane`;
+      if (fs.existsSync(withExt)) {
+        return loadPropaneModule({
+          projectRoot,
+          transform,
+          runtimeExports,
+          filePath: withExt,
+        });
+      }
+    }
+
+    throw new Error(`Unexpected require: ${id}`);
+  });
+
+  PROPANE_MODULE_CACHE.set(normalized, exports);
+  return exports;
 }
 
 function transpileTs(source, fileName) {
@@ -442,15 +541,21 @@ function transpileTs(source, fileName) {
 
 function evaluateModule(code, resolvers) {
   const module = { exports: {} };
+  const resolve =
+    typeof resolvers === 'function'
+      ? resolvers
+      : (id) => {
+          if (resolvers && resolvers[id]) {
+            return resolvers[id];
+          }
+          throw new Error(`Unexpected require: ${id}`);
+        };
   const sandbox = {
     module,
     exports: module.exports,
     console,
     require: (id) => {
-      if (resolvers && resolvers[id]) {
-        return resolvers[id];
-      }
-      throw new Error(`Unexpected require: ${id}`);
+      return resolve(id);
     },
   };
 
@@ -478,6 +583,7 @@ function assertThrows(fn, message) {
 
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
+const PROPANE_MODULE_CACHE = new Map();
 
 function isMapValue(value) {
   if (!value || typeof value !== 'object') {
