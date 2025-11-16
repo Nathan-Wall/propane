@@ -420,7 +420,7 @@ export default function propanePlugin() {
 
   function buildTypeNamespace(typeAlias, properties, exported) {
     const namespaceId = t.identifier(typeAlias.id.name);
-    const typeId = t.identifier('Type');
+    const typeId = t.identifier('Data');
 
     const literalMembers = properties.map((prop) => {
       const key = t.identifier(prop.name);
@@ -464,7 +464,7 @@ export default function propanePlugin() {
       privateName: t.privateName(t.identifier(prop.name)),
     }));
     const propsTypeRef = t.tsTypeReference(
-      t.tsQualifiedName(t.identifier(typeName), t.identifier('Type'))
+      t.tsQualifiedName(t.identifier(typeName), t.identifier('Data'))
     );
 
     for (const prop of propDescriptors) {
