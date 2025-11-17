@@ -1,7 +1,7 @@
 import { assert } from './assert.ts';
-import { User as UserMessage } from './tmp/user.propane.js';
-import { Indexed as IndexedMessage } from './tmp/indexed.propane.js';
-import { Compound as CompoundMessage } from './tmp/compound.propane.js';
+import { User } from './tmp/user.propane.js';
+import { Indexed } from './tmp/indexed.propane.js';
+import { Compound } from './tmp/compound.propane.js';
 
 type DistanceUnit = 'm' | 'ft';
 
@@ -55,11 +55,11 @@ export default function runCompoundTests() {
     alias: 'Alias',
     status: 'READY',
   };
-  const compoundFromData = new CompoundMessage({
+  const compoundFromData = new Compound({
     user: simpleUser,
     indexed: simpleIndexed,
   });
-  assert(compoundFromData.user instanceof UserMessage, 'Compound ctor should hydrate user data.');
+  assert(compoundFromData.user instanceof User, 'Compound ctor should hydrate user data.');
   assert(compoundFromData.indexed.name === 'CompoundIndexed', 'Compound ctor should keep indexed data.');
   const updatedCompound = compoundFromData.setUser({
     ...simpleUser,
@@ -71,9 +71,9 @@ export default function runCompoundTests() {
     name: 'Updated Indexed',
   });
   assert(updatedIndexed.indexed.name === 'Updated Indexed', 'Compound setter should accept indexed data.');
-  const compoundFromMessages = new CompoundMessage({
-    user: new UserMessage(simpleUser),
-    indexed: new IndexedMessage(simpleIndexed),
+  const compoundFromMessages = new Compound({
+    user: new User(simpleUser),
+    indexed: new Indexed(simpleIndexed),
   });
-  assert(compoundFromMessages.user instanceof UserMessage, 'Compound should accept user instances.');
+  assert(compoundFromMessages.user instanceof User, 'Compound should accept user instances.');
 }

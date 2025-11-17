@@ -9,9 +9,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
-const outDir = path.join(testsDir, 'tmp');
+const outDir = path.join(projectRoot, 'build', 'tests');
 
+await cleanOutput();
 await buildAll();
+await copyTests();
 
 async function buildAll() {
   const files = findPropaneFiles(testsDir);
@@ -65,6 +67,12 @@ function findPropaneFiles(dir) {
   return found;
 }
 
+async function cleanOutput() {
+  if (fs.existsSync(outDir)) {
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -89,16 +97,57 @@ function rewriteImports(code, outPath) {
   result = result.replace(/^import\s*\{\s*Brand\s*\}\s*from[^;]+;\n?/m, '');
 
   // Append .ts to relative imports without an explicit extension (excluding the .propane.js ones we just set)
-  result = result.replace(/(from\s+['"])(\.{1,2}\/[^'"\.][^'"]*)(['"])/g, (match, p1, p2, p3) => {
+  result = result.replace(/(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g, (match, p1, p2, p3) => {
     if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
       return match;
     }
     return `${p1}${p2}.ts${p3}`;
   });
 
-  // Fix path for shared common/types in tests/tmp output
-  result = result.replace(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../..\/common/types/brand.ts'");
+  // Fix path for shared common/types in build/tests output
+  result = result.replace(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.ts'");
   return result;
+}
+
+async function copyTests() {
+  const testFiles = findTestFiles(testsDir);
+  for (const file of testFiles) {
+    const rel = path.relative(testsDir, file);
+    const dest = path.join(outDir, rel);
+    ensureDir(path.dirname(dest));
+    let content = fs.readFileSync(file, 'utf8');
+
+    // Strip tmp prefixes introduced earlier
+    content = content.replace(/\.\/tmp\//g, './');
+    // Ensure we import compiled artifacts next to mirrored tests
+    content = content.replace(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
+    // Fix runtime relative path when mirrored into build/tests (./build/tests/* -> ../../runtime)
+    content = content.replace(/from ['"]\.\.\/runtime\//g, "from '../../runtime/");
+    // Fix assert path
+    content = content.replace(/from ['"]\.\/assert\.ts['"]/g, "from './assert.ts'");
+
+    fs.writeFileSync(dest, content, 'utf8');
+  }
+
+  // copy loaders / runner
+  for (const helper of ['run-tests.ts', 'ts-loader.mjs', 'assert.ts']) {
+    fs.copyFileSync(path.join(testsDir, helper), path.join(outDir, helper));
+  }
+}
+
+function findTestFiles(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.') || entry.name === 'tmp') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...findTestFiles(full));
+    } else if (entry.isFile() && /\.propane\.test\.(t|j)s$/.test(entry.name)) {
+      files.push(full);
+    }
+  }
+  return files;
 }
 
 function ensureValueExport(outputText, source, filePath) {

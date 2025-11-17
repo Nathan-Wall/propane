@@ -79,6 +79,3 @@ out/
 # Rollup
 .rollup.cache/
 
-# Custom
-tests/tmp/
-

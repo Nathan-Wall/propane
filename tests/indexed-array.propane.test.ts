@@ -1,11 +1,7 @@
 import { assert } from './assert.ts';
-import { ArrayMessage as ArrayMessageClass } from './tmp/indexed-array.propane.js';
-
-type ArrayMessageInstance = ArrayMessageClass;
-type ArrayMessageConstructor = typeof ArrayMessageClass;
+import { ArrayMessage } from './tmp/indexed-array.propane.js';
 
 export default function runIndexedArrayTests() {
-  const ArrayMessage: ArrayMessageConstructor = ArrayMessageClass;
 
   const arrayInstance: ArrayMessageInstance = new ArrayMessage({
     names: ['Alpha', 'Beta', 'Gamma Value'],

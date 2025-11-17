@@ -10,6 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
+const builtTestsDir = path.join(projectRoot, 'build', 'tests');
 const failPattern = /(?:^|[.-])fail$/i;
 
 const COLOR_RESET = '\x1b[0m';
@@ -66,13 +67,13 @@ for (const filePath of propaneFiles) {
   }
 }
 
-const testFiles = findTestFiles(testsDir);
+const testFiles = findTestFiles(builtTestsDir);
 
 for (const testFile of testFiles) {
   const relativeName = path.relative(projectRoot, testFile);
   try {
     const moduleUrl = pathToFileURL(testFile).href;
-    const mod = (await import(moduleUrl)) as { default?: (ctx: TestContext) => Promise<void> | void };
+    const mod = (await import(moduleUrl)) as { default?: () => Promise<void> | void };
     const runTests = mod?.default;
     assert(typeof runTests === 'function', 'Test file must export a default function.');
     await runTests();

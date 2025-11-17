@@ -1,11 +1,7 @@
 import { assert } from './assert.ts';
-import { OptionalHole as OptionalHoleClass } from './tmp/index-optional-hole.propane.js';
-
-type OptionalHoleInstance = OptionalHoleClass;
-type OptionalHoleConstructor = typeof OptionalHoleClass;
+import { OptionalHole } from './tmp/index-optional-hole.propane.js';
 
 export default function runOptionalHoleTests() {
-  const OptionalHole: OptionalHoleConstructor = OptionalHoleClass;
 
   const optionalHole = new OptionalHole({
     id: 7,

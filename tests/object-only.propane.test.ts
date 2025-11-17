@@ -1,11 +1,7 @@
 import { assert } from './assert.ts';
-import { ObjectOnly as ObjectOnlyClass } from './tmp/object-only.propane.js';
-
-type ObjectOnlyInstance = ObjectOnlyClass;
-type ObjectOnlyConstructor = typeof ObjectOnlyClass;
+import { ObjectOnly } from './tmp/object-only.propane.js';
 
 export default function runObjectOnlyTests() {
-  const ObjectOnly: ObjectOnlyConstructor = ObjectOnlyClass;
 
   const objectInstance: ObjectOnlyInstance = new ObjectOnly({
     id: 10,

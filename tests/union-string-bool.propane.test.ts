@@ -1,11 +1,7 @@
 import { assert } from './assert.ts';
-import { UnionStringBool as UnionStringBoolClass } from './tmp/union-string-bool.propane.js';
-
-type UnionStringBoolInstance = UnionStringBoolClass;
-type UnionStringBoolConstructor = typeof UnionStringBoolClass;
+import { UnionStringBool } from './tmp/union-string-bool.propane.js';
 
 export default function runUnionStringBoolTests() {
-  const UnionStringBool: UnionStringBoolConstructor = UnionStringBoolClass;
 
   const unionStringInstance: UnionStringBoolInstance = new UnionStringBool({
     value: 'true',

@@ -1,22 +1,8 @@
 import { assert, isMapValue } from './assert.ts';
-import { MapMessage as MapMessageClass } from './tmp/map.propane.js';
+import { MapMessage } from './tmp/map.propane.js';
 import { ImmutableMap } from '../runtime/immutable-map.ts';
 
-type MapLabelKey = string | number;
-
-interface MetadataValue {
-  value: string;
-}
-
-interface ExtraValue {
-  note: string | null;
-}
-
-type MapMessageInstance = MapMessageClass;
-type MapMessageConstructor = typeof MapMessageClass;
-
 export default function runMapPropaneTests() {
-  const MapMessage: MapMessageConstructor = MapMessageClass;
   
   const labelEntries: [string | number, number][] = [
     ['one', 1],

@@ -1,11 +1,7 @@
 import { assert } from './assert.ts';
-import { Hole as HoleClass } from './tmp/index-hole.propane.js';
-
-type HoleInstance = HoleClass;
-type HoleConstructor = typeof HoleClass;
+import { Hole } from './tmp/index-hole.propane.js';
 
 export default function runIndexHoleTests() {
-  const Hole: HoleConstructor = HoleClass;
 
   const holeInstance = new Hole({
     id: 20,

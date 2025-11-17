@@ -1,11 +1,7 @@
 import { assert, assertThrows } from './assert.ts';
-import { Indexed as IndexedClass } from './tmp/indexed.propane.js';
-
-type IndexedInstance = IndexedClass;
-type IndexedConstructor = typeof IndexedClass;
+import { Indexed } from './tmp/indexed.propane.js';
 
 export default function runIndexedPropaneTests() {
-  const Indexed: IndexedConstructor = IndexedClass;
   if (typeof Indexed !== 'function') {
     throw new Error('Indexed class was not exported.');
   }

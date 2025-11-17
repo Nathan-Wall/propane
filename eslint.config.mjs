@@ -96,4 +96,22 @@ export default defineConfig(
 
   // 6) Keep Prettier in charge of formatting — must be last
   prettier,
+
+  // 7) Disable type-aware linting for test files (they rely on transpiled outputs)
+  {
+    name: 'overrides/tests-no-type-check',
+    files: ['tests/**/*.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
+    rules: {
+      '@typescript-eslint/consistent-type-imports': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^unused_',
+          varsIgnorePattern: '^unused_',
+          caughtErrorsIgnorePattern: '^unused_',
+        },
+      ],
+    },
+  },
 );
