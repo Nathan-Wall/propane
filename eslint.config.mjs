@@ -61,6 +61,17 @@ export default defineConfig(
       curly: ['error', 'all'],
       eqeqeq: ['error', 'smart'],
       'no-console': 'off',
+      'max-len': [
+        'error',
+        {
+          code: 80,
+          tabWidth: 2,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreComments: true,
+          ignoreUrls: true,
+        },
+      ],
 
       // TS quality & DX
       '@typescript-eslint/consistent-type-imports': 'error',
