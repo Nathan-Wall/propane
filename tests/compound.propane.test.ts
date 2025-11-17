@@ -1,8 +1,7 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { User as UserMessage } from './tmp/user.propane.js';
+import { Indexed as IndexedMessage } from './tmp/indexed.propane.js';
+import { Compound as CompoundMessage } from './tmp/compound.propane.js';
 
 type DistanceUnit = 'm' | 'ft';
 
@@ -34,40 +33,7 @@ interface IndexedProps {
   status: string;
 }
 
-interface UserMessageInstance extends UserProps, PropaneMessageInstance<UserProps> {}
-type UserMessageCtor = PropaneMessageConstructor<UserProps, UserMessageInstance>;
-
-interface IndexedMessageInstance
-  extends IndexedProps,
-    PropaneMessageInstance<IndexedProps> {}
-type IndexedMessageCtor = PropaneMessageConstructor<IndexedProps, IndexedMessageInstance>;
-
-interface CompoundProps {
-  user: UserProps | UserMessageInstance;
-  indexed: IndexedProps | IndexedMessageInstance;
-}
-
-interface CompoundInstance extends PropaneMessageInstance<CompoundProps> {
-  user: UserMessageInstance;
-  indexed: IndexedMessageInstance;
-  setUser(user: CompoundProps['user']): CompoundInstance;
-  setIndexed(indexed: CompoundProps['indexed']): CompoundInstance;
-}
-
-type CompoundCtor = PropaneMessageConstructor<CompoundProps, CompoundInstance>;
-
-export default function runCompoundTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const UserMessage = loadFixtureClass<UserMessageCtor>('tests/user.propane', 'User');
-  const Compound = loadFixtureClass<CompoundCtor>('tests/compound.propane', 'Compound');
-  const Indexed = loadFixtureClass<IndexedMessageCtor>('tests/indexed.propane', 'Indexed');
-
+export default function runCompoundTests() {
   const simpleUser: UserProps = {
     id: 99,
     name: 'CompoundUser',
@@ -89,7 +55,7 @@ export default function runCompoundTests(ctx: TestContext) {
     alias: 'Alias',
     status: 'READY',
   };
-  const compoundFromData: CompoundInstance = new Compound({
+  const compoundFromData = new CompoundMessage({
     user: simpleUser,
     indexed: simpleIndexed,
   });
@@ -105,9 +71,9 @@ export default function runCompoundTests(ctx: TestContext) {
     name: 'Updated Indexed',
   });
   assert(updatedIndexed.indexed.name === 'Updated Indexed', 'Compound setter should accept indexed data.');
-  const compoundFromMessages = new Compound({
+  const compoundFromMessages = new CompoundMessage({
     user: new UserMessage(simpleUser),
-    indexed: new Indexed(simpleIndexed),
+    indexed: new IndexedMessage(simpleIndexed),
   });
   assert(compoundFromMessages.user instanceof UserMessage, 'Compound should accept user instances.');
 }

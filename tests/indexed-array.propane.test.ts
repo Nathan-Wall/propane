@@ -1,50 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { ArrayMessage as ArrayMessageClass } from './tmp/indexed-array.propane.js';
 
-interface LabeledValue {
-  name: string;
-}
+type ArrayMessageInstance = ArrayMessageClass;
+type ArrayMessageConstructor = typeof ArrayMessageClass;
 
-interface ArrayMessageProps {
-  names: string[];
-  scores: number[];
-  flags?: boolean[];
-  labels: LabeledValue[];
-}
-
-interface ArrayMessageInstance
-  extends ArrayMessageProps,
-    PropaneMessageInstance<ArrayMessageProps> {
-  pushNames(...names: string[]): ArrayMessageInstance;
-  popNames(): ArrayMessageInstance;
-  shiftScores(): ArrayMessageInstance;
-  unshiftScores(...scores: number[]): ArrayMessageInstance;
-  spliceNames(start: number, deleteCount: number, ...items: string[]): ArrayMessageInstance;
-  reverseNames(): ArrayMessageInstance;
-  sortScores(comparator?: (a: number, b: number) => number): ArrayMessageInstance;
-  fillNames(value: string, start?: number, end?: number): ArrayMessageInstance;
-  copyWithinScores(target: number, start: number, end?: number): ArrayMessageInstance;
-  pushFlags(...flags: boolean[]): ArrayMessageInstance;
-  shiftFlags(): ArrayMessageInstance;
-}
-
-type ArrayMessageConstructor = PropaneMessageConstructor<ArrayMessageProps, ArrayMessageInstance>;
-
-export default function runIndexedArrayTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const ArrayMessage = loadFixtureClass<ArrayMessageConstructor>(
-    'tests/indexed-array.propane',
-    'ArrayMessage'
-  );
+export default function runIndexedArrayTests() {
+  const ArrayMessage: ArrayMessageConstructor = ArrayMessageClass;
 
   const arrayInstance: ArrayMessageInstance = new ArrayMessage({
     names: ['Alpha', 'Beta', 'Gamma Value'],

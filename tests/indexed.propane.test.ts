@@ -1,39 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert, assertThrows } from './assert.ts';
+import { Indexed as IndexedClass } from './tmp/indexed.propane.js';
 
-interface IndexedProps {
-  id: number;
-  name: string;
-  age: number;
-  active: boolean;
-  nickname?: string;
-  score: number | null;
-  alias?: string | null;
-  status: string;
-}
+type IndexedInstance = IndexedClass;
+type IndexedConstructor = typeof IndexedClass;
 
-interface IndexedInstance extends IndexedProps, PropaneMessageInstance<IndexedProps> {
-  setName(name: string): IndexedInstance;
-  setAlias(alias: string | null | undefined): IndexedInstance;
-}
-
-type IndexedConstructor = PropaneMessageConstructor<IndexedProps, IndexedInstance>;
-
-export default function runIndexedPropaneTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const assertThrows: TestContext['assertThrows'] = (fn, message) => {
-    ctx.assertThrows(fn, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const Indexed = loadFixtureClass<IndexedConstructor>('tests/indexed.propane', 'Indexed');
+export default function runIndexedPropaneTests() {
+  const Indexed: IndexedConstructor = IndexedClass;
   if (typeof Indexed !== 'function') {
     throw new Error('Indexed class was not exported.');
   }

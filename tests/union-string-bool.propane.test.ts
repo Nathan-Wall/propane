@@ -1,37 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { UnionStringBool as UnionStringBoolClass } from './tmp/union-string-bool.propane.js';
 
-type UnionValue = string | boolean;
+type UnionStringBoolInstance = UnionStringBoolClass;
+type UnionStringBoolConstructor = typeof UnionStringBoolClass;
 
-interface UnionStringBoolProps {
-  value: UnionValue;
-  optional?: UnionValue;
-}
-
-interface UnionStringBoolInstance
-  extends UnionStringBoolProps,
-    PropaneMessageInstance<UnionStringBoolProps> {}
-
-type UnionStringBoolConstructor = PropaneMessageConstructor<
-  UnionStringBoolProps,
-  UnionStringBoolInstance
->;
-
-export default function runUnionStringBoolTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const UnionStringBool = loadFixtureClass<UnionStringBoolConstructor>(
-    'tests/union-string-bool.propane',
-    'UnionStringBool'
-  );
+export default function runUnionStringBoolTests() {
+  const UnionStringBool: UnionStringBoolConstructor = UnionStringBoolClass;
 
   const unionStringInstance: UnionStringBoolInstance = new UnionStringBool({
     value: 'true',

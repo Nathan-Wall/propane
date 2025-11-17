@@ -14,6 +14,7 @@ export default defineConfig(
       '**/node_modules/**',
       '**/dist/**',
       '**/build/**',
+      'tests/tmp/**',
       '**/coverage/**',
       '**/.next/**',
       '**/.nuxt/**',

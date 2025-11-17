@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { transformSync } from '@babel/core';
 import propanePlugin from '../babel/propane-plugin.js';
-import { createTestContext } from './test-harness.ts';
-import type { TestContext } from './test-harness.ts';
+import { spawnSync } from 'child_process';
+import { assert } from './assert.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +21,17 @@ function formatStatus(status: 'PASS' | 'FAIL'): string {
   return `${color}[${status}]${COLOR_RESET}`;
 }
 
-const propaneFiles = findPropaneFiles(testsDir);
 let hasFailure = false;
+
+// Build fixtures to tests/tmp before running tests
+const buildResult = spawnSync('node', [path.join(projectRoot, 'scripts', 'build-fixtures.js')], {
+  stdio: 'inherit',
+});
+if (buildResult.status !== 0) {
+  process.exit(buildResult.status ?? 1);
+}
+
+const propaneFiles = findPropaneFiles(testsDir);
 
 for (const filePath of propaneFiles) {
   const relativeName = path.relative(projectRoot, filePath);
@@ -57,16 +66,6 @@ for (const filePath of propaneFiles) {
   }
 }
 
-const context = createTestContext({
-  projectRoot,
-  transform: (source, filename) =>
-    transformSync(source, {
-      filename,
-      parserOpts: { sourceType: 'module', plugins: ['typescript'] },
-      plugins: [propanePlugin],
-    }).code,
-});
-
 const testFiles = findTestFiles(testsDir);
 
 for (const testFile of testFiles) {
@@ -75,10 +74,8 @@ for (const testFile of testFiles) {
     const moduleUrl = pathToFileURL(testFile).href;
     const mod = (await import(moduleUrl)) as { default?: (ctx: TestContext) => Promise<void> | void };
     const runTests = mod?.default;
-    if (typeof runTests !== 'function') {
-      throw new Error('Test file must export a default function.');
-    }
-    await runTests(context);
+    assert(typeof runTests === 'function', 'Test file must export a default function.');
+    await runTests();
     console.log(`${formatStatus('PASS')} ${relativeName}`);
   } catch (err) {
     console.error(`${formatStatus('FAIL')} ${relativeName}`);

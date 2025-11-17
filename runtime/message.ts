@@ -1,5 +1,5 @@
-import { parseJson } from '../common/json/parse';
-import { ImmutableMap } from './immutable-map';
+import { parseJson } from '../common/json/parse.ts';
+import { ImmutableMap } from './immutable-map.ts';
 
 export type DataPrimitive = string | number | boolean | null | undefined;
 export type DataValue = DataPrimitive | DataObject | DataArray;

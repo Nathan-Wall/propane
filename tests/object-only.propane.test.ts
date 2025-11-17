@@ -1,29 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { ObjectOnly as ObjectOnlyClass } from './tmp/object-only.propane.js';
 
-interface ObjectOnlyProps {
-  id: number;
-  name: string;
-  age: number;
-  active: boolean;
-}
+type ObjectOnlyInstance = ObjectOnlyClass;
+type ObjectOnlyConstructor = typeof ObjectOnlyClass;
 
-interface ObjectOnlyInstance extends ObjectOnlyProps, PropaneMessageInstance<ObjectOnlyProps> {}
-
-type ObjectOnlyConstructor = PropaneMessageConstructor<ObjectOnlyProps, ObjectOnlyInstance>;
-
-export default function runObjectOnlyTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const ObjectOnly = loadFixtureClass<ObjectOnlyConstructor>('tests/object-only.propane', 'ObjectOnly');
+export default function runObjectOnlyTests() {
+  const ObjectOnly: ObjectOnlyConstructor = ObjectOnlyClass;
 
   const objectInstance: ObjectOnlyInstance = new ObjectOnly({
     id: 10,

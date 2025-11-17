@@ -1,28 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { Hole as HoleClass } from './tmp/index-hole.propane.js';
 
-interface HoleProps {
-  id: number;
-  value: number;
-  name: string;
-}
+type HoleInstance = HoleClass;
+type HoleConstructor = typeof HoleClass;
 
-type HoleInstance = PropaneMessageInstance<HoleProps>;
-
-type HoleConstructor = PropaneMessageConstructor<HoleProps, HoleInstance>;
-
-export default function runIndexHoleTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const Hole = loadFixtureClass<HoleConstructor>('tests/index-hole.propane', 'Hole');
+export default function runIndexHoleTests() {
+  const Hole: HoleConstructor = HoleClass;
 
   const holeInstance = new Hole({
     id: 20,

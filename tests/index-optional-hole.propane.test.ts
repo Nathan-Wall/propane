@@ -1,37 +1,11 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert } from './assert.ts';
+import { OptionalHole as OptionalHoleClass } from './tmp/index-optional-hole.propane.js';
 
-interface OptionalHoleProps {
-  id: number;
-  created: Date;
-  note?: string;
-  name: string;
-}
+type OptionalHoleInstance = OptionalHoleClass;
+type OptionalHoleConstructor = typeof OptionalHoleClass;
 
-interface OptionalHoleInstance extends PropaneMessageInstance<OptionalHoleProps> {
-  deleteNote(): OptionalHoleInstance;
-}
-
-type OptionalHoleConstructor = PropaneMessageConstructor<
-  OptionalHoleProps,
-  OptionalHoleInstance
->;
-
-export default function runOptionalHoleTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-
-  const OptionalHole = loadFixtureClass<OptionalHoleConstructor>(
-    'tests/index-optional-hole.propane',
-    'OptionalHole'
-  );
+export default function runOptionalHoleTests() {
+  const OptionalHole: OptionalHoleConstructor = OptionalHoleClass;
 
   const optionalHole = new OptionalHole({
     id: 7,

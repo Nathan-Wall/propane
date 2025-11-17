@@ -1,8 +1,6 @@
-import type { TestContext } from './test-harness.ts';
-import type {
-  PropaneMessageConstructor,
-  PropaneMessageInstance,
-} from './propane-test-types.ts';
+import { assert, isMapValue } from './assert.ts';
+import { MapMessage as MapMessageClass } from './tmp/map.propane.js';
+import { ImmutableMap } from '../runtime/immutable-map.ts';
 
 type MapLabelKey = string | number;
 
@@ -14,67 +12,12 @@ interface ExtraValue {
   note: string | null;
 }
 
-interface ImmutableMapLike<K, V> extends ReadonlyMap<K, V> {
-  toMap(): Map<K, V>;
-  equals(other: unknown): boolean;
-}
+type MapMessageInstance = MapMessageClass;
+type MapMessageConstructor = typeof MapMessageClass;
 
-interface MapMessageHydratedProps {
-  labels: ImmutableMapLike<MapLabelKey, number>;
-  metadata?: ImmutableMapLike<string, MetadataValue>;
-  extras: ImmutableMapLike<string, ExtraValue>;
-}
-
-interface MapMessageInputProps {
-  labels: ReadonlyMap<MapLabelKey, number>;
-  metadata?: ReadonlyMap<string, MetadataValue>;
-  extras: ReadonlyMap<string, ExtraValue>;
-}
-
-interface MapMessageInstance
-  extends PropaneMessageInstance<MapMessageHydratedProps> {
-  labels: MapMessageHydratedProps['labels'];
-  metadata?: MapMessageHydratedProps['metadata'];
-  extras: MapMessageHydratedProps['extras'];
-  setLabels(value: ReadonlyMap<MapLabelKey, number>): MapMessageInstance;
-  setMetadata(value: ReadonlyMap<string, MetadataValue> | undefined): MapMessageInstance;
-  setLabelsEntry(key: MapLabelKey, value: number): MapMessageInstance;
-  deleteLabelsEntry(key: MapLabelKey): MapMessageInstance;
-  clearExtras(): MapMessageInstance;
-  mergeLabelsEntries(
-    entries: Iterable<[MapLabelKey, number]> | ReadonlyMap<MapLabelKey, number>
-  ): MapMessageInstance;
-  updateExtrasEntry(
-    key: string,
-    updater: (entry: ExtraValue | undefined) => ExtraValue
-  ): MapMessageInstance;
-  mapLabelsEntries(
-    mapper: (value: number, key: MapLabelKey) => [MapLabelKey, number]
-  ): MapMessageInstance;
-  filterLabelsEntries(
-    predicate: (value: number, key: MapLabelKey) => boolean
-  ): MapMessageInstance;
-  setMetadataEntry(key: string, value: MetadataValue): MapMessageInstance;
-}
-
-type MapMessageConstructor = PropaneMessageConstructor<
-  MapMessageInputProps,
-  MapMessageInstance,
-  MapMessageHydratedProps
->;
-
-export default function runMapPropaneTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = (condition, message) => {
-    ctx.assert(condition, message);
-  };
-  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
-    return ctx.loadFixtureClass(fixture, exportName);
-  };
-  const isMapValue = (value: unknown) => ctx.isMapValue(value);
-  const { runtimeExports } = ctx;
-
-  const MapMessage = loadFixtureClass<MapMessageConstructor>('tests/map.propane', 'MapMessage');
-
+export default function runMapPropaneTests() {
+  const MapMessage: MapMessageConstructor = MapMessageClass;
+  
   const labelEntries: [string | number, number][] = [
     ['one', 1],
     [2, 4],
@@ -193,18 +136,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
     'setMetadataEntry should initialize optional map.'
   );
 
-  const ImmutableMapCtor = runtimeExports['ImmutableMap'] as new <
-    K,
-    V
-  >(
-    entries?: Iterable<readonly [K, V]>
-  ) => ReadonlyMap<K, V> & {
-    equals(other: unknown): boolean;
-    toMap(): Map<K, V>;
-  };
-  assert(typeof ImmutableMapCtor === 'function', 'ImmutableMap should be exported.');
-
-  const immutable = new ImmutableMapCtor([
+  const immutable = new ImmutableMap([
     ['alpha', 1],
     ['beta', 2],
   ]);
@@ -235,10 +167,10 @@ export default function runMapPropaneTests(ctx: TestContext) {
   plainMap.set('gamma', 3);
   assert(!immutable.has('gamma'), 'ImmutableMap should remain immutable after toMap.');
 
-  const cloned = new ImmutableMapCtor(plainMap);
+  const cloned = new ImmutableMap(plainMap);
   assert(cloned.has('gamma'), 'ImmutableMap should accept Map constructor input.');
 
-  const equalsPeer = new ImmutableMapCtor([
+  const equalsPeer = new ImmutableMap([
     ['alpha', 1],
     ['beta', 2],
   ]);
@@ -247,7 +179,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
   assert(immutable.equals(equalsMap), 'ImmutableMap equals should handle plain Map inputs.');
   const changedSource = equalsPeer.toMap();
   changedSource.set('delta', 4);
-  const changedPeer = new ImmutableMapCtor(changedSource);
+  const changedPeer = new ImmutableMap(changedSource);
   assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
   assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
 }
