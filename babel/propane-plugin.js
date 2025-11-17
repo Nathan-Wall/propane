@@ -2116,11 +2116,7 @@ export default function propanePlugin() {
 
     if (t.isTSTypeReference(typeNode)) {
       if (isDateReference(typeNode)) {
-        return t.binaryExpression(
-          'instanceof',
-          valueId,
-          t.identifier('Date')
-        );
+        return buildDateCheckExpression(valueId);
       }
 
       if (isBrandReference(typeNode)) {
@@ -2147,6 +2143,33 @@ export default function propanePlugin() {
       t.unaryExpression('typeof', valueId),
       t.stringLiteral(type)
     );
+  }
+
+  function buildDateCheckExpression(valueId) {
+    const instanceOfDate = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('Date')
+    );
+
+    const objectToStringCall = t.callExpression(
+      t.memberExpression(
+        t.memberExpression(
+          t.memberExpression(t.identifier('Object'), t.identifier('prototype')),
+          t.identifier('toString')
+        ),
+        t.identifier('call')
+      ),
+      [valueId]
+    );
+
+    const tagEqualsDate = t.binaryExpression(
+      '===',
+      objectToStringCall,
+      t.stringLiteral('[object Date]')
+    );
+
+    return t.logicalExpression('||', instanceOfDate, tagEqualsDate);
   }
 
   function buildLiteralTypeCheck(typeNode, valueId) {

@@ -14,8 +14,6 @@ export interface MessagePropDescriptor<T extends object> {
   getValue: () => T[keyof T];
 }
 
-export type Cereal<T extends object> = T | DataArray;
-
 interface MessageConstructor<T extends DataObject> {
   new (props: T): Message<T>;
   prototype: Message<T>;
@@ -38,17 +36,6 @@ export abstract class Message<T extends DataObject> {
 
   serialize(): string {
     const descriptors = this.$getPropDescriptors();
-    const useOrderedArray = shouldUseOrderedSerialization(descriptors);
-
-    if (useOrderedArray) {
-      const ordered = descriptors.reduce((acc, descriptor) => {
-        const idx = descriptor.fieldNumber! - 1;
-        acc[idx] = descriptor.getValue();
-        return acc;
-      }, [] as DataArray);
-      return `:${serializeArrayLiteral(ordered)}`;
-    }
-
     const entries: ObjectEntry[] = [];
     let expectedIndex = 1;
 
@@ -82,9 +69,8 @@ export abstract class Message<T extends DataObject> {
     message: string
   ): Message<T> {
     const payload = parseCerealString(message);
-    const normalizedEntries = normalizeCereal(payload);
     const proto = this.prototype;
-    const props = proto.$fromEntries(normalizedEntries);
+    const props = proto.$fromEntries(payload);
     return new this(props);
   }
 }
@@ -97,10 +83,6 @@ export function parseCerealString(value: string) {
   const payload = value.slice(1);
 
   const trimmed = payload.trim();
-
-  if (trimmed.startsWith('[')) {
-    return parseArrayLiteral(payload);
-  }
 
   if (trimmed.startsWith('{')) {
     return parseObjectLiteral(payload);
@@ -115,57 +97,13 @@ export function parseCerealString(value: string) {
   return parsed;
 }
 
-function normalizeCereal<T extends DataObject>(cereal: Cereal<T>) {
-  if (Array.isArray(cereal)) {
-    return cereal.reduce<Record<string, unknown>>((entries, value, index) => {
-      entries[String(index + 1)] = value;
-      return entries;
-    }, {});
-  }
-
-  return cereal as Record<string, unknown>;
-}
-
-function shouldUseOrderedSerialization<T extends DataObject>(
-  descriptors: MessagePropDescriptor<T>[]
-) {
-  if (!descriptors.length) {
-    return false;
-  }
-
-  const numbers = new Set<number>();
-  let max = 0;
-
-  for (const descriptor of descriptors) {
-    if (descriptor.fieldNumber == null) {
-      return false;
-    }
-
-    const num = descriptor.fieldNumber;
-    numbers.add(num);
-    if (num > max) {
-      max = num;
-    }
-  }
-
-  if (numbers.size !== descriptors.length) {
-    return false;
-  }
-
-  for (let i = 1; i <= max; i += 1) {
-    if (!numbers.has(i)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
 const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
+const DATE_OBJECT_TAG = '[object Date]';
+const DATE_PREFIX = 'D';
 
 function canUseBareString(value: string) {
   return (
@@ -173,6 +111,11 @@ function canUseBareString(value: string) {
     !RESERVED_STRINGS.has(value) &&
     !NUMERIC_STRING_RE.test(value)
   );
+}
+
+
+function jsonStringifyDate(value: Date) {
+  return JSON.stringify(value.toISOString());
 }
 
 function serializePrimitive(value: unknown): string {
@@ -189,6 +132,9 @@ function serializePrimitive(value: unknown): string {
   }
 
   if (value && typeof value === 'object') {
+    if (isDateValue(value)) {
+      return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
+    }
     return JSON.stringify(value);
   }
 
@@ -224,6 +170,14 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
     Object.prototype.toString.call(value) === MAP_OBJECT_TAG ||
     Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
   );
+}
+
+function isDateValue(value: unknown): value is Date {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return value instanceof Date || Object.prototype.toString.call(value) === DATE_OBJECT_TAG;
 }
 
 interface ObjectEntry {
@@ -349,12 +303,8 @@ function parseLiteralToken(token: string): DataValue {
     return parseObjectLiteral(trimmed);
   }
 
-  if (trimmed.startsWith('"')) {
-    const parsedString = parseJson(trimmed);
-    if (typeof parsedString !== 'string') {
-      throw new Error(`Invalid string literal token: ${trimmed}`);
-    }
-    return parsedString;
+  if (trimmed.startsWith('"') || trimmed.startsWith(`${DATE_PREFIX}"`)) {
+    return parseStringOrDate(trimmed);
   }
 
   if (SIMPLE_STRING_RE.test(trimmed)) {
@@ -490,4 +440,31 @@ function parseNumericIndex(key: string): number | null {
   }
 
   return num;
+}
+
+function parseStringOrDate(token: string): string | Date {
+  if (token.startsWith(`${DATE_PREFIX}"`)) {
+    const jsonPortion = token.slice(DATE_PREFIX.length);
+    const parsed = parseJson(jsonPortion);
+
+    if (typeof parsed !== 'string') {
+      throw new Error(`Invalid date literal token: ${token}`);
+    }
+
+    const date = new Date(parsed);
+
+    if (Number.isNaN(date.getTime())) {
+      throw new Error(`Invalid date value: ${parsed}`);
+    }
+
+    return date;
+  }
+
+  const parsedString = parseJson(token);
+
+  if (typeof parsedString !== 'string') {
+    throw new Error(`Invalid string literal token: ${token}`);
+  }
+
+  return parsedString;
 }

@@ -92,7 +92,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
     extras,
   });
   assert(
-    mapInstance.serialize() === ':[[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[alpha,{"note":"A"}],[beta,{"note":null}]]]',
+    mapInstance.serialize() === ':{[[one,1],[2,4]],[[owner,{"value":"Alice"}]],[[alpha,{"note":"A"}],[beta,{"note":null}]]}',
     'Map serialization incorrect.'
   );
   const mapCereal = mapInstance.cerealize();
@@ -121,7 +121,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
   assert(clearedMetadata.metadata === undefined, 'setMetadata should allow undefined.');
   assert(mapInstance.metadata.get('owner').value === 'Alice', 'setMetadata should not mutate original metadata.');
 
-  const mapRaw = MapMessage.deserialize(':[[[alpha,10],[5,15]],undefined,[[raw,{"note":null}]]]');
+  const mapRaw = MapMessage.deserialize(':{[[alpha,10],[5,15]],3:[[raw,{"note":null}]]}');
   const mapRawData = mapRaw.cerealize();
   assert(mapRawData.labels.get('alpha') === 10, 'Raw map lost string key.');
   assert(mapRawData.labels.get(5) === 15, 'Raw map lost numeric key.');

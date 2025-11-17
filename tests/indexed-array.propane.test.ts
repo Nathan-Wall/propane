@@ -54,11 +54,11 @@ export default function runIndexedArrayTests(ctx: TestContext) {
   });
 
   assert(
-    arrayInstance.serialize() === ':[[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{"name":"Label A"}]]',
+    arrayInstance.serialize() === ':{[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{"name":"Label A"}]}',
     'Array serialization incorrect.'
   );
 
-  const arrayRaw = ArrayMessage.deserialize(':[[Delta,Echo],[4,5],undefined,[{"name":"Label B"}]]');
+  const arrayRaw = ArrayMessage.deserialize(':{[Delta,Echo],[4,5],4:[{"name":"Label B"}]}');
   const arrayRawData = arrayRaw.cerealize();
   assert(arrayRawData.names[0] === 'Delta', 'Array raw lost names.');
   assert(arrayRawData.flags === undefined, 'Array raw optional flags should be undefined.');

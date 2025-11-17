@@ -37,7 +37,7 @@ export default function runOptionalHoleTests(ctx: TestContext) {
     name: 'Optional',
   });
   const optionalHoleSerialized = optionalHole.serialize();
-  const expectedOptionalSerialization = ':{7,"1892-01-03T00:00:00.000Z",4:Optional}';
+  const expectedOptionalSerialization = ':{7,D"1892-01-03T00:00:00.000Z",4:Optional}';
   assert(
     optionalHoleSerialized === expectedOptionalSerialization,
     'Optional field omission should force explicit index on next property.'
@@ -52,7 +52,7 @@ export default function runOptionalHoleTests(ctx: TestContext) {
     note: 'HELLO',
   });
   const optionalHoleWithNoteSerialized = optionalHoleWithNote.serialize();
-  const expectedOptionalWithNote = ':{9,"1892-01-03T00:00:00.000Z",HELLO,Optional}';
+  const expectedOptionalWithNote = ':{9,D"1892-01-03T00:00:00.000Z",HELLO,Optional}';
   assert(
     optionalHoleWithNoteSerialized === expectedOptionalWithNote,
     'Present optional field should include its index and keep later implicit.'
