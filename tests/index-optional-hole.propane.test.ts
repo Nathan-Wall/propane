@@ -11,7 +11,9 @@ interface OptionalHoleProps {
   name: string;
 }
 
-type OptionalHoleInstance = PropaneMessageInstance<OptionalHoleProps>;
+interface OptionalHoleInstance extends PropaneMessageInstance<OptionalHoleProps> {
+  deleteNote(): OptionalHoleInstance;
+}
 
 type OptionalHoleConstructor = PropaneMessageConstructor<
   OptionalHoleProps,
@@ -56,6 +58,12 @@ export default function runOptionalHoleTests(ctx: TestContext) {
   assert(
     optionalHoleWithNoteSerialized === expectedOptionalWithNote,
     'Present optional field should include its index and keep later implicit.'
+  );
+  const optionalHoleDeleted = optionalHoleWithNote.deleteNote();
+  const expectedOptionalDeleted = ':{9,D"1892-01-03T00:00:00.000Z",4:Optional}';
+  assert(
+    optionalHoleDeleted.serialize() === expectedOptionalDeleted,
+    'deleteNote should clear optional field and reintroduce index gap.'
   );
   const optionalHoleHydrated = OptionalHole.deserialize(optionalHoleSerialized);
   assert(optionalHoleHydrated.cerealize().name === 'Optional', 'Optional hole deserialize failed.');

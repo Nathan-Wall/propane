@@ -723,6 +723,9 @@ export default function propanePlugin() {
     const setterMethods = propDescriptors.map((prop) =>
       buildSetterMethod(typeName, propDescriptors, prop)
     );
+    const deleteMethods = propDescriptors
+      .filter((prop) => prop.optional)
+      .map((prop) => buildDeleteMethod(typeName, propDescriptors, prop));
     const arrayMethods = buildArrayMutatorMethods(
       typeName,
       propDescriptors
@@ -737,6 +740,7 @@ export default function propanePlugin() {
       constructor,
       ...getters,
       ...setterMethods,
+      ...deleteMethods,
       ...arrayMethods,
       ...mapMethods,
       descriptorMethod,
@@ -1204,19 +1208,26 @@ export default function propanePlugin() {
     return normalized;
   }
 
-  function buildPropsObjectExpression(propDescriptors, targetProp, valueExpr) {
+  function buildPropsObjectExpression(
+    propDescriptors,
+    targetProp,
+    valueExpr,
+    { omitTarget = false } = {}
+  ) {
     return t.objectExpression(
-      propDescriptors.map((prop) =>
-        t.objectProperty(
-          t.identifier(prop.name),
-          prop === targetProp
-            ? t.cloneNode(valueExpr)
-            : t.memberExpression(
-                t.thisExpression(),
-                t.cloneNode(prop.privateName)
-              )
+      propDescriptors
+        .filter((prop) => !(omitTarget && prop === targetProp))
+        .map((prop) =>
+          t.objectProperty(
+            t.identifier(prop.name),
+            prop === targetProp
+              ? t.cloneNode(valueExpr)
+              : t.memberExpression(
+                  t.thisExpression(),
+                  t.cloneNode(prop.privateName)
+                )
+          )
         )
-      )
     );
   }
 
@@ -1251,6 +1262,28 @@ export default function propanePlugin() {
 
     const methodName = `set${capitalize(targetProp.name)}`;
     const method = t.classMethod('method', t.identifier(methodName), [valueId], body);
+    method.returnType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(typeName))
+    );
+    return method;
+  }
+
+  function buildDeleteMethod(typeName, propDescriptors, targetProp) {
+    const propsObject = buildPropsObjectExpression(
+      propDescriptors,
+      targetProp,
+      t.identifier('undefined'),
+      { omitTarget: true }
+    );
+
+    const body = t.blockStatement([
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [propsObject])
+      ),
+    ]);
+
+    const methodName = `delete${capitalize(targetProp.name)}`;
+    const method = t.classMethod('method', t.identifier(methodName), [], body);
     method.returnType = t.tsTypeAnnotation(
       t.tsTypeReference(t.identifier(typeName))
     );
