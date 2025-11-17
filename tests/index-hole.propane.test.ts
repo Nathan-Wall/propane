@@ -30,11 +30,14 @@ export default function runIndexHoleTests(ctx: TestContext) {
     value: 42,
   });
   const holeSerialized = holeInstance.serialize();
+  const expectedHoleSerialization = ':{1:20,3:42,4:Hole}';
   assert(
-    holeSerialized.startsWith(':{'),
-    'Serialization with holes should fall back to object literal.'
+    holeSerialized === expectedHoleSerialization,
+    `Hole serialization should use compact object literal. Got: ${holeSerialized}`
   );
   assert(holeInstance.cerealize().id === 20, 'Hole serialization lost data.');
+  const hydratedHole = Hole.deserialize(holeSerialized);
+  assert(hydratedHole.cerealize().name === 'Hole', 'Hole roundtrip failed.');
 
   const holeRaw = ':{"1":20,"3":42,"name":"Hole"}';
   const holeHydrated = Hole.deserialize(holeRaw);

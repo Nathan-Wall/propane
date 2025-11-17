@@ -36,27 +36,28 @@ export abstract class Message<T extends DataObject> {
     }, {} as T);
   }
 
-  private preserialize(): Cereal<T> {
+  serialize(): string {
     const descriptors = this.$getPropDescriptors();
     const useOrderedArray = shouldUseOrderedSerialization(descriptors);
 
     if (useOrderedArray) {
-      return descriptors.reduce((ordered, descriptor) => {
-        const idx = (descriptor.fieldNumber!) - 1;
-        ordered[idx] = descriptor.getValue();
-        return ordered;
+      const ordered = descriptors.reduce((acc, descriptor) => {
+        const idx = descriptor.fieldNumber! - 1;
+        acc[idx] = descriptor.getValue();
+        return acc;
       }, [] as DataArray);
+      return `:${serializeArrayLiteral(ordered)}`;
     }
 
-    return this.cerealizeWithDescriptors(descriptors);
-  }
+    const objectEntries = descriptors.map<[string, unknown]>((descriptor) => {
+      const key =
+        descriptor.fieldNumber == null
+          ? String(descriptor.name)
+          : String(descriptor.fieldNumber);
+      return [key, descriptor.getValue()];
+    });
 
-  serialize(): string {
-    const payload = this.preserialize();
-    const serialized = Array.isArray(payload)
-      ? serializeArrayLiteral(payload)
-      : serializeObjectLiteral(payload as Record<string, unknown>);
-    return `:${serialized}`;
+    return `:${serializeObjectLiteral(objectEntries)}`;
   }
 
   static deserialize<T extends DataObject>(
@@ -78,8 +79,14 @@ export function parseCerealString(value: string) {
 
   const payload = value.slice(1);
 
-  if (payload.trim().startsWith('[')) {
+  const trimmed = payload.trim();
+
+  if (trimmed.startsWith('[')) {
     return parseArrayLiteral(payload);
+  }
+
+  if (trimmed.startsWith('{')) {
+    return parseObjectLiteral(payload);
   }
 
   const parsed = parseJson(payload);
@@ -143,6 +150,14 @@ const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 
+function canUseBareString(value: string) {
+  return (
+    SIMPLE_STRING_RE.test(value) &&
+    !RESERVED_STRINGS.has(value) &&
+    !NUMERIC_STRING_RE.test(value)
+  );
+}
+
 function serializePrimitive(value: unknown): string {
   if (value === undefined) {
     return 'undefined';
@@ -161,11 +176,7 @@ function serializePrimitive(value: unknown): string {
   }
 
   if (typeof value === 'string') {
-    if (
-      SIMPLE_STRING_RE.test(value) &&
-      !RESERVED_STRINGS.has(value) &&
-      !NUMERIC_STRING_RE.test(value)
-    ) {
+    if (canUseBareString(value)) {
       return value;
     }
     return JSON.stringify(value);
@@ -198,11 +209,23 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
   );
 }
 
-function serializeObjectLiteral(record: Record<string, unknown>): string {
-  const entries = Object.entries(record).map(
-    ([key, value]) => `${JSON.stringify(key)}:${serializePrimitive(value)}`
+function serializeObjectLiteral(
+  recordOrEntries: Record<string, unknown> | Array<[string, unknown]>
+): string {
+  const entries = Array.isArray(recordOrEntries)
+    ? recordOrEntries
+    : Object.entries(recordOrEntries);
+  const serialized = entries.map(
+    ([key, value]) => `${serializeObjectKey(key)}:${serializePrimitive(value)}`
   );
-  return `{${entries.join(',')}}`;
+  return `{${serialized.join(',')}}`;
+}
+
+function serializeObjectKey(key: string): string {
+  if (canUseBareString(key) || NUMERIC_STRING_RE.test(key)) {
+    return key;
+  }
+  return JSON.stringify(key);
 }
 
 function parseArrayLiteral(literal: string): DataArray {
@@ -299,11 +322,7 @@ function parseLiteralToken(token: string): DataValue {
   }
 
   if (trimmed.startsWith('{')) {
-    const parsedObject = parseJson(trimmed);
-    if (!parsedObject || typeof parsedObject !== 'object' || Array.isArray(parsedObject)) {
-      throw new Error(`Invalid object literal token: ${trimmed}`);
-    }
-    return parsedObject;
+    return parseObjectLiteral(trimmed);
   }
 
   if (trimmed.startsWith('"')) {
@@ -319,4 +338,100 @@ function parseLiteralToken(token: string): DataValue {
   }
 
   throw new Error(`Invalid literal token: ${trimmed}`);
+}
+
+function parseObjectLiteral(literal: string): Record<string, unknown> {
+  const trimmed = literal.trim();
+
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    throw new Error('Invalid object literal.');
+  }
+
+  if (trimmed === '{}') {
+    return {};
+  }
+
+  const content = trimmed.slice(1, -1);
+  const tokens = splitTopLevel(content);
+
+  return tokens.reduce<Record<string, unknown>>((entries, token) => {
+    const [keyToken, valueToken] = splitKeyValue(token);
+    const key = parseObjectKey(keyToken);
+    const value = parseLiteralToken(valueToken);
+    entries[key] = value;
+    return entries;
+  }, {});
+}
+
+function splitKeyValue(entry: string): [string, string] {
+  let depth = 0;
+  let inString = false;
+  let escaping = false;
+
+  for (let i = 0; i < entry.length; i += 1) {
+    const char = entry[i];
+
+    if (inString) {
+      if (escaping) {
+        escaping = false;
+      } else if (char === '\\') {
+        escaping = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === '{' || char === '[') {
+      depth += 1;
+      continue;
+    }
+
+    if (char === '}' || char === ']') {
+      depth -= 1;
+      continue;
+    }
+
+    if (char === ':' && depth === 0) {
+      const key = entry.slice(0, i).trim();
+      const value = entry.slice(i + 1).trim();
+
+      if (!key || !value) {
+        throw new Error(`Invalid object entry: ${entry}`);
+      }
+
+      return [key, value];
+    }
+  }
+
+  throw new Error(`Invalid object entry: ${entry}`);
+}
+
+function parseObjectKey(token: string): string {
+  const trimmed = token.trim();
+
+  if (!trimmed) {
+    throw new Error('Invalid object key.');
+  }
+
+  if (trimmed.startsWith('"')) {
+    const parsed = parseJson(trimmed);
+
+    if (typeof parsed !== 'string') {
+      throw new Error(`Invalid object key literal: ${token}`);
+    }
+
+    return parsed;
+  }
+
+  if (canUseBareString(trimmed) || NUMERIC_STRING_RE.test(trimmed)) {
+    return trimmed;
+  }
+
+  throw new Error(`Invalid object key literal: ${token}`);
 }

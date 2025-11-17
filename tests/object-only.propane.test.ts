@@ -32,14 +32,20 @@ export default function runObjectOnlyTests(ctx: TestContext) {
     active: false,
   });
   const objectSerialized = objectInstance.serialize();
+  const expectedSerialized = ':{id:10,name:ObjectOnly,age:50,active:false}';
   assert(
-    objectSerialized.startsWith(':{'),
-    'Non-indexed properties should serialize as object literal.'
+    objectSerialized === expectedSerialized,
+    'Object serialization should omit unnecessary quotes.'
   );
   assert(objectInstance.cerealize().name === 'ObjectOnly', 'Non-indexed serialization failed.');
+  const objectRoundTrip = ObjectOnly.deserialize(objectSerialized);
+  assert(objectRoundTrip.cerealize().name === 'ObjectOnly', 'Compact object serialization should be readable.');
 
-  const objectRaw =
-    ':{"id":30,"name":"Obj","age":60,"active":true}';
-  const objectHydrated = ObjectOnly.deserialize(objectRaw);
-  assert(objectHydrated.cerealize().name === 'Obj', 'Object raw deserialize lost name.');
+  const compactRaw = ':{id:30,name:Obj,age:60,active:true}';
+  const compactHydrated = ObjectOnly.deserialize(compactRaw);
+  assert(compactHydrated.cerealize().name === 'Obj', 'Compact object raw deserialize lost name.');
+
+  const legacyRaw = ':{"id":30,"name":"Obj","age":60,"active":true}';
+  const legacyHydrated = ObjectOnly.deserialize(legacyRaw);
+  assert(legacyHydrated.cerealize().name === 'Obj', 'Legacy object raw deserialize lost name.');
 }
