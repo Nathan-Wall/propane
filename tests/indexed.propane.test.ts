@@ -1,16 +1,44 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+interface IndexedProps {
+  id: number;
+  name: string;
+  age: number;
+  active: boolean;
+  nickname?: string;
+  score: number | null;
+  alias?: string | null;
+  status: string;
+}
+
+interface IndexedInstance extends IndexedProps, PropaneMessageInstance<IndexedProps> {
+  setName(name: string): IndexedInstance;
+  setAlias(alias: string | null | undefined): IndexedInstance;
+}
+
+type IndexedConstructor = PropaneMessageConstructor<IndexedProps, IndexedInstance>;
 
 export default function runIndexedPropaneTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const assertThrows = ctx.assertThrows;
-  const loadFixtureClass = ctx.loadFixtureClass;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const assertThrows: TestContext['assertThrows'] = (fn, message) => {
+    ctx.assertThrows(fn, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
 
-  const Indexed = loadFixtureClass('tests/indexed.propane', 'Indexed');
+  const Indexed = loadFixtureClass<IndexedConstructor>('tests/indexed.propane', 'Indexed');
   if (typeof Indexed !== 'function') {
     throw new Error('Indexed class was not exported.');
   }
 
-  const instance = new Indexed({
+  const instance: IndexedInstance = new Indexed({
     id: 1,
     name: 'Alice',
     age: 30,
@@ -61,13 +89,13 @@ export default function runIndexedPropaneTests(ctx: TestContext) {
   assert(fromCerealPayload.status === 'IDLE', 'Decerealize lost status.');
 
   assertThrows(
-    () => Indexed.deserialize(':{\"name\":\"Charlie\",\"age\":22,\"active\":true}'),
+    () => Indexed.deserialize(':{"name":"Charlie","age":22,"active":true}'),
     'Missing required fields should throw.'
   );
 
   assertThrows(
     () =>
-      Indexed.deserialize(':{\"1\":\"bad\",\"name\":\"Dana\",\"age\":40,\"active\":true}'),
+      Indexed.deserialize(':{"1":"bad","name":"Dana","age":40,"active":true}'),
     'Invalid field types should throw.'
   );
 
@@ -96,7 +124,7 @@ export default function runIndexedPropaneTests(ctx: TestContext) {
   assert(optionalHydratedCereal.alias === 'CJ-A', 'Raw alias lost.');
 
   const optionalRawMissing =
-    ':{\"1\":7,\"2\":\"OptName\",\"3\":31,\"4\":true,\"6\":5,\"8\":\"RESTING\"}';
+    ':{"1":7,"2":"OptName","3":31,"4":true,"6":5,"8":"RESTING"}';
   const optionalHydratedMissing = Indexed.deserialize(optionalRawMissing);
   const optionalHydratedMissingCereal = optionalHydratedMissing.cerealize();
   assert(optionalHydratedMissingCereal.nickname === undefined, 'Missing optional value should stay undefined.');

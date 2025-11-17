@@ -1,24 +1,48 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+type UnionValue = string | boolean;
+
+interface UnionStringBoolProps {
+  value: UnionValue;
+  optional?: UnionValue;
+}
+
+interface UnionStringBoolInstance
+  extends UnionStringBoolProps,
+    PropaneMessageInstance<UnionStringBoolProps> {}
+
+type UnionStringBoolConstructor = PropaneMessageConstructor<
+  UnionStringBoolProps,
+  UnionStringBoolInstance
+>;
 
 export default function runUnionStringBoolTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const loadFixtureClass = ctx.loadFixtureClass;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
 
-  const UnionStringBool = loadFixtureClass(
+  const UnionStringBool = loadFixtureClass<UnionStringBoolConstructor>(
     'tests/union-string-bool.propane',
     'UnionStringBool'
   );
 
-  const unionStringInstance = new UnionStringBool({
+  const unionStringInstance: UnionStringBoolInstance = new UnionStringBool({
     value: 'true',
     optional: '42',
   });
   assert(
-    unionStringInstance.serialize() === ':[\"true\",\"42\"]',
+    unionStringInstance.serialize() === ':["true","42"]',
     'String union serialization failed.'
   );
 
-  const unionBoolInstance = new UnionStringBool({
+  const unionBoolInstance: UnionStringBoolInstance = new UnionStringBool({
     value: true,
     optional: false,
   });
@@ -27,12 +51,12 @@ export default function runUnionStringBoolTests(ctx: TestContext) {
     'Boolean union serialization failed.'
   );
 
-  const unionStringRaw = UnionStringBool.deserialize(':[\"true\",false]');
+  const unionStringRaw = UnionStringBool.deserialize(':["true",false]');
   const unionStringRawData = unionStringRaw.cerealize();
   assert(unionStringRawData.value === 'true', 'Union string raw lost string value.');
   assert(unionStringRawData.optional === false, 'Union string raw lost optional boolean.');
 
-  const unionBoolRaw = UnionStringBool.deserialize(':[true,\"false\"]');
+  const unionBoolRaw = UnionStringBool.deserialize(':[true,"false"]');
   const unionBoolRawData = unionBoolRaw.cerealize();
   assert(unionBoolRawData.value === true, 'Union bool raw lost boolean value.');
   assert(unionBoolRawData.optional === 'false', 'Union bool raw lost string optional.');

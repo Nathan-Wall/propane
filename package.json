@@ -9,6 +9,7 @@
   },
   "scripts": {
     "test": "node --loader ./tests/ts-loader.mjs tests/run-tests.ts",
+    "lint": "eslint .",
     "propane:compile": "node scripts/propane-compiler.js",
     "runtime:build": "npm --prefix runtime run build",
     "runtime:publish": "node scripts/publish-runtime.js"
@@ -30,6 +31,13 @@
   "homepage": "https://github.com/Nathan-Wall/propane#readme",
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "typescript": "^5.9.3"
+    "@eslint/js": "^9.39.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.4",
+    "@typescript-eslint/parser": "^8.46.4",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^16.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.4"
   }
 }

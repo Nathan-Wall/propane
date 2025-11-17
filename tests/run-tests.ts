@@ -74,7 +74,7 @@ for (const testFile of testFiles) {
   try {
     const moduleUrl = pathToFileURL(testFile).href;
     const mod = (await import(moduleUrl)) as { default?: (ctx: TestContext) => Promise<void> | void };
-    const runTests = mod && mod.default;
+    const runTests = mod?.default;
     if (typeof runTests !== 'function') {
       throw new Error('Test file must export a default function.');
     }

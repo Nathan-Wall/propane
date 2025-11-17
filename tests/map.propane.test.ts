@@ -1,13 +1,81 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+type MapLabelKey = string | number;
+
+interface MetadataValue {
+  value: string;
+}
+
+interface ExtraValue {
+  note: string | null;
+}
+
+interface ImmutableMapLike<K, V> extends ReadonlyMap<K, V> {
+  toMap(): Map<K, V>;
+  equals(other: unknown): boolean;
+}
+
+interface MapMessageHydratedProps {
+  labels: ImmutableMapLike<MapLabelKey, number>;
+  metadata?: ImmutableMapLike<string, MetadataValue>;
+  extras: ImmutableMapLike<string, ExtraValue>;
+}
+
+interface MapMessageInputProps {
+  labels: ReadonlyMap<MapLabelKey, number>;
+  metadata?: ReadonlyMap<string, MetadataValue>;
+  extras: ReadonlyMap<string, ExtraValue>;
+}
+
+interface MapMessageInstance
+  extends PropaneMessageInstance<MapMessageHydratedProps> {
+  labels: MapMessageHydratedProps['labels'];
+  metadata?: MapMessageHydratedProps['metadata'];
+  extras: MapMessageHydratedProps['extras'];
+  setLabels(value: ReadonlyMap<MapLabelKey, number>): MapMessageInstance;
+  setMetadata(value: ReadonlyMap<string, MetadataValue> | undefined): MapMessageInstance;
+  setLabelsEntry(key: MapLabelKey, value: number): MapMessageInstance;
+  deleteLabelsEntry(key: MapLabelKey): MapMessageInstance;
+  clearExtras(): MapMessageInstance;
+  mergeLabelsEntries(
+    entries: Iterable<[MapLabelKey, number]> | ReadonlyMap<MapLabelKey, number>
+  ): MapMessageInstance;
+  updateExtrasEntry(
+    key: string,
+    updater: (entry: ExtraValue | undefined) => ExtraValue
+  ): MapMessageInstance;
+  mapLabelsEntries(
+    mapper: (value: number, key: MapLabelKey) => [MapLabelKey, number]
+  ): MapMessageInstance;
+  filterLabelsEntries(
+    predicate: (value: number, key: MapLabelKey) => boolean
+  ): MapMessageInstance;
+  setMetadataEntry(key: string, value: MetadataValue): MapMessageInstance;
+}
+
+type MapMessageConstructor = PropaneMessageConstructor<
+  MapMessageInputProps,
+  MapMessageInstance,
+  MapMessageHydratedProps
+>;
 
 export default function runMapPropaneTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const loadFixtureClass = ctx.loadFixtureClass;
-  const { runtimeExports, isMapValue } = ctx;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
+  const isMapValue = (value: unknown) => ctx.isMapValue(value);
+  const { runtimeExports } = ctx;
 
-  const MapMessage = loadFixtureClass('tests/map.propane', 'MapMessage');
+  const MapMessage = loadFixtureClass<MapMessageConstructor>('tests/map.propane', 'MapMessage');
 
-  const labelEntries: Array<[string | number, number]> = [
+  const labelEntries: [string | number, number][] = [
     ['one', 1],
     [2, 4],
   ];
@@ -18,7 +86,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
     ['beta', { note: null }],
   ]);
 
-  const mapInstance = new MapMessage({
+  const mapInstance: MapMessageInstance = new MapMessage({
     labels,
     metadata,
     extras,
@@ -40,7 +108,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
   const labelsCopy = mapCereal.labels.toMap();
   labelsCopy.set('delta', 8);
   assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
-  const updatedLabelEntries: Array<[string | number, number]> = [
+  const updatedLabelEntries: [string | number, number][] = [
     ['gamma', 7],
     [3, 9],
   ];
@@ -63,7 +131,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
   assert(rawExtrasEntries[0][1].note === null, 'Raw map lost null value.');
 
   const mapObjectRaw = MapMessage.deserialize(
-    ':{\"1\":[[\"owner\",1]],\"2\":[[\"meta\",{\"value\":\"Bob\"}]],\"3\":[[\"obj\",{\"note\":\"Value\"}]]}'
+    ':{"1":[["owner",1]],"2":[["meta",{"value":"Bob"}]],"3":[["obj",{"note":"Value"}]]}'
   );
   const mapObjectRawData = mapObjectRaw.cerealize();
   assert(isMapValue(mapObjectRawData.metadata), 'Object raw metadata should be Map.');
@@ -92,7 +160,7 @@ export default function runMapPropaneTests(ctx: TestContext) {
   assert(mergedLabelsMap.labels.get('theta') === 9, 'mergeLabelsEntries should merge Map input.');
 
   const updatedExtrasInstance = mapInstance.updateExtrasEntry('alpha', (entry) => ({
-    note: entry && entry.note ? `${entry.note}!` : 'A!',
+    note: entry?.note ? `${entry.note}!` : 'A!',
   }));
   assert(
     updatedExtrasInstance.extras.get('alpha')?.note === 'A!',

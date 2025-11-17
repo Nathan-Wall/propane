@@ -1,15 +1,52 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+interface LabeledValue {
+  name: string;
+}
+
+interface ArrayMessageProps {
+  names: string[];
+  scores: number[];
+  flags?: boolean[];
+  labels: LabeledValue[];
+}
+
+interface ArrayMessageInstance
+  extends ArrayMessageProps,
+    PropaneMessageInstance<ArrayMessageProps> {
+  pushNames(...names: string[]): ArrayMessageInstance;
+  popNames(): ArrayMessageInstance;
+  shiftScores(): ArrayMessageInstance;
+  unshiftScores(...scores: number[]): ArrayMessageInstance;
+  spliceNames(start: number, deleteCount: number, ...items: string[]): ArrayMessageInstance;
+  reverseNames(): ArrayMessageInstance;
+  sortScores(comparator?: (a: number, b: number) => number): ArrayMessageInstance;
+  fillNames(value: string, start?: number, end?: number): ArrayMessageInstance;
+  copyWithinScores(target: number, start: number, end?: number): ArrayMessageInstance;
+  pushFlags(...flags: boolean[]): ArrayMessageInstance;
+  shiftFlags(): ArrayMessageInstance;
+}
+
+type ArrayMessageConstructor = PropaneMessageConstructor<ArrayMessageProps, ArrayMessageInstance>;
 
 export default function runIndexedArrayTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const loadFixtureClass = ctx.loadFixtureClass;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
 
-  const ArrayMessage = loadFixtureClass(
+  const ArrayMessage = loadFixtureClass<ArrayMessageConstructor>(
     'tests/indexed-array.propane',
     'ArrayMessage'
   );
 
-  const arrayInstance = new ArrayMessage({
+  const arrayInstance: ArrayMessageInstance = new ArrayMessage({
     names: ['Alpha', 'Beta', 'Gamma Value'],
     scores: [1, 2, 3],
     flags: [true, false],
@@ -17,14 +54,15 @@ export default function runIndexedArrayTests(ctx: TestContext) {
   });
 
   assert(
-    arrayInstance.serialize() === ':[[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{\"name\":\"Label A\"}]]',
+    arrayInstance.serialize() === ':[[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{"name":"Label A"}]]',
     'Array serialization incorrect.'
   );
 
-  const arrayRaw = ArrayMessage.deserialize(':[[Delta,Echo],[4,5],undefined,[{\"name\":\"Label B\"}]]');
+  const arrayRaw = ArrayMessage.deserialize(':[[Delta,Echo],[4,5],undefined,[{"name":"Label B"}]]');
   const arrayRawData = arrayRaw.cerealize();
   assert(arrayRawData.names[0] === 'Delta', 'Array raw lost names.');
   assert(arrayRawData.flags === undefined, 'Array raw optional flags should be undefined.');
+  assert(arrayRawData.labels[0], 'Array raw labels lost.');
   assert(arrayRawData.labels[0].name === 'Label B', 'Array raw labels lost.');
 
   const pushedNames = arrayInstance.pushNames('Delta', 'Echo');
@@ -64,12 +102,11 @@ export default function runIndexedArrayTests(ctx: TestContext) {
   });
   const flagsAdded = optionalArrayInstance.pushFlags(true, false);
   assert(optionalArrayInstance.flags === undefined, 'pushFlags should not mutate undefined source array.');
-  assert(flagsAdded.flags && flagsAdded.flags.length === 2, 'pushFlags should initialize optional array.');
+  assert(flagsAdded.flags?.length === 2, 'pushFlags should initialize optional array.');
 
   const flagsShifted = flagsAdded.shiftFlags();
   assert(
-    flagsShifted.flags &&
-      flagsShifted.flags.length === 1 &&
+    flagsShifted.flags?.length === 1 &&
       flagsShifted.flags[0] === false,
     'shiftFlags should remove first entry.'
   );

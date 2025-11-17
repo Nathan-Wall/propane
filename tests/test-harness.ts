@@ -13,13 +13,31 @@ export interface TestContext {
   runtimeExports: Record<string, unknown>;
   assert(condition: unknown, message: string): asserts condition;
   assertThrows(fn: () => unknown, message: string): void;
-  isMapValue(value: unknown): boolean;
+  isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown>;
   loadFixtureClass<T = unknown>(fixture: string, exportName: string): T;
 }
 
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
-const PROPANE_MODULE_CACHE = new Map();
+type PropaneExports = Record<string, unknown>;
+const PROPANE_MODULE_CACHE = new Map<string, PropaneExports>();
+
+interface BuildClassParams {
+  projectRoot: string;
+  transform: TransformFn;
+  runtimeExports: PropaneExports;
+  fixture: string;
+  exportName: string;
+}
+
+interface LoadPropaneModuleParams {
+  projectRoot: string;
+  transform: TransformFn;
+  runtimeExports: PropaneExports;
+  filePath: string;
+}
+
+type ModuleResolvers = PropaneExports | ((id: string) => unknown);
 
 export function createTestContext({
   projectRoot,
@@ -29,14 +47,15 @@ export function createTestContext({
   transform: TransformFn;
 }): TestContext {
   const runtimeExports = buildRuntimeExports(projectRoot);
-  const loadFixtureClass = (fixture, exportName) =>
-    buildClassFromFixture({
+  function loadFixtureClass<T = unknown>(fixture: string, exportName: string): T {
+    return buildClassFromFixture<T>({
       projectRoot,
       transform,
       runtimeExports,
       fixture,
       exportName,
     });
+  }
 
   return {
     projectRoot,
@@ -49,24 +68,31 @@ export function createTestContext({
   };
 }
 
-function buildRuntimeExports(projectRoot) {
+function buildRuntimeExports(projectRoot: string): PropaneExports {
+  const jsonParseJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'common/json/parse.ts'), 'utf8'),
+    'common/json/parse.ts'
+  );
+  const jsonParseExports = evaluateModule(jsonParseJs);
+
   const immutableMapJs = transpileTs(
-    fs.readFileSync(path.join(projectRoot, 'runtime/src/immutable-map.ts'), 'utf8'),
-    'runtime/src/immutable-map.ts'
+    fs.readFileSync(path.join(projectRoot, 'runtime/immutable-map.ts'), 'utf8'),
+    'runtime/immutable-map.ts'
   );
   const immutableMapExports = evaluateModule(immutableMapJs);
 
   const messageJs = transpileTs(
-    fs.readFileSync(path.join(projectRoot, 'runtime/src/message.ts'), 'utf8'),
-    'runtime/src/message.ts'
+    fs.readFileSync(path.join(projectRoot, 'runtime/message.ts'), 'utf8'),
+    'runtime/message.ts'
   );
   const messageExports = evaluateModule(messageJs, {
     './immutable-map': immutableMapExports,
+    '../common/json/parse': jsonParseExports,
   });
 
   const indexJs = transpileTs(
-    fs.readFileSync(path.join(projectRoot, 'runtime/src/index.ts'), 'utf8'),
-    'runtime/src/index.ts'
+    fs.readFileSync(path.join(projectRoot, 'runtime/index.ts'), 'utf8'),
+    'runtime/index.ts'
   );
 
   return evaluateModule(indexJs, {
@@ -75,21 +101,26 @@ function buildRuntimeExports(projectRoot) {
   });
 }
 
-function buildClassFromFixture({
+function buildClassFromFixture<T = unknown>({
   projectRoot,
   transform,
   runtimeExports,
   fixture,
   exportName,
-}) {
+}: BuildClassParams): T {
   const filePath = path.join(projectRoot, fixture);
-  const exports = loadPropaneModule({
+  const moduleExports = loadPropaneModule({
     projectRoot,
     transform,
     runtimeExports,
     filePath,
   });
-  return exports[exportName];
+
+  if (!(exportName in moduleExports)) {
+    throw new Error(`Export ${exportName} not found in ${fixture}`);
+  }
+
+  return moduleExports[exportName] as T;
 }
 
 function loadPropaneModule({
@@ -97,10 +128,11 @@ function loadPropaneModule({
   transform,
   runtimeExports,
   filePath,
-}) {
+}: LoadPropaneModuleParams): PropaneExports {
   const normalized = path.resolve(projectRoot, filePath);
-  if (PROPANE_MODULE_CACHE.has(normalized)) {
-    return PROPANE_MODULE_CACHE.get(normalized);
+  const cached = PROPANE_MODULE_CACHE.get(normalized);
+  if (cached) {
+    return cached;
   }
 
   const source = fs.readFileSync(normalized, 'utf8');
@@ -109,7 +141,7 @@ function loadPropaneModule({
   const js = transpileTs(transformed, `${relative}.ts`);
   const dir = path.dirname(normalized);
 
-  const exports = evaluateModule(js, (id) => {
+  const moduleExports = evaluateModule(js, (id) => {
     if (id === '@propanejs/runtime') {
       return runtimeExports;
     }
@@ -130,11 +162,11 @@ function loadPropaneModule({
     throw new Error(`Unexpected require: ${id}`);
   });
 
-  PROPANE_MODULE_CACHE.set(normalized, exports);
-  return exports;
+  PROPANE_MODULE_CACHE.set(normalized, moduleExports);
+  return moduleExports;
 }
 
-function transpileTs(source, fileName) {
+function transpileTs(source: string, fileName: string): string {
   const result = ts.transpileModule(source, {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -151,22 +183,23 @@ function transpileTs(source, fileName) {
   return result.outputText;
 }
 
-function evaluateModule(code, resolvers) {
-  const module = { exports: {} };
-  const resolve =
+function evaluateModule(code: string, resolvers?: ModuleResolvers): PropaneExports {
+  const module = { exports: {} as PropaneExports };
+  const resolve: (id: string) => unknown =
     typeof resolvers === 'function'
       ? resolvers
-      : (id) => {
-          if (resolvers && resolvers[id]) {
-            return resolvers[id];
-          }
-          throw new Error(`Unexpected require: ${id}`);
-        };
-  const sandbox = {
+      : ((records: PropaneExports) =>
+          (id: string) => {
+            if (id in records) {
+              return records[id];
+            }
+            throw new Error(`Unexpected require: ${id}`);
+          })(resolvers ?? {});
+  const sandbox: Record<string, unknown> = {
     module,
     exports: module.exports,
     console,
-    require: (id) => {
+    require: (id: string): unknown => {
       return resolve(id);
     },
   };
@@ -175,13 +208,13 @@ function evaluateModule(code, resolvers) {
   return module.exports;
 }
 
-function assert(condition, message) {
+function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new Error(message);
   }
 }
 
-function assertThrows(fn, message) {
+function assertThrows(fn: () => unknown, message: string): void {
   let threw = false;
   try {
     fn();
@@ -193,7 +226,7 @@ function assertThrows(fn, message) {
   }
 }
 
-function isMapValue(value) {
+function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
   if (!value || typeof value !== 'object') {
     return false;
   }

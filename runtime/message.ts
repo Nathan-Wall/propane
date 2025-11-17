@@ -1,19 +1,27 @@
+import { parseJson } from '../common/json/parse';
 import { ImmutableMap } from './immutable-map';
 
-export type MessagePropDescriptor<T extends object> = {
+export type DataPrimitive = string | number | boolean | null | undefined;
+export type DataValue = DataPrimitive | DataObject | DataArray;
+export type DataArray = DataValue[];
+export interface DataObject {
+  [key: string]: DataValue;
+}
+
+export interface MessagePropDescriptor<T extends object> {
   name: keyof T;
   fieldNumber: number | null;
   getValue: () => T[keyof T];
-};
+}
 
-export type Cereal<T extends object> = T | unknown[];
+export type Cereal<T extends object> = T | DataArray;
 
-type MessageConstructor<T extends object> = {
+interface MessageConstructor<T extends DataObject> {
   new (props: T): Message<T>;
   prototype: Message<T>;
-};
+}
 
-export abstract class Message<T extends object> {
+export abstract class Message<T extends DataObject> {
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
 
@@ -33,11 +41,11 @@ export abstract class Message<T extends object> {
     const useOrderedArray = shouldUseOrderedSerialization(descriptors);
 
     if (useOrderedArray) {
-      return descriptors.reduce<unknown[]>((ordered, descriptor) => {
-        const idx = (descriptor.fieldNumber as number) - 1;
+      return descriptors.reduce((ordered, descriptor) => {
+        const idx = (descriptor.fieldNumber!) - 1;
         ordered[idx] = descriptor.getValue();
         return ordered;
-      }, []);
+      }, [] as DataArray);
     }
 
     return this.cerealizeWithDescriptors(descriptors);
@@ -51,19 +59,19 @@ export abstract class Message<T extends object> {
     return `:${serialized}`;
   }
 
-  static deserialize<T extends object>(
+  static deserialize<T extends DataObject>(
     this: MessageConstructor<T>,
     message: string
   ): Message<T> {
-    const payload = parseCerealString<T>(message);
+    const payload = parseCerealString(message);
     const normalizedEntries = normalizeCereal(payload);
-    const proto = this.prototype as Message<T>;
+    const proto = this.prototype;
     const props = proto.$fromEntries(normalizedEntries);
     return new this(props);
   }
 }
 
-export function parseCerealString<T extends object>(value: string): Cereal<T> {
+export function parseCerealString(value: string) {
   if (!value.startsWith(':')) {
     throw new Error('Invalid Propane message. Expected ":" prefix.');
   }
@@ -74,16 +82,16 @@ export function parseCerealString<T extends object>(value: string): Cereal<T> {
     return parseArrayLiteral(payload);
   }
 
-  const parsed = JSON.parse(payload);
+  const parsed = parseJson(payload);
 
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error('Invalid Propane message payload.');
   }
 
-  return parsed as Cereal<T>;
+  return parsed;
 }
 
-function normalizeCereal<T extends object>(cereal: Cereal<T>) {
+function normalizeCereal<T extends DataObject>(cereal: Cereal<T>) {
   if (Array.isArray(cereal)) {
     return cereal.reduce<Record<string, unknown>>((entries, value, index) => {
       entries[String(index + 1)] = value;
@@ -94,7 +102,7 @@ function normalizeCereal<T extends object>(cereal: Cereal<T>) {
   return cereal as Record<string, unknown>;
 }
 
-function shouldUseOrderedSerialization<T extends object>(
+function shouldUseOrderedSerialization<T extends DataObject>(
   descriptors: MessagePropDescriptor<T>[]
 ) {
   if (!descriptors.length) {
@@ -197,7 +205,7 @@ function serializeObjectLiteral(record: Record<string, unknown>): string {
   return `{${entries.join(',')}}`;
 }
 
-function parseArrayLiteral(literal: string): unknown[] {
+function parseArrayLiteral(literal: string): DataArray {
   const trimmed = literal.trim();
 
   if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) {
@@ -262,7 +270,7 @@ function splitTopLevel(content: string): string[] {
   return tokens.filter((token) => token.length > 0 || token === '');
 }
 
-function parseLiteralToken(token: string): unknown {
+function parseLiteralToken(token: string): DataValue {
   const trimmed = token.trim();
 
   if (!trimmed || trimmed === 'undefined') {
@@ -291,11 +299,19 @@ function parseLiteralToken(token: string): unknown {
   }
 
   if (trimmed.startsWith('{')) {
-    return JSON.parse(trimmed);
+    const parsedObject = parseJson(trimmed);
+    if (!parsedObject || typeof parsedObject !== 'object' || Array.isArray(parsedObject)) {
+      throw new Error(`Invalid object literal token: ${trimmed}`);
+    }
+    return parsedObject;
   }
 
   if (trimmed.startsWith('"')) {
-    return JSON.parse(trimmed);
+    const parsedString = parseJson(trimmed);
+    if (typeof parsedString !== 'string') {
+      throw new Error(`Invalid string literal token: ${trimmed}`);
+    }
+    return parsedString;
   }
 
   if (SIMPLE_STRING_RE.test(trimmed)) {

@@ -1,10 +1,28 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+interface HoleProps {
+  id: number;
+  value: number;
+  name: string;
+}
+
+type HoleInstance = PropaneMessageInstance<HoleProps>;
+
+type HoleConstructor = PropaneMessageConstructor<HoleProps, HoleInstance>;
 
 export default function runIndexHoleTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const loadFixtureClass = ctx.loadFixtureClass;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
 
-  const Hole = loadFixtureClass('tests/index-hole.propane', 'Hole');
+  const Hole = loadFixtureClass<HoleConstructor>('tests/index-hole.propane', 'Hole');
 
   const holeInstance = new Hole({
     id: 20,
@@ -18,8 +36,7 @@ export default function runIndexHoleTests(ctx: TestContext) {
   );
   assert(holeInstance.cerealize().id === 20, 'Hole serialization lost data.');
 
-  const holeRaw =
-    ':{\"1\":20,\"3\":42,\"name\":\"Hole\"}';
+  const holeRaw = ':{"1":20,"3":42,"name":"Hole"}';
   const holeHydrated = Hole.deserialize(holeRaw);
   const holeHydratedCereal = holeHydrated.cerealize();
   assert(holeHydratedCereal.name === 'Hole', 'Hole raw deserialize lost name.');

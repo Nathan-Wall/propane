@@ -1,28 +1,69 @@
 declare module 'fs' {
-  const fs: any;
+  interface Dirent {
+    name: string;
+    isDirectory(): boolean;
+    isFile(): boolean;
+  }
+
+  interface FsModule {
+    readFileSync(path: string, encoding: 'utf8'): string;
+    readFileSync(path: string, options: { encoding: 'utf8' }): string;
+    readdirSync(path: string, options: { withFileTypes: true }): Dirent[];
+    existsSync(path: string): boolean;
+  }
+
+  const fs: FsModule;
   export = fs;
 }
 
 declare module 'path' {
-  const path: any;
+  interface PathModule {
+    dirname(path: string): string;
+    resolve(...segments: string[]): string;
+    join(...segments: string[]): string;
+    relative(from: string, to: string): string;
+    basename(path: string, ext?: string): string;
+  }
+
+  const path: PathModule;
   export = path;
 }
 
 declare module 'url' {
-  export const fileURLToPath: (url: string) => string;
-  export const pathToFileURL: (path: string) => { href: string };
+  export function fileURLToPath(url: string): string;
+  export function pathToFileURL(path: string): { href: string };
 }
 
 declare module 'vm' {
-  const vm: any;
+  interface VmModule {
+    runInNewContext(
+      code: string,
+      sandbox: Record<string, unknown>,
+      options?: { timeout?: number }
+    ): void;
+  }
+
+  const vm: VmModule;
   export = vm;
 }
 
 declare module '@babel/core' {
-  export function transformSync(...args: any[]): any;
+  export interface TransformOptions {
+    filename?: string;
+    parserOpts?: { sourceType?: 'module' | 'script'; plugins?: string[] };
+    plugins?: unknown[];
+  }
+
+  export function transformSync(source: string, options?: TransformOptions): {
+    code?: string;
+  };
 }
 
 declare module '../babel/propane-plugin.js' {
-  const plugin: any;
+  const plugin: unknown;
   export default plugin;
 }
+
+declare const process: {
+  exit(code?: number): never;
+};

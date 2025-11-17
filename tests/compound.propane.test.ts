@@ -1,14 +1,74 @@
 import type { TestContext } from './test-harness.ts';
+import type {
+  PropaneMessageConstructor,
+  PropaneMessageInstance,
+} from './propane-test-types.ts';
+
+type DistanceUnit = 'm' | 'ft';
+
+interface Distance {
+  unit: DistanceUnit;
+  value: number;
+}
+
+interface UserProps {
+  id: number;
+  name: string;
+  email: string;
+  passwordHash: string;
+  created: Date;
+  updated: Date;
+  active: boolean;
+  eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
+  height: Distance;
+}
+
+interface IndexedProps {
+  id: number;
+  name: string;
+  age: number;
+  active: boolean;
+  nickname?: string;
+  score: number | null;
+  alias?: string | null;
+  status: string;
+}
+
+interface UserMessageInstance extends UserProps, PropaneMessageInstance<UserProps> {}
+type UserMessageCtor = PropaneMessageConstructor<UserProps, UserMessageInstance>;
+
+interface IndexedMessageInstance
+  extends IndexedProps,
+    PropaneMessageInstance<IndexedProps> {}
+type IndexedMessageCtor = PropaneMessageConstructor<IndexedProps, IndexedMessageInstance>;
+
+interface CompoundProps {
+  user: UserProps | UserMessageInstance;
+  indexed: IndexedProps | IndexedMessageInstance;
+}
+
+interface CompoundInstance extends PropaneMessageInstance<CompoundProps> {
+  user: UserMessageInstance;
+  indexed: IndexedMessageInstance;
+  setUser(user: CompoundProps['user']): CompoundInstance;
+  setIndexed(indexed: CompoundProps['indexed']): CompoundInstance;
+}
+
+type CompoundCtor = PropaneMessageConstructor<CompoundProps, CompoundInstance>;
 
 export default function runCompoundTests(ctx: TestContext) {
-  const assert: TestContext['assert'] = ctx.assert;
-  const loadFixtureClass = ctx.loadFixtureClass;
+  const assert: TestContext['assert'] = (condition, message) => {
+    ctx.assert(condition, message);
+  };
+  const loadFixtureClass: TestContext['loadFixtureClass'] = (fixture, exportName) => {
+    return ctx.loadFixtureClass(fixture, exportName);
+  };
 
-  const UserMessage = loadFixtureClass('tests/user.propane', 'User');
-  const Compound = loadFixtureClass('tests/compound.propane', 'Compound');
-  const Indexed = loadFixtureClass('tests/indexed.propane', 'Indexed');
+  const UserMessage = loadFixtureClass<UserMessageCtor>('tests/user.propane', 'User');
+  const Compound = loadFixtureClass<CompoundCtor>('tests/compound.propane', 'Compound');
+  const Indexed = loadFixtureClass<IndexedMessageCtor>('tests/indexed.propane', 'Indexed');
 
-  const simpleUser = {
+  const simpleUser: UserProps = {
     id: 99,
     name: 'CompoundUser',
     email: 'compound@example.com',
@@ -19,7 +79,7 @@ export default function runCompoundTests(ctx: TestContext) {
     eyeColor: 'blue',
     height: { unit: 'm', value: 1.8 },
   };
-  const simpleIndexed = {
+  const simpleIndexed: IndexedProps = {
     id: 88,
     name: 'CompoundIndexed',
     age: 35,
@@ -29,7 +89,7 @@ export default function runCompoundTests(ctx: TestContext) {
     alias: 'Alias',
     status: 'READY',
   };
-  const compoundFromData = new Compound({
+  const compoundFromData: CompoundInstance = new Compound({
     user: simpleUser,
     indexed: simpleIndexed,
   });

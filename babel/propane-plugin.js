@@ -1680,7 +1680,6 @@ export default function propanePlugin() {
           `merge${capitalize(prop.name)}Entries`,
           buildMapMergeParams(prop),
           (mapRef) => {
-            const entryId = t.identifier('entry');
             const mergeKeyId = t.identifier('mergeKey');
             const mergeValueId = t.identifier('mergeValue');
             return [

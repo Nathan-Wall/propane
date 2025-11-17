@@ -1,8 +1,9 @@
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #map: Map<K, V>;
+  readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   constructor(
-    entries?: Iterable<readonly [K, V]> | ReadonlyArray<readonly [K, V]> | ReadonlyMap<K, V>
+    entries?: Iterable<readonly [K, V]> | readonly (readonly [K, V])[] | ReadonlyMap<K, V>
   ) {
     if (!entries) {
       this.#map = new Map();
@@ -86,7 +87,4 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     return new Map(this.#map);
   }
 
-  get [Symbol.toStringTag](): string {
-    return 'ImmutableMap';
-  }
 }
