@@ -1,0 +1,6 @@
+export type OptionalHole = {
+  '1:id': number;
+  '2:created': Date;
+  '3:note'?: string;
+  '4:name': string;
+};

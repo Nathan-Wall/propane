@@ -49,15 +49,32 @@ export abstract class Message<T extends DataObject> {
       return `:${serializeArrayLiteral(ordered)}`;
     }
 
-    const objectEntries = descriptors.map<[string, unknown]>((descriptor) => {
-      const key =
-        descriptor.fieldNumber == null
-          ? String(descriptor.name)
-          : String(descriptor.fieldNumber);
-      return [key, descriptor.getValue()];
-    });
+    const entries: ObjectEntry[] = [];
+    let expectedIndex = 1;
 
-    return `:${serializeObjectLiteral(objectEntries)}`;
+    for (const descriptor of descriptors) {
+      const value = descriptor.getValue();
+      if (descriptor.fieldNumber == null) {
+        entries.push({ key: String(descriptor.name), value });
+        continue;
+      }
+
+      if (value === undefined) {
+        continue;
+      }
+
+      const fieldNumber = descriptor.fieldNumber;
+      const shouldOmitKey = fieldNumber === expectedIndex;
+
+      entries.push({
+        key: shouldOmitKey ? null : String(fieldNumber),
+        value,
+      });
+
+      expectedIndex = fieldNumber + 1;
+    }
+
+    return `:${serializeObjectLiteral(entries)}`;
   }
 
   static deserialize<T extends DataObject>(
@@ -209,14 +226,21 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
   );
 }
 
+interface ObjectEntry {
+  key: string | null;
+  value: unknown;
+}
+
 function serializeObjectLiteral(
-  recordOrEntries: Record<string, unknown> | Array<[string, unknown]>
+  recordOrEntries: Record<string, unknown> | ObjectEntry[]
 ): string {
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
-    : Object.entries(recordOrEntries);
-  const serialized = entries.map(
-    ([key, value]) => `${serializeObjectKey(key)}:${serializePrimitive(value)}`
+    : Object.entries(recordOrEntries).map(([key, value]) => ({ key, value }));
+  const serialized = entries.map(({ key, value }) =>
+    key == null
+      ? serializePrimitive(value)
+      : `${serializeObjectKey(key)}:${serializePrimitive(value)}`
   );
   return `{${serialized.join(',')}}`;
 }
@@ -354,16 +378,38 @@ function parseObjectLiteral(literal: string): Record<string, unknown> {
   const content = trimmed.slice(1, -1);
   const tokens = splitTopLevel(content);
 
+  let expectedIndex = 1;
+
   return tokens.reduce<Record<string, unknown>>((entries, token) => {
-    const [keyToken, valueToken] = splitKeyValue(token);
+    if (!token) {
+      return entries;
+    }
+
+    const split = splitKeyValue(token);
+
+    if (!split) {
+      const key = String(expectedIndex);
+      const value = parseLiteralToken(token);
+      entries[key] = value;
+      expectedIndex += 1;
+      return entries;
+    }
+
+    const [keyToken, valueToken] = split;
     const key = parseObjectKey(keyToken);
     const value = parseLiteralToken(valueToken);
     entries[key] = value;
+
+    const numericKey = parseNumericIndex(key);
+    if (numericKey != null) {
+      expectedIndex = numericKey + 1;
+    }
+
     return entries;
   }, {});
 }
 
-function splitKeyValue(entry: string): [string, string] {
+function splitKeyValue(entry: string): [string, string] | null {
   let depth = 0;
   let inString = false;
   let escaping = false;
@@ -409,7 +455,7 @@ function splitKeyValue(entry: string): [string, string] {
     }
   }
 
-  throw new Error(`Invalid object entry: ${entry}`);
+  return null;
 }
 
 function parseObjectKey(token: string): string {
@@ -434,4 +480,14 @@ function parseObjectKey(token: string): string {
   }
 
   throw new Error(`Invalid object key literal: ${token}`);
+}
+
+function parseNumericIndex(key: string): number | null {
+  const num = Number(key);
+
+  if (!Number.isInteger(num) || num < 1) {
+    return null;
+  }
+
+  return num;
 }

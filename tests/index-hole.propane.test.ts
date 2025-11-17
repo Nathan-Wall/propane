@@ -30,7 +30,7 @@ export default function runIndexHoleTests(ctx: TestContext) {
     value: 42,
   });
   const holeSerialized = holeInstance.serialize();
-  const expectedHoleSerialization = ':{1:20,3:42,4:Hole}';
+  const expectedHoleSerialization = ':{20,3:42,Hole}';
   assert(
     holeSerialized === expectedHoleSerialization,
     `Hole serialization should use compact object literal. Got: ${holeSerialized}`
