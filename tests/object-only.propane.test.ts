@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { ObjectOnly } from './tmp/object-only.propane.js';
+import { ObjectOnly } from './object-only.propane.ts';
 
 export default function runObjectOnlyTests() {
 

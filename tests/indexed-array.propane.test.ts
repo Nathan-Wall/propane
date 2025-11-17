@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { ArrayMessage } from './tmp/indexed-array.propane.js';
+import { ArrayMessage } from './indexed-array.propane.ts';
 
 export default function runIndexedArrayTests() {
 

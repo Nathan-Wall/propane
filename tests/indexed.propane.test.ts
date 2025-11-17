@@ -1,5 +1,5 @@
 import { assert, assertThrows } from './assert.ts';
-import { Indexed } from './tmp/indexed.propane.js';
+import { Indexed } from './indexed.propane.ts';
 
 export default function runIndexedPropaneTests() {
   if (typeof Indexed !== 'function') {

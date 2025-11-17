@@ -121,6 +121,7 @@ async function copyTests() {
     content = content.replace(/\.\/tmp\//g, './');
     // Ensure we import compiled artifacts next to mirrored tests
     content = content.replace(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
+    content = content.replace(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
     // Fix runtime relative path when mirrored into build/tests (./build/tests/* -> ../../runtime)
     content = content.replace(/from ['"]\.\.\/runtime\//g, "from '../../runtime/");
     // Fix assert path

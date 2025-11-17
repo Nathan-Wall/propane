@@ -1,7 +1,7 @@
 import { assert } from './assert.ts';
-import { User } from './tmp/user.propane.js';
-import { Indexed } from './tmp/indexed.propane.js';
-import { Compound } from './tmp/compound.propane.js';
+import { User } from './user.propane.ts';
+import { Indexed } from './indexed.propane.ts';
+import { Compound } from './compound.propane.ts';
 
 type DistanceUnit = 'm' | 'ft';
 

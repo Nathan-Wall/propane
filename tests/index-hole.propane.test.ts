@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { Hole } from './tmp/index-hole.propane.js';
+import { Hole } from './index-hole.propane.ts';
 
 export default function runIndexHoleTests() {
 

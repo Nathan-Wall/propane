@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { UnionStringBool } from './tmp/union-string-bool.propane.js';
+import { UnionStringBool } from './union-string-bool.propane.ts';
 
 export default function runUnionStringBoolTests() {
 

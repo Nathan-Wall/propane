@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { OptionalHole } from './tmp/index-optional-hole.propane.js';
+import { OptionalHole } from './index-optional-hole.propane.ts';
 
 export default function runOptionalHoleTests() {
 
