@@ -88,6 +88,13 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
   const immutableMapExports = evaluateModule(immutableMapJs, {
     '../json/stringify': jsonStringifyExports,
   });
+  const immutableSetJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'common/set/immutable.ts'), 'utf8'),
+    'common/set/immutable.ts'
+  );
+  const immutableSetExports = evaluateModule(immutableSetJs, {
+    '../json/stringify': jsonStringifyExports,
+  });
 
   const messageJs = transpileTs(
     fs.readFileSync(path.join(projectRoot, 'runtime/message.ts'), 'utf8'),
@@ -95,6 +102,7 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
   );
   const messageExports = evaluateModule(messageJs, {
     '../common/map/immutable': immutableMapExports,
+    '../common/set/immutable': immutableSetExports,
     '../common/json/parse': jsonParseExports,
     '../common/json/stringify': jsonStringifyExports,
   });
@@ -107,6 +115,7 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
   return evaluateModule(indexJs, {
     './message': messageExports,
     '../common/map/immutable': immutableMapExports,
+    '../common/set/immutable': immutableSetExports,
   });
 }
 

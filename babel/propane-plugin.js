@@ -18,6 +18,7 @@ export default function propanePlugin() {
         enter(path, state) {
           state.usesPropaneBase = false;
           state.usesImmutableMap = false;
+          state.usesImmutableSet = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
           const filename = fileOpts.filename || '';
@@ -102,6 +103,9 @@ export default function propanePlugin() {
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;
     }
+    if (properties.some((prop) => prop.isSet)) {
+      state.usesImmutableSet = true;
+    }
     declaredMessageTypeNames.add(typeAlias.id.name);
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
@@ -179,10 +183,14 @@ export default function propanePlugin() {
       const mapType = isMapTypeNode(propTypePath.node);
       const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
       const arrayType = isArrayTypeNode(propTypePath.node);
+      const setType = isSetTypeNode(propTypePath.node);
+      const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
       const messageTypeName = getMessageReferenceName(propTypePath);
       const runtimeType = mapType
         ? wrapReadonlyMapType(t.cloneNode(propTypePath.node))
-        : t.cloneNode(propTypePath.node);
+        : setType
+          ? wrapReadonlySetType(t.cloneNode(propTypePath.node))
+          : t.cloneNode(propTypePath.node);
 
       let inputTypeAnnotation = runtimeType;
 
@@ -201,6 +209,7 @@ export default function propanePlugin() {
         optional: Boolean(memberPath.node.optional),
         readonly: Boolean(memberPath.node.readonly),
         isArray: arrayType,
+        isSet: setType,
         isMap: mapType,
         isMessageType: Boolean(messageTypeName),
         messageTypeName,
@@ -211,6 +220,7 @@ export default function propanePlugin() {
           : null,
         mapKeyType: mapArgs ? mapArgs.keyType : null,
         mapValueType: mapArgs ? mapArgs.valueType : null,
+        setElementType: setArg,
       });
     }
 
@@ -287,6 +297,11 @@ export default function propanePlugin() {
         return;
       }
 
+      if (isSetReference(typePath.node)) {
+        assertSupportedSetType(typePath);
+        return;
+      }
+
       if (isAllowedTypeReference(typePath)) {
         return;
       }
@@ -337,6 +352,13 @@ export default function propanePlugin() {
     return t.isIdentifier(node.typeName) && node.typeName.name === 'Date';
   }
 
+  function isSetReference(node) {
+    return (
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Set' || node.typeName.name === 'ReadonlySet')
+    );
+  }
+
   function isMapReference(node) {
     return (
       t.isIdentifier(node.typeName) &&
@@ -372,6 +394,23 @@ export default function propanePlugin() {
     const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
     assertSupportedMapKeyType(keyTypePath);
     assertSupportedType(valueTypePath);
+  }
+
+  function assertSupportedSetType(typePath) {
+    const typeNode = typePath.node;
+
+    if (!t.isTSTypeReference(typeNode)) {
+      throw typePath.buildCodeFrameError('Invalid Set type.');
+    }
+
+    const typeParams = typeNode.typeParameters;
+    if (!typeParams || typeParams.params.length !== 1) {
+      throw typePath.buildCodeFrameError(
+        'Propane Set types must specify a single element type, e.g. Set<string>.'
+      );
+    }
+
+    assertSupportedType(typePath.get('typeParameters').get('params')[0]);
   }
 
   function assertSupportedMapKeyType(typePath) {
@@ -620,7 +659,7 @@ export default function propanePlugin() {
         baseType = wrapReadonlyMapType(baseType);
       }
 
-      const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap);
+      const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap || prop.isSet);
       const fieldTypeAnnotation = needsOptionalUnion
         ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
         : baseType;
@@ -679,6 +718,8 @@ export default function propanePlugin() {
         );
       } else if (prop.isMap) {
         valueExpr = buildImmutableMapExpression(propsAccess);
+      } else if (prop.isSet) {
+        valueExpr = buildImmutableSetExpression(propsAccess);
       }
 
       if (prop.isMessageType && prop.messageTypeName) {
@@ -745,6 +786,10 @@ export default function propanePlugin() {
       typeName,
       propDescriptors
     );
+    const setMethods = buildSetMutatorMethods(
+      typeName,
+      propDescriptors
+    );
 
     const classBody = t.classBody([
       typeTagField,
@@ -755,6 +800,7 @@ export default function propanePlugin() {
       ...deleteMethods,
       ...arrayMethods,
       ...mapMethods,
+      ...setMethods,
       descriptorMethod,
       fromEntriesMethod,
     ]);
@@ -905,6 +951,17 @@ export default function propanePlugin() {
           ])
         );
         checkedValueId = mapValueId;
+      } else if (prop.isSet) {
+        const setValueId = t.identifier(`${prop.name}SetValue`);
+        statements.push(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              setValueId,
+              buildImmutableSetExpression(checkedValueId)
+            ),
+          ])
+        );
+        checkedValueId = setValueId;
       } else if (prop.isMessageType && prop.messageTypeName) {
         const messageValueId = t.identifier(`${prop.name}MessageValue`);
         statements.push(
@@ -997,6 +1054,9 @@ export default function propanePlugin() {
     if (state.usesImmutableMap) {
       requiredSpecifiers.push('ImmutableMap');
     }
+    if (state.usesImmutableSet) {
+      requiredSpecifiers.push('ImmutableSet');
+    }
 
     if (existingImport) {
       const existingSpecifiers = new Set(
@@ -1074,7 +1134,36 @@ export default function propanePlugin() {
     return node;
   }
 
+  function wrapReadonlySetType(node) {
+    if (t.isTSParenthesizedType(node)) {
+      return t.tsParenthesizedType(
+        wrapReadonlySetType(t.cloneNode(node.typeAnnotation))
+      );
+    }
+
+    if (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      node.typeName.name === 'Set'
+    ) {
+      return t.tsTypeReference(
+        t.identifier('ReadonlySet'),
+        node.typeParameters ? t.cloneNode(node.typeParameters) : null
+      );
+    }
+
+    return node;
+  }
+
   function buildMapTagComparison(valueExpr, tag) {
+    return t.binaryExpression(
+      '===',
+      buildObjectToStringCall(valueExpr),
+      t.stringLiteral(tag)
+    );
+  }
+
+  function buildSetTagComparison(valueExpr, tag) {
     return t.binaryExpression(
       '===',
       buildObjectToStringCall(valueExpr),
@@ -1173,6 +1262,53 @@ export default function propanePlugin() {
     );
   }
 
+  function buildImmutableSetExpression(valueExpr) {
+    const arrayCheck = t.callExpression(
+      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+      [t.cloneNode(valueExpr)]
+    );
+
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableSet')
+    );
+    const immutableTagCheck = buildSetTagComparison(
+      valueExpr,
+      '[object ImmutableSet]'
+    );
+    const immutableCheck = t.logicalExpression(
+      '||',
+      immutableInstanceCheck,
+      immutableTagCheck
+    );
+
+    const setInstanceCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('Set')
+    );
+    const setTagCheck = buildSetTagComparison(valueExpr, '[object Set]');
+    const setCheck = t.logicalExpression('||', setInstanceCheck, setTagCheck);
+
+    const buildNewImmutableSet = () =>
+      t.newExpression(t.identifier('ImmutableSet'), [t.cloneNode(valueExpr)]);
+
+    return t.conditionalExpression(
+      immutableCheck,
+      t.cloneNode(valueExpr),
+      t.conditionalExpression(
+        arrayCheck,
+        buildNewImmutableSet(),
+        t.conditionalExpression(
+          setCheck,
+          buildNewImmutableSet(),
+          t.cloneNode(valueExpr)
+        )
+      )
+    );
+  }
+
   function buildMessageNormalizationExpression(
     valueExpr,
     className,
@@ -1249,16 +1385,24 @@ export default function propanePlugin() {
       t.cloneNode(targetProp.inputTypeAnnotation)
     );
 
-    const setterValueExpr = targetProp.isMessageType && targetProp.messageTypeName
-      ? buildMessageNormalizationExpression(
-          valueId,
-          targetProp.messageTypeName,
-          {
-            allowUndefined: Boolean(targetProp.optional),
-            allowNull: typeAllowsNull(targetProp.typeAnnotation),
-          }
-        )
-      : t.cloneNode(valueId);
+    let setterValueExpr = t.cloneNode(valueId);
+
+    if (targetProp.isMap) {
+      setterValueExpr = buildImmutableMapExpression(setterValueExpr);
+    } else if (targetProp.isSet) {
+      setterValueExpr = buildImmutableSetExpression(setterValueExpr);
+    }
+
+    if (targetProp.isMessageType && targetProp.messageTypeName) {
+      setterValueExpr = buildMessageNormalizationExpression(
+        setterValueExpr,
+        targetProp.messageTypeName,
+        {
+          allowUndefined: Boolean(targetProp.optional),
+          allowNull: typeAllowsNull(targetProp.typeAnnotation),
+        }
+      );
+    }
 
     const propsObject = buildPropsObjectExpression(
       propDescriptors,
@@ -1890,6 +2034,287 @@ export default function propanePlugin() {
     return methods;
   }
 
+  function buildSetMutatorMethods(typeName, propDescriptors) {
+    const methods = [];
+
+    for (const prop of propDescriptors) {
+      if (!prop.isSet || !prop.setElementType) {
+        continue;
+      }
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `add${capitalize(prop.name)}`,
+          buildSetAddParams(prop),
+          (setRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(setRef(), t.identifier('add')),
+                [t.identifier('value')]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `addAll${capitalize(prop.name)}`,
+          buildSetAddAllParams(prop),
+          (setRef) => {
+            const toAddId = t.identifier('toAdd');
+            return [
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(toAddId),
+                ]),
+                t.identifier('values'),
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(setRef(), t.identifier('add')),
+                      [toAddId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `delete${capitalize(prop.name)}`,
+          buildSetDeleteParams(prop),
+          (setRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(setRef(), t.identifier('delete')),
+                [t.identifier('value')]
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `deleteAll${capitalize(prop.name)}`,
+          buildSetDeleteAllParams(prop),
+          (setRef) => {
+            const delId = t.identifier('del');
+            return [
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(delId),
+                ]),
+                t.identifier('values'),
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(setRef(), t.identifier('delete')),
+                      [delId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `clear${capitalize(prop.name)}`,
+          [],
+          (setRef) => [
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(setRef(), t.identifier('clear')),
+                []
+              )
+            ),
+          ]
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `filter${capitalize(prop.name)}`,
+          buildSetFilterParams(prop),
+          (setRef) => {
+            const filteredId = t.identifier(`${prop.name}Filtered`);
+            const valueId = t.identifier('value');
+            return [
+              t.variableDeclaration('const', [
+                t.variableDeclarator(filteredId, t.arrayExpression([])),
+              ]),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(valueId),
+                ]),
+                setRef(),
+                t.blockStatement([
+                  t.ifStatement(
+                    t.callExpression(t.identifier('predicate'), [valueId]),
+                    t.expressionStatement(
+                      t.callExpression(
+                        t.memberExpression(filteredId, t.identifier('push')),
+                        [valueId]
+                      )
+                    )
+                  ),
+                ])
+              ),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(setRef(), t.identifier('clear')),
+                  []
+                )
+              ),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(valueId),
+                ]),
+                filteredId,
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(setRef(), t.identifier('add')),
+                      [valueId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `map${capitalize(prop.name)}`,
+          buildSetMapParams(prop),
+          (setRef) => {
+            const mappedId = t.identifier(`${prop.name}Mapped`);
+            const valueId = t.identifier('value');
+            const mappedValueId = t.identifier('mappedValue');
+            return [
+              t.variableDeclaration('const', [
+                t.variableDeclarator(mappedId, t.arrayExpression([])),
+              ]),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(valueId),
+                ]),
+                setRef(),
+                t.blockStatement([
+                  t.variableDeclaration('const', [
+                    t.variableDeclarator(
+                      mappedValueId,
+                      t.callExpression(t.identifier('mapper'), [valueId])
+                    ),
+                  ]),
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(mappedId, t.identifier('push')),
+                      [mappedValueId]
+                    )
+                  ),
+                ])
+              ),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(setRef(), t.identifier('clear')),
+                  []
+                )
+              ),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(valueId),
+                ]),
+                mappedId,
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(setRef(), t.identifier('add')),
+                      [valueId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+
+      methods.push(
+        buildSetMutationMethod(
+          typeName,
+          propDescriptors,
+          prop,
+          `update${capitalize(prop.name)}`,
+          buildSetUpdateParams(prop),
+          (setRef) => {
+            const updatedId = t.identifier('updated');
+            return [
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  updatedId,
+                  t.callExpression(t.identifier('updater'), [setRef()])
+                ),
+              ]),
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(setRef(), t.identifier('clear')),
+                  []
+                )
+              ),
+              t.forOfStatement(
+                t.variableDeclaration('const', [
+                  t.variableDeclarator(updatedId, null),
+                ]),
+                updatedId,
+                t.blockStatement([
+                  t.expressionStatement(
+                    t.callExpression(
+                      t.memberExpression(setRef(), t.identifier('add')),
+                      [updatedId]
+                    )
+                  ),
+                ])
+              ),
+            ];
+          }
+        )
+      );
+    }
+
+    return methods;
+  }
+
   function buildMapMutationMethod(
     typeName,
     propDescriptors,
@@ -1978,12 +2403,97 @@ export default function propanePlugin() {
     return { statements: [sourceDecl, entriesDecl, mapDecl], nextName };
   }
 
+  function buildSetMutationMethod(
+    typeName,
+    propDescriptors,
+    prop,
+    methodName,
+    params,
+    buildMutations
+  ) {
+    const { statements, nextName } = buildSetCloneSetup(prop);
+    const nextRef = () => t.identifier(nextName);
+    const mutations = buildMutations(nextRef);
+    const bodyStatements = [
+      ...statements,
+      ...mutations,
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [
+          buildPropsObjectExpression(
+            propDescriptors,
+            prop,
+            nextRef()
+          ),
+        ])
+      ),
+    ];
+
+    const method = t.classMethod(
+      'method',
+      t.identifier(methodName),
+      params,
+      t.blockStatement(bodyStatements)
+    );
+    method.returnType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(typeName))
+    );
+    return method;
+  }
+
+  function buildSetCloneSetup(prop) {
+    const sourceName = `${prop.name}SetSource`;
+    const entriesName = `${prop.name}SetEntries`;
+    const nextName = `${prop.name}SetNext`;
+
+    const fieldExpr = () =>
+      t.memberExpression(
+        t.thisExpression(),
+        t.identifier(prop.name)
+      );
+
+    const statements = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(sourceName),
+          t.logicalExpression(
+            '??',
+            fieldExpr(),
+            t.arrayExpression([])
+          )
+        ),
+      ]),
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(entriesName),
+          t.arrayExpression([
+            t.spreadElement(t.identifier(sourceName)),
+          ])
+        ),
+      ]),
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier(nextName),
+          t.newExpression(
+            t.identifier('Set'),
+            [t.identifier(entriesName)]
+          )
+        ),
+      ]),
+    ];
+
+    return { statements, nextName, entriesName };
+  }
+
   function cloneMapKeyType(prop) {
     return prop.mapKeyType ? t.cloneNode(prop.mapKeyType) : t.tsAnyKeyword();
   }
 
   function cloneMapValueType(prop) {
     return prop.mapValueType ? t.cloneNode(prop.mapValueType) : t.tsAnyKeyword();
+  }
+
+  function cloneSetElementType(prop) {
+    return prop.setElementType ? t.cloneNode(prop.setElementType) : t.tsAnyKeyword();
   }
 
   function buildMapSetParams(prop) {
@@ -2040,6 +2550,90 @@ export default function propanePlugin() {
       )
     );
     return [keyId, updaterId];
+  }
+
+  function buildSetAddParams(prop) {
+    const valueId = t.identifier('value');
+    valueId.typeAnnotation = t.tsTypeAnnotation(cloneSetElementType(prop));
+    return [valueId];
+  }
+
+  function buildSetAddAllParams(prop) {
+    const valuesId = t.identifier('values');
+    valuesId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([cloneSetElementType(prop)])
+      )
+    );
+    return [valuesId];
+  }
+
+  function buildSetDeleteParams(prop) {
+    const valueId = t.identifier('value');
+    valueId.typeAnnotation = t.tsTypeAnnotation(cloneSetElementType(prop));
+    return [valueId];
+  }
+
+  function buildSetDeleteAllParams(prop) {
+    const valuesId = t.identifier('values');
+    valuesId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([cloneSetElementType(prop)])
+      )
+    );
+    return [valuesId];
+  }
+
+  function buildSetFilterParams(prop) {
+    const predicateId = t.identifier('predicate');
+    const valueId = t.identifier('value');
+    predicateId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [t.identifier(valueId.name)],
+        t.tsTypeAnnotation(t.tsTypeReference(t.identifier('boolean')))
+      )
+    );
+    return [predicateId];
+  }
+
+  function buildSetMapParams(prop) {
+    const mapperId = t.identifier('mapper');
+    const valueId = t.identifier('value');
+    mapperId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [t.identifier(valueId.name)],
+        t.tsTypeAnnotation(t.tsTypeReference(t.identifier('any')))
+      )
+    );
+    return [mapperId];
+  }
+
+  function buildSetUpdateParams(prop) {
+    const updaterId = t.identifier('updater');
+    const currentId = t.identifier('current');
+    currentId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('ImmutableSet'),
+        t.tsTypeParameterInstantiation([cloneSetElementType(prop)])
+      )
+    );
+    updaterId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [currentId],
+        t.tsTypeAnnotation(
+          t.tsTypeReference(
+            t.identifier('Iterable'),
+            t.tsTypeParameterInstantiation([cloneSetElementType(prop)])
+          )
+        )
+      )
+    );
+    return [updaterId];
   }
 
   function buildMapMapperParams(prop) {
@@ -2170,6 +2764,10 @@ export default function propanePlugin() {
 
       if (isMapReference(typeNode)) {
         return buildMapTypeCheckExpression(typeNode, valueId);
+      }
+
+      if (isSetReference(typeNode)) {
+        return buildSetTypeCheckExpression(typeNode, valueId);
       }
 
       return null;
@@ -2320,6 +2918,53 @@ export default function propanePlugin() {
     return t.logicalExpression('&&', baseCheck, everyCall);
   }
 
+  function buildSetTypeCheckExpression(typeNode, valueId) {
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('ImmutableSet')
+    );
+    const immutableTagCheck = buildSetTagComparison(
+      valueId,
+      '[object ImmutableSet]'
+    );
+    const immutableCheck = t.logicalExpression(
+      '||',
+      immutableInstanceCheck,
+      immutableTagCheck
+    );
+    const setInstanceCheck = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('Set')
+    );
+    const setTagCheck = buildSetTagComparison(valueId, '[object Set]');
+    const setCheck = t.logicalExpression('||', setInstanceCheck, setTagCheck);
+    const baseCheck = t.logicalExpression('||', immutableCheck, setCheck);
+
+    const elementType = getSetTypeArguments(typeNode);
+    if (!elementType) {
+      return baseCheck;
+    }
+
+    const elementId = t.identifier('setValue');
+    const elementCheck = buildRuntimeTypeCheckExpression(elementType, elementId);
+    if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+      return baseCheck;
+    }
+
+    const valuesArray = t.arrayExpression([t.spreadElement(valueId)]);
+
+    return t.logicalExpression(
+      '&&',
+      baseCheck,
+      t.callExpression(
+        t.memberExpression(valuesArray, t.identifier('every')),
+        [t.arrowFunctionExpression([elementId], elementCheck)]
+      )
+    );
+  }
+
   function typeAllowsNull(typeNode) {
     if (!typeNode) {
       return false;
@@ -2432,6 +3077,22 @@ export default function propanePlugin() {
     return t.isTSArrayType(node);
   }
 
+  function isSetTypeNode(node) {
+    if (!node) {
+      return false;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return isSetTypeNode(node.typeAnnotation);
+    }
+
+    return (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Set' || node.typeName.name === 'ReadonlySet')
+    );
+  }
+
   function isMapTypeNode(node) {
     if (!node) {
       return false;
@@ -2466,6 +3127,28 @@ export default function propanePlugin() {
     ) {
       const [keyType, valueType] = node.typeParameters.params;
       return { keyType, valueType };
+    }
+
+    return null;
+  }
+
+  function getSetTypeArguments(node) {
+    if (!node) {
+      return null;
+    }
+
+    if (t.isTSParenthesizedType(node)) {
+      return getSetTypeArguments(node.typeAnnotation);
+    }
+
+    if (
+      t.isTSTypeReference(node) &&
+      t.isIdentifier(node.typeName) &&
+      (node.typeName.name === 'Set' || node.typeName.name === 'ReadonlySet') &&
+      node.typeParameters &&
+      node.typeParameters.params.length === 1
+    ) {
+      return node.typeParameters.params[0];
     }
 
     return null;

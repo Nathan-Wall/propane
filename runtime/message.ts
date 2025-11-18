@@ -1,6 +1,8 @@
 import { parseJson } from '../common/json/parse.ts';
 import { normalizeForJson } from '../common/json/stringify.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
+import { ImmutableSet } from '../common/set/immutable.ts';
+import { ImmutableSet } from '../common/set/immutable.ts';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -209,6 +211,10 @@ function serializePrimitive(value: unknown): string {
     return serializeMapLiteral(value);
   }
 
+  if (isSetValue(value)) {
+    return serializeSetLiteral(value);
+  }
+
   if (value && typeof value === 'object') {
     if (isDateValue(value)) {
       return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
@@ -234,7 +240,11 @@ function serializeMapLiteral(entries: ReadonlyMap<unknown, unknown>): string {
   const serialized = [...entries.entries()].map(([key, value]) =>
     serializeArrayLiteral([key, value])
   );
-  return `[${serialized.join(',')}]`;
+  return `M[${serialized.join(',')}]`;
+}
+
+function serializeSetLiteral(values: ReadonlySet<unknown>): string {
+  return `S${serializeArrayLiteral([...values.values()])}`;
 }
 
 function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
@@ -247,6 +257,19 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
     value instanceof ImmutableMap ||
     Object.prototype.toString.call(value) === MAP_OBJECT_TAG ||
     Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
+  );
+}
+
+function isSetValue(value: unknown): value is ReadonlySet<unknown> {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return (
+    value instanceof Set ||
+    value instanceof ImmutableSet ||
+    Object.prototype.toString.call(value) === '[object Set]' ||
+    Object.prototype.toString.call(value) === '[object ImmutableSet]'
   );
 }
 
@@ -351,6 +374,16 @@ function splitTopLevel(content: string): string[] {
 
 function parseLiteralToken(token: string): DataValue {
   const trimmed = token.trim();
+
+  if (trimmed.startsWith('M[')) {
+    const parsedArray = parseArrayLiteral(trimmed.slice(1)) as DataArray;
+    return new ImmutableMap(parsedArray as [unknown, unknown][]);
+  }
+
+  if (trimmed.startsWith('S[')) {
+    const parsedArray = parseArrayLiteral(trimmed.slice(1)) as DataArray;
+    return new ImmutableSet(parsedArray as unknown[]);
+  }
 
   if (!trimmed || trimmed === 'undefined') {
     return undefined;

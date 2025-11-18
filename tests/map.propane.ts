@@ -1,0 +1,417 @@
+// Generated from tests/map.propane
+import { Message, MessagePropDescriptor, ImmutableMap } from "@propanejs/runtime";
+export namespace MapMessage {
+  export type Data = {
+    labels: ReadonlyMap<string | number, number>;
+    metadata?: ReadonlyMap<string, {
+      value: string;
+    }>;
+    extras: ReadonlyMap<string, {
+      note: string | null;
+    }>;
+  };
+  export type Value = MapMessage | MapMessage.Data;
+}
+export class MapMessage extends Message<MapMessage.Data> {
+  static #typeTag = Symbol("MapMessage");
+  #labels: ReadonlyMap<string | number, number>;
+  #metadata: ReadonlyMap<string, {
+    value: string;
+  }> | undefined;
+  #extras: ReadonlyMap<string, {
+    note: string | null;
+  }>;
+  constructor(props: MapMessage.Value) {
+    super(MapMessage.#typeTag);
+    this.#labels = Array.isArray(props.labels) ? new ImmutableMap(props.labels) : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : props.labels instanceof Map || Object.prototype.toString.call(props.labels) === "[object Map]" ? new ImmutableMap(props.labels) : props.labels;
+    this.#metadata = Array.isArray(props.metadata) ? new ImmutableMap(props.metadata) : props.metadata instanceof ImmutableMap || Object.prototype.toString.call(props.metadata) === "[object ImmutableMap]" ? props.metadata : props.metadata instanceof Map || Object.prototype.toString.call(props.metadata) === "[object Map]" ? new ImmutableMap(props.metadata) : props.metadata;
+    this.#extras = Array.isArray(props.extras) ? new ImmutableMap(props.extras) : props.extras instanceof ImmutableMap || Object.prototype.toString.call(props.extras) === "[object ImmutableMap]" ? props.extras : props.extras instanceof Map || Object.prototype.toString.call(props.extras) === "[object Map]" ? new ImmutableMap(props.extras) : props.extras;
+  }
+  get labels(): ReadonlyMap<string | number, number> {
+    return this.#labels;
+  }
+  get metadata(): ReadonlyMap<string, {
+    value: string;
+  }> | undefined {
+    return this.#metadata;
+  }
+  get extras(): ReadonlyMap<string, {
+    note: string | null;
+  }> {
+    return this.#extras;
+  }
+  setLabels(value: ReadonlyMap<string | number, number>): MapMessage {
+    return new MapMessage({
+      labels: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  setMetadata(value: ReadonlyMap<string, {
+    value: string;
+  }>): MapMessage {
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      extras: this.#extras
+    });
+  }
+  setExtras(value: ReadonlyMap<string, {
+    note: string | null;
+  }>): MapMessage {
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value
+    });
+  }
+  deleteMetadata(): MapMessage {
+    return new MapMessage({
+      labels: this.#labels,
+      extras: this.#extras
+    });
+  }
+  setLabelsEntry(key: string | number, value: number): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    labelsMapNext.set(key, value);
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  deleteLabelsEntry(key: string | number): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    labelsMapNext.delete(key);
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  clearLabels(): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    labelsMapNext.clear();
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  mergeLabelsEntries(entries: Iterable<[string | number, number]> | Map<string | number, number> | ReadonlyMap<string | number, number>): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    for (const [mergeKey, mergeValue] of entries) {
+      labelsMapNext.set(mergeKey, mergeValue);
+    }
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  updateLabelsEntry(key: string | number, updater: (currentValue: number | undefined) => number): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    const currentValue = labelsMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    labelsMapNext.set(key, updatedValue);
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  mapLabelsEntries(mapper: (value: number, key: string | number) => [string | number, number]): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    const labelsMappedEntries = [];
+    for (const [entryKey, entryValue] of labelsMapNext) {
+      const mappedEntry = mapper(entryValue, entryKey);
+      labelsMappedEntries.push(mappedEntry);
+    }
+    labelsMapNext.clear();
+    for (const [newKey, newValue] of labelsMappedEntries) {
+      labelsMapNext.set(newKey, newValue);
+    }
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  filterLabelsEntries(predicate: (value: number, key: string | number) => boolean): MapMessage {
+    const labelsMapSource = this.#labels;
+    const labelsMapEntries = Array.from(labelsMapSource.entries());
+    const labelsMapNext = new Map(labelsMapEntries);
+    for (const [entryKey, entryValue] of labelsMapNext) {
+      if (!predicate(entryValue, entryKey)) labelsMapNext.delete(entryKey);
+    }
+    return new MapMessage({
+      labels: labelsMapNext,
+      metadata: this.#metadata,
+      extras: this.#extras
+    });
+  }
+  setMetadataEntry(key: string, value: {
+    value: string;
+  }): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    metadataMapNext.set(key, value);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  deleteMetadataEntry(key: string): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    metadataMapNext.delete(key);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  clearMetadata(): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    metadataMapNext.clear();
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  mergeMetadataEntries(entries: Iterable<[string, {
+    value: string;
+  }]> | Map<string, {
+    value: string;
+  }> | ReadonlyMap<string, {
+    value: string;
+  }>): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    for (const [mergeKey, mergeValue] of entries) {
+      metadataMapNext.set(mergeKey, mergeValue);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  updateMetadataEntry(key: string, updater: (currentValue: {
+    value: string;
+  } | undefined) => {
+    value: string;
+  }): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    const currentValue = metadataMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    metadataMapNext.set(key, updatedValue);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  mapMetadataEntries(mapper: (value: {
+    value: string;
+  }, key: string) => [string, {
+    value: string;
+  }]): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    const metadataMappedEntries = [];
+    for (const [entryKey, entryValue] of metadataMapNext) {
+      const mappedEntry = mapper(entryValue, entryKey);
+      metadataMappedEntries.push(mappedEntry);
+    }
+    metadataMapNext.clear();
+    for (const [newKey, newValue] of metadataMappedEntries) {
+      metadataMapNext.set(newKey, newValue);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  filterMetadataEntries(predicate: (value: {
+    value: string;
+  }, key: string) => boolean): MapMessage {
+    const metadataMapSource = this.#metadata;
+    const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
+    const metadataMapNext = new Map(metadataMapEntries);
+    for (const [entryKey, entryValue] of metadataMapNext) {
+      if (!predicate(entryValue, entryKey)) metadataMapNext.delete(entryKey);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: metadataMapNext,
+      extras: this.#extras
+    });
+  }
+  setExtrasEntry(key: string, value: {
+    note: string | null;
+  }): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    extrasMapNext.set(key, value);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  deleteExtrasEntry(key: string): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    extrasMapNext.delete(key);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  clearExtras(): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    extrasMapNext.clear();
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  mergeExtrasEntries(entries: Iterable<[string, {
+    note: string | null;
+  }]> | Map<string, {
+    note: string | null;
+  }> | ReadonlyMap<string, {
+    note: string | null;
+  }>): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    for (const [mergeKey, mergeValue] of entries) {
+      extrasMapNext.set(mergeKey, mergeValue);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  updateExtrasEntry(key: string, updater: (currentValue: {
+    note: string | null;
+  } | undefined) => {
+    note: string | null;
+  }): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    const currentValue = extrasMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    extrasMapNext.set(key, updatedValue);
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  mapExtrasEntries(mapper: (value: {
+    note: string | null;
+  }, key: string) => [string, {
+    note: string | null;
+  }]): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    const extrasMappedEntries = [];
+    for (const [entryKey, entryValue] of extrasMapNext) {
+      const mappedEntry = mapper(entryValue, entryKey);
+      extrasMappedEntries.push(mappedEntry);
+    }
+    extrasMapNext.clear();
+    for (const [newKey, newValue] of extrasMappedEntries) {
+      extrasMapNext.set(newKey, newValue);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  filterExtrasEntries(predicate: (value: {
+    note: string | null;
+  }, key: string) => boolean): MapMessage {
+    const extrasMapSource = this.#extras;
+    const extrasMapEntries = Array.from(extrasMapSource.entries());
+    const extrasMapNext = new Map(extrasMapEntries);
+    for (const [entryKey, entryValue] of extrasMapNext) {
+      if (!predicate(entryValue, entryKey)) extrasMapNext.delete(entryKey);
+    }
+    return new MapMessage({
+      labels: this.#labels,
+      metadata: this.#metadata,
+      extras: extrasMapNext
+    });
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<MapMessage.Data>[] {
+    return [{
+      name: "labels",
+      fieldNumber: 1,
+      getValue: () => this.#labels
+    }, {
+      name: "metadata",
+      fieldNumber: 2,
+      getValue: () => this.#metadata
+    }, {
+      name: "extras",
+      fieldNumber: 3,
+      getValue: () => this.#extras
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): MapMessage.Data {
+    const props = {} as Partial<MapMessage.Data>;
+    const labelsValue = entries["1"] === undefined ? entries["labels"] : entries["1"];
+    if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
+    const labelsMapValue = Array.isArray(labelsValue) ? new ImmutableMap(labelsValue) : labelsValue instanceof ImmutableMap || Object.prototype.toString.call(labelsValue) === "[object ImmutableMap]" ? labelsValue : labelsValue instanceof Map || Object.prototype.toString.call(labelsValue) === "[object Map]" ? new ImmutableMap(labelsValue) : labelsValue;
+    if (!((labelsMapValue instanceof ImmutableMap || Object.prototype.toString.call(labelsMapValue) === "[object ImmutableMap]" || labelsMapValue instanceof Map || Object.prototype.toString.call(labelsMapValue) === "[object Map]") && [...labelsMapValue.entries()].every(([mapKey, mapValue]) => (typeof mapKey === "string" || typeof mapKey === "number") && typeof mapValue === "number"))) throw new Error("Invalid value for property \"labels\".");
+    props.labels = labelsMapValue;
+    const metadataValue = entries["2"] === undefined ? entries["metadata"] : entries["2"];
+    const metadataNormalized = metadataValue === null ? undefined : metadataValue;
+    const metadataMapValue = Array.isArray(metadataNormalized) ? new ImmutableMap(metadataNormalized) : metadataNormalized instanceof ImmutableMap || Object.prototype.toString.call(metadataNormalized) === "[object ImmutableMap]" ? metadataNormalized : metadataNormalized instanceof Map || Object.prototype.toString.call(metadataNormalized) === "[object Map]" ? new ImmutableMap(metadataNormalized) : metadataNormalized;
+    if (metadataMapValue !== undefined && !((metadataMapValue instanceof ImmutableMap || Object.prototype.toString.call(metadataMapValue) === "[object ImmutableMap]" || metadataMapValue instanceof Map || Object.prototype.toString.call(metadataMapValue) === "[object Map]") && [...metadataMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "object" && mapValue !== null && mapValue.value !== undefined && typeof mapValue.value === "string"))) throw new Error("Invalid value for property \"metadata\".");
+    props.metadata = metadataMapValue;
+    const extrasValue = entries["3"] === undefined ? entries["extras"] : entries["3"];
+    if (extrasValue === undefined) throw new Error("Missing required property \"extras\".");
+    const extrasMapValue = Array.isArray(extrasValue) ? new ImmutableMap(extrasValue) : extrasValue instanceof ImmutableMap || Object.prototype.toString.call(extrasValue) === "[object ImmutableMap]" ? extrasValue : extrasValue instanceof Map || Object.prototype.toString.call(extrasValue) === "[object Map]" ? new ImmutableMap(extrasValue) : extrasValue;
+    if (!((extrasMapValue instanceof ImmutableMap || Object.prototype.toString.call(extrasMapValue) === "[object ImmutableMap]" || extrasMapValue instanceof Map || Object.prototype.toString.call(extrasMapValue) === "[object Map]") && [...extrasMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "object" && mapValue !== null && mapValue.note !== undefined && (typeof mapValue.note === "string" || mapValue.note === null)))) throw new Error("Invalid value for property \"extras\".");
+    props.extras = extrasMapValue;
+    return props as MapMessage.Data;
+  }
+}
