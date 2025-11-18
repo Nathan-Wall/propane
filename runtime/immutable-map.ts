@@ -127,6 +127,7 @@ function hashString(value: string): number {
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #buckets: Map<string, [K, V][]>;
   #size: number;
+  #hash?: number;
   readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   constructor(
@@ -253,6 +254,10 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   }
 
   hashCode(): number {
+    if (this.#hash !== undefined) {
+      return this.#hash;
+    }
+
     // Order-independent hash: hash each entry, sort hashes for determinism,
     // then sum.
     const entryHashes: number[] = [];
@@ -266,6 +271,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     for (const h of entryHashes) {
       hash = (hash + h) | 0;
     }
+    this.#hash = hash;
     return hash;
   }
 

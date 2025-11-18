@@ -33,6 +33,9 @@ interface MessageConstructor<T extends DataObject> {
 
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
+  static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
+  #serialized?: string;
+  #hash?: number;
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
@@ -44,7 +47,18 @@ export abstract class Message<T extends DataObject> {
   // Immutable.js compatibility: provide a stable hash based on canonical
   // serialization.
   hashCode(): number {
-    return hashString(this.serialize());
+    if (this.#hash !== undefined) {
+      return this.#hash;
+    }
+
+    const serialized = this.serialize();
+    const hash = hashString(serialized);
+
+    // Messages are immutable; cache the hash even if the serialized string was too
+    // large to retain.
+    this.#hash = hash;
+
+    return hash;
   }
 
   equals(other: unknown): boolean {
@@ -83,6 +97,10 @@ export abstract class Message<T extends DataObject> {
   }
 
   serialize(): string {
+    if (this.#serialized !== undefined) {
+      return this.#serialized;
+    }
+
     const descriptors = this.$getPropDescriptors();
     const entries: ObjectEntry[] = [];
     let expectedIndex = 1;
@@ -109,7 +127,14 @@ export abstract class Message<T extends DataObject> {
       expectedIndex = fieldNumber + 1;
     }
 
-    return `:${serializeObjectLiteral(entries)}`;
+    const serialized = `:${serializeObjectLiteral(entries)}`;
+
+    // Avoid retaining excessively large payloads to protect memory usage.
+    if (serialized.length <= Message.MAX_CACHED_SERIALIZE) {
+      this.#serialized = serialized;
+    }
+
+    return serialized;
   }
 
   static deserialize<T extends DataObject>(
