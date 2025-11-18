@@ -1,0 +1,7 @@
+import { ImmutableArray } from '../common/array/immutable';
+import { ImmutableSet } from '../common/set/immutable';
+
+export type ImmutableArraySet = {
+  arr: ImmutableArray<number>;
+  set: ImmutableSet<string>;
+};

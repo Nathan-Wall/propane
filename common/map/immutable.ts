@@ -284,7 +284,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     }
     return m;
   }
-  
+
   toJSON(): unknown {
     return [...this].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
   }

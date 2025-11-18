@@ -19,8 +19,20 @@ export function normalizeForJson(value: unknown): unknown {
     return [...value.entries()].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
   }
 
+  if (isImmutableSetLike(value)) {
+    return [...value.values()].map((v) => normalizeForJson(v));
+  }
+
+  if (isImmutableArrayLike(value)) {
+    return [...value.values()].map((v) => normalizeForJson(v));
+  }
+
   if (value instanceof Map) {
     return [...value.entries()].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
+  }
+
+  if (value instanceof Set) {
+    return [...value.values()].map((v) => normalizeForJson(v));
   }
 
   if (Array.isArray(value)) {
@@ -44,5 +56,23 @@ function isImmutableMapLike(value: unknown): value is { entries: () => IterableI
     typeof value === 'object' &&
     typeof (value as { entries?: unknown }).entries === 'function' &&
     (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableMap'
+  );
+}
+
+function isImmutableSetLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as { values?: unknown }).values === 'function' &&
+    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableSet'
+  );
+}
+
+function isImmutableArrayLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as { values?: unknown }).values === 'function' &&
+    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableArray'
   );
 }
