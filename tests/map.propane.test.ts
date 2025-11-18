@@ -168,4 +168,23 @@ export default function runMapPropaneTests() {
   const changedPeer = new ImmutableMap(changedSource);
   assert(!immutable.equals(changedPeer), 'ImmutableMap equals should detect differences.');
   assert(!immutable.equals(null), 'ImmutableMap equals should return false for null input.');
+
+  // Message keys should be compared with equals/hashCode, not identity.
+  const msgKeyA = new MapMessage({
+    labels: new Map([['alpha', 1]]),
+    extras: new Map([['note', { note: null }]]),
+    metadata: undefined,
+  });
+  const msgKeyB = new MapMessage({
+    labels: new Map([['alpha', 1]]),
+    extras: new Map([['note', { note: null }]]),
+    metadata: undefined,
+  });
+  const msgMap = new ImmutableMap([
+    [msgKeyA, 'value-a'],
+    [msgKeyB, 'value-b'],
+  ]);
+  assert(msgMap.size === 1, 'ImmutableMap should coalesce equal Message keys.');
+  assert(msgMap.has(msgKeyB), 'ImmutableMap should find equal Message keys.');
+  assert(msgMap.get(msgKeyA) === 'value-b', 'ImmutableMap should use last entry for equal Message keys.');
 }
