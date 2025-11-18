@@ -1,3 +1,5 @@
+import { normalizeForJson } from '../json/stringify.ts';
+
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
@@ -282,5 +284,8 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     }
     return m;
   }
-
+  
+  toJSON(): unknown {
+    return [...this].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
+  }
 }

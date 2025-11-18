@@ -1,2 +1,2 @@
-export * from './immutable-map.ts';
+export * from '../common/map/immutable.ts';
 export * from './message.ts';

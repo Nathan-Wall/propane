@@ -75,19 +75,28 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
   );
   const jsonParseExports = evaluateModule(jsonParseJs);
 
-  const immutableMapJs = transpileTs(
-    fs.readFileSync(path.join(projectRoot, 'runtime/immutable-map.ts'), 'utf8'),
-    'runtime/immutable-map.ts'
+  const jsonStringifyJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'common/json/stringify.ts'), 'utf8'),
+    'common/json/stringify.ts'
   );
-  const immutableMapExports = evaluateModule(immutableMapJs);
+  const jsonStringifyExports = evaluateModule(jsonStringifyJs);
+
+  const immutableMapJs = transpileTs(
+    fs.readFileSync(path.join(projectRoot, 'common/map/immutable.ts'), 'utf8'),
+    'common/map/immutable.ts'
+  );
+  const immutableMapExports = evaluateModule(immutableMapJs, {
+    '../json/stringify': jsonStringifyExports,
+  });
 
   const messageJs = transpileTs(
     fs.readFileSync(path.join(projectRoot, 'runtime/message.ts'), 'utf8'),
     'runtime/message.ts'
   );
   const messageExports = evaluateModule(messageJs, {
-    './immutable-map': immutableMapExports,
+    '../common/map/immutable': immutableMapExports,
     '../common/json/parse': jsonParseExports,
+    '../common/json/stringify': jsonStringifyExports,
   });
 
   const indexJs = transpileTs(
@@ -97,7 +106,7 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
 
   return evaluateModule(indexJs, {
     './message': messageExports,
-    './immutable-map': immutableMapExports,
+    '../common/map/immutable': immutableMapExports,
   });
 }
 

@@ -14,6 +14,7 @@ const outDir = path.join(projectRoot, 'build', 'tests');
 await cleanOutput();
 await buildAll();
 await copyTests();
+await copyCommon();
 
 async function buildAll() {
   const files = findPropaneFiles(testsDir);
@@ -133,6 +134,26 @@ async function copyTests() {
   // copy loaders / runner
   for (const helper of ['run-tests.ts', 'ts-loader.mjs', 'assert.ts']) {
     fs.copyFileSync(path.join(testsDir, helper), path.join(outDir, helper));
+  }
+}
+
+async function copyCommon() {
+  const commonSrc = path.join(projectRoot, 'common');
+  const commonDest = path.join(outDir, '..', 'common');
+  ensureDir(commonDest);
+  ensurePackageTypeModule(commonDest);
+
+  const filesToCopy = [
+    ['json', 'parse.ts'],
+    ['json', 'stringify.ts'],
+    ['map', 'immutable.ts'],
+  ];
+
+  for (const [subdir, file] of filesToCopy) {
+    const srcPath = path.join(commonSrc, subdir, file);
+    const destPath = path.join(commonDest, subdir, file);
+    ensureDir(path.dirname(destPath));
+    fs.copyFileSync(srcPath, destPath);
   }
 }
 

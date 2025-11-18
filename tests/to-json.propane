@@ -1,0 +1,13 @@
+export type ToJson = {
+  '1:map': Map<string, number>;
+  '2:imap': Map<string, number>;
+  '3:big': bigint;
+  '4:date': Date;
+  '5:optional'?: string;
+  '6:nonFinite': number;
+  '7:nested': {
+    array: (number | undefined)[];
+    map: Map<string, bigint>;
+    imap: Map<string, Date>;
+  };
+};

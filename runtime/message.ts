@@ -1,5 +1,6 @@
 import { parseJson } from '../common/json/parse.ts';
-import { ImmutableMap } from './immutable-map.ts';
+import { normalizeForJson } from '../common/json/stringify.ts';
+import { ImmutableMap } from '../common/map/immutable.ts';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -135,6 +136,18 @@ export abstract class Message<T extends DataObject> {
     }
 
     return serialized;
+  }
+
+  /**
+   * Provide a JSON-friendly view; JSON.stringify(Message) will emit the plain
+   * object form rather than the Propane cereal string.
+   * This is primarily provided for debugging purposes.
+   * Note that serialization via this method or JSON.stringify is lossy, and
+   * all data cannot be reassemled to a Message.
+   * Use `serialize()` for serialization.
+   */
+  toJSON(): unknown {
+    return normalizeForJson(this.cerealize());
   }
 
   static deserialize<T extends DataObject>(
