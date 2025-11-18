@@ -1,6 +1,14 @@
 import { parseJson } from '../common/json/parse.ts';
 import { ImmutableMap } from './immutable-map.ts';
 
+const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
+const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
+const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
+const MAP_OBJECT_TAG = '[object Map]';
+const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
+const DATE_OBJECT_TAG = '[object Date]';
+const DATE_PREFIX = 'D';
+
 export type DataPrimitive = string | number | boolean | null | undefined;
 export type DataValue = DataPrimitive | DataObject | DataArray;
 export type DataArray = DataValue[];
@@ -14,14 +22,54 @@ export interface MessagePropDescriptor<T extends object> {
   getValue: () => T[keyof T];
 }
 
+type MessageFromEntries<T extends DataObject> = Message<T> & {
+  $fromEntries(entries: Record<string, unknown>): T;
+};
+
 interface MessageConstructor<T extends DataObject> {
   new (props: T): Message<T>;
-  prototype: Message<T>;
+  prototype: MessageFromEntries<T>;
 }
 
 export abstract class Message<T extends DataObject> {
+  readonly #typeTag: symbol;
+
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
+
+  protected constructor(typeTag: symbol) {
+    this.#typeTag = typeTag;
+  }
+
+  // Immutable.js compatibility: provide a stable hash based on canonical
+  // serialization.
+  hashCode(): number {
+    return hashString(this.serialize());
+  }
+
+  equals(other: unknown): boolean {
+    if (!other || typeof other !== 'object') {
+      return false;
+    }
+
+    if (!(other instanceof Message)) {
+      return false;
+    }
+
+    if (other.#typeTag !== this.#typeTag) {
+      return false;
+    }
+
+    if (typeof other.serialize === 'function') {
+      try {
+        return other.serialize() === this.serialize();
+      } catch {
+        return false;
+      }
+    }
+
+    return false;
+  }
 
   private cerealize(): T {
     return this.cerealizeWithDescriptors(this.$getPropDescriptors());
@@ -96,14 +144,6 @@ export function parseCerealString(value: string) {
 
   return parsed;
 }
-
-const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
-const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
-const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
-const MAP_OBJECT_TAG = '[object Map]';
-const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
-const DATE_OBJECT_TAG = '[object Date]';
-const DATE_PREFIX = 'D';
 
 function canUseBareString(value: string) {
   return (
@@ -440,6 +480,15 @@ function parseNumericIndex(key: string): number | null {
   }
 
   return num;
+}
+
+// Simple deterministic string hash (Java-style)
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+  }
+  return hash;
 }
 
 function parseStringOrDate(token: string): string | Date {

@@ -704,8 +704,19 @@ export default function propanePlugin() {
       );
     });
 
+    const typeTagPrivate = t.privateName(t.identifier('typeTag'));
+    const typeTagField = t.classPrivateProperty(
+      typeTagPrivate,
+      t.callExpression(t.identifier('Symbol'), [t.stringLiteral(typeName)])
+    );
+    typeTagField.static = true;
+
     const constructorBody = [
-      t.expressionStatement(t.callExpression(t.super(), [])),
+      t.expressionStatement(
+        t.callExpression(t.super(), [
+          t.memberExpression(t.identifier(typeName), typeTagPrivate),
+        ])
+      ),
       ...constructorAssignments,
     ];
 
@@ -736,6 +747,7 @@ export default function propanePlugin() {
     );
 
     const classBody = t.classBody([
+      typeTagField,
       ...backingFields,
       constructor,
       ...getters,
