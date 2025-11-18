@@ -19,6 +19,8 @@ export default function propanePlugin() {
           state.usesPropaneBase = false;
           state.usesImmutableMap = false;
           state.usesImmutableSet = false;
+          state.usesImmutableArray = false;
+          state.usesImmutableSet = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
           const filename = fileOpts.filename || '';
@@ -106,6 +108,9 @@ export default function propanePlugin() {
     if (properties.some((prop) => prop.isSet)) {
       state.usesImmutableSet = true;
     }
+    if (properties.some((prop) => prop.isArray)) {
+      state.usesImmutableArray = true;
+    }
     declaredMessageTypeNames.add(typeAlias.id.name);
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
@@ -183,6 +188,7 @@ export default function propanePlugin() {
       const mapType = isMapTypeNode(propTypePath.node);
       const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
       const arrayType = isArrayTypeNode(propTypePath.node);
+      const arrayElementType = arrayType ? getArrayElementType(propTypePath.node) : null;
       const setType = isSetTypeNode(propTypePath.node);
       const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
       const messageTypeName = getMessageReferenceName(propTypePath);
@@ -190,7 +196,9 @@ export default function propanePlugin() {
         ? wrapReadonlyMapType(t.cloneNode(propTypePath.node))
         : setType
           ? wrapReadonlySetType(t.cloneNode(propTypePath.node))
-          : t.cloneNode(propTypePath.node);
+          : arrayType
+            ? wrapReadonlyArrayType(t.cloneNode(propTypePath.node))
+            : t.cloneNode(propTypePath.node);
 
       let inputTypeAnnotation = runtimeType;
 
@@ -215,9 +223,7 @@ export default function propanePlugin() {
         messageTypeName,
         typeAnnotation: runtimeType,
         inputTypeAnnotation,
-        arrayElementType: arrayType
-          ? getArrayElementType(propTypePath.node)
-          : null,
+        arrayElementType,
         mapKeyType: mapArgs ? mapArgs.keyType : null,
         mapValueType: mapArgs ? mapArgs.valueType : null,
         setElementType: setArg,
@@ -701,21 +707,7 @@ export default function propanePlugin() {
       let valueExpr = t.cloneNode(propsAccess);
 
       if (prop.isArray) {
-        valueExpr = t.conditionalExpression(
-          t.callExpression(
-            t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-            [t.cloneNode(propsAccess)]
-          ),
-          t.callExpression(
-            t.memberExpression(t.identifier('Object'), t.identifier('freeze')),
-            [
-              t.arrayExpression([
-                t.spreadElement(t.cloneNode(propsAccess)),
-              ]),
-            ]
-          ),
-          t.cloneNode(propsAccess)
-        );
+        valueExpr = buildImmutableArrayExpression(propsAccess);
       } else if (prop.isMap) {
         valueExpr = buildImmutableMapExpression(propsAccess);
       } else if (prop.isSet) {
@@ -962,6 +954,17 @@ export default function propanePlugin() {
           ])
         );
         checkedValueId = setValueId;
+      } else if (prop.isArray) {
+        const arrayValueId = t.identifier(`${prop.name}ArrayValue`);
+        statements.push(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              arrayValueId,
+              buildImmutableArrayExpression(checkedValueId)
+            ),
+          ])
+        );
+        checkedValueId = arrayValueId;
       } else if (prop.isMessageType && prop.messageTypeName) {
         const messageValueId = t.identifier(`${prop.name}MessageValue`);
         statements.push(
@@ -1057,6 +1060,9 @@ export default function propanePlugin() {
     if (state.usesImmutableSet) {
       requiredSpecifiers.push('ImmutableSet');
     }
+    if (state.usesImmutableArray) {
+      requiredSpecifiers.push('ImmutableArray');
+    }
 
     if (existingImport) {
       const existingSpecifiers = new Set(
@@ -1102,11 +1108,9 @@ export default function propanePlugin() {
 
   function wrapReadonlyArrayType(node) {
     if (t.isTSArrayType(node)) {
-      return t.tsTypeOperator(
-        t.tsArrayType(
-          wrapReadonlyArrayType(t.cloneNode(node.elementType))
-        ),
-        'readonly'
+      return t.tsTypeReference(
+        t.identifier('ImmutableArray'),
+        t.tsTypeParameterInstantiation([node.elementType])
       );
     }
 
@@ -1258,6 +1262,31 @@ export default function propanePlugin() {
           buildNewImmutableMap(),
           t.cloneNode(valueExpr)
         )
+      )
+    );
+  }
+
+  function buildImmutableArrayExpression(valueExpr) {
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableArray')
+    );
+    const arrayCheck = t.callExpression(
+      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+      [t.cloneNode(valueExpr)]
+    );
+
+    const toImmutable = () =>
+      t.newExpression(t.identifier('ImmutableArray'), [t.cloneNode(valueExpr)]);
+
+    return t.conditionalExpression(
+      immutableInstanceCheck,
+      t.cloneNode(valueExpr),
+      t.conditionalExpression(
+        arrayCheck,
+        toImmutable(),
+        t.cloneNode(valueExpr)
       )
     );
   }
@@ -2729,28 +2758,7 @@ export default function propanePlugin() {
     }
 
     if (t.isTSArrayType(typeNode)) {
-      const elementId = t.identifier('element');
-      const elementCheck = buildRuntimeTypeCheckExpression(
-        typeNode.elementType,
-        elementId
-      );
-      const arrayCheck = t.callExpression(
-        t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-        [valueId]
-      );
-
-      if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
-        return arrayCheck;
-      }
-
-      return t.logicalExpression(
-        '&&',
-        arrayCheck,
-        t.callExpression(
-          t.memberExpression(valueId, t.identifier('every')),
-          [t.arrowFunctionExpression([elementId], elementCheck)]
-        )
-      );
+        return buildArrayTypeCheckExpression(typeNode, valueId);
     }
 
     if (t.isTSTypeReference(typeNode)) {
@@ -2960,6 +2968,55 @@ export default function propanePlugin() {
       baseCheck,
       t.callExpression(
         t.memberExpression(valuesArray, t.identifier('every')),
+        [t.arrowFunctionExpression([elementId], elementCheck)]
+      )
+    );
+  }
+
+  function buildArrayTypeCheckExpression(typeNode, valueId) {
+    const immutableInstanceCheck = t.binaryExpression(
+      'instanceof',
+      valueId,
+      t.identifier('ImmutableArray')
+    );
+    const immutableTagCheck = buildSetTagComparison(
+      valueId,
+      '[object ImmutableArray]'
+    );
+    const arrayInstanceCheck = t.callExpression(
+      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+      [valueId]
+    );
+    const baseCheck = t.logicalExpression(
+      '||',
+      immutableInstanceCheck,
+      t.logicalExpression('||', immutableTagCheck, arrayInstanceCheck)
+    );
+
+    const elementId = t.identifier('element');
+    const elementCheck = buildRuntimeTypeCheckExpression(
+      getArrayElementType(typeNode),
+      elementId
+    );
+
+    if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+      return baseCheck;
+    }
+
+    return t.logicalExpression(
+      '&&',
+      baseCheck,
+      t.callExpression(
+        t.memberExpression(
+          t.callExpression(
+            t.memberExpression(
+              t.identifier('Array'),
+              t.identifier('from')
+            ),
+            [valueId]
+          ),
+          t.identifier('every')
+        ),
         [t.arrowFunctionExpression([elementId], elementCheck)]
       )
     );

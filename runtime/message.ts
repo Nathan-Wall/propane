@@ -2,6 +2,7 @@ import { parseJson } from '../common/json/parse.ts';
 import { normalizeForJson } from '../common/json/stringify.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
 import { ImmutableSet } from '../common/set/immutable.ts';
+import { ImmutableArray } from '../common/array/immutable.ts';
 import { ImmutableSet } from '../common/set/immutable.ts';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
@@ -203,8 +204,8 @@ function serializePrimitive(value: unknown): string {
     return 'undefined';
   }
 
-  if (Array.isArray(value)) {
-    return serializeArrayLiteral(value);
+  if (Array.isArray(value) || value instanceof ImmutableArray) {
+    return serializeArrayLiteral(Array.isArray(value) ? value : [...value]);
   }
 
   if (isMapValue(value)) {

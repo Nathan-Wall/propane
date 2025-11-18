@@ -73,6 +73,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   constructor(items?: Iterable<T> | ArrayLike<T>) {
     if (!items) {
       this.#items = [];
+      this.#defineIndexProps();
       return;
     }
     if (Symbol.iterator in Object(items)) {
@@ -81,6 +82,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       const arrayLike = items as ArrayLike<T>;
       this.#items = Array.from({ length: arrayLike.length }, (_, i) => arrayLike[i]);
     }
+    this.#defineIndexProps();
     Object.freeze(this.#items);
     Object.freeze(this);
   }
@@ -160,5 +162,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   toJSON(): unknown {
     return this.#items.map((v) => normalizeForJson(v));
+  }
+
+  #defineIndexProps() {
+    for (let i = 0; i < this.#items.length; i += 1) {
+      (this as unknown as Record<number, T>)[i] = this.#items[i];
+    }
   }
 }
