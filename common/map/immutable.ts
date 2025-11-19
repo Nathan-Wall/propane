@@ -7,8 +7,8 @@ function isMessageLike(value: unknown): value is {
 } {
   return Boolean(
     value &&
-      typeof value === 'object' &&
-      typeof (value as { equals?: unknown }).equals === 'function'
+    typeof value === 'object' &&
+    typeof (value as { equals?: unknown }).equals === 'function'
   );
 }
 
@@ -28,7 +28,7 @@ function equalKeys(a: unknown, b: unknown): boolean {
   return false;
 }
 
-function equalValues(a: unknown, b: unknown): boolean {
+export function equalValues(a: unknown, b: unknown): boolean {
   if (a === b || Object.is(a, b)) {
     return true;
   }

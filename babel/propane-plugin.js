@@ -696,6 +696,7 @@ export default function propanePlugin() {
     }
 
     const constructorParam = t.identifier('props');
+    constructorParam.optional = true;
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
       t.cloneNode(valueTypeRef)
     );
@@ -727,6 +728,13 @@ export default function propanePlugin() {
         );
       }
 
+      const defaultValue = getDefaultValue(prop);
+      const initExpr = t.conditionalExpression(
+        t.identifier('props'),
+        valueExpr,
+        defaultValue
+      );
+
       return t.expressionStatement(
         t.assignmentExpression(
           '=',
@@ -734,7 +742,7 @@ export default function propanePlugin() {
             t.thisExpression(),
             t.cloneNode(prop.privateName)
           ),
-          valueExpr
+          initExpr
         )
       );
     });
@@ -995,14 +1003,14 @@ export default function propanePlugin() {
       if (typeCheckExpr && !t.isBooleanLiteral(typeCheckExpr, { value: true })) {
         const shouldValidate = prop.optional
           ? t.logicalExpression(
-              '&&',
-              t.binaryExpression(
-                '!==',
-                checkedValueId,
-                t.identifier('undefined')
-              ),
-              t.unaryExpression('!', typeCheckExpr)
-            )
+            '&&',
+            t.binaryExpression(
+              '!==',
+              checkedValueId,
+              t.identifier('undefined')
+            ),
+            t.unaryExpression('!', typeCheckExpr)
+          )
           : t.unaryExpression('!', typeCheckExpr);
 
         statements.push(
@@ -1405,9 +1413,9 @@ export default function propanePlugin() {
             prop === targetProp
               ? t.cloneNode(valueExpr)
               : t.memberExpression(
-                  t.thisExpression(),
-                  t.cloneNode(prop.privateName)
-                )
+                t.thisExpression(),
+                t.cloneNode(prop.privateName)
+              )
           )
         )
     );
@@ -1782,9 +1790,9 @@ export default function propanePlugin() {
       const valuesParam = params[0];
       const valuesId =
         t.isIdentifier(valuesParam) ? valuesParam
-        : t.isRestElement(valuesParam) && t.isIdentifier(valuesParam.argument)
-          ? valuesParam.argument
-          : null;
+          : t.isRestElement(valuesParam) && t.isIdentifier(valuesParam.argument)
+            ? valuesParam.argument
+            : null;
       if (valuesId) {
         preludeStatements.push(
           t.ifStatement(
@@ -1847,14 +1855,14 @@ export default function propanePlugin() {
 
     const sourceInit = prop.optional
       ? t.conditionalExpression(
-          t.binaryExpression(
-            '===',
-            fieldExpr(),
-            t.identifier('undefined')
-          ),
-          t.arrayExpression([]),
-          fieldExpr()
-        )
+        t.binaryExpression(
+          '===',
+          fieldExpr(),
+          t.identifier('undefined')
+        ),
+        t.arrayExpression([]),
+        fieldExpr()
+      )
       : fieldExpr();
 
     const statements = [
@@ -2449,25 +2457,25 @@ export default function propanePlugin() {
 
     const entriesExpr = prop.optional
       ? t.conditionalExpression(
-          t.binaryExpression(
-            '===',
-            t.identifier(sourceName),
-            t.identifier('undefined')
-          ),
-          t.arrayExpression([]),
-          t.callExpression(t.identifier('Array.from'), [
-            t.callExpression(
-              t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
-              []
-            ),
-          ])
-        )
-      : t.callExpression(t.identifier('Array.from'), [
+        t.binaryExpression(
+          '===',
+          t.identifier(sourceName),
+          t.identifier('undefined')
+        ),
+        t.arrayExpression([]),
+        t.callExpression(t.identifier('Array.from'), [
           t.callExpression(
             t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
             []
           ),
-        ]);
+        ])
+      )
+      : t.callExpression(t.identifier('Array.from'), [
+        t.callExpression(
+          t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
+          []
+        ),
+      ]);
 
     const entriesDecl = t.variableDeclaration('const', [
       t.variableDeclarator(t.identifier(entriesName), entriesExpr),
@@ -2907,7 +2915,7 @@ export default function propanePlugin() {
     }
 
     if (t.isTSArrayType(typeNode)) {
-        return buildArrayTypeCheckExpression(typeNode, valueId);
+      return buildArrayTypeCheckExpression(typeNode, valueId);
     }
 
     if (t.isTSTypeReference(typeNode)) {
@@ -3536,3 +3544,80 @@ export default function propanePlugin() {
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
 }
+function getDefaultValue(prop) {
+  if (prop.optional) {
+    return t.identifier('undefined');
+  }
+
+  if (prop.isArray) {
+    return t.callExpression(
+      t.memberExpression(t.identifier('Object'), t.identifier('freeze')),
+      [t.arrayExpression([])]
+    );
+  }
+
+  if (prop.isMap) {
+    return t.newExpression(t.identifier('Map'), []);
+  }
+
+  if (prop.isSet) {
+    return t.newExpression(t.identifier('Set'), []);
+  }
+
+  return getDefaultValueForType(prop.typeAnnotation);
+}
+
+function getDefaultValueForType(typeNode) {
+  if (t.isTSTypeAnnotation(typeNode)) {
+    return getDefaultValueForType(typeNode.typeAnnotation);
+  }
+
+  if (t.isTSParenthesizedType(typeNode)) {
+    return getDefaultValueForType(typeNode.typeAnnotation);
+  }
+
+  if (t.isTSNumberKeyword(typeNode)) {
+    return t.numericLiteral(0);
+  }
+
+  if (t.isTSStringKeyword(typeNode)) {
+    return t.stringLiteral('');
+  }
+
+  if (t.isTSBooleanKeyword(typeNode)) {
+    return t.booleanLiteral(false);
+  }
+
+  if (t.isTSBigIntKeyword(typeNode)) {
+    return t.callExpression(t.identifier('BigInt'), [t.numericLiteral(0)]);
+  }
+
+  if (t.isTSNullKeyword(typeNode)) {
+    return t.nullLiteral();
+  }
+
+  if (t.isTSUndefinedKeyword(typeNode)) {
+    return t.identifier('undefined');
+  }
+
+  if (t.isTSUnionType(typeNode)) {
+    if (typeNode.types.length > 0) {
+      return getDefaultValueForType(typeNode.types[0]);
+    }
+  }
+
+  if (t.isTSTypeReference(typeNode)) {
+    const typeName = typeNode.typeName;
+    if (t.isIdentifier(typeName)) {
+      if (typeName.name === 'Date') {
+        return t.newExpression(t.identifier('Date'), [t.numericLiteral(0)]);
+      }
+      // Assume it's a message type
+      return t.newExpression(t.identifier(typeName.name), []);
+    }
+  }
+
+  // Fallback for unknown types, though validation should catch most
+  return t.identifier('undefined');
+}
+

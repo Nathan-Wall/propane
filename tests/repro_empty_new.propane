@@ -1,0 +1,15 @@
+export type UnionFirstNumber = {
+  val: number | string;
+}
+
+export type UnionFirstString = {
+  val: string | number;
+}
+
+export type OptionalField = {
+  val?: string;
+}
+
+export type RequiredMessage = {
+  sub: UnionFirstNumber;
+}
