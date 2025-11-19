@@ -7,11 +7,32 @@ export namespace MapBigintKey {
   export type Value = MapBigintKey | MapBigintKey.Data;
 }
 export class MapBigintKey extends Message<MapBigintKey.Data> {
-  static #typeTag = Symbol("MapBigintKey");
+  static TYPE_TAG: symbol = Symbol("MapBigintKey");
+  static EMPTY: MapBigintKey;
   #values: ReadonlyMap<bigint, string>;
-  constructor(props: MapBigintKey.Value) {
-    super(MapBigintKey.#typeTag);
-    this.#values = Array.isArray(props.values) ? new ImmutableMap(props.values) : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : props.values instanceof Map || Object.prototype.toString.call(props.values) === "[object Map]" ? new ImmutableMap(props.values) : props.values;
+  constructor(props?: MapBigintKey.Value) {
+    if (!props) {
+      if (MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
+    }
+    super(MapBigintKey.TYPE_TAG);
+    this.#values = props ? Array.isArray(props.values) ? new ImmutableMap(props.values) : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : props.values instanceof Map || Object.prototype.toString.call(props.values) === "[object Map]" ? new ImmutableMap(props.values) : props.values : new Map();
+    if (!props) MapBigintKey.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
+    return [{
+      name: "values",
+      fieldNumber: null,
+      getValue: () => this.#values
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): MapBigintKey.Data {
+    const props = {} as Partial<MapBigintKey.Data>;
+    const valuesValue = entries["values"];
+    if (valuesValue === undefined) throw new Error("Missing required property \"values\".");
+    const valuesMapValue = Array.isArray(valuesValue) ? new ImmutableMap(valuesValue) : valuesValue instanceof ImmutableMap || Object.prototype.toString.call(valuesValue) === "[object ImmutableMap]" ? valuesValue : valuesValue instanceof Map || Object.prototype.toString.call(valuesValue) === "[object Map]" ? new ImmutableMap(valuesValue) : valuesValue;
+    if (!((valuesMapValue instanceof ImmutableMap || Object.prototype.toString.call(valuesMapValue) === "[object ImmutableMap]" || valuesMapValue instanceof Map || Object.prototype.toString.call(valuesMapValue) === "[object Map]") && [...valuesMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
+    props.values = valuesMapValue;
+    return props as MapBigintKey.Data;
   }
   get values(): ReadonlyMap<bigint, string> {
     return this.#values;
@@ -110,21 +131,5 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     return new MapBigintKey({
       values: valuesMapNext
     });
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
-    return [{
-      name: "values",
-      fieldNumber: null,
-      getValue: () => this.#values
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): MapBigintKey.Data {
-    const props = {} as Partial<MapBigintKey.Data>;
-    const valuesValue = entries["values"];
-    if (valuesValue === undefined) throw new Error("Missing required property \"values\".");
-    const valuesMapValue = Array.isArray(valuesValue) ? new ImmutableMap(valuesValue) : valuesValue instanceof ImmutableMap || Object.prototype.toString.call(valuesValue) === "[object ImmutableMap]" ? valuesValue : valuesValue instanceof Map || Object.prototype.toString.call(valuesValue) === "[object Map]" ? new ImmutableMap(valuesValue) : valuesValue;
-    if (!((valuesMapValue instanceof ImmutableMap || Object.prototype.toString.call(valuesMapValue) === "[object ImmutableMap]" || valuesMapValue instanceof Map || Object.prototype.toString.call(valuesMapValue) === "[object Map]") && [...valuesMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
-    props.values = valuesMapValue;
-    return props as MapBigintKey.Data;
   }
 }

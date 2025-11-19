@@ -10,17 +10,61 @@ export namespace ObjectOnly {
   export type Value = ObjectOnly | ObjectOnly.Data;
 }
 export class ObjectOnly extends Message<ObjectOnly.Data> {
-  static #typeTag = Symbol("ObjectOnly");
+  static TYPE_TAG: symbol = Symbol("ObjectOnly");
+  static EMPTY: ObjectOnly;
   #id: number;
   #name: string;
   #age: number;
   #active: boolean;
-  constructor(props: ObjectOnly.Value) {
-    super(ObjectOnly.#typeTag);
-    this.#id = props.id;
-    this.#name = props.name;
-    this.#age = props.age;
-    this.#active = props.active;
+  constructor(props?: ObjectOnly.Value) {
+    if (!props) {
+      if (ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
+    }
+    super(ObjectOnly.TYPE_TAG);
+    this.#id = props ? props.id : 0;
+    this.#name = props ? props.name : "";
+    this.#age = props ? props.age : 0;
+    this.#active = props ? props.active : false;
+    if (!props) ObjectOnly.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
+    return [{
+      name: "id",
+      fieldNumber: null,
+      getValue: () => this.#id
+    }, {
+      name: "name",
+      fieldNumber: null,
+      getValue: () => this.#name
+    }, {
+      name: "age",
+      fieldNumber: null,
+      getValue: () => this.#age
+    }, {
+      name: "active",
+      fieldNumber: null,
+      getValue: () => this.#active
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): ObjectOnly.Data {
+    const props = {} as Partial<ObjectOnly.Data>;
+    const idValue = entries["id"];
+    if (idValue === undefined) throw new Error("Missing required property \"id\".");
+    if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
+    props.id = idValue;
+    const nameValue = entries["name"];
+    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
+    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
+    props.name = nameValue;
+    const ageValue = entries["age"];
+    if (ageValue === undefined) throw new Error("Missing required property \"age\".");
+    if (!(typeof ageValue === "number")) throw new Error("Invalid value for property \"age\".");
+    props.age = ageValue;
+    const activeValue = entries["active"];
+    if (activeValue === undefined) throw new Error("Missing required property \"active\".");
+    if (!(typeof activeValue === "boolean")) throw new Error("Invalid value for property \"active\".");
+    props.active = activeValue;
+    return props as ObjectOnly.Data;
   }
   get id(): number {
     return this.#id;
@@ -65,44 +109,5 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       age: this.#age,
       active: value
     });
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
-    return [{
-      name: "id",
-      fieldNumber: null,
-      getValue: () => this.#id
-    }, {
-      name: "name",
-      fieldNumber: null,
-      getValue: () => this.#name
-    }, {
-      name: "age",
-      fieldNumber: null,
-      getValue: () => this.#age
-    }, {
-      name: "active",
-      fieldNumber: null,
-      getValue: () => this.#active
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): ObjectOnly.Data {
-    const props = {} as Partial<ObjectOnly.Data>;
-    const idValue = entries["id"];
-    if (idValue === undefined) throw new Error("Missing required property \"id\".");
-    if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
-    const nameValue = entries["name"];
-    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
-    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
-    const ageValue = entries["age"];
-    if (ageValue === undefined) throw new Error("Missing required property \"age\".");
-    if (!(typeof ageValue === "number")) throw new Error("Invalid value for property \"age\".");
-    props.age = ageValue;
-    const activeValue = entries["active"];
-    if (activeValue === undefined) throw new Error("Missing required property \"active\".");
-    if (!(typeof activeValue === "boolean")) throw new Error("Invalid value for property \"active\".");
-    props.active = activeValue;
-    return props as ObjectOnly.Data;
   }
 }

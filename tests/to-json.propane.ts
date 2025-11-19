@@ -17,7 +17,8 @@ export namespace ToJson {
   export type Value = ToJson | ToJson.Data;
 }
 export class ToJson extends Message<ToJson.Data> {
-  static #typeTag = Symbol("ToJson");
+  static TYPE_TAG: symbol = Symbol("ToJson");
+  static EMPTY: ToJson;
   #map: ReadonlyMap<string, number>;
   #imap: ReadonlyMap<string, number>;
   #big: bigint;
@@ -29,15 +30,84 @@ export class ToJson extends Message<ToJson.Data> {
     map: Map<string, bigint>;
     imap: Map<string, Date>;
   };
-  constructor(props: ToJson.Value) {
-    super(ToJson.#typeTag);
-    this.#map = Array.isArray(props.map) ? new ImmutableMap(props.map) : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : props.map instanceof Map || Object.prototype.toString.call(props.map) === "[object Map]" ? new ImmutableMap(props.map) : props.map;
-    this.#imap = Array.isArray(props.imap) ? new ImmutableMap(props.imap) : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : props.imap instanceof Map || Object.prototype.toString.call(props.imap) === "[object Map]" ? new ImmutableMap(props.imap) : props.imap;
-    this.#big = props.big;
-    this.#date = props.date;
-    this.#optional = props.optional;
-    this.#nonFinite = props.nonFinite;
-    this.#nested = props.nested;
+  constructor(props?: ToJson.Value) {
+    if (!props) {
+      if (ToJson.EMPTY) return ToJson.EMPTY;
+    }
+    super(ToJson.TYPE_TAG);
+    this.#map = props ? Array.isArray(props.map) ? new ImmutableMap(props.map) : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : props.map instanceof Map || Object.prototype.toString.call(props.map) === "[object Map]" ? new ImmutableMap(props.map) : props.map : new Map();
+    this.#imap = props ? Array.isArray(props.imap) ? new ImmutableMap(props.imap) : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : props.imap instanceof Map || Object.prototype.toString.call(props.imap) === "[object Map]" ? new ImmutableMap(props.imap) : props.imap : new Map();
+    this.#big = props ? props.big : BigInt(0);
+    this.#date = props ? props.date : new Date(0);
+    this.#optional = props ? props.optional : undefined;
+    this.#nonFinite = props ? props.nonFinite : 0;
+    this.#nested = props ? props.nested : undefined;
+    if (!props) ToJson.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
+    return [{
+      name: "map",
+      fieldNumber: 1,
+      getValue: () => this.#map
+    }, {
+      name: "imap",
+      fieldNumber: 2,
+      getValue: () => this.#imap
+    }, {
+      name: "big",
+      fieldNumber: 3,
+      getValue: () => this.#big
+    }, {
+      name: "date",
+      fieldNumber: 4,
+      getValue: () => this.#date
+    }, {
+      name: "optional",
+      fieldNumber: 5,
+      getValue: () => this.#optional
+    }, {
+      name: "nonFinite",
+      fieldNumber: 6,
+      getValue: () => this.#nonFinite
+    }, {
+      name: "nested",
+      fieldNumber: 7,
+      getValue: () => this.#nested
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): ToJson.Data {
+    const props = {} as Partial<ToJson.Data>;
+    const mapValue = entries["1"] === undefined ? entries["map"] : entries["1"];
+    if (mapValue === undefined) throw new Error("Missing required property \"map\".");
+    const mapMapValue = Array.isArray(mapValue) ? new ImmutableMap(mapValue) : mapValue instanceof ImmutableMap || Object.prototype.toString.call(mapValue) === "[object ImmutableMap]" ? mapValue : mapValue instanceof Map || Object.prototype.toString.call(mapValue) === "[object Map]" ? new ImmutableMap(mapValue) : mapValue;
+    if (!((mapMapValue instanceof ImmutableMap || Object.prototype.toString.call(mapMapValue) === "[object ImmutableMap]" || mapMapValue instanceof Map || Object.prototype.toString.call(mapMapValue) === "[object Map]") && [...mapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
+    props.map = mapMapValue;
+    const imapValue = entries["2"] === undefined ? entries["imap"] : entries["2"];
+    if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
+    const imapMapValue = Array.isArray(imapValue) ? new ImmutableMap(imapValue) : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : imapValue instanceof Map || Object.prototype.toString.call(imapValue) === "[object Map]" ? new ImmutableMap(imapValue) : imapValue;
+    if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"imap\".");
+    props.imap = imapMapValue;
+    const bigValue = entries["3"] === undefined ? entries["big"] : entries["3"];
+    if (bigValue === undefined) throw new Error("Missing required property \"big\".");
+    if (!(typeof bigValue === "bigint")) throw new Error("Invalid value for property \"big\".");
+    props.big = bigValue;
+    const dateValue = entries["4"] === undefined ? entries["date"] : entries["4"];
+    if (dateValue === undefined) throw new Error("Missing required property \"date\".");
+    if (!(dateValue instanceof Date || Object.prototype.toString.call(dateValue) === "[object Date]")) throw new Error("Invalid value for property \"date\".");
+    props.date = dateValue;
+    const optionalValue = entries["5"] === undefined ? entries["optional"] : entries["5"];
+    const optionalNormalized = optionalValue === null ? undefined : optionalValue;
+    if (optionalNormalized !== undefined && !(typeof optionalNormalized === "string")) throw new Error("Invalid value for property \"optional\".");
+    props.optional = optionalNormalized;
+    const nonFiniteValue = entries["6"] === undefined ? entries["nonFinite"] : entries["6"];
+    if (nonFiniteValue === undefined) throw new Error("Missing required property \"nonFinite\".");
+    if (!(typeof nonFiniteValue === "number")) throw new Error("Invalid value for property \"nonFinite\".");
+    props.nonFinite = nonFiniteValue;
+    const nestedValue = entries["7"] === undefined ? entries["nested"] : entries["7"];
+    if (nestedValue === undefined) throw new Error("Missing required property \"nested\".");
+    if (!(typeof nestedValue === "object" && nestedValue !== null && nestedValue.array !== undefined && (nestedValue.array instanceof ImmutableArray || Object.prototype.toString.call(nestedValue.array) === "[object ImmutableArray]" || Array.isArray(nestedValue.array)) && Array.from(nestedValue.array).every(element => typeof element === "number" || element === undefined) && nestedValue.map !== undefined && (nestedValue.map instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.map) === "[object ImmutableMap]" || nestedValue.map instanceof Map || Object.prototype.toString.call(nestedValue.map) === "[object Map]") && [...nestedValue.map.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint") && nestedValue.imap !== undefined && (nestedValue.imap instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.imap) === "[object ImmutableMap]" || nestedValue.imap instanceof Map || Object.prototype.toString.call(nestedValue.imap) === "[object Map]") && [...nestedValue.imap.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || Object.prototype.toString.call(mapValue) === "[object Date]")))) throw new Error("Invalid value for property \"nested\".");
+    props.nested = nestedValue;
+    return props as ToJson.Data;
   }
   get map(): ReadonlyMap<string, number> {
     return this.#map;
@@ -418,70 +488,5 @@ export class ToJson extends Message<ToJson.Data> {
       nonFinite: this.#nonFinite,
       nested: this.#nested
     });
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
-    return [{
-      name: "map",
-      fieldNumber: 1,
-      getValue: () => this.#map
-    }, {
-      name: "imap",
-      fieldNumber: 2,
-      getValue: () => this.#imap
-    }, {
-      name: "big",
-      fieldNumber: 3,
-      getValue: () => this.#big
-    }, {
-      name: "date",
-      fieldNumber: 4,
-      getValue: () => this.#date
-    }, {
-      name: "optional",
-      fieldNumber: 5,
-      getValue: () => this.#optional
-    }, {
-      name: "nonFinite",
-      fieldNumber: 6,
-      getValue: () => this.#nonFinite
-    }, {
-      name: "nested",
-      fieldNumber: 7,
-      getValue: () => this.#nested
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): ToJson.Data {
-    const props = {} as Partial<ToJson.Data>;
-    const mapValue = entries["1"] === undefined ? entries["map"] : entries["1"];
-    if (mapValue === undefined) throw new Error("Missing required property \"map\".");
-    const mapMapValue = Array.isArray(mapValue) ? new ImmutableMap(mapValue) : mapValue instanceof ImmutableMap || Object.prototype.toString.call(mapValue) === "[object ImmutableMap]" ? mapValue : mapValue instanceof Map || Object.prototype.toString.call(mapValue) === "[object Map]" ? new ImmutableMap(mapValue) : mapValue;
-    if (!((mapMapValue instanceof ImmutableMap || Object.prototype.toString.call(mapMapValue) === "[object ImmutableMap]" || mapMapValue instanceof Map || Object.prototype.toString.call(mapMapValue) === "[object Map]") && [...mapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
-    props.map = mapMapValue;
-    const imapValue = entries["2"] === undefined ? entries["imap"] : entries["2"];
-    if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
-    const imapMapValue = Array.isArray(imapValue) ? new ImmutableMap(imapValue) : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : imapValue instanceof Map || Object.prototype.toString.call(imapValue) === "[object Map]" ? new ImmutableMap(imapValue) : imapValue;
-    if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"imap\".");
-    props.imap = imapMapValue;
-    const bigValue = entries["3"] === undefined ? entries["big"] : entries["3"];
-    if (bigValue === undefined) throw new Error("Missing required property \"big\".");
-    if (!(typeof bigValue === "bigint")) throw new Error("Invalid value for property \"big\".");
-    props.big = bigValue;
-    const dateValue = entries["4"] === undefined ? entries["date"] : entries["4"];
-    if (dateValue === undefined) throw new Error("Missing required property \"date\".");
-    if (!(dateValue instanceof Date || Object.prototype.toString.call(dateValue) === "[object Date]")) throw new Error("Invalid value for property \"date\".");
-    props.date = dateValue;
-    const optionalValue = entries["5"] === undefined ? entries["optional"] : entries["5"];
-    const optionalNormalized = optionalValue === null ? undefined : optionalValue;
-    if (optionalNormalized !== undefined && !(typeof optionalNormalized === "string")) throw new Error("Invalid value for property \"optional\".");
-    props.optional = optionalNormalized;
-    const nonFiniteValue = entries["6"] === undefined ? entries["nonFinite"] : entries["6"];
-    if (nonFiniteValue === undefined) throw new Error("Missing required property \"nonFinite\".");
-    if (!(typeof nonFiniteValue === "number")) throw new Error("Invalid value for property \"nonFinite\".");
-    props.nonFinite = nonFiniteValue;
-    const nestedValue = entries["7"] === undefined ? entries["nested"] : entries["7"];
-    if (nestedValue === undefined) throw new Error("Missing required property \"nested\".");
-    if (!(typeof nestedValue === "object" && nestedValue !== null && nestedValue.array !== undefined && (nestedValue.array instanceof ImmutableArray || Object.prototype.toString.call(nestedValue.array) === "[object ImmutableArray]" || Array.isArray(nestedValue.array)) && Array.from(nestedValue.array).every(element => typeof element === "number" || element === undefined) && nestedValue.map !== undefined && (nestedValue.map instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.map) === "[object ImmutableMap]" || nestedValue.map instanceof Map || Object.prototype.toString.call(nestedValue.map) === "[object Map]") && [...nestedValue.map.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint") && nestedValue.imap !== undefined && (nestedValue.imap instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.imap) === "[object ImmutableMap]" || nestedValue.imap instanceof Map || Object.prototype.toString.call(nestedValue.imap) === "[object Map]") && [...nestedValue.imap.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || Object.prototype.toString.call(mapValue) === "[object Date]")))) throw new Error("Invalid value for property \"nested\".");
-    props.nested = nestedValue;
-    return props as ToJson.Data;
   }
 }

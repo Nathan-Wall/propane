@@ -695,11 +695,32 @@ export default function propanePlugin() {
       getters.push(getter);
     }
 
+    const className = typeName; // Assuming typeName is the class name
+
+    if (propDescriptors.length === 0) {
+      // No properties, nothing to initialize.
+      return t.classMethod(
+        'constructor',
+        t.identifier('constructor'),
+        [],
+        t.blockStatement([
+          t.expressionStatement(
+            t.callExpression(t.super(), [
+              t.memberExpression(
+                t.identifier(className),
+                t.identifier('TYPE_TAG')
+              ),
+            ])
+          ),
+        ])
+      );
+    }
+
     const constructorParam = t.identifier('props');
-    constructorParam.optional = true;
     constructorParam.typeAnnotation = t.tsTypeAnnotation(
       t.cloneNode(valueTypeRef)
     );
+    constructorParam.optional = true;
 
     const constructorAssignments = propDescriptors.map((prop) => {
       const propsAccess = t.memberExpression(
@@ -728,47 +749,87 @@ export default function propanePlugin() {
         );
       }
 
+      // Default value logic
       const defaultValue = getDefaultValue(prop);
-      const initExpr = t.conditionalExpression(
-        t.identifier('props'),
-        valueExpr,
-        defaultValue
-      );
-
-      return t.expressionStatement(
-        t.assignmentExpression(
-          '=',
-          t.memberExpression(
-            t.thisExpression(),
-            t.cloneNode(prop.privateName)
-          ),
-          initExpr
+      const assignment = t.assignmentExpression(
+        '=',
+        t.memberExpression(
+          t.thisExpression(),
+          t.cloneNode(prop.privateName)
+        ),
+        t.conditionalExpression(
+          t.identifier('props'),
+          valueExpr,
+          defaultValue
         )
       );
+
+      return t.expressionStatement(assignment);
     });
 
-    const typeTagPrivate = t.privateName(t.identifier('typeTag'));
-    const typeTagField = t.classPrivateProperty(
-      typeTagPrivate,
-      t.callExpression(t.identifier('Symbol'), [t.stringLiteral(typeName)])
+    // Memoization logic
+    const memoizationCheck = t.ifStatement(
+      t.unaryExpression('!', t.identifier('props')),
+      t.blockStatement([
+        t.ifStatement(
+          t.memberExpression(t.identifier(className), t.identifier('EMPTY')),
+          t.returnStatement(
+            t.memberExpression(t.identifier(className), t.identifier('EMPTY'))
+          )
+        ),
+      ])
     );
-    typeTagField.static = true;
 
-    const constructorBody = [
+    const memoizationSet = t.ifStatement(
+      t.unaryExpression('!', t.identifier('props')),
       t.expressionStatement(
-        t.callExpression(t.super(), [
-          t.memberExpression(t.identifier(typeName), typeTagPrivate),
-        ])
-      ),
-      ...constructorAssignments,
-    ];
+        t.assignmentExpression(
+          '=',
+          t.memberExpression(t.identifier(className), t.identifier('EMPTY')),
+          t.thisExpression()
+        )
+      )
+    );
 
     const constructor = t.classMethod(
       'constructor',
       t.identifier('constructor'),
       [constructorParam],
-      t.blockStatement(constructorBody)
+      t.blockStatement([
+        memoizationCheck,
+        t.expressionStatement(
+          t.callExpression(t.super(), [
+            t.memberExpression(
+              t.identifier(className),
+              t.identifier('TYPE_TAG')
+            ),
+          ])
+        ),
+        ...constructorAssignments,
+        memoizationSet,
+      ])
     );
+
+    const staticFields = [
+      t.classProperty(
+        t.identifier('TYPE_TAG'),
+        t.callExpression(t.identifier('Symbol'), [t.stringLiteral(className)]),
+        t.tsTypeAnnotation(t.tsSymbolKeyword()),
+        null,
+        false,
+        true
+      ),
+      t.classProperty(
+        t.identifier('EMPTY'),
+        null,
+        t.tsTypeAnnotation(
+          t.tsTypeReference(t.identifier(className))
+        ),
+        null,
+        false,
+        true
+      ),
+    ];
 
     const fromEntriesMethod = buildFromEntriesMethod(propDescriptors, propsTypeRef);
 
@@ -794,17 +855,17 @@ export default function propanePlugin() {
     );
 
     const classBody = t.classBody([
-      typeTagField,
+      ...staticFields,
       ...backingFields,
       constructor,
+      descriptorMethod,
+      fromEntriesMethod,
       ...getters,
       ...setterMethods,
       ...deleteMethods,
       ...arrayMethods,
       ...mapMethods,
       ...setMethods,
-      descriptorMethod,
-      fromEntriesMethod,
     ]);
 
     const classDecl = t.classDeclaration(

@@ -23,5 +23,20 @@ export default function () {
   assert.strictEqual(req.sub.val, 0, 'RequiredMessage.sub.val should default to 0');
   console.log('RequiredMessage passed.');
 
+  console.log('Testing Memoization...');
+  const num1 = new UnionFirstNumber();
+  const num2 = new UnionFirstNumber();
+  assert.strictEqual(num1, num2, 'Empty instances should be memoized (reference equality)');
+
+  const str1 = new UnionFirstString();
+  const str2 = new UnionFirstString();
+  assert.strictEqual(str1, str2, 'Empty instances should be memoized (reference equality)');
+
+  const req1 = new RequiredMessage();
+  const req2 = new RequiredMessage();
+  assert.strictEqual(req1, req2, 'Empty instances should be memoized (reference equality)');
+  assert.strictEqual(req1.sub, req2.sub, 'Nested empty instances should be memoized');
+  console.log('Memoization passed.');
+
   console.log('All tests passed!');
 }

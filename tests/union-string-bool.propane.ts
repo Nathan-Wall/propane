@@ -8,36 +8,18 @@ export namespace UnionStringBool {
   export type Value = UnionStringBool | UnionStringBool.Data;
 }
 export class UnionStringBool extends Message<UnionStringBool.Data> {
-  static #typeTag = Symbol("UnionStringBool");
+  static TYPE_TAG: symbol = Symbol("UnionStringBool");
+  static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;
-  constructor(props: UnionStringBool.Value) {
-    super(UnionStringBool.#typeTag);
-    this.#value = props.value;
-    this.#optional = props.optional;
-  }
-  get value(): string | boolean {
-    return this.#value;
-  }
-  get optional(): string | boolean {
-    return this.#optional;
-  }
-  setValue(value: string | boolean): UnionStringBool {
-    return new UnionStringBool({
-      value: value,
-      optional: this.#optional
-    });
-  }
-  setOptional(value: string | boolean): UnionStringBool {
-    return new UnionStringBool({
-      value: this.#value,
-      optional: value
-    });
-  }
-  deleteOptional(): UnionStringBool {
-    return new UnionStringBool({
-      value: this.#value
-    });
+  constructor(props?: UnionStringBool.Value) {
+    if (!props) {
+      if (UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
+    }
+    super(UnionStringBool.TYPE_TAG);
+    this.#value = props ? props.value : "";
+    this.#optional = props ? props.optional : undefined;
+    if (!props) UnionStringBool.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
     return [{
@@ -61,5 +43,28 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     if (optionalNormalized !== undefined && !(typeof optionalNormalized === "string" || typeof optionalNormalized === "boolean")) throw new Error("Invalid value for property \"optional\".");
     props.optional = optionalNormalized;
     return props as UnionStringBool.Data;
+  }
+  get value(): string | boolean {
+    return this.#value;
+  }
+  get optional(): string | boolean {
+    return this.#optional;
+  }
+  setValue(value: string | boolean): UnionStringBool {
+    return new UnionStringBool({
+      value: value,
+      optional: this.#optional
+    });
+  }
+  setOptional(value: string | boolean): UnionStringBool {
+    return new UnionStringBool({
+      value: this.#value,
+      optional: value
+    });
+  }
+  deleteOptional(): UnionStringBool {
+    return new UnionStringBool({
+      value: this.#value
+    });
   }
 }

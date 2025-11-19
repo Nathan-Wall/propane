@@ -12,19 +12,63 @@ export namespace ArrayMessage {
   export type Value = ArrayMessage | ArrayMessage.Data;
 }
 export class ArrayMessage extends Message<ArrayMessage.Data> {
-  static #typeTag = Symbol("ArrayMessage");
+  static TYPE_TAG: symbol = Symbol("ArrayMessage");
+  static EMPTY: ArrayMessage;
   #names: ImmutableArray<string>;
   #scores: ImmutableArray<number>;
   #flags: ImmutableArray<boolean> | undefined;
   #labels: ImmutableArray<{
     name: string;
   }>;
-  constructor(props: ArrayMessage.Value) {
-    super(ArrayMessage.#typeTag);
-    this.#names = props.names instanceof ImmutableArray ? props.names : Array.isArray(props.names) ? new ImmutableArray(props.names) : props.names;
-    this.#scores = props.scores instanceof ImmutableArray ? props.scores : Array.isArray(props.scores) ? new ImmutableArray(props.scores) : props.scores;
-    this.#flags = props.flags instanceof ImmutableArray ? props.flags : Array.isArray(props.flags) ? new ImmutableArray(props.flags) : props.flags;
-    this.#labels = props.labels instanceof ImmutableArray ? props.labels : Array.isArray(props.labels) ? new ImmutableArray(props.labels) : props.labels;
+  constructor(props?: ArrayMessage.Value) {
+    if (!props) {
+      if (ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
+    }
+    super(ArrayMessage.TYPE_TAG);
+    this.#names = props ? props.names instanceof ImmutableArray ? props.names : Array.isArray(props.names) ? new ImmutableArray(props.names) : props.names : Object.freeze([]);
+    this.#scores = props ? props.scores instanceof ImmutableArray ? props.scores : Array.isArray(props.scores) ? new ImmutableArray(props.scores) : props.scores : Object.freeze([]);
+    this.#flags = props ? props.flags instanceof ImmutableArray ? props.flags : Array.isArray(props.flags) ? new ImmutableArray(props.flags) : props.flags : undefined;
+    this.#labels = props ? props.labels instanceof ImmutableArray ? props.labels : Array.isArray(props.labels) ? new ImmutableArray(props.labels) : props.labels : Object.freeze([]);
+    if (!props) ArrayMessage.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
+    return [{
+      name: "names",
+      fieldNumber: 1,
+      getValue: () => this.#names
+    }, {
+      name: "scores",
+      fieldNumber: 2,
+      getValue: () => this.#scores
+    }, {
+      name: "flags",
+      fieldNumber: 3,
+      getValue: () => this.#flags
+    }, {
+      name: "labels",
+      fieldNumber: 4,
+      getValue: () => this.#labels
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): ArrayMessage.Data {
+    const props = {} as Partial<ArrayMessage.Data>;
+    const namesValue = entries["1"] === undefined ? entries["names"] : entries["1"];
+    if (namesValue === undefined) throw new Error("Missing required property \"names\".");
+    const namesArrayValue = namesValue instanceof ImmutableArray ? namesValue : Array.isArray(namesValue) ? new ImmutableArray(namesValue) : namesValue;
+    props.names = namesArrayValue;
+    const scoresValue = entries["2"] === undefined ? entries["scores"] : entries["2"];
+    if (scoresValue === undefined) throw new Error("Missing required property \"scores\".");
+    const scoresArrayValue = scoresValue instanceof ImmutableArray ? scoresValue : Array.isArray(scoresValue) ? new ImmutableArray(scoresValue) : scoresValue;
+    props.scores = scoresArrayValue;
+    const flagsValue = entries["3"] === undefined ? entries["flags"] : entries["3"];
+    const flagsNormalized = flagsValue === null ? undefined : flagsValue;
+    const flagsArrayValue = flagsNormalized instanceof ImmutableArray ? flagsNormalized : Array.isArray(flagsNormalized) ? new ImmutableArray(flagsNormalized) : flagsNormalized;
+    props.flags = flagsArrayValue;
+    const labelsValue = entries["4"] === undefined ? entries["labels"] : entries["4"];
+    if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
+    const labelsArrayValue = labelsValue instanceof ImmutableArray ? labelsValue : Array.isArray(labelsValue) ? new ImmutableArray(labelsValue) : labelsValue;
+    props.labels = labelsArrayValue;
+    return props as ArrayMessage.Data;
   }
   get names(): ImmutableArray<string> {
     return this.#names;
@@ -510,44 +554,5 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       flags: this.#flags,
       labels: labelsNext
     });
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
-    return [{
-      name: "names",
-      fieldNumber: 1,
-      getValue: () => this.#names
-    }, {
-      name: "scores",
-      fieldNumber: 2,
-      getValue: () => this.#scores
-    }, {
-      name: "flags",
-      fieldNumber: 3,
-      getValue: () => this.#flags
-    }, {
-      name: "labels",
-      fieldNumber: 4,
-      getValue: () => this.#labels
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): ArrayMessage.Data {
-    const props = {} as Partial<ArrayMessage.Data>;
-    const namesValue = entries["1"] === undefined ? entries["names"] : entries["1"];
-    if (namesValue === undefined) throw new Error("Missing required property \"names\".");
-    const namesArrayValue = namesValue instanceof ImmutableArray ? namesValue : Array.isArray(namesValue) ? new ImmutableArray(namesValue) : namesValue;
-    props.names = namesArrayValue;
-    const scoresValue = entries["2"] === undefined ? entries["scores"] : entries["2"];
-    if (scoresValue === undefined) throw new Error("Missing required property \"scores\".");
-    const scoresArrayValue = scoresValue instanceof ImmutableArray ? scoresValue : Array.isArray(scoresValue) ? new ImmutableArray(scoresValue) : scoresValue;
-    props.scores = scoresArrayValue;
-    const flagsValue = entries["3"] === undefined ? entries["flags"] : entries["3"];
-    const flagsNormalized = flagsValue === null ? undefined : flagsValue;
-    const flagsArrayValue = flagsNormalized instanceof ImmutableArray ? flagsNormalized : Array.isArray(flagsNormalized) ? new ImmutableArray(flagsNormalized) : flagsNormalized;
-    props.flags = flagsArrayValue;
-    const labelsValue = entries["4"] === undefined ? entries["labels"] : entries["4"];
-    if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
-    const labelsArrayValue = labelsValue instanceof ImmutableArray ? labelsValue : Array.isArray(labelsValue) ? new ImmutableArray(labelsValue) : labelsValue;
-    props.labels = labelsArrayValue;
-    return props as ArrayMessage.Data;
   }
 }

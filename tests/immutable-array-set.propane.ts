@@ -10,31 +10,18 @@ export namespace ImmutableArraySet {
   export type Value = ImmutableArraySet | ImmutableArraySet.Data;
 }
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
-  static #typeTag = Symbol("ImmutableArraySet");
+  static TYPE_TAG: symbol = Symbol("ImmutableArraySet");
+  static EMPTY: ImmutableArraySet;
   #arr: ImmutableArray<number>;
   #set: ImmutableSet<string>;
-  constructor(props: ImmutableArraySet.Value) {
-    super(ImmutableArraySet.#typeTag);
-    this.#arr = props.arr;
-    this.#set = props.set;
-  }
-  get arr(): ImmutableArray<number> {
-    return this.#arr;
-  }
-  get set(): ImmutableSet<string> {
-    return this.#set;
-  }
-  setArr(value: ImmutableArray<number>): ImmutableArraySet {
-    return new ImmutableArraySet({
-      arr: value,
-      set: this.#set
-    });
-  }
-  setSet(value: ImmutableSet<string>): ImmutableArraySet {
-    return new ImmutableArraySet({
-      arr: this.#arr,
-      set: value
-    });
+  constructor(props?: ImmutableArraySet.Value) {
+    if (!props) {
+      if (ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
+    }
+    super(ImmutableArraySet.TYPE_TAG);
+    this.#arr = props ? props.arr : new ImmutableArray();
+    this.#set = props ? props.set : new ImmutableSet();
+    if (!props) ImmutableArraySet.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
     return [{
@@ -56,5 +43,23 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     if (setValue === undefined) throw new Error("Missing required property \"set\".");
     props.set = setValue;
     return props as ImmutableArraySet.Data;
+  }
+  get arr(): ImmutableArray<number> {
+    return this.#arr;
+  }
+  get set(): ImmutableSet<string> {
+    return this.#set;
+  }
+  setArr(value: ImmutableArray<number>): ImmutableArraySet {
+    return new ImmutableArraySet({
+      arr: value,
+      set: this.#set
+    });
+  }
+  setSet(value: ImmutableSet<string>): ImmutableArraySet {
+    return new ImmutableArraySet({
+      arr: this.#arr,
+      set: value
+    });
   }
 }

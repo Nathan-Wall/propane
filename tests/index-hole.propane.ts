@@ -9,45 +9,20 @@ export namespace Hole {
   export type Value = Hole | Hole.Data;
 }
 export class Hole extends Message<Hole.Data> {
-  static #typeTag = Symbol("Hole");
+  static TYPE_TAG: symbol = Symbol("Hole");
+  static EMPTY: Hole;
   #id: number;
   #value: number;
   #name: string;
-  constructor(props: Hole.Value) {
-    super(Hole.#typeTag);
-    this.#id = props.id;
-    this.#value = props.value;
-    this.#name = props.name;
-  }
-  get id(): number {
-    return this.#id;
-  }
-  get value(): number {
-    return this.#value;
-  }
-  get name(): string {
-    return this.#name;
-  }
-  setId(value: number): Hole {
-    return new Hole({
-      id: value,
-      value: this.#value,
-      name: this.#name
-    });
-  }
-  setValue(value: number): Hole {
-    return new Hole({
-      id: this.#id,
-      value: value,
-      name: this.#name
-    });
-  }
-  setName(value: string): Hole {
-    return new Hole({
-      id: this.#id,
-      value: this.#value,
-      name: value
-    });
+  constructor(props?: Hole.Value) {
+    if (!props) {
+      if (Hole.EMPTY) return Hole.EMPTY;
+    }
+    super(Hole.TYPE_TAG);
+    this.#id = props ? props.id : 0;
+    this.#value = props ? props.value : 0;
+    this.#name = props ? props.name : "";
+    if (!props) Hole.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Hole.Data>[] {
     return [{
@@ -79,5 +54,35 @@ export class Hole extends Message<Hole.Data> {
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
     props.name = nameValue;
     return props as Hole.Data;
+  }
+  get id(): number {
+    return this.#id;
+  }
+  get value(): number {
+    return this.#value;
+  }
+  get name(): string {
+    return this.#name;
+  }
+  setId(value: number): Hole {
+    return new Hole({
+      id: value,
+      value: this.#value,
+      name: this.#name
+    });
+  }
+  setValue(value: number): Hole {
+    return new Hole({
+      id: this.#id,
+      value: value,
+      name: this.#name
+    });
+  }
+  setName(value: string): Hole {
+    return new Hole({
+      id: this.#id,
+      value: this.#value,
+      name: value
+    });
   }
 }

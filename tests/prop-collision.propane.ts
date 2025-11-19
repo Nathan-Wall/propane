@@ -8,31 +8,18 @@ export namespace Foo {
   export type Value = Foo | Foo.Data;
 }
 export class Foo extends Message<Foo.Data> {
-  static #typeTag = Symbol("Foo");
+  static TYPE_TAG: symbol = Symbol("Foo");
+  static EMPTY: Foo;
   #name: string;
   #_name: string;
-  constructor(props: Foo.Value) {
-    super(Foo.#typeTag);
-    this.#name = props.name;
-    this.#_name = props._name;
-  }
-  get name(): string {
-    return this.#name;
-  }
-  get _name(): string {
-    return this.#_name;
-  }
-  setName(value: string): Foo {
-    return new Foo({
-      name: value,
-      _name: this.#_name
-    });
-  }
-  set_name(value: string): Foo {
-    return new Foo({
-      name: this.#name,
-      _name: value
-    });
+  constructor(props?: Foo.Value) {
+    if (!props) {
+      if (Foo.EMPTY) return Foo.EMPTY;
+    }
+    super(Foo.TYPE_TAG);
+    this.#name = props ? props.name : "";
+    this.#_name = props ? props._name : "";
+    if (!props) Foo.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Foo.Data>[] {
     return [{
@@ -56,5 +43,23 @@ export class Foo extends Message<Foo.Data> {
     if (!(typeof _nameValue === "string")) throw new Error("Invalid value for property \"_name\".");
     props._name = _nameValue;
     return props as Foo.Data;
+  }
+  get name(): string {
+    return this.#name;
+  }
+  get _name(): string {
+    return this.#_name;
+  }
+  setName(value: string): Foo {
+    return new Foo({
+      name: value,
+      _name: this.#_name
+    });
+  }
+  set_name(value: string): Foo {
+    return new Foo({
+      name: this.#name,
+      _name: value
+    });
   }
 }

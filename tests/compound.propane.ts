@@ -10,31 +10,18 @@ export namespace Compound {
   export type Value = Compound | Compound.Data;
 }
 export class Compound extends Message<Compound.Data> {
-  static #typeTag = Symbol("Compound");
+  static TYPE_TAG: symbol = Symbol("Compound");
+  static EMPTY: Compound;
   #user: User;
   #indexed: Indexed;
-  constructor(props: Compound.Value) {
-    super(Compound.#typeTag);
-    this.#user = props.user instanceof User ? props.user : new User(props.user);
-    this.#indexed = props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed);
-  }
-  get user(): User {
-    return this.#user;
-  }
-  get indexed(): Indexed {
-    return this.#indexed;
-  }
-  setUser(value: User.Value): Compound {
-    return new Compound({
-      user: value instanceof User ? value : new User(value),
-      indexed: this.#indexed
-    });
-  }
-  setIndexed(value: Indexed.Value): Compound {
-    return new Compound({
-      user: this.#user,
-      indexed: value instanceof Indexed ? value : new Indexed(value)
-    });
+  constructor(props?: Compound.Value) {
+    if (!props) {
+      if (Compound.EMPTY) return Compound.EMPTY;
+    }
+    super(Compound.TYPE_TAG);
+    this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
+    this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
+    if (!props) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
     return [{
@@ -58,5 +45,23 @@ export class Compound extends Message<Compound.Data> {
     const indexedMessageValue = indexedValue instanceof Indexed ? indexedValue : new Indexed(indexedValue);
     props.indexed = indexedMessageValue;
     return props as Compound.Data;
+  }
+  get user(): User {
+    return this.#user;
+  }
+  get indexed(): Indexed {
+    return this.#indexed;
+  }
+  setUser(value: User.Value): Compound {
+    return new Compound({
+      user: value instanceof User ? value : new User(value),
+      indexed: this.#indexed
+    });
+  }
+  setIndexed(value: Indexed.Value): Compound {
+    return new Compound({
+      user: this.#user,
+      indexed: value instanceof Indexed ? value : new Indexed(value)
+    });
   }
 }

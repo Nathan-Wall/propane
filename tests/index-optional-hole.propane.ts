@@ -10,17 +10,61 @@ export namespace OptionalHole {
   export type Value = OptionalHole | OptionalHole.Data;
 }
 export class OptionalHole extends Message<OptionalHole.Data> {
-  static #typeTag = Symbol("OptionalHole");
+  static TYPE_TAG: symbol = Symbol("OptionalHole");
+  static EMPTY: OptionalHole;
   #id: number;
   #created: Date;
   #note: string;
   #name: string;
-  constructor(props: OptionalHole.Value) {
-    super(OptionalHole.#typeTag);
-    this.#id = props.id;
-    this.#created = props.created;
-    this.#note = props.note;
-    this.#name = props.name;
+  constructor(props?: OptionalHole.Value) {
+    if (!props) {
+      if (OptionalHole.EMPTY) return OptionalHole.EMPTY;
+    }
+    super(OptionalHole.TYPE_TAG);
+    this.#id = props ? props.id : 0;
+    this.#created = props ? props.created : new Date(0);
+    this.#note = props ? props.note : undefined;
+    this.#name = props ? props.name : "";
+    if (!props) OptionalHole.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
+    return [{
+      name: "id",
+      fieldNumber: 1,
+      getValue: () => this.#id
+    }, {
+      name: "created",
+      fieldNumber: 2,
+      getValue: () => this.#created
+    }, {
+      name: "note",
+      fieldNumber: 3,
+      getValue: () => this.#note
+    }, {
+      name: "name",
+      fieldNumber: 4,
+      getValue: () => this.#name
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): OptionalHole.Data {
+    const props = {} as Partial<OptionalHole.Data>;
+    const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
+    if (idValue === undefined) throw new Error("Missing required property \"id\".");
+    if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
+    props.id = idValue;
+    const createdValue = entries["2"] === undefined ? entries["created"] : entries["2"];
+    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
+    if (!(createdValue instanceof Date || Object.prototype.toString.call(createdValue) === "[object Date]")) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue;
+    const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
+    const noteNormalized = noteValue === null ? undefined : noteValue;
+    if (noteNormalized !== undefined && !(typeof noteNormalized === "string")) throw new Error("Invalid value for property \"note\".");
+    props.note = noteNormalized;
+    const nameValue = entries["4"] === undefined ? entries["name"] : entries["4"];
+    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
+    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
+    props.name = nameValue;
+    return props as OptionalHole.Data;
   }
   get id(): number {
     return this.#id;
@@ -72,44 +116,5 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: this.#created,
       name: this.#name
     });
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
-    return [{
-      name: "id",
-      fieldNumber: 1,
-      getValue: () => this.#id
-    }, {
-      name: "created",
-      fieldNumber: 2,
-      getValue: () => this.#created
-    }, {
-      name: "note",
-      fieldNumber: 3,
-      getValue: () => this.#note
-    }, {
-      name: "name",
-      fieldNumber: 4,
-      getValue: () => this.#name
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): OptionalHole.Data {
-    const props = {} as Partial<OptionalHole.Data>;
-    const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
-    if (idValue === undefined) throw new Error("Missing required property \"id\".");
-    if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
-    const createdValue = entries["2"] === undefined ? entries["created"] : entries["2"];
-    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || Object.prototype.toString.call(createdValue) === "[object Date]")) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue;
-    const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
-    const noteNormalized = noteValue === null ? undefined : noteValue;
-    if (noteNormalized !== undefined && !(typeof noteNormalized === "string")) throw new Error("Invalid value for property \"note\".");
-    props.note = noteNormalized;
-    const nameValue = entries["4"] === undefined ? entries["name"] : entries["4"];
-    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
-    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
-    return props as OptionalHole.Data;
   }
 }

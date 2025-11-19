@@ -10,31 +10,18 @@ export namespace Distance {
   export type Value = Distance | Distance.Data;
 }
 export class Distance extends Message<Distance.Data> {
-  static #typeTag = Symbol("Distance");
+  static TYPE_TAG: symbol = Symbol("Distance");
+  static EMPTY: Distance;
   #unit: DistanceUnit;
   #value: number;
-  constructor(props: Distance.Value) {
-    super(Distance.#typeTag);
-    this.#unit = props.unit;
-    this.#value = props.value;
-  }
-  get unit(): DistanceUnit {
-    return this.#unit;
-  }
-  get value(): number {
-    return this.#value;
-  }
-  setUnit(value: DistanceUnit): Distance {
-    return new Distance({
-      unit: value,
-      value: this.#value
-    });
-  }
-  setValue(value: number): Distance {
-    return new Distance({
-      unit: this.#unit,
-      value: value
-    });
+  constructor(props?: Distance.Value) {
+    if (!props) {
+      if (Distance.EMPTY) return Distance.EMPTY;
+    }
+    super(Distance.TYPE_TAG);
+    this.#unit = props ? props.unit : new DistanceUnit();
+    this.#value = props ? props.value : 0;
+    if (!props) Distance.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
     return [{
@@ -57,5 +44,23 @@ export class Distance extends Message<Distance.Data> {
     if (!(typeof valueValue === "number")) throw new Error("Invalid value for property \"value\".");
     props.value = valueValue;
     return props as Distance.Data;
+  }
+  get unit(): DistanceUnit {
+    return this.#unit;
+  }
+  get value(): number {
+    return this.#value;
+  }
+  setUnit(value: DistanceUnit): Distance {
+    return new Distance({
+      unit: value,
+      value: this.#value
+    });
+  }
+  setValue(value: number): Distance {
+    return new Distance({
+      unit: this.#unit,
+      value: value
+    });
   }
 }
