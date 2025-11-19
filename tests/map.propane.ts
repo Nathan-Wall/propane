@@ -1,5 +1,5 @@
 // Generated from tests/map.propane
-import { Message, MessagePropDescriptor, ImmutableMap } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapMessage {
   export type Data = {
     labels: ReadonlyMap<string | number, number>;
@@ -72,6 +72,11 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   setLabelsEntry(key: string | number, value: number): MapMessage {
+    const labelsCurrent = this.labels;
+    if (labelsCurrent && labelsCurrent.has(key)) {
+      const existing = labelsCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const labelsMapSource = this.#labels;
     const labelsMapEntries = Array.from(labelsMapSource.entries());
     const labelsMapNext = new Map(labelsMapEntries);
@@ -83,6 +88,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   deleteLabelsEntry(key: string | number): MapMessage {
+    const labelsCurrent = this.labels;
+    if (labelsCurrent === undefined || !labelsCurrent.has(key)) return this;
     const labelsMapSource = this.#labels;
     const labelsMapEntries = Array.from(labelsMapSource.entries());
     const labelsMapNext = new Map(labelsMapEntries);
@@ -94,6 +101,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   clearLabels(): MapMessage {
+    const labelsCurrent = this.labels;
+    if (labelsCurrent === undefined || labelsCurrent.size === 0) return this;
     const labelsMapSource = this.#labels;
     const labelsMapEntries = Array.from(labelsMapSource.entries());
     const labelsMapNext = new Map(labelsMapEntries);
@@ -111,6 +120,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       labelsMapNext.set(mergeKey, mergeValue);
     }
+    if (this.labels === labelsMapNext || this.labels !== undefined && this.labels.equals(labelsMapNext)) return this;
     return new MapMessage({
       labels: labelsMapNext,
       metadata: this.#metadata,
@@ -124,6 +134,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     const currentValue = labelsMapNext.get(key);
     const updatedValue = updater(currentValue);
     labelsMapNext.set(key, updatedValue);
+    if (this.labels === labelsMapNext || this.labels !== undefined && this.labels.equals(labelsMapNext)) return this;
     return new MapMessage({
       labels: labelsMapNext,
       metadata: this.#metadata,
@@ -143,6 +154,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [newKey, newValue] of labelsMappedEntries) {
       labelsMapNext.set(newKey, newValue);
     }
+    if (this.labels === labelsMapNext || this.labels !== undefined && this.labels.equals(labelsMapNext)) return this;
     return new MapMessage({
       labels: labelsMapNext,
       metadata: this.#metadata,
@@ -156,6 +168,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [entryKey, entryValue] of labelsMapNext) {
       if (!predicate(entryValue, entryKey)) labelsMapNext.delete(entryKey);
     }
+    if (this.labels === labelsMapNext || this.labels !== undefined && this.labels.equals(labelsMapNext)) return this;
     return new MapMessage({
       labels: labelsMapNext,
       metadata: this.#metadata,
@@ -165,6 +178,11 @@ export class MapMessage extends Message<MapMessage.Data> {
   setMetadataEntry(key: string, value: {
     value: string;
   }): MapMessage {
+    const metadataCurrent = this.metadata;
+    if (metadataCurrent && metadataCurrent.has(key)) {
+      const existing = metadataCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
     const metadataMapNext = new Map(metadataMapEntries);
@@ -176,6 +194,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   deleteMetadataEntry(key: string): MapMessage {
+    const metadataCurrent = this.metadata;
+    if (metadataCurrent === undefined || !metadataCurrent.has(key)) return this;
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
     const metadataMapNext = new Map(metadataMapEntries);
@@ -187,6 +207,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   clearMetadata(): MapMessage {
+    const metadataCurrent = this.metadata;
+    if (metadataCurrent === undefined || metadataCurrent.size === 0) return this;
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : Array.from(metadataMapSource.entries());
     const metadataMapNext = new Map(metadataMapEntries);
@@ -210,6 +232,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       metadataMapNext.set(mergeKey, mergeValue);
     }
+    if (this.metadata === metadataMapNext || this.metadata !== undefined && this.metadata.equals(metadataMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: metadataMapNext,
@@ -227,6 +250,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     const currentValue = metadataMapNext.get(key);
     const updatedValue = updater(currentValue);
     metadataMapNext.set(key, updatedValue);
+    if (this.metadata === metadataMapNext || this.metadata !== undefined && this.metadata.equals(metadataMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: metadataMapNext,
@@ -250,6 +274,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [newKey, newValue] of metadataMappedEntries) {
       metadataMapNext.set(newKey, newValue);
     }
+    if (this.metadata === metadataMapNext || this.metadata !== undefined && this.metadata.equals(metadataMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: metadataMapNext,
@@ -265,6 +290,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [entryKey, entryValue] of metadataMapNext) {
       if (!predicate(entryValue, entryKey)) metadataMapNext.delete(entryKey);
     }
+    if (this.metadata === metadataMapNext || this.metadata !== undefined && this.metadata.equals(metadataMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: metadataMapNext,
@@ -274,6 +300,11 @@ export class MapMessage extends Message<MapMessage.Data> {
   setExtrasEntry(key: string, value: {
     note: string | null;
   }): MapMessage {
+    const extrasCurrent = this.extras;
+    if (extrasCurrent && extrasCurrent.has(key)) {
+      const existing = extrasCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const extrasMapSource = this.#extras;
     const extrasMapEntries = Array.from(extrasMapSource.entries());
     const extrasMapNext = new Map(extrasMapEntries);
@@ -285,6 +316,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   deleteExtrasEntry(key: string): MapMessage {
+    const extrasCurrent = this.extras;
+    if (extrasCurrent === undefined || !extrasCurrent.has(key)) return this;
     const extrasMapSource = this.#extras;
     const extrasMapEntries = Array.from(extrasMapSource.entries());
     const extrasMapNext = new Map(extrasMapEntries);
@@ -296,6 +329,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     });
   }
   clearExtras(): MapMessage {
+    const extrasCurrent = this.extras;
+    if (extrasCurrent === undefined || extrasCurrent.size === 0) return this;
     const extrasMapSource = this.#extras;
     const extrasMapEntries = Array.from(extrasMapSource.entries());
     const extrasMapNext = new Map(extrasMapEntries);
@@ -319,6 +354,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       extrasMapNext.set(mergeKey, mergeValue);
     }
+    if (this.extras === extrasMapNext || this.extras !== undefined && this.extras.equals(extrasMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,
@@ -336,6 +372,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     const currentValue = extrasMapNext.get(key);
     const updatedValue = updater(currentValue);
     extrasMapNext.set(key, updatedValue);
+    if (this.extras === extrasMapNext || this.extras !== undefined && this.extras.equals(extrasMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,
@@ -359,6 +396,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [newKey, newValue] of extrasMappedEntries) {
       extrasMapNext.set(newKey, newValue);
     }
+    if (this.extras === extrasMapNext || this.extras !== undefined && this.extras.equals(extrasMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,
@@ -374,6 +412,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     for (const [entryKey, entryValue] of extrasMapNext) {
       if (!predicate(entryValue, entryKey)) extrasMapNext.delete(entryKey);
     }
+    if (this.extras === extrasMapNext || this.extras !== undefined && this.extras.equals(extrasMapNext)) return this;
     return new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,

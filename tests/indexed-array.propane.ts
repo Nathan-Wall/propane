@@ -82,6 +82,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushNames(...values): ArrayMessage {
+    if (!values.length) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.push(...values);
@@ -93,6 +94,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   popNames(): ArrayMessage {
+    if ((this.names ?? []).length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.pop();
@@ -104,6 +106,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   shiftNames(): ArrayMessage {
+    if ((this.names ?? []).length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.shift();
@@ -115,6 +118,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftNames(...values): ArrayMessage {
+    if (!values.length) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.unshift(...values);
@@ -184,6 +188,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushScores(...values): ArrayMessage {
+    if (!values.length) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.push(...values);
@@ -195,6 +200,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   popScores(): ArrayMessage {
+    if ((this.scores ?? []).length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.pop();
@@ -206,6 +212,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   shiftScores(): ArrayMessage {
+    if ((this.scores ?? []).length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.shift();
@@ -217,6 +224,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftScores(...values): ArrayMessage {
+    if (!values.length) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.unshift(...values);
@@ -286,6 +294,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushFlags(...values): ArrayMessage {
+    if (!values.length) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.push(...values);
@@ -297,6 +306,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   popFlags(): ArrayMessage {
+    if ((this.flags ?? []).length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.pop();
@@ -308,6 +318,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   shiftFlags(): ArrayMessage {
+    if ((this.flags ?? []).length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.shift();
@@ -319,6 +330,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftFlags(...values): ArrayMessage {
+    if (!values.length) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.unshift(...values);
@@ -388,6 +400,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushLabels(...values): ArrayMessage {
+    if (!values.length) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.push(...values);
@@ -399,6 +412,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   popLabels(): ArrayMessage {
+    if ((this.labels ?? []).length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.pop();
@@ -410,6 +424,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   shiftLabels(): ArrayMessage {
+    if ((this.labels ?? []).length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.shift();
@@ -421,6 +436,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftLabels(...values): ArrayMessage {
+    if (!values.length) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.unshift(...values);

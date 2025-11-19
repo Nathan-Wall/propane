@@ -1,5 +1,5 @@
 // Generated from tests/map-bigint.propane
-import { Message, MessagePropDescriptor, ImmutableMap } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapBigintKey {
   export type Data = {
     values: ReadonlyMap<bigint, string>;
@@ -22,6 +22,11 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     });
   }
   setValuesEntry(key: bigint, value: string): MapBigintKey {
+    const valuesCurrent = this.values;
+    if (valuesCurrent && valuesCurrent.has(key)) {
+      const existing = valuesCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
@@ -31,6 +36,8 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     });
   }
   deleteValuesEntry(key: bigint): MapBigintKey {
+    const valuesCurrent = this.values;
+    if (valuesCurrent === undefined || !valuesCurrent.has(key)) return this;
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
@@ -40,6 +47,8 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     });
   }
   clearValues(): MapBigintKey {
+    const valuesCurrent = this.values;
+    if (valuesCurrent === undefined || valuesCurrent.size === 0) return this;
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
@@ -55,6 +64,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       valuesMapNext.set(mergeKey, mergeValue);
     }
+    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext
     });
@@ -66,6 +76,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const currentValue = valuesMapNext.get(key);
     const updatedValue = updater(currentValue);
     valuesMapNext.set(key, updatedValue);
+    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext
     });
@@ -83,6 +94,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     for (const [newKey, newValue] of valuesMappedEntries) {
       valuesMapNext.set(newKey, newValue);
     }
+    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext
     });
@@ -94,6 +106,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     for (const [entryKey, entryValue] of valuesMapNext) {
       if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
     }
+    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext
     });

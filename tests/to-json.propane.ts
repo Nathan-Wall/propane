@@ -1,5 +1,5 @@
 // Generated from tests/to-json.propane
-import { Message, MessagePropDescriptor, ImmutableMap } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace ToJson {
   export type Data = {
     map: ReadonlyMap<string, number>;
@@ -156,6 +156,11 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   setMapEntry(key: string, value: number): ToJson {
+    const mapCurrent = this.map;
+    if (mapCurrent && mapCurrent.has(key)) {
+      const existing = mapCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const mapMapSource = this.#map;
     const mapMapEntries = Array.from(mapMapSource.entries());
     const mapMapNext = new Map(mapMapEntries);
@@ -171,6 +176,8 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   deleteMapEntry(key: string): ToJson {
+    const mapCurrent = this.map;
+    if (mapCurrent === undefined || !mapCurrent.has(key)) return this;
     const mapMapSource = this.#map;
     const mapMapEntries = Array.from(mapMapSource.entries());
     const mapMapNext = new Map(mapMapEntries);
@@ -186,6 +193,8 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   clearMap(): ToJson {
+    const mapCurrent = this.map;
+    if (mapCurrent === undefined || mapCurrent.size === 0) return this;
     const mapMapSource = this.#map;
     const mapMapEntries = Array.from(mapMapSource.entries());
     const mapMapNext = new Map(mapMapEntries);
@@ -207,6 +216,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       mapMapNext.set(mergeKey, mergeValue);
     }
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
@@ -224,6 +234,7 @@ export class ToJson extends Message<ToJson.Data> {
     const currentValue = mapMapNext.get(key);
     const updatedValue = updater(currentValue);
     mapMapNext.set(key, updatedValue);
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
@@ -247,6 +258,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [newKey, newValue] of mapMappedEntries) {
       mapMapNext.set(newKey, newValue);
     }
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
@@ -264,6 +276,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [entryKey, entryValue] of mapMapNext) {
       if (!predicate(entryValue, entryKey)) mapMapNext.delete(entryKey);
     }
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
@@ -275,6 +288,11 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   setImapEntry(key: string, value: number): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent && imapCurrent.has(key)) {
+      const existing = imapCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
     const imapMapSource = this.#imap;
     const imapMapEntries = Array.from(imapMapSource.entries());
     const imapMapNext = new Map(imapMapEntries);
@@ -290,6 +308,8 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   deleteImapEntry(key: string): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent === undefined || !imapCurrent.has(key)) return this;
     const imapMapSource = this.#imap;
     const imapMapEntries = Array.from(imapMapSource.entries());
     const imapMapNext = new Map(imapMapEntries);
@@ -305,6 +325,8 @@ export class ToJson extends Message<ToJson.Data> {
     });
   }
   clearImap(): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent === undefined || imapCurrent.size === 0) return this;
     const imapMapSource = this.#imap;
     const imapMapEntries = Array.from(imapMapSource.entries());
     const imapMapNext = new Map(imapMapEntries);
@@ -326,6 +348,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [mergeKey, mergeValue] of entries) {
       imapMapNext.set(mergeKey, mergeValue);
     }
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
       map: this.#map,
       imap: imapMapNext,
@@ -343,6 +366,7 @@ export class ToJson extends Message<ToJson.Data> {
     const currentValue = imapMapNext.get(key);
     const updatedValue = updater(currentValue);
     imapMapNext.set(key, updatedValue);
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
       map: this.#map,
       imap: imapMapNext,
@@ -366,6 +390,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [newKey, newValue] of imapMappedEntries) {
       imapMapNext.set(newKey, newValue);
     }
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
       map: this.#map,
       imap: imapMapNext,
@@ -383,6 +408,7 @@ export class ToJson extends Message<ToJson.Data> {
     for (const [entryKey, entryValue] of imapMapNext) {
       if (!predicate(entryValue, entryKey)) imapMapNext.delete(entryKey);
     }
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
       map: this.#map,
       imap: imapMapNext,

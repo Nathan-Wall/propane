@@ -44,6 +44,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const tagsSetEntries = [...tagsSetSource];
     const tagsSetNext = new Set(tagsSetEntries);
     tagsSetNext.add(value);
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -56,6 +57,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const toAdd of values) {
       tagsSetNext.add(toAdd);
     }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -66,6 +68,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const tagsSetEntries = [...tagsSetSource];
     const tagsSetNext = new Set(tagsSetEntries);
     tagsSetNext.delete(value);
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -78,6 +81,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const del of values) {
       tagsSetNext.delete(del);
     }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -88,6 +92,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const tagsSetEntries = [...tagsSetSource];
     const tagsSetNext = new Set(tagsSetEntries);
     tagsSetNext.clear();
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -105,6 +110,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const value of tagsFiltered) {
       tagsSetNext.add(value);
     }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -123,6 +129,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const value of tagsMapped) {
       tagsSetNext.add(value);
     }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -137,6 +144,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const updated of updated) {
       tagsSetNext.add(updated);
     }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
@@ -147,6 +155,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
     idsSetNext.add(value);
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -159,6 +168,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const toAdd of values) {
       idsSetNext.add(toAdd);
     }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -169,6 +179,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
     idsSetNext.delete(value);
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -181,6 +192,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const del of values) {
       idsSetNext.delete(del);
     }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -191,6 +203,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
     idsSetNext.clear();
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -208,6 +221,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const value of idsFiltered) {
       idsSetNext.add(value);
     }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -226,6 +240,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const value of idsMapped) {
       idsSetNext.add(value);
     }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
@@ -240,6 +255,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     for (const updated of updated) {
       idsSetNext.add(updated);
     }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext

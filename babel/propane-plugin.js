@@ -20,6 +20,7 @@ export default function propanePlugin() {
           state.usesImmutableMap = false;
           state.usesImmutableSet = false;
           state.usesImmutableArray = false;
+          state.usesEquals = false;
           state.usesImmutableSet = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
@@ -104,6 +105,7 @@ export default function propanePlugin() {
     const properties = extractProperties(typeLiteralPath.get('members'));
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;
+      state.usesEquals = true;
     }
     if (properties.some((prop) => prop.isSet)) {
       state.usesImmutableSet = true;
@@ -1063,6 +1065,9 @@ export default function propanePlugin() {
     if (state.usesImmutableArray) {
       requiredSpecifiers.push('ImmutableArray');
     }
+    if (state.usesEquals) {
+      requiredSpecifiers.push('equals');
+    }
 
     if (existingImport) {
       const existingSpecifiers = new Set(
@@ -1765,7 +1770,46 @@ export default function propanePlugin() {
     const { statements, nextName } = buildArrayCloneSetup(prop);
     const nextRef = () => t.identifier(nextName);
     const mutations = buildMutations(nextRef);
+    const currentExpr = t.memberExpression(
+      t.thisExpression(),
+      t.identifier(prop.name)
+    );
+
+    const preludeStatements = [];
+
+    // Fast no-op checks to avoid unnecessary cloning/equality work.
+    if (methodName.startsWith('push') || methodName.startsWith('unshift')) {
+      const valuesParam = params[0];
+      const valuesId =
+        t.isIdentifier(valuesParam) ? valuesParam
+        : t.isRestElement(valuesParam) && t.isIdentifier(valuesParam.argument)
+          ? valuesParam.argument
+          : null;
+      if (valuesId) {
+        preludeStatements.push(
+          t.ifStatement(
+            t.unaryExpression('!', t.memberExpression(t.cloneNode(valuesId), t.identifier('length'))),
+            t.returnStatement(t.thisExpression())
+          )
+        );
+      }
+    }
+
+    if (methodName.startsWith('pop') || methodName.startsWith('shift')) {
+      const lengthAccess = t.memberExpression(
+        t.logicalExpression('??', currentExpr, t.arrayExpression([])),
+        t.identifier('length')
+      );
+      preludeStatements.push(
+        t.ifStatement(
+          t.binaryExpression('===', lengthAccess, t.numericLiteral(0)),
+          t.returnStatement(t.thisExpression())
+        )
+      );
+    }
+
     const bodyStatements = [
+      ...preludeStatements,
       ...statements,
       ...mutations,
       t.returnStatement(
@@ -1850,7 +1894,8 @@ export default function propanePlugin() {
                 [t.identifier('key'), t.identifier('value')]
               )
             ),
-          ]
+          ],
+          buildSetEntryOptions(prop)
         )
       );
 
@@ -1868,7 +1913,8 @@ export default function propanePlugin() {
                 [t.identifier('key')]
               )
             ),
-          ]
+          ],
+          buildDeleteEntryOptions(prop)
         )
       );
 
@@ -1886,7 +1932,8 @@ export default function propanePlugin() {
                 []
               )
             ),
-          ]
+          ],
+          buildClearMapOptions(prop)
         )
       );
 
@@ -2350,21 +2397,25 @@ export default function propanePlugin() {
     prop,
     methodName,
     params,
-    buildMutations
+    buildMutations,
+    options = {}
   ) {
+    const { prelude = [], skipNoopGuard = false } = options;
     const { statements, nextName } = buildMapCloneSetup(prop);
     const nextRef = () => t.identifier(nextName);
     const mutations = buildMutations(nextRef);
+    const currentExpr = t.memberExpression(
+      t.thisExpression(),
+      t.identifier(prop.name)
+    );
     const bodyStatements = [
+      ...prelude,
       ...statements,
       ...mutations,
+      ...(skipNoopGuard ? [] : [buildNoopGuard(currentExpr, nextRef())]),
       t.returnStatement(
         t.newExpression(t.identifier(typeName), [
-          buildPropsObjectExpression(
-            propDescriptors,
-            prop,
-            nextRef()
-          ),
+          buildPropsObjectExpression(propDescriptors, prop, nextRef()),
         ])
       ),
     ];
@@ -2443,9 +2494,14 @@ export default function propanePlugin() {
     const { statements, nextName } = buildSetCloneSetup(prop);
     const nextRef = () => t.identifier(nextName);
     const mutations = buildMutations(nextRef);
+    const currentExpr = t.memberExpression(
+      t.thisExpression(),
+      t.identifier(prop.name)
+    );
     const bodyStatements = [
       ...statements,
       ...mutations,
+      buildNoopGuard(currentExpr, nextRef()),
       t.returnStatement(
         t.newExpression(t.identifier(typeName), [
           buildPropsObjectExpression(
@@ -2511,6 +2567,99 @@ export default function propanePlugin() {
     ];
 
     return { statements, nextName, entriesName };
+  }
+
+  function buildNoopGuard(currentExpr, nextExpr) {
+    const sameRef = t.binaryExpression('===', t.cloneNode(currentExpr), t.cloneNode(nextExpr));
+    const equalsCall = t.logicalExpression(
+      '&&',
+      t.binaryExpression('!==', t.cloneNode(currentExpr), t.identifier('undefined')),
+      t.callExpression(
+        t.memberExpression(t.cloneNode(currentExpr), t.identifier('equals')),
+        [t.cloneNode(nextExpr)]
+      )
+    );
+    return t.ifStatement(
+      t.logicalExpression('||', sameRef, equalsCall),
+      t.returnStatement(t.thisExpression())
+    );
+  }
+
+  function buildSetEntryOptions(prop) {
+    const currentId = t.identifier(`${prop.name}Current`);
+    const existingId = t.identifier('existing');
+    const valueId = t.identifier('value');
+    const hasKey = t.callExpression(
+      t.memberExpression(currentId, t.identifier('has')),
+      [t.identifier('key')]
+    );
+    const getExisting = t.callExpression(
+      t.memberExpression(currentId, t.identifier('get')),
+      [t.identifier('key')]
+    );
+    const equalsCall = t.callExpression(t.identifier('equals'), [existingId, valueId]);
+
+    const prelude = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      ]),
+      t.ifStatement(
+        t.logicalExpression(
+          '&&',
+          currentId,
+          hasKey
+        ),
+        t.blockStatement([
+          t.variableDeclaration('const', [
+            t.variableDeclarator(existingId, getExisting),
+          ]),
+          t.ifStatement(equalsCall, t.returnStatement(t.thisExpression())),
+        ])
+      ),
+    ];
+
+    return { prelude, skipNoopGuard: true };
+  }
+
+  function buildDeleteEntryOptions(prop) {
+    const currentId = t.identifier(`${prop.name}Current`);
+    const hasKey = t.callExpression(
+      t.memberExpression(currentId, t.identifier('has')),
+      [t.identifier('key')]
+    );
+    const prelude = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      ]),
+      t.ifStatement(
+        t.logicalExpression(
+          '||',
+          t.binaryExpression('===', currentId, t.identifier('undefined')),
+          t.unaryExpression('!', hasKey)
+        ),
+        t.returnStatement(t.thisExpression())
+      ),
+    ];
+    return { prelude, skipNoopGuard: true };
+  }
+
+  function buildClearMapOptions(prop) {
+    const currentId = t.identifier(`${prop.name}Current`);
+    const sizeAccess = t.memberExpression(currentId, t.identifier('size'));
+    const prelude = [
+      t.variableDeclaration('const', [
+        t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      ]),
+      t.ifStatement(
+        t.logicalExpression(
+          '||',
+          t.binaryExpression('===', currentId, t.identifier('undefined')),
+          t.binaryExpression('===', sizeAccess, t.numericLiteral(0))
+        ),
+        t.returnStatement(t.thisExpression())
+      ),
+    ];
+    return { prelude, skipNoopGuard: true };
   }
 
   function cloneMapKeyType(prop) {

@@ -19,6 +19,7 @@ export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
 }
+export type MapKey = DataPrimitive;
 
 export interface MessagePropDescriptor<T extends object> {
   name: keyof T;
@@ -373,17 +374,19 @@ function splitTopLevel(content: string): string[] {
   return tokens.filter((token) => token.length > 0 || token === '');
 }
 
-function parseLiteralToken(token: string): DataValue {
+function parseLiteralToken(token: string) {
   const trimmed = token.trim();
 
   if (trimmed.startsWith('M[')) {
-    const parsedArray = parseArrayLiteral(trimmed.slice(1)) as DataArray;
-    return new ImmutableMap(parsedArray as [unknown, unknown][]);
+    const parsedArray = parseArrayLiteral(trimmed.slice(1));
+    // TODO: Add asserts where there's a cast here.
+    const entries = parsedArray.map((entry) => entry as [MapKey, DataValue]);
+    return new ImmutableMap(entries);
   }
 
   if (trimmed.startsWith('S[')) {
-    const parsedArray = parseArrayLiteral(trimmed.slice(1)) as DataArray;
-    return new ImmutableSet(parsedArray as unknown[]);
+    const parsedArray = parseArrayLiteral(trimmed.slice(1));
+    return new ImmutableSet(parsedArray);
   }
 
   if (!trimmed || trimmed === 'undefined') {
