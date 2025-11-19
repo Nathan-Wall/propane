@@ -1,13 +1,14 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/map-bigint.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapBigintKey {
-  export type Data = {
+  export interface Data {
     values: ReadonlyMap<bigint, string>;
-  };
+  }
   export type Value = MapBigintKey | MapBigintKey.Data;
 }
 export class MapBigintKey extends Message<MapBigintKey.Data> {
-  static TYPE_TAG: symbol = Symbol("MapBigintKey");
+  static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
   #values: ReadonlyMap<bigint, string>;
   constructor(props?: MapBigintKey.Value) {

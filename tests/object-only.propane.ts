@@ -1,16 +1,17 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/object-only.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace ObjectOnly {
-  export type Data = {
+  export interface Data {
     id: number;
     name: string;
     age: number;
     active: boolean;
-  };
+  }
   export type Value = ObjectOnly | ObjectOnly.Data;
 }
 export class ObjectOnly extends Message<ObjectOnly.Data> {
-  static TYPE_TAG: symbol = Symbol("ObjectOnly");
+  static TYPE_TAG = Symbol("ObjectOnly");
   static EMPTY: ObjectOnly;
   #id: number;
   #name: string;

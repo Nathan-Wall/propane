@@ -1,8 +1,9 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Unions {
-  export type Data = {
+  export interface Data {
     username: string | null;
     email: Email | null;
     metadata: {
@@ -10,11 +11,11 @@ export namespace Unions {
     } | {
       updated: Date;
     };
-  };
+  }
   export type Value = Unions | Unions.Data;
 }
 export class Unions extends Message<Unions.Data> {
-  static TYPE_TAG: symbol = Symbol("Unions");
+  static TYPE_TAG = Symbol("Unions");
   static EMPTY: Unions;
   #username: string | null;
   #email: Email | null;

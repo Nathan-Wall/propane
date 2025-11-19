@@ -1,14 +1,15 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/union-string-bool.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionStringBool {
-  export type Data = {
+  export interface Data {
     value: string | boolean;
     optional?: string | boolean;
-  };
+  }
   export type Value = UnionStringBool | UnionStringBool.Data;
 }
 export class UnionStringBool extends Message<UnionStringBool.Data> {
-  static TYPE_TAG: symbol = Symbol("UnionStringBool");
+  static TYPE_TAG = Symbol("UnionStringBool");
   static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;

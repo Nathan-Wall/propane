@@ -1,18 +1,19 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/primitives.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Primitives {
-  export type Data = {
+  export interface Data {
     flag: boolean;
     count: number;
     label: string;
     size: bigint;
     empty: null;
     missing: undefined;
-  };
+  }
   export type Value = Primitives | Primitives.Data;
 }
 export class Primitives extends Message<Primitives.Data> {
-  static TYPE_TAG: symbol = Symbol("Primitives");
+  static TYPE_TAG = Symbol("Primitives");
   static EMPTY: Primitives;
   #flag: boolean;
   #count: number;

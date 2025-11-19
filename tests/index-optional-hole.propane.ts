@@ -1,16 +1,17 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/index-optional-hole.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace OptionalHole {
-  export type Data = {
+  export interface Data {
     id: number;
     created: Date;
     note?: string;
     name: string;
-  };
+  }
   export type Value = OptionalHole | OptionalHole.Data;
 }
 export class OptionalHole extends Message<OptionalHole.Data> {
-  static TYPE_TAG: symbol = Symbol("OptionalHole");
+  static TYPE_TAG = Symbol("OptionalHole");
   static EMPTY: OptionalHole;
   #id: number;
   #created: Date;

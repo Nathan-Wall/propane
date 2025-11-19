@@ -1,10 +1,11 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/user.propane
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace User {
-  export type Data = {
+  export interface Data {
     id: number;
     name: string;
     email: Email;
@@ -14,11 +15,11 @@ export namespace User {
     active: boolean;
     eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
     height: Distance.Value;
-  };
+  }
   export type Value = User | User.Data;
 }
 export class User extends Message<User.Data> {
-  static TYPE_TAG: symbol = Symbol("User");
+  static TYPE_TAG = Symbol("User");
   static EMPTY: User;
   #id: number;
   #name: string;

@@ -1,7 +1,8 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/map.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapMessage {
-  export type Data = {
+  export interface Data {
     labels: ReadonlyMap<string | number, number>;
     metadata?: ReadonlyMap<string, {
       value: string;
@@ -9,11 +10,11 @@ export namespace MapMessage {
     extras: ReadonlyMap<string, {
       note: string | null;
     }>;
-  };
+  }
   export type Value = MapMessage | MapMessage.Data;
 }
 export class MapMessage extends Message<MapMessage.Data> {
-  static TYPE_TAG: symbol = Symbol("MapMessage");
+  static TYPE_TAG = Symbol("MapMessage");
   static EMPTY: MapMessage;
   #labels: ReadonlyMap<string | number, number>;
   #metadata: ReadonlyMap<string, {

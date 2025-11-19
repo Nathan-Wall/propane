@@ -1,14 +1,15 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/set.propane
 import { Message, MessagePropDescriptor, ImmutableSet } from "@propanejs/runtime";
 export namespace SetMessage {
-  export type Data = {
+  export interface Data {
     tags: ReadonlySet<string>;
     ids?: ReadonlySet<number>;
-  };
+  }
   export type Value = SetMessage | SetMessage.Data;
 }
 export class SetMessage extends Message<SetMessage.Data> {
-  static TYPE_TAG: symbol = Symbol("SetMessage");
+  static TYPE_TAG = Symbol("SetMessage");
   static EMPTY: SetMessage;
   #tags: ReadonlySet<string>;
   #ids: ReadonlySet<number> | undefined;

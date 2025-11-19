@@ -1,15 +1,16 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/index-hole.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Hole {
-  export type Data = {
+  export interface Data {
     id: number;
     value: number;
     name: string;
-  };
+  }
   export type Value = Hole | Hole.Data;
 }
 export class Hole extends Message<Hole.Data> {
-  static TYPE_TAG: symbol = Symbol("Hole");
+  static TYPE_TAG = Symbol("Hole");
   static EMPTY: Hole;
   #id: number;
   #value: number;

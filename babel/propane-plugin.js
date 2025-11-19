@@ -36,6 +36,7 @@ export default function propanePlugin() {
 
           if (!existing) {
             path.addComment('leading', ` ${commentText}`, true);
+            path.addComment('leading', ' eslint-disable @typescript-eslint/no-namespace', true);
           }
         },
         exit(path, state) {
@@ -610,10 +611,11 @@ export default function propanePlugin() {
 
     const literalClone = t.tsTypeLiteral(literalMembers);
 
-    const typeDecl = t.tsTypeAliasDeclaration(
+    const typeDecl = t.tsInterfaceDeclaration(
       typeId,
       typeAlias.typeParameters ? t.cloneNode(typeAlias.typeParameters) : null,
-      literalClone
+      null,
+      t.tsInterfaceBody(literalClone.members)
     );
 
     const exportedTypeDecl = t.exportNamedDeclaration(typeDecl, []);
@@ -814,7 +816,7 @@ export default function propanePlugin() {
       t.classProperty(
         t.identifier('TYPE_TAG'),
         t.callExpression(t.identifier('Symbol'), [t.stringLiteral(className)]),
-        t.tsTypeAnnotation(t.tsSymbolKeyword()),
+        null,
         null,
         false,
         true

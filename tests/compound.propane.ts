@@ -1,16 +1,17 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/compound.propane
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Compound {
-  export type Data = {
+  export interface Data {
     user: User.Value;
     indexed: Indexed.Value;
-  };
+  }
   export type Value = Compound | Compound.Data;
 }
 export class Compound extends Message<Compound.Data> {
-  static TYPE_TAG: symbol = Symbol("Compound");
+  static TYPE_TAG = Symbol("Compound");
   static EMPTY: Compound;
   #user: User;
   #indexed: Indexed;

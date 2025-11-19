@@ -1,7 +1,8 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/to-json.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace ToJson {
-  export type Data = {
+  export interface Data {
     map: ReadonlyMap<string, number>;
     imap: ReadonlyMap<string, number>;
     big: bigint;
@@ -13,11 +14,11 @@ export namespace ToJson {
       map: Map<string, bigint>;
       imap: Map<string, Date>;
     };
-  };
+  }
   export type Value = ToJson | ToJson.Data;
 }
 export class ToJson extends Message<ToJson.Data> {
-  static TYPE_TAG: symbol = Symbol("ToJson");
+  static TYPE_TAG = Symbol("ToJson");
   static EMPTY: ToJson;
   #map: ReadonlyMap<string, number>;
   #imap: ReadonlyMap<string, number>;

@@ -1,13 +1,14 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/repro_empty_new.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionFirstNumber {
-  export type Data = {
+  export interface Data {
     val: number | string;
-  };
+  }
   export type Value = UnionFirstNumber | UnionFirstNumber.Data;
 }
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
-  static TYPE_TAG: symbol = Symbol("UnionFirstNumber");
+  static TYPE_TAG = Symbol("UnionFirstNumber");
   static EMPTY: UnionFirstNumber;
   #val: number | string;
   constructor(props?: UnionFirstNumber.Value) {
@@ -43,13 +44,13 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   }
 }
 export namespace UnionFirstString {
-  export type Data = {
+  export interface Data {
     val: string | number;
-  };
+  }
   export type Value = UnionFirstString | UnionFirstString.Data;
 }
 export class UnionFirstString extends Message<UnionFirstString.Data> {
-  static TYPE_TAG: symbol = Symbol("UnionFirstString");
+  static TYPE_TAG = Symbol("UnionFirstString");
   static EMPTY: UnionFirstString;
   #val: string | number;
   constructor(props?: UnionFirstString.Value) {
@@ -85,13 +86,13 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   }
 }
 export namespace OptionalField {
-  export type Data = {
+  export interface Data {
     val?: string;
-  };
+  }
   export type Value = OptionalField | OptionalField.Data;
 }
 export class OptionalField extends Message<OptionalField.Data> {
-  static TYPE_TAG: symbol = Symbol("OptionalField");
+  static TYPE_TAG = Symbol("OptionalField");
   static EMPTY: OptionalField;
   #val: string;
   constructor(props?: OptionalField.Value) {
@@ -130,13 +131,13 @@ export class OptionalField extends Message<OptionalField.Data> {
   }
 }
 export namespace RequiredMessage {
-  export type Data = {
+  export interface Data {
     sub: UnionFirstNumber.Value;
-  };
+  }
   export type Value = RequiredMessage | RequiredMessage.Data;
 }
 export class RequiredMessage extends Message<RequiredMessage.Data> {
-  static TYPE_TAG: symbol = Symbol("RequiredMessage");
+  static TYPE_TAG = Symbol("RequiredMessage");
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
   constructor(props?: RequiredMessage.Value) {

@@ -1,7 +1,8 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/indexed.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Indexed {
-  export type Data = {
+  export interface Data {
     id: number;
     name: string;
     age: number;
@@ -10,11 +11,11 @@ export namespace Indexed {
     score: number | null;
     alias?: string | null;
     status: string;
-  };
+  }
   export type Value = Indexed | Indexed.Data;
 }
 export class Indexed extends Message<Indexed.Data> {
-  static TYPE_TAG: symbol = Symbol("Indexed");
+  static TYPE_TAG = Symbol("Indexed");
   static EMPTY: Indexed;
   #id: number;
   #name: string;

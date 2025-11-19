@@ -1,18 +1,19 @@
+// eslint-disable @typescript-eslint/no-namespace
 // Generated from tests/indexed-array.propane
 import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
 export namespace ArrayMessage {
-  export type Data = {
+  export interface Data {
     names: ImmutableArray<string>;
     scores: ImmutableArray<number>;
     flags?: ImmutableArray<boolean>;
     labels: ImmutableArray<{
       name: string;
     }>;
-  };
+  }
   export type Value = ArrayMessage | ArrayMessage.Data;
 }
 export class ArrayMessage extends Message<ArrayMessage.Data> {
-  static TYPE_TAG: symbol = Symbol("ArrayMessage");
+  static TYPE_TAG = Symbol("ArrayMessage");
   static EMPTY: ArrayMessage;
   #names: ImmutableArray<string>;
   #scores: ImmutableArray<number>;
