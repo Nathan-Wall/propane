@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
@@ -78,13 +78,6 @@ export class Unions extends Message<Unions.Data> {
   } {
     return this.#metadata;
   }
-  setUsername(value: string | null): Unions {
-    return new Unions({
-      username: value,
-      email: this.#email,
-      metadata: this.#metadata
-    });
-  }
   setEmail(value: Email | null): Unions {
     return new Unions({
       username: this.#username,
@@ -101,6 +94,13 @@ export class Unions extends Message<Unions.Data> {
       username: this.#username,
       email: this.#email,
       metadata: value
+    });
+  }
+  setUsername(value: string | null): Unions {
+    return new Unions({
+      username: value,
+      email: this.#email,
+      metadata: this.#metadata
     });
   }
 }

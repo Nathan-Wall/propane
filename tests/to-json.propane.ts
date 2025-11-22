@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace ToJson {
@@ -135,127 +135,16 @@ export class ToJson extends Message<ToJson.Data> {
   } {
     return this.#nested;
   }
-  setMap(value: ReadonlyMap<string, number>): ToJson {
-    return new ToJson({
-      map: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setImap(value: ReadonlyMap<string, number>): ToJson {
+  clearImap(): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent === undefined || imapCurrent.size === 0) return this;
+    const imapMapSource = this.#imap;
+    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapNext = new Map(imapMapEntries);
+    imapMapNext.clear();
     return new ToJson({
       map: this.#map,
-      imap: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setBig(value: bigint): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: value,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setDate(value: Date): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: this.#big,
-      date: value,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setOptional(value: string): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: value,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setNonFinite(value: number): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: value,
-      nested: this.#nested
-    });
-  }
-  setNested(value: {
-    array: (number | undefined)[];
-    map: Map<string, bigint>;
-    imap: Map<string, Date>;
-  }): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: value
-    });
-  }
-  deleteOptional(): ToJson {
-    return new ToJson({
-      map: this.#map,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setMapEntry(key: string, value: number): ToJson {
-    const mapCurrent = this.map;
-    if (mapCurrent && mapCurrent.has(key)) {
-      const existing = mapCurrent.get(key);
-      if (equals(existing, value)) return this;
-    }
-    const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
-    const mapMapNext = new Map(mapMapEntries);
-    mapMapNext.set(key, value);
-    return new ToJson({
-      map: mapMapNext,
-      imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  deleteMapEntry(key: string): ToJson {
-    const mapCurrent = this.map;
-    if (mapCurrent === undefined || !mapCurrent.has(key)) return this;
-    const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
-    const mapMapNext = new Map(mapMapEntries);
-    mapMapNext.delete(key);
-    return new ToJson({
-      map: mapMapNext,
-      imap: this.#imap,
+      imap: imapMapNext,
       big: this.#big,
       date: this.#date,
       optional: this.#optional,
@@ -280,14 +169,30 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  mergeMapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
+  deleteImapEntry(key: string): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent === undefined || !imapCurrent.has(key)) return this;
+    const imapMapSource = this.#imap;
+    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapNext = new Map(imapMapEntries);
+    imapMapNext.delete(key);
+    return new ToJson({
+      map: this.#map,
+      imap: imapMapNext,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  deleteMapEntry(key: string): ToJson {
+    const mapCurrent = this.map;
+    if (mapCurrent === undefined || !mapCurrent.has(key)) return this;
     const mapMapSource = this.#map;
     const mapMapEntries = Array.from(mapMapSource.entries());
     const mapMapNext = new Map(mapMapEntries);
-    for (const [mergeKey, mergeValue] of entries) {
-      mapMapNext.set(mergeKey, mergeValue);
-    }
-    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+    mapMapNext.delete(key);
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
@@ -298,41 +203,27 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
-    const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
-    const mapMapNext = new Map(mapMapEntries);
-    const currentValue = mapMapNext.get(key);
-    const updatedValue = updater(currentValue);
-    mapMapNext.set(key, updatedValue);
-    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+  deleteOptional(): ToJson {
     return new ToJson({
-      map: mapMapNext,
+      map: this.#map,
       imap: this.#imap,
       big: this.#big,
       date: this.#date,
-      optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
     });
   }
-  mapMapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
-    const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
-    const mapMapNext = new Map(mapMapEntries);
-    const mapMappedEntries = [];
-    for (const [entryKey, entryValue] of mapMapNext) {
-      const mappedEntry = mapper(entryValue, entryKey);
-      mapMappedEntries.push(mappedEntry);
+  filterImapEntries(predicate: (value: number, key: string) => boolean): ToJson {
+    const imapMapSource = this.#imap;
+    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapNext = new Map(imapMapEntries);
+    for (const [entryKey, entryValue] of imapMapNext) {
+      if (!predicate(entryValue, entryKey)) imapMapNext.delete(entryKey);
     }
-    mapMapNext.clear();
-    for (const [newKey, newValue] of mapMappedEntries) {
-      mapMapNext.set(newKey, newValue);
-    }
-    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
-      map: mapMapNext,
-      imap: this.#imap,
+      map: this.#map,
+      imap: imapMapNext,
       big: this.#big,
       date: this.#date,
       optional: this.#optional,
@@ -351,96 +242,6 @@ export class ToJson extends Message<ToJson.Data> {
     return new ToJson({
       map: mapMapNext,
       imap: this.#imap,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  setImapEntry(key: string, value: number): ToJson {
-    const imapCurrent = this.imap;
-    if (imapCurrent && imapCurrent.has(key)) {
-      const existing = imapCurrent.get(key);
-      if (equals(existing, value)) return this;
-    }
-    const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
-    const imapMapNext = new Map(imapMapEntries);
-    imapMapNext.set(key, value);
-    return new ToJson({
-      map: this.#map,
-      imap: imapMapNext,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  deleteImapEntry(key: string): ToJson {
-    const imapCurrent = this.imap;
-    if (imapCurrent === undefined || !imapCurrent.has(key)) return this;
-    const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
-    const imapMapNext = new Map(imapMapEntries);
-    imapMapNext.delete(key);
-    return new ToJson({
-      map: this.#map,
-      imap: imapMapNext,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  clearImap(): ToJson {
-    const imapCurrent = this.imap;
-    if (imapCurrent === undefined || imapCurrent.size === 0) return this;
-    const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
-    const imapMapNext = new Map(imapMapEntries);
-    imapMapNext.clear();
-    return new ToJson({
-      map: this.#map,
-      imap: imapMapNext,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  mergeImapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
-    const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
-    const imapMapNext = new Map(imapMapEntries);
-    for (const [mergeKey, mergeValue] of entries) {
-      imapMapNext.set(mergeKey, mergeValue);
-    }
-    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
-    return new ToJson({
-      map: this.#map,
-      imap: imapMapNext,
-      big: this.#big,
-      date: this.#date,
-      optional: this.#optional,
-      nonFinite: this.#nonFinite,
-      nested: this.#nested
-    });
-  }
-  updateImapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
-    const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
-    const imapMapNext = new Map(imapMapEntries);
-    const currentValue = imapMapNext.get(key);
-    const updatedValue = updater(currentValue);
-    imapMapNext.set(key, updatedValue);
-    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
-    return new ToJson({
-      map: this.#map,
-      imap: imapMapNext,
       big: this.#big,
       date: this.#date,
       optional: this.#optional,
@@ -472,17 +273,216 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  filterImapEntries(predicate: (value: number, key: string) => boolean): ToJson {
+  mapMapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
+    const mapMapSource = this.#map;
+    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapNext = new Map(mapMapEntries);
+    const mapMappedEntries = [];
+    for (const [entryKey, entryValue] of mapMapNext) {
+      const mappedEntry = mapper(entryValue, entryKey);
+      mapMappedEntries.push(mappedEntry);
+    }
+    mapMapNext.clear();
+    for (const [newKey, newValue] of mapMappedEntries) {
+      mapMapNext.set(newKey, newValue);
+    }
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+    return new ToJson({
+      map: mapMapNext,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  mergeImapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
     const imapMapSource = this.#imap;
     const imapMapEntries = Array.from(imapMapSource.entries());
     const imapMapNext = new Map(imapMapEntries);
-    for (const [entryKey, entryValue] of imapMapNext) {
-      if (!predicate(entryValue, entryKey)) imapMapNext.delete(entryKey);
+    for (const [mergeKey, mergeValue] of entries) {
+      imapMapNext.set(mergeKey, mergeValue);
     }
     if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
     return new ToJson({
       map: this.#map,
       imap: imapMapNext,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  mergeMapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
+    const mapMapSource = this.#map;
+    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapNext = new Map(mapMapEntries);
+    for (const [mergeKey, mergeValue] of entries) {
+      mapMapNext.set(mergeKey, mergeValue);
+    }
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+    return new ToJson({
+      map: mapMapNext,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setBig(value: bigint): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: this.#imap,
+      big: value,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setDate(value: Date): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: this.#imap,
+      big: this.#big,
+      date: value,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setImap(value: ReadonlyMap<string, number>): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setImapEntry(key: string, value: number): ToJson {
+    const imapCurrent = this.imap;
+    if (imapCurrent && imapCurrent.has(key)) {
+      const existing = imapCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
+    const imapMapSource = this.#imap;
+    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapNext = new Map(imapMapEntries);
+    imapMapNext.set(key, value);
+    return new ToJson({
+      map: this.#map,
+      imap: imapMapNext,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setMap(value: ReadonlyMap<string, number>): ToJson {
+    return new ToJson({
+      map: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setMapEntry(key: string, value: number): ToJson {
+    const mapCurrent = this.map;
+    if (mapCurrent && mapCurrent.has(key)) {
+      const existing = mapCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
+    const mapMapSource = this.#map;
+    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapNext = new Map(mapMapEntries);
+    mapMapNext.set(key, value);
+    return new ToJson({
+      map: mapMapNext,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  setNested(value: {
+    array: (number | undefined)[];
+    map: Map<string, bigint>;
+    imap: Map<string, Date>;
+  }): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: value
+    });
+  }
+  setNonFinite(value: number): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: value,
+      nested: this.#nested
+    });
+  }
+  setOptional(value: string): ToJson {
+    return new ToJson({
+      map: this.#map,
+      imap: this.#imap,
+      big: this.#big,
+      date: this.#date,
+      optional: value,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  updateImapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
+    const imapMapSource = this.#imap;
+    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapNext = new Map(imapMapEntries);
+    const currentValue = imapMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    imapMapNext.set(key, updatedValue);
+    if (this.imap === imapMapNext || this.imap !== undefined && this.imap.equals(imapMapNext)) return this;
+    return new ToJson({
+      map: this.#map,
+      imap: imapMapNext,
+      big: this.#big,
+      date: this.#date,
+      optional: this.#optional,
+      nonFinite: this.#nonFinite,
+      nested: this.#nested
+    });
+  }
+  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
+    const mapMapSource = this.#map;
+    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapNext = new Map(mapMapEntries);
+    const currentValue = mapMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    mapMapNext.set(key, updatedValue);
+    if (this.map === mapMapNext || this.map !== undefined && this.map.equals(mapMapNext)) return this;
+    return new ToJson({
+      map: mapMapNext,
+      imap: this.#imap,
       big: this.#big,
       date: this.#date,
       optional: this.#optional,

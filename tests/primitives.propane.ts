@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Primitives {
@@ -107,20 +107,30 @@ export class Primitives extends Message<Primitives.Data> {
   get missing(): undefined {
     return this.#missing;
   }
-  setFlag(value: boolean): Primitives {
+  setCount(value: number): Primitives {
     return new Primitives({
-      flag: value,
-      count: this.#count,
+      flag: this.#flag,
+      count: value,
       label: this.#label,
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
     });
   }
-  setCount(value: number): Primitives {
+  setEmpty(value: null): Primitives {
     return new Primitives({
       flag: this.#flag,
-      count: value,
+      count: this.#count,
+      label: this.#label,
+      size: this.#size,
+      empty: value,
+      missing: this.#missing
+    });
+  }
+  setFlag(value: boolean): Primitives {
+    return new Primitives({
+      flag: value,
+      count: this.#count,
       label: this.#label,
       size: this.#size,
       empty: this.#empty,
@@ -137,26 +147,6 @@ export class Primitives extends Message<Primitives.Data> {
       missing: this.#missing
     });
   }
-  setSize(value: bigint): Primitives {
-    return new Primitives({
-      flag: this.#flag,
-      count: this.#count,
-      label: this.#label,
-      size: value,
-      empty: this.#empty,
-      missing: this.#missing
-    });
-  }
-  setEmpty(value: null): Primitives {
-    return new Primitives({
-      flag: this.#flag,
-      count: this.#count,
-      label: this.#label,
-      size: this.#size,
-      empty: value,
-      missing: this.#missing
-    });
-  }
   setMissing(value: undefined): Primitives {
     return new Primitives({
       flag: this.#flag,
@@ -165,6 +155,16 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: value
+    });
+  }
+  setSize(value: bigint): Primitives {
+    return new Primitives({
+      flag: this.#flag,
+      count: this.#count,
+      label: this.#label,
+      size: value,
+      empty: this.#empty,
+      missing: this.#missing
     });
   }
 }

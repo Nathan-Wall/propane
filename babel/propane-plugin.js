@@ -36,7 +36,7 @@ export default function propanePlugin() {
 
           if (!existing) {
             path.addComment('leading', ` ${commentText}`, true);
-            path.addComment('leading', ' eslint-disable @typescript-eslint/no-namespace', true);
+            path.addComment('leading', ' eslint-disable @typescript-eslint/no-namespace', false);
           }
         },
         exit(path, state) {
@@ -863,11 +863,19 @@ export default function propanePlugin() {
       descriptorMethod,
       fromEntriesMethod,
       ...getters,
-      ...setterMethods,
-      ...deleteMethods,
-      ...arrayMethods,
-      ...mapMethods,
-      ...setMethods,
+      ...[
+        ...setterMethods,
+        ...deleteMethods,
+        ...arrayMethods,
+        ...mapMethods,
+        ...setMethods,
+      ].sort((a, b) => {
+        const nameA = a.key.name;
+        const nameB = b.key.name;
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+      }),
     ]);
 
     const classDecl = t.classDeclaration(
@@ -2441,14 +2449,14 @@ export default function propanePlugin() {
               ),
               t.forOfStatement(
                 t.variableDeclaration('const', [
-                  t.variableDeclarator(updatedId, null),
+                  t.variableDeclarator(t.identifier('updatedItem'), null),
                 ]),
                 updatedId,
                 t.blockStatement([
                   t.expressionStatement(
                     t.callExpression(
                       t.memberExpression(setRef(), t.identifier('add')),
-                      [updatedId]
+                      [t.identifier('updatedItem')]
                     )
                   ),
                 ])
@@ -2835,7 +2843,7 @@ export default function propanePlugin() {
     return [valuesId];
   }
 
-  function buildSetFilterParams(prop) {
+  function buildSetFilterParams(unused_prop) {
     const predicateId = t.identifier('predicate');
     const valueId = t.identifier('value');
     predicateId.typeAnnotation = t.tsTypeAnnotation(
@@ -2855,7 +2863,7 @@ export default function propanePlugin() {
       t.tsFunctionType(
         null,
         [t.identifier(valueId.name)],
-        t.tsTypeAnnotation(t.tsTypeReference(t.identifier('any')))
+        t.tsTypeAnnotation(t.cloneNode(prop.setElementType))
       )
     );
     return [mapperId];

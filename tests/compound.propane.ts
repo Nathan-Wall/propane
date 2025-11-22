@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/compound.propane
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
@@ -53,16 +53,16 @@ export class Compound extends Message<Compound.Data> {
   get indexed(): Indexed {
     return this.#indexed;
   }
-  setUser(value: User.Value): Compound {
-    return new Compound({
-      user: value instanceof User ? value : new User(value),
-      indexed: this.#indexed
-    });
-  }
   setIndexed(value: Indexed.Value): Compound {
     return new Compound({
       user: this.#user,
       indexed: value instanceof Indexed ? value : new Indexed(value)
+    });
+  }
+  setUser(value: User.Value): Compound {
+    return new Compound({
+      user: value instanceof User ? value : new User(value),
+      indexed: this.#indexed
     });
   }
 }

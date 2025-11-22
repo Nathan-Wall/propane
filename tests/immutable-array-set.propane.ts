@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/immutable-array-set.propane
 import { ImmutableArray } from '../common/array/immutable';
 import { ImmutableSet } from '../common/set/immutable';

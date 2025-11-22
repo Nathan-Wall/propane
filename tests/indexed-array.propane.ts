@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
 import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
 export namespace ArrayMessage {
@@ -85,18 +85,239 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   }> {
     return this.#labels;
   }
-  setNames(value: ImmutableArray<string>): ArrayMessage {
+  copyWithinFlags(target: number, start: number, end?: number): ArrayMessage {
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.copyWithin(target, start, end);
     return new ArrayMessage({
-      names: value,
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  copyWithinLabels(target: number, start: number, end?: number): ArrayMessage {
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.copyWithin(target, start, end);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  copyWithinNames(target: number, start: number, end?: number): ArrayMessage {
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.copyWithin(target, start, end);
+    return new ArrayMessage({
+      names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
     });
   }
-  setScores(value: ImmutableArray<number>): ArrayMessage {
+  copyWithinScores(target: number, start: number, end?: number): ArrayMessage {
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.copyWithin(target, start, end);
     return new ArrayMessage({
       names: this.#names,
-      scores: value,
+      scores: scoresNext,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  deleteFlags(): ArrayMessage {
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      labels: this.#labels
+    });
+  }
+  fillFlags(value: boolean, start?: number, end?: number): ArrayMessage {
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.fill(value, start, end);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  fillLabels(value: {
+    name: string;
+  }, start?: number, end?: number): ArrayMessage {
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.fill(value, start, end);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  fillNames(value: string, start?: number, end?: number): ArrayMessage {
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.fill(value, start, end);
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  fillScores(value: number, start?: number, end?: number): ArrayMessage {
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.fill(value, start, end);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: scoresNext,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  popFlags(): ArrayMessage {
+    if ((this.flags ?? []).length === 0) return this;
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.pop();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  popLabels(): ArrayMessage {
+    if ((this.labels ?? []).length === 0) return this;
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.pop();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  popNames(): ArrayMessage {
+    if ((this.names ?? []).length === 0) return this;
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.pop();
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  popScores(): ArrayMessage {
+    if ((this.scores ?? []).length === 0) return this;
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.pop();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: scoresNext,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  pushFlags(...values): ArrayMessage {
+    if (!values.length) return this;
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.push(...values);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  pushLabels(...values): ArrayMessage {
+    if (!values.length) return this;
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.push(...values);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  pushNames(...values): ArrayMessage {
+    if (!values.length) return this;
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.push(...values);
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  pushScores(...values): ArrayMessage {
+    if (!values.length) return this;
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.push(...values);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: scoresNext,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  reverseFlags(): ArrayMessage {
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.reverse();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  reverseLabels(): ArrayMessage {
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.reverse();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  reverseNames(): ArrayMessage {
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.reverse();
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  reverseScores(): ArrayMessage {
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.reverse();
+    return new ArrayMessage({
+      names: this.#names,
+      scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
     });
@@ -119,35 +340,44 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: value
     });
   }
-  deleteFlags(): ArrayMessage {
+  setNames(value: ImmutableArray<string>): ArrayMessage {
+    return new ArrayMessage({
+      names: value,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  setScores(value: ImmutableArray<number>): ArrayMessage {
+    return new ArrayMessage({
+      names: this.#names,
+      scores: value,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  shiftFlags(): ArrayMessage {
+    if ((this.flags ?? []).length === 0) return this;
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.shift();
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
+      flags: flagsNext,
       labels: this.#labels
     });
   }
-  pushNames(...values): ArrayMessage {
-    if (!values.length) return this;
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.push(...values);
+  shiftLabels(): ArrayMessage {
+    if ((this.labels ?? []).length === 0) return this;
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.shift();
     return new ArrayMessage({
-      names: namesNext,
+      names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  popNames(): ArrayMessage {
-    if ((this.names ?? []).length === 0) return this;
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.pop();
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
+      labels: labelsNext
     });
   }
   shiftNames(): ArrayMessage {
@@ -158,100 +388,6 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     return new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  unshiftNames(...values): ArrayMessage {
-    if (!values.length) return this;
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.unshift(...values);
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  spliceNames(start: number, deleteCount?: number, ...items): ArrayMessage {
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    namesNext.splice(...args);
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  reverseNames(): ArrayMessage {
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.reverse();
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  sortNames(compareFn?: (a: string, b: string) => number): ArrayMessage {
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.sort(compareFn);
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  fillNames(value: string, start?: number, end?: number): ArrayMessage {
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.fill(value, start, end);
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  copyWithinNames(target: number, start: number, end?: number): ArrayMessage {
-    const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.copyWithin(target, start, end);
-    return new ArrayMessage({
-      names: namesNext,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  pushScores(...values): ArrayMessage {
-    if (!values.length) return this;
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.push(...values);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  popScores(): ArrayMessage {
-    if ((this.scores ?? []).length === 0) return this;
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.pop();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
     });
@@ -268,14 +404,92 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  unshiftScores(...values): ArrayMessage {
-    if (!values.length) return this;
+  sortFlags(compareFn?: (a: boolean, b: boolean) => number): ArrayMessage {
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    flagsNext.sort(compareFn);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  sortLabels(compareFn?: (a: {
+    name: string;
+  }, b: {
+    name: string;
+  }) => number): ArrayMessage {
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    labelsNext.sort(compareFn);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  sortNames(compareFn?: (a: string, b: string) => number): ArrayMessage {
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.sort(compareFn);
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  sortScores(compareFn?: (a: number, b: number) => number): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
-    scoresNext.unshift(...values);
+    scoresNext.sort(compareFn);
     return new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
+      flags: this.#flags,
+      labels: this.#labels
+    });
+  }
+  spliceFlags(start: number, deleteCount?: number, ...items): ArrayMessage {
+    const flagsArray = this.#flags === undefined ? [] : this.#flags;
+    const flagsNext = [...flagsArray];
+    const args = [start];
+    if (deleteCount !== undefined) args.push(deleteCount);
+    args.push(...items);
+    flagsNext.splice(...args);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: flagsNext,
+      labels: this.#labels
+    });
+  }
+  spliceLabels(start: number, deleteCount?: number, ...items): ArrayMessage {
+    const labelsArray = this.#labels;
+    const labelsNext = [...labelsArray];
+    const args = [start];
+    if (deleteCount !== undefined) args.push(deleteCount);
+    args.push(...items);
+    labelsNext.splice(...args);
+    return new ArrayMessage({
+      names: this.#names,
+      scores: this.#scores,
+      flags: this.#flags,
+      labels: labelsNext
+    });
+  }
+  spliceNames(start: number, deleteCount?: number, ...items): ArrayMessage {
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    const args = [start];
+    if (deleteCount !== undefined) args.push(deleteCount);
+    args.push(...items);
+    namesNext.splice(...args);
+    return new ArrayMessage({
+      names: namesNext,
+      scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
     });
@@ -294,86 +508,6 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  reverseScores(): ArrayMessage {
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.reverse();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  sortScores(compareFn?: (a: number, b: number) => number): ArrayMessage {
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.sort(compareFn);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  fillScores(value: number, start?: number, end?: number): ArrayMessage {
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.fill(value, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  copyWithinScores(target: number, start: number, end?: number): ArrayMessage {
-    const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.copyWithin(target, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: scoresNext,
-      flags: this.#flags,
-      labels: this.#labels
-    });
-  }
-  pushFlags(...values): ArrayMessage {
-    if (!values.length) return this;
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.push(...values);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  popFlags(): ArrayMessage {
-    if ((this.flags ?? []).length === 0) return this;
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.pop();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  shiftFlags(): ArrayMessage {
-    if ((this.flags ?? []).length === 0) return this;
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.shift();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
   unshiftFlags(...values): ArrayMessage {
     if (!values.length) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -384,100 +518,6 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
-  }
-  spliceFlags(start: number, deleteCount?: number, ...items): ArrayMessage {
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    flagsNext.splice(...args);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  reverseFlags(): ArrayMessage {
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.reverse();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  sortFlags(compareFn?: (a: boolean, b: boolean) => number): ArrayMessage {
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.sort(compareFn);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  fillFlags(value: boolean, start?: number, end?: number): ArrayMessage {
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.fill(value, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  copyWithinFlags(target: number, start: number, end?: number): ArrayMessage {
-    const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.copyWithin(target, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: flagsNext,
-      labels: this.#labels
-    });
-  }
-  pushLabels(...values): ArrayMessage {
-    if (!values.length) return this;
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.push(...values);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
-    });
-  }
-  popLabels(): ArrayMessage {
-    if ((this.labels ?? []).length === 0) return this;
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.pop();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
-    });
-  }
-  shiftLabels(): ArrayMessage {
-    if ((this.labels ?? []).length === 0) return this;
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.shift();
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
     });
   }
   unshiftLabels(...values): ArrayMessage {
@@ -492,68 +532,28 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: labelsNext
     });
   }
-  spliceLabels(start: number, deleteCount?: number, ...items): ArrayMessage {
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    labelsNext.splice(...args);
+  unshiftNames(...values): ArrayMessage {
+    if (!values.length) return this;
+    const namesArray = this.#names;
+    const namesNext = [...namesArray];
+    namesNext.unshift(...values);
     return new ArrayMessage({
-      names: this.#names,
+      names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
-      labels: labelsNext
+      labels: this.#labels
     });
   }
-  reverseLabels(): ArrayMessage {
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.reverse();
+  unshiftScores(...values): ArrayMessage {
+    if (!values.length) return this;
+    const scoresArray = this.#scores;
+    const scoresNext = [...scoresArray];
+    scoresNext.unshift(...values);
     return new ArrayMessage({
       names: this.#names,
-      scores: this.#scores,
+      scores: scoresNext,
       flags: this.#flags,
-      labels: labelsNext
-    });
-  }
-  sortLabels(compareFn?: (a: {
-    name: string;
-  }, b: {
-    name: string;
-  }) => number): ArrayMessage {
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.sort(compareFn);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
-    });
-  }
-  fillLabels(value: {
-    name: string;
-  }, start?: number, end?: number): ArrayMessage {
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.fill(value, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
-    });
-  }
-  copyWithinLabels(target: number, start: number, end?: number): ArrayMessage {
-    const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.copyWithin(target, start, end);
-    return new ArrayMessage({
-      names: this.#names,
-      scores: this.#scores,
-      flags: this.#flags,
-      labels: labelsNext
+      labels: this.#labels
     });
   }
 }

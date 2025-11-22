@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro_empty_new.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionFirstNumber {
@@ -121,13 +121,13 @@ export class OptionalField extends Message<OptionalField.Data> {
   get val(): string {
     return this.#val;
   }
+  deleteVal(): OptionalField {
+    return new OptionalField({});
+  }
   setVal(value: string): OptionalField {
     return new OptionalField({
       val: value
     });
-  }
-  deleteVal(): OptionalField {
-    return new OptionalField({});
   }
 }
 export namespace RequiredMessage {

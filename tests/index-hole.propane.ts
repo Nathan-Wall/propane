@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-hole.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Hole {
@@ -72,18 +72,18 @@ export class Hole extends Message<Hole.Data> {
       name: this.#name
     });
   }
-  setValue(value: number): Hole {
-    return new Hole({
-      id: this.#id,
-      value: value,
-      name: this.#name
-    });
-  }
   setName(value: string): Hole {
     return new Hole({
       id: this.#id,
       value: this.#value,
       name: value
+    });
+  }
+  setValue(value: number): Hole {
+    return new Hole({
+      id: this.#id,
+      value: value,
+      name: this.#name
     });
   }
 }

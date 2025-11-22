@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Indexed {
@@ -134,24 +134,34 @@ export class Indexed extends Message<Indexed.Data> {
   get status(): string {
     return this.#status;
   }
-  setId(value: number): Indexed {
+  deleteAlias(): Indexed {
     return new Indexed({
-      id: value,
+      id: this.#id,
       name: this.#name,
       age: this.#age,
       active: this.#active,
       nickname: this.#nickname,
       score: this.#score,
+      status: this.#status
+    });
+  }
+  deleteNickname(): Indexed {
+    return new Indexed({
+      id: this.#id,
+      name: this.#name,
+      age: this.#age,
+      active: this.#active,
+      score: this.#score,
       alias: this.#alias,
       status: this.#status
     });
   }
-  setName(value: string): Indexed {
+  setActive(value: boolean): Indexed {
     return new Indexed({
       id: this.#id,
-      name: value,
+      name: this.#name,
       age: this.#age,
-      active: this.#active,
+      active: value,
       nickname: this.#nickname,
       score: this.#score,
       alias: this.#alias,
@@ -170,12 +180,36 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     });
   }
-  setActive(value: boolean): Indexed {
+  setAlias(value: string | null): Indexed {
     return new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
-      active: value,
+      active: this.#active,
+      nickname: this.#nickname,
+      score: this.#score,
+      alias: value,
+      status: this.#status
+    });
+  }
+  setId(value: number): Indexed {
+    return new Indexed({
+      id: value,
+      name: this.#name,
+      age: this.#age,
+      active: this.#active,
+      nickname: this.#nickname,
+      score: this.#score,
+      alias: this.#alias,
+      status: this.#status
+    });
+  }
+  setName(value: string): Indexed {
+    return new Indexed({
+      id: this.#id,
+      name: value,
+      age: this.#age,
+      active: this.#active,
       nickname: this.#nickname,
       score: this.#score,
       alias: this.#alias,
@@ -206,18 +240,6 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     });
   }
-  setAlias(value: string | null): Indexed {
-    return new Indexed({
-      id: this.#id,
-      name: this.#name,
-      age: this.#age,
-      active: this.#active,
-      nickname: this.#nickname,
-      score: this.#score,
-      alias: value,
-      status: this.#status
-    });
-  }
   setStatus(value: string): Indexed {
     return new Indexed({
       id: this.#id,
@@ -228,28 +250,6 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: value
-    });
-  }
-  deleteNickname(): Indexed {
-    return new Indexed({
-      id: this.#id,
-      name: this.#name,
-      age: this.#age,
-      active: this.#active,
-      score: this.#score,
-      alias: this.#alias,
-      status: this.#status
-    });
-  }
-  deleteAlias(): Indexed {
-    return new Indexed({
-      id: this.#id,
-      name: this.#name,
-      age: this.#age,
-      active: this.#active,
-      nickname: this.#nickname,
-      score: this.#score,
-      status: this.#status
     });
   }
 }

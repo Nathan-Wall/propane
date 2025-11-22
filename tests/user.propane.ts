@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/user.propane
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
@@ -150,54 +150,15 @@ export class User extends Message<User.Data> {
   get height(): Distance {
     return this.#height;
   }
-  setId(value: number): User {
+  setActive(value: boolean): User {
     return new User({
-      id: value,
+      id: this.#id,
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
       created: this.#created,
       updated: this.#updated,
-      active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    });
-  }
-  setName(value: string): User {
-    return new User({
-      id: this.#id,
-      name: value,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
-      active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    });
-  }
-  setEmail(value: Email): User {
-    return new User({
-      id: this.#id,
-      name: this.#name,
-      email: value,
-      passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
-      active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    });
-  }
-  setPasswordHash(value: Hash): User {
-    return new User({
-      id: this.#id,
-      name: this.#name,
-      email: this.#email,
-      passwordHash: value,
-      created: this.#created,
-      updated: this.#updated,
-      active: this.#active,
+      active: value,
       eyeColor: this.#eyeColor,
       height: this.#height
     });
@@ -215,28 +176,15 @@ export class User extends Message<User.Data> {
       height: this.#height
     });
   }
-  setUpdated(value: Date): User {
+  setEmail(value: Email): User {
     return new User({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: value,
-      active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    });
-  }
-  setActive(value: boolean): User {
-    return new User({
-      id: this.#id,
-      name: this.#name,
-      email: this.#email,
+      email: value,
       passwordHash: this.#passwordHash,
       created: this.#created,
       updated: this.#updated,
-      active: value,
+      active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
     });
@@ -265,6 +213,58 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: value instanceof Distance ? value : new Distance(value)
+    });
+  }
+  setId(value: number): User {
+    return new User({
+      id: value,
+      name: this.#name,
+      email: this.#email,
+      passwordHash: this.#passwordHash,
+      created: this.#created,
+      updated: this.#updated,
+      active: this.#active,
+      eyeColor: this.#eyeColor,
+      height: this.#height
+    });
+  }
+  setName(value: string): User {
+    return new User({
+      id: this.#id,
+      name: value,
+      email: this.#email,
+      passwordHash: this.#passwordHash,
+      created: this.#created,
+      updated: this.#updated,
+      active: this.#active,
+      eyeColor: this.#eyeColor,
+      height: this.#height
+    });
+  }
+  setPasswordHash(value: Hash): User {
+    return new User({
+      id: this.#id,
+      name: this.#name,
+      email: this.#email,
+      passwordHash: value,
+      created: this.#created,
+      updated: this.#updated,
+      active: this.#active,
+      eyeColor: this.#eyeColor,
+      height: this.#height
+    });
+  }
+  setUpdated(value: Date): User {
+    return new User({
+      id: this.#id,
+      name: this.#name,
+      email: this.#email,
+      passwordHash: this.#passwordHash,
+      created: this.#created,
+      updated: value,
+      active: this.#active,
+      eyeColor: this.#eyeColor,
+      height: this.#height
     });
   }
 }

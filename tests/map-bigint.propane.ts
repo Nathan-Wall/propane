@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapBigintKey {
@@ -38,21 +38,13 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   get values(): ReadonlyMap<bigint, string> {
     return this.#values;
   }
-  setValues(value: ReadonlyMap<bigint, string>): MapBigintKey {
-    return new MapBigintKey({
-      values: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value
-    });
-  }
-  setValuesEntry(key: bigint, value: string): MapBigintKey {
+  clearValues(): MapBigintKey {
     const valuesCurrent = this.values;
-    if (valuesCurrent && valuesCurrent.has(key)) {
-      const existing = valuesCurrent.get(key);
-      if (equals(existing, value)) return this;
-    }
+    if (valuesCurrent === undefined || valuesCurrent.size === 0) return this;
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
-    valuesMapNext.set(key, value);
+    valuesMapNext.clear();
     return new MapBigintKey({
       values: valuesMapNext
     });
@@ -68,36 +60,13 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     });
   }
-  clearValues(): MapBigintKey {
-    const valuesCurrent = this.values;
-    if (valuesCurrent === undefined || valuesCurrent.size === 0) return this;
+  filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
-    valuesMapNext.clear();
-    return new MapBigintKey({
-      values: valuesMapNext
-    });
-  }
-  mergeValuesEntries(entries: Iterable<[bigint, string]> | Map<bigint, string> | ReadonlyMap<bigint, string>): MapBigintKey {
-    const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
-    const valuesMapNext = new Map(valuesMapEntries);
-    for (const [mergeKey, mergeValue] of entries) {
-      valuesMapNext.set(mergeKey, mergeValue);
+    for (const [entryKey, entryValue] of valuesMapNext) {
+      if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
     }
-    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
-    return new MapBigintKey({
-      values: valuesMapNext
-    });
-  }
-  updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
-    const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
-    const valuesMapNext = new Map(valuesMapEntries);
-    const currentValue = valuesMapNext.get(key);
-    const updatedValue = updater(currentValue);
-    valuesMapNext.set(key, updatedValue);
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext
@@ -121,13 +90,44 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     });
   }
-  filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
+  mergeValuesEntries(entries: Iterable<[bigint, string]> | Map<bigint, string> | ReadonlyMap<bigint, string>): MapBigintKey {
     const valuesMapSource = this.#values;
     const valuesMapEntries = Array.from(valuesMapSource.entries());
     const valuesMapNext = new Map(valuesMapEntries);
-    for (const [entryKey, entryValue] of valuesMapNext) {
-      if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
+    for (const [mergeKey, mergeValue] of entries) {
+      valuesMapNext.set(mergeKey, mergeValue);
     }
+    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
+    return new MapBigintKey({
+      values: valuesMapNext
+    });
+  }
+  setValues(value: ReadonlyMap<bigint, string>): MapBigintKey {
+    return new MapBigintKey({
+      values: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value
+    });
+  }
+  setValuesEntry(key: bigint, value: string): MapBigintKey {
+    const valuesCurrent = this.values;
+    if (valuesCurrent && valuesCurrent.has(key)) {
+      const existing = valuesCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
+    const valuesMapSource = this.#values;
+    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapNext = new Map(valuesMapEntries);
+    valuesMapNext.set(key, value);
+    return new MapBigintKey({
+      values: valuesMapNext
+    });
+  }
+  updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
+    const valuesMapSource = this.#values;
+    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapNext = new Map(valuesMapEntries);
+    const currentValue = valuesMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    valuesMapNext.set(key, updatedValue);
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return new MapBigintKey({
       values: valuesMapNext

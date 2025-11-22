@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/prop-collision.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace Foo {

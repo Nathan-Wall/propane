@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.propane
 import { Message, MessagePropDescriptor, ImmutableSet } from "@propanejs/runtime";
 export namespace SetMessage {
@@ -53,32 +53,17 @@ export class SetMessage extends Message<SetMessage.Data> {
   get ids(): ReadonlySet<number> | undefined {
     return this.#ids;
   }
-  setTags(value: ReadonlySet<string>): SetMessage {
-    return new SetMessage({
-      tags: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value,
-      ids: this.#ids
-    });
-  }
-  setIds(value: ReadonlySet<number>): SetMessage {
+  addAllIds(values: Iterable<number>): SetMessage {
+    const idsSetSource = this.ids ?? [];
+    const idsSetEntries = [...idsSetSource];
+    const idsSetNext = new Set(idsSetEntries);
+    for (const toAdd of values) {
+      idsSetNext.add(toAdd);
+    }
+    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
-      ids: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value
-    });
-  }
-  deleteIds(): SetMessage {
-    return new SetMessage({
-      tags: this.#tags
-    });
-  }
-  addTags(value: string): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    tagsSetNext.add(value);
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
+      ids: idsSetNext
     });
   }
   addAllTags(values: Iterable<string>): SetMessage {
@@ -87,93 +72,6 @@ export class SetMessage extends Message<SetMessage.Data> {
     const tagsSetNext = new Set(tagsSetEntries);
     for (const toAdd of values) {
       tagsSetNext.add(toAdd);
-    }
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  deleteTags(value: string): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    tagsSetNext.delete(value);
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  deleteAllTags(values: Iterable<string>): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    for (const del of values) {
-      tagsSetNext.delete(del);
-    }
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  clearTags(): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    tagsSetNext.clear();
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  filterTags(predicate: (value) => boolean): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    const tagsFiltered = [];
-    for (const value of tagsSetNext) {
-      if (predicate(value)) tagsFiltered.push(value);
-    }
-    tagsSetNext.clear();
-    for (const value of tagsFiltered) {
-      tagsSetNext.add(value);
-    }
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  mapTags(mapper: (value) => any): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    const tagsMapped = [];
-    for (const value of tagsSetNext) {
-      const mappedValue = mapper(value);
-      tagsMapped.push(mappedValue);
-    }
-    tagsSetNext.clear();
-    for (const value of tagsMapped) {
-      tagsSetNext.add(value);
-    }
-    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
-    return new SetMessage({
-      tags: tagsSetNext,
-      ids: this.#ids
-    });
-  }
-  updateTags(updater: (current: ImmutableSet<string>) => Iterable<string>): SetMessage {
-    const tagsSetSource = this.tags ?? [];
-    const tagsSetEntries = [...tagsSetSource];
-    const tagsSetNext = new Set(tagsSetEntries);
-    const updated = updater(tagsSetNext);
-    tagsSetNext.clear();
-    for (const updated of updated) {
-      tagsSetNext.add(updated);
     }
     if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
@@ -192,28 +90,37 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: idsSetNext
     });
   }
-  addAllIds(values: Iterable<number>): SetMessage {
+  addTags(value: string): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    tagsSetNext.add(value);
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
+    });
+  }
+  clearIds(): SetMessage {
     const idsSetSource = this.ids ?? [];
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
-    for (const toAdd of values) {
-      idsSetNext.add(toAdd);
-    }
+    idsSetNext.clear();
     if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
     });
   }
-  deleteIds(value: number): SetMessage {
-    const idsSetSource = this.ids ?? [];
-    const idsSetEntries = [...idsSetSource];
-    const idsSetNext = new Set(idsSetEntries);
-    idsSetNext.delete(value);
-    if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
+  clearTags(): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    tagsSetNext.clear();
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
     return new SetMessage({
-      tags: this.#tags,
-      ids: idsSetNext
+      tags: tagsSetNext,
+      ids: this.#ids
     });
   }
   deleteAllIds(values: Iterable<number>): SetMessage {
@@ -229,15 +136,44 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: idsSetNext
     });
   }
-  clearIds(): SetMessage {
+  deleteAllTags(values: Iterable<string>): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    for (const del of values) {
+      tagsSetNext.delete(del);
+    }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
+    });
+  }
+  deleteIds(): SetMessage {
+    return new SetMessage({
+      tags: this.#tags
+    });
+  }
+  deleteIds(value: number): SetMessage {
     const idsSetSource = this.ids ?? [];
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
-    idsSetNext.clear();
+    idsSetNext.delete(value);
     if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
+    });
+  }
+  deleteTags(value: string): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    tagsSetNext.delete(value);
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
     });
   }
   filterIds(predicate: (value) => boolean): SetMessage {
@@ -258,7 +194,25 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: idsSetNext
     });
   }
-  mapIds(mapper: (value) => any): SetMessage {
+  filterTags(predicate: (value) => boolean): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    const tagsFiltered = [];
+    for (const value of tagsSetNext) {
+      if (predicate(value)) tagsFiltered.push(value);
+    }
+    tagsSetNext.clear();
+    for (const value of tagsFiltered) {
+      tagsSetNext.add(value);
+    }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
+    });
+  }
+  mapIds(mapper: (value) => number): SetMessage {
     const idsSetSource = this.ids ?? [];
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
@@ -277,19 +231,65 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: idsSetNext
     });
   }
+  mapTags(mapper: (value) => string): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    const tagsMapped = [];
+    for (const value of tagsSetNext) {
+      const mappedValue = mapper(value);
+      tagsMapped.push(mappedValue);
+    }
+    tagsSetNext.clear();
+    for (const value of tagsMapped) {
+      tagsSetNext.add(value);
+    }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
+    });
+  }
+  setIds(value: ReadonlySet<number>): SetMessage {
+    return new SetMessage({
+      tags: this.#tags,
+      ids: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value
+    });
+  }
+  setTags(value: ReadonlySet<string>): SetMessage {
+    return new SetMessage({
+      tags: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value,
+      ids: this.#ids
+    });
+  }
   updateIds(updater: (current: ImmutableSet<number>) => Iterable<number>): SetMessage {
     const idsSetSource = this.ids ?? [];
     const idsSetEntries = [...idsSetSource];
     const idsSetNext = new Set(idsSetEntries);
     const updated = updater(idsSetNext);
     idsSetNext.clear();
-    for (const updated of updated) {
-      idsSetNext.add(updated);
+    for (const updatedItem of updated) {
+      idsSetNext.add(updatedItem);
     }
     if (this.ids === idsSetNext || this.ids !== undefined && this.ids.equals(idsSetNext)) return this;
     return new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
+    });
+  }
+  updateTags(updater: (current: ImmutableSet<string>) => Iterable<string>): SetMessage {
+    const tagsSetSource = this.tags ?? [];
+    const tagsSetEntries = [...tagsSetSource];
+    const tagsSetNext = new Set(tagsSetEntries);
+    const updated = updater(tagsSetNext);
+    tagsSetNext.clear();
+    for (const updatedItem of updated) {
+      tagsSetNext.add(updatedItem);
+    }
+    if (this.tags === tagsSetNext || this.tags !== undefined && this.tags.equals(tagsSetNext)) return this;
+    return new SetMessage({
+      tags: tagsSetNext,
+      ids: this.#ids
     });
   }
 }

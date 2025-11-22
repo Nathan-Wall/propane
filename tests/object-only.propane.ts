@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/object-only.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace ObjectOnly {
@@ -79,6 +79,22 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   get active(): boolean {
     return this.#active;
   }
+  setActive(value: boolean): ObjectOnly {
+    return new ObjectOnly({
+      id: this.#id,
+      name: this.#name,
+      age: this.#age,
+      active: value
+    });
+  }
+  setAge(value: number): ObjectOnly {
+    return new ObjectOnly({
+      id: this.#id,
+      name: this.#name,
+      age: value,
+      active: this.#active
+    });
+  }
   setId(value: number): ObjectOnly {
     return new ObjectOnly({
       id: value,
@@ -93,22 +109,6 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: value,
       age: this.#age,
       active: this.#active
-    });
-  }
-  setAge(value: number): ObjectOnly {
-    return new ObjectOnly({
-      id: this.#id,
-      name: this.#name,
-      age: value,
-      active: this.#active
-    });
-  }
-  setActive(value: boolean): ObjectOnly {
-    return new ObjectOnly({
-      id: this.#id,
-      name: this.#name,
-      age: this.#age,
-      active: value
     });
   }
 }

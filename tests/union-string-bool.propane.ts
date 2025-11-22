@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionStringBool {
@@ -51,10 +51,9 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   get optional(): string | boolean {
     return this.#optional;
   }
-  setValue(value: string | boolean): UnionStringBool {
+  deleteOptional(): UnionStringBool {
     return new UnionStringBool({
-      value: value,
-      optional: this.#optional
+      value: this.#value
     });
   }
   setOptional(value: string | boolean): UnionStringBool {
@@ -63,9 +62,10 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
       optional: value
     });
   }
-  deleteOptional(): UnionStringBool {
+  setValue(value: string | boolean): UnionStringBool {
     return new UnionStringBool({
-      value: this.#value
+      value: value,
+      optional: this.#optional
     });
   }
 }

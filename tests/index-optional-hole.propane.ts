@@ -1,4 +1,4 @@
-// eslint-disable @typescript-eslint/no-namespace
+/* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace OptionalHole {
@@ -79,11 +79,10 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   get name(): string {
     return this.#name;
   }
-  setId(value: number): OptionalHole {
+  deleteNote(): OptionalHole {
     return new OptionalHole({
-      id: value,
+      id: this.#id,
       created: this.#created,
-      note: this.#note,
       name: this.#name
     });
   }
@@ -95,11 +94,11 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: this.#name
     });
   }
-  setNote(value: string): OptionalHole {
+  setId(value: number): OptionalHole {
     return new OptionalHole({
-      id: this.#id,
+      id: value,
       created: this.#created,
-      note: value,
+      note: this.#note,
       name: this.#name
     });
   }
@@ -111,10 +110,11 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: value
     });
   }
-  deleteNote(): OptionalHole {
+  setNote(value: string): OptionalHole {
     return new OptionalHole({
       id: this.#id,
       created: this.#created,
+      note: value,
       name: this.#name
     });
   }
