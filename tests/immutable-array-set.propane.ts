@@ -3,13 +3,6 @@
 import { ImmutableArray } from '../common/array/immutable';
 import { ImmutableSet } from '../common/set/immutable';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace ImmutableArraySet {
-  export interface Data {
-    arr: number[] | Iterable<number>;
-    set: Set<string> | Iterable<string>;
-  }
-  export type Value = ImmutableArraySet | ImmutableArraySet.Data;
-}
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static EMPTY: ImmutableArraySet;
@@ -262,4 +255,11 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       set: setSetNext
     });
   }
+}
+export namespace ImmutableArraySet {
+  export interface Data {
+    arr: number[] | Iterable<number>;
+    set: Set<string> | Iterable<string>;
+  }
+  export type Value = ImmutableArraySet | ImmutableArraySet.Data;
 }

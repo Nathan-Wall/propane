@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
 import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
-namespace ArrayMessage_Labels_Item {
-  export interface Data {
-    name: string;
-  }
-  export type Value = ArrayMessage_Labels_Item | ArrayMessage_Labels_Item.Data;
-}
 class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static EMPTY: ArrayMessage_Labels_Item;
@@ -41,14 +35,11 @@ class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
     });
   }
 }
-export namespace ArrayMessage {
+namespace ArrayMessage_Labels_Item {
   export interface Data {
-    names: string[] | Iterable<string>;
-    scores: number[] | Iterable<number>;
-    flags?: boolean[] | Iterable<boolean> | undefined;
-    labels: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>;
+    name: string;
   }
-  export type Value = ArrayMessage | ArrayMessage.Data;
+  export type Value = ArrayMessage_Labels_Item | ArrayMessage_Labels_Item.Data;
 }
 export class ArrayMessage extends Message<ArrayMessage.Data> {
   static TYPE_TAG = Symbol("ArrayMessage");
@@ -576,4 +567,14 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
+}
+export namespace ArrayMessage {
+  export interface Data {
+    names: string[] | Iterable<string>;
+    scores: number[] | Iterable<number>;
+    flags?: boolean[] | Iterable<boolean> | undefined;
+    labels: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>;
+  }
+  export type Value = ArrayMessage | ArrayMessage.Data;
+  export import Labels_Item = ArrayMessage_Labels_Item;
 }

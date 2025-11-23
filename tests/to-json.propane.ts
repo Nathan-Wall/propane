@@ -1,14 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
 import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, equals } from "@propanejs/runtime";
-namespace ToJson_Nested {
-  export interface Data {
-    array: (number | undefined)[] | Iterable<(number | undefined)>;
-    map: Map<string, bigint> | Iterable<[string, bigint]>;
-    imap: Map<string, Date> | Iterable<[string, Date]>;
-  }
-  export type Value = ToJson_Nested | ToJson_Nested.Data;
-}
 class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static EMPTY: ToJson_Nested;
@@ -391,17 +383,13 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     });
   }
 }
-export namespace ToJson {
+namespace ToJson_Nested {
   export interface Data {
-    map: Map<string, number> | Iterable<[string, number]>;
-    imap: Map<string, number> | Iterable<[string, number]>;
-    big: bigint;
-    date: Date;
-    optional?: string | undefined;
-    nonFinite: number;
-    nested: ToJson_Nested.Value;
+    array: (number | undefined)[] | Iterable<(number | undefined)>;
+    map: Map<string, bigint> | Iterable<[string, bigint]>;
+    imap: Map<string, Date> | Iterable<[string, Date]>;
   }
-  export type Value = ToJson | ToJson.Data;
+  export type Value = ToJson_Nested | ToJson_Nested.Data;
 }
 export class ToJson extends Message<ToJson.Data> {
   static TYPE_TAG = Symbol("ToJson");
@@ -862,4 +850,17 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
+}
+export namespace ToJson {
+  export interface Data {
+    map: Map<string, number> | Iterable<[string, number]>;
+    imap: Map<string, number> | Iterable<[string, number]>;
+    big: bigint;
+    date: Date;
+    optional?: string | undefined;
+    nonFinite: number;
+    nested: ToJson_Nested.Value;
+  }
+  export type Value = ToJson | ToJson.Data;
+  export import Nested = ToJson_Nested;
 }

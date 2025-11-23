@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
-export namespace MapBigintKey {
-  export interface Data {
-    values: Map<bigint, string> | Iterable<[bigint, string]>;
-  }
-  export type Value = MapBigintKey | MapBigintKey.Data;
-}
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
@@ -131,4 +125,10 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     });
   }
+}
+export namespace MapBigintKey {
+  export interface Data {
+    values: Map<bigint, string> | Iterable<[bigint, string]>;
+  }
+  export type Value = MapBigintKey | MapBigintKey.Data;
 }

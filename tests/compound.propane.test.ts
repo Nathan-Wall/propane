@@ -63,6 +63,7 @@ export default function runCompoundTests() {
   assert(compoundFromData.user instanceof User, 'Compound ctor should hydrate user data.');
   assert(compoundFromData.indexed.name === 'CompoundIndexed', 'Compound ctor should keep indexed data.');
   assert(typeof compoundFromData.inline.serialize === 'function', 'Compound inline should hydrate anonymous type into a message.');
+  assert(compoundFromData.inline instanceof Compound.Inline, 'Compound inline should be exposed as Compound.Inline.');
   assert(compoundFromData.inline.value === 'Inline Data', 'Compound inline should preserve inline data.');
   const updatedCompound = compoundFromData.setUser({
     ...simpleUser,
@@ -89,5 +90,6 @@ export default function runCompoundTests() {
   assert(compoundFromMessages.user instanceof User, 'Compound should accept user instances.');
   const updatedInline = compoundFromData.setInline({ value: 'Updated Inline' });
   assert(typeof updatedInline.inline.serialize === 'function', 'Compound setInline should wrap plain data into a message.');
+  assert(updatedInline.inline instanceof Compound.Inline, 'Compound setInline result should expose inline message class via namespace.');
   assert(updatedInline.inline.value === 'Updated Inline', 'Compound setInline should accept plain inline data.');
 }

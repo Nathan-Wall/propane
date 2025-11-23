@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-map-key.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
-export namespace MapMapKey {
-  export interface Data {
-    nested: Map<Map<string, number>, string> | Iterable<[Map<string, number>, string]>;
-    optional?: Map<ReadonlyMap<string, number>, number> | Iterable<[ReadonlyMap<string, number>, number]> | undefined;
-  }
-  export type Value = MapMapKey | MapMapKey.Data;
-}
 export class MapMapKey extends Message<MapMapKey.Data> {
   static TYPE_TAG = Symbol("MapMapKey");
   static EMPTY: MapMapKey;
@@ -262,4 +255,11 @@ export class MapMapKey extends Message<MapMapKey.Data> {
       optional: optionalMapNext
     });
   }
+}
+export namespace MapMapKey {
+  export interface Data {
+    nested: Map<Map<string, number>, string> | Iterable<[Map<string, number>, string]>;
+    optional?: Map<ReadonlyMap<string, number>, number> | Iterable<[ReadonlyMap<string, number>, number]> | undefined;
+  }
+  export type Value = MapMapKey | MapMapKey.Data;
 }

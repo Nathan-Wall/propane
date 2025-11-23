@@ -2,18 +2,6 @@
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace Unions {
-  export interface Data {
-    username: string | null;
-    email: Email | null;
-    metadata: {
-      created: Date;
-    } | {
-      updated: Date;
-    };
-  }
-  export type Value = Unions | Unions.Data;
-}
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static EMPTY: Unions;
@@ -101,4 +89,16 @@ export class Unions extends Message<Unions.Data> {
       metadata: this.#metadata
     });
   }
+}
+export namespace Unions {
+  export interface Data {
+    username: string | null;
+    email: Email | null;
+    metadata: {
+      created: Date;
+    } | {
+      updated: Date;
+    };
+  }
+  export type Value = Unions | Unions.Data;
 }

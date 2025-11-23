@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.propane
 import { Message, MessagePropDescriptor, ImmutableSet } from "@propanejs/runtime";
-export namespace SetMessage {
-  export interface Data {
-    tags: Set<string> | Iterable<string>;
-    ids?: Set<number> | Iterable<number> | undefined;
-  }
-  export type Value = SetMessage | SetMessage.Data;
-}
 export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static EMPTY: SetMessage;
@@ -290,4 +283,11 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: this.#ids
     });
   }
+}
+export namespace SetMessage {
+  export interface Data {
+    tags: Set<string> | Iterable<string>;
+    ids?: Set<number> | Iterable<number> | undefined;
+  }
+  export type Value = SetMessage | SetMessage.Data;
 }

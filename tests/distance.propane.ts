@@ -3,13 +3,6 @@
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export type DistanceUnit = 'm' | 'ft';
 export type DistanceUnitType = DistanceUnit;
-export namespace Distance {
-  export interface Data {
-    unit: DistanceUnit;
-    value: number;
-  }
-  export type Value = Distance | Distance.Data;
-}
 export class Distance extends Message<Distance.Data> {
   static TYPE_TAG = Symbol("Distance");
   static EMPTY: Distance;
@@ -62,4 +55,11 @@ export class Distance extends Message<Distance.Data> {
       value: value
     });
   }
+}
+export namespace Distance {
+  export interface Data {
+    unit: DistanceUnit;
+    value: number;
+  }
+  export type Value = Distance | Distance.Data;
 }

@@ -1,15 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace OptionalHole {
-  export interface Data {
-    id: number;
-    created: Date;
-    note?: string | undefined;
-    name: string;
-  }
-  export type Value = OptionalHole | OptionalHole.Data;
-}
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static EMPTY: OptionalHole;
@@ -116,4 +107,13 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: this.#name
     });
   }
+}
+export namespace OptionalHole {
+  export interface Data {
+    id: number;
+    created: Date;
+    note?: string | undefined;
+    name: string;
+  }
+  export type Value = OptionalHole | OptionalHole.Data;
 }

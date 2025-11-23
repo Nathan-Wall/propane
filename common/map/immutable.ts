@@ -97,11 +97,11 @@ function hashKey(key: unknown): string {
   }
 
   if (isImmutableMapLike(key)) {
-    return `map-h:${(key as ImmutableMap<unknown, unknown>).hashCode()}`;
+    return `map-h:${key.hashCode()}`;
   }
 
   if (isMapLike(key)) {
-    const wrapped = new ImmutableMap(key as ReadonlyMap<unknown, unknown>);
+    const wrapped = new ImmutableMap(key);
     return `map-h:${wrapped.hashCode()}`;
   }
 

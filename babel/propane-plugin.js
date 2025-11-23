@@ -121,17 +121,21 @@ export default function propanePlugin() {
     }
     declaredMessageTypeNames.add(typeAlias.id.name);
 
-    const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
+    const generatedTypeNames = generatedTypes
+      .map((node) => (t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id) ? node.id.name : null))
+      .filter(Boolean);
+
+    const typeNamespace = buildTypeNamespace(typeAlias, properties, exported, generatedTypeNames);
     const classDecl = buildClassFromProperties(typeAlias.id.name, properties, declaredMessageTypeNames);
 
     state.usesPropaneBase = true;
 
     if (exported) {
       const classExport = t.exportNamedDeclaration(classDecl, []);
-      return [...generatedTypes, typeNamespace, classExport];
+      return [...generatedTypes, classExport, typeNamespace];
     }
 
-    return [...generatedTypes, typeNamespace, classDecl];
+    return [...generatedTypes, classDecl, typeNamespace];
   }
 
   function extractProperties(memberPaths, generatedTypes, parentName) {
@@ -633,12 +637,10 @@ function assertSupportedMapKeyType(typePath) {
     );
   }
 
-  if (typePath.isTSTypeReference()) {
-    if (isDateReference(typePath.node)) {
-      throw typePath.buildCodeFrameError(
-        'Propane map keys cannot be Date objects.'
-      );
-    }
+  if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
+    throw typePath.buildCodeFrameError(
+      'Propane map keys cannot be Date objects.'
+    );
   }
 
   assertSupportedType(typePath);
@@ -745,7 +747,7 @@ function resolveQualifiedRoot(qualifiedName) {
 
 
 
-function buildTypeNamespace(typeAlias, properties, exported) {
+  function buildTypeNamespace(typeAlias, properties, exported, generatedTypeNames = []) {
   const namespaceId = t.identifier(typeAlias.id.name);
   const typeId = t.identifier('Data');
 
@@ -793,7 +795,19 @@ function buildTypeNamespace(typeAlias, properties, exported) {
   const exportedUnionDecl = t.exportNamedDeclaration(typeUnionDecl, []);
   exportedUnionDecl.exportKind = 'type';
 
-  const moduleBlock = t.tsModuleBlock([exportedTypeDecl, exportedUnionDecl]);
+  const aliasDecls = generatedTypeNames
+    .filter((name) => typeof name === 'string' && name.startsWith(`${typeAlias.id.name}_`))
+    .map((name) => {
+      const aliasName = name.slice(typeAlias.id.name.length + 1);
+      const importEquals = t.tsImportEqualsDeclaration(
+        t.identifier(aliasName),
+        t.identifier(name)
+      );
+      importEquals.isExport = true;
+      return importEquals;
+    });
+
+  const moduleBlock = t.tsModuleBlock([exportedTypeDecl, exportedUnionDecl, ...aliasDecls]);
   const namespaceDecl = t.tsModuleDeclaration(namespaceId, moduleBlock);
   namespaceDecl.declare = typeAlias.declare;
   namespaceDecl.kind = 'namespace';
@@ -887,25 +901,19 @@ function buildClassFromProperties(typeName, properties, declaredMessageTypeNames
 
     if (prop.isArray) {
       const elementTypeName = getTypeName(prop.arrayElementType);
-      if (elementTypeName && declaredMessageTypeNames.has(elementTypeName)) {
-        valueExpr = buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName);
-      } else {
-        valueExpr = buildImmutableArrayExpression(propsAccess);
-      }
+      valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
+        ? buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName)
+        : buildImmutableArrayExpression(propsAccess);
     } else if (prop.isMap) {
       const valueTypeName = getTypeName(prop.mapValueType);
-      if (valueTypeName && declaredMessageTypeNames.has(valueTypeName)) {
-        valueExpr = buildImmutableMapOfMessagesExpression(propsAccess, valueTypeName);
-      } else {
-        valueExpr = buildImmutableMapExpression(propsAccess);
-      }
+      valueExpr = valueTypeName && declaredMessageTypeNames.has(valueTypeName)
+        ? buildImmutableMapOfMessagesExpression(propsAccess, valueTypeName)
+        : buildImmutableMapExpression(propsAccess);
     } else if (prop.isSet) {
       const elementTypeName = getTypeName(prop.setElementType);
-      if (elementTypeName && declaredMessageTypeNames.has(elementTypeName)) {
-        valueExpr = buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName);
-      } else {
-        valueExpr = buildImmutableSetExpression(propsAccess);
-      }
+      valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
+        ? buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName)
+        : buildImmutableSetExpression(propsAccess);
     }
 
     if (prop.isMessageType && prop.messageTypeName) {
@@ -1313,20 +1321,14 @@ function ensureBaseImport(programPath, state) {
       && stmt.source.value === MESSAGE_SOURCE
   );
   const requiredSpecifiers = ['Message', 'MessagePropDescriptor'];
-  if (state.usesImmutableMap) {
-    if (!hasImportBinding('ImmutableMap')) {
-      requiredSpecifiers.push('ImmutableMap');
-    }
+  if (state.usesImmutableMap && !hasImportBinding('ImmutableMap')) {
+    requiredSpecifiers.push('ImmutableMap');
   }
-  if (state.usesImmutableSet) {
-    if (!hasImportBinding('ImmutableSet')) {
-      requiredSpecifiers.push('ImmutableSet');
-    }
+  if (state.usesImmutableSet && !hasImportBinding('ImmutableSet')) {
+    requiredSpecifiers.push('ImmutableSet');
   }
-  if (state.usesImmutableArray) {
-    if (!hasImportBinding('ImmutableArray')) {
-      requiredSpecifiers.push('ImmutableArray');
-    }
+  if (state.usesImmutableArray && !hasImportBinding('ImmutableArray')) {
+    requiredSpecifiers.push('ImmutableArray');
   }
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');

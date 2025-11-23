@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace UnionStringBool {
-  export interface Data {
-    value: string | boolean;
-    optional?: string | boolean | undefined;
-  }
-  export type Value = UnionStringBool | UnionStringBool.Data;
-}
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
   static EMPTY: UnionStringBool;
@@ -66,4 +59,11 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
       optional: this.#optional
     });
   }
+}
+export namespace UnionStringBool {
+  export interface Data {
+    value: string | boolean;
+    optional?: string | boolean | undefined;
+  }
+  export type Value = UnionStringBool | UnionStringBool.Data;
 }

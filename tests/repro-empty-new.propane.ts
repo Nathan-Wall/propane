@@ -1,12 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace UnionFirstNumber {
-  export interface Data {
-    val: number | string;
-  }
-  export type Value = UnionFirstNumber | UnionFirstNumber.Data;
-}
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static EMPTY: UnionFirstNumber;
@@ -41,11 +35,11 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     });
   }
 }
-export namespace UnionFirstString {
+export namespace UnionFirstNumber {
   export interface Data {
-    val: string | number;
+    val: number | string;
   }
-  export type Value = UnionFirstString | UnionFirstString.Data;
+  export type Value = UnionFirstNumber | UnionFirstNumber.Data;
 }
 export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
@@ -81,11 +75,11 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     });
   }
 }
-export namespace OptionalField {
+export namespace UnionFirstString {
   export interface Data {
-    val?: string | undefined;
+    val: string | number;
   }
-  export type Value = OptionalField | OptionalField.Data;
+  export type Value = UnionFirstString | UnionFirstString.Data;
 }
 export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
@@ -124,11 +118,11 @@ export class OptionalField extends Message<OptionalField.Data> {
     });
   }
 }
-export namespace RequiredMessage {
+export namespace OptionalField {
   export interface Data {
-    sub: UnionFirstNumber.Value;
+    val?: string | undefined;
   }
-  export type Value = RequiredMessage | RequiredMessage.Data;
+  export type Value = OptionalField | OptionalField.Data;
 }
 export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
@@ -163,4 +157,10 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
       sub: value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value)
     });
   }
+}
+export namespace RequiredMessage {
+  export interface Data {
+    sub: UnionFirstNumber.Value;
+  }
+  export type Value = RequiredMessage | RequiredMessage.Data;
 }

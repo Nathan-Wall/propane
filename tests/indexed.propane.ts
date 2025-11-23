@@ -1,19 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace Indexed {
-  export interface Data {
-    id: number;
-    name: string;
-    age: number;
-    active: boolean;
-    nickname?: string | undefined;
-    score: number | null;
-    alias?: string | null | undefined;
-    status: string;
-  }
-  export type Value = Indexed | Indexed.Data;
-}
 export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
   static EMPTY: Indexed;
@@ -250,4 +237,17 @@ export class Indexed extends Message<Indexed.Data> {
       status: value
     });
   }
+}
+export namespace Indexed {
+  export interface Data {
+    id: number;
+    name: string;
+    age: number;
+    active: boolean;
+    nickname?: string | undefined;
+    score: number | null;
+    alias?: string | null | undefined;
+    status: string;
+  }
+  export type Value = Indexed | Indexed.Data;
 }

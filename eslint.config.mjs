@@ -104,7 +104,7 @@ export default defineConfig(
       '@typescript-eslint/array-type': [
         'error',
         {
-          default: 'array-simple',
+          default: 'array',
         },
       ],
       '@typescript-eslint/no-unused-vars': [
@@ -168,6 +168,11 @@ export default defineConfig(
     files: ['**/*.propane.ts'],
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
+    },
+    rules: {
+      // Generated code style constraints are relaxed.
+      '@typescript-eslint/array-type': 'off',
+      'unicorn/prefer-spread': 'off',
     },
   },
 );

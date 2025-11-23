@@ -3,12 +3,6 @@
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-namespace Compound_Inline {
-  export interface Data {
-    value: string;
-  }
-  export type Value = Compound_Inline | Compound_Inline.Data;
-}
 class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static EMPTY: Compound_Inline;
@@ -43,13 +37,11 @@ class Compound_Inline extends Message<Compound_Inline.Data> {
     });
   }
 }
-export namespace Compound {
+namespace Compound_Inline {
   export interface Data {
-    user: User.Value;
-    indexed: Indexed.Value;
-    inline: Compound_Inline.Value;
+    value: string;
   }
-  export type Value = Compound | Compound.Data;
+  export type Value = Compound_Inline | Compound_Inline.Data;
 }
 export class Compound extends Message<Compound.Data> {
   static TYPE_TAG = Symbol("Compound");
@@ -126,4 +118,13 @@ export class Compound extends Message<Compound.Data> {
       inline: this.#inline
     });
   }
+}
+export namespace Compound {
+  export interface Data {
+    user: User.Value;
+    indexed: Indexed.Value;
+    inline: Compound_Inline.Value;
+  }
+  export type Value = Compound | Compound.Data;
+  export import Inline = Compound_Inline;
 }

@@ -4,20 +4,6 @@ import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-export namespace User {
-  export interface Data {
-    id: number;
-    name: string;
-    email: Email;
-    passwordHash: Hash;
-    created: Date;
-    updated: Date;
-    active: boolean;
-    eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
-    height: Distance.Value;
-  }
-  export type Value = User | User.Data;
-}
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static EMPTY: User;
@@ -265,4 +251,18 @@ export class User extends Message<User.Data> {
       height: this.#height
     });
   }
+}
+export namespace User {
+  export interface Data {
+    id: number;
+    name: string;
+    email: Email;
+    passwordHash: Hash;
+    created: Date;
+    updated: Date;
+    active: boolean;
+    eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
+    height: Distance.Value;
+  }
+  export type Value = User | User.Data;
 }
