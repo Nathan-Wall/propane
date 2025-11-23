@@ -1,12 +1,14 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
-import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
-export namespace ArrayMessage {
-  export interface Data {
-    names: ImmutableArray<string>;
-    scores: ImmutableArray<number>;
-    flags?: ImmutableArray<boolean> | undefined;
-    labels: ImmutableArray<{
+  import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
+  export namespace ArrayMessage {
+    export interface Data {
+    names: string[] | Iterable<string>;
+    scores: number[] | Iterable<number>;
+    flags?: boolean[] | Iterable<boolean> | undefined;
+    labels: {
+      name: string;
+    }[] | Iterable<{
       name: string;
     }>;
   }
@@ -24,10 +26,10 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   constructor(props?: ArrayMessage.Value) {
     if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
     super(ArrayMessage.TYPE_TAG);
-    this.#names = props ? props.names instanceof ImmutableArray ? props.names : Array.isArray(props.names) ? new ImmutableArray(props.names) : props.names : Object.freeze([]);
-    this.#scores = props ? props.scores instanceof ImmutableArray ? props.scores : Array.isArray(props.scores) ? new ImmutableArray(props.scores) : props.scores : Object.freeze([]);
-    this.#flags = props ? props.flags instanceof ImmutableArray ? props.flags : Array.isArray(props.flags) ? new ImmutableArray(props.flags) : props.flags : undefined;
-    this.#labels = props ? props.labels instanceof ImmutableArray ? props.labels : Array.isArray(props.labels) ? new ImmutableArray(props.labels) : props.labels : Object.freeze([]);
+    this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : Object.freeze([]);
+    this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
+    this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
+    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableArray ? props.labels : new ImmutableArray(props.labels) : Object.freeze([]);
     if (!props) ArrayMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
@@ -53,19 +55,23 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     const props = {} as Partial<ArrayMessage.Data>;
     const namesValue = entries["1"] === undefined ? entries["names"] : entries["1"];
     if (namesValue === undefined) throw new Error("Missing required property \"names\".");
-    const namesArrayValue = namesValue instanceof ImmutableArray ? namesValue : Array.isArray(namesValue) ? new ImmutableArray(namesValue) : namesValue;
+    const namesArrayValue = namesValue === undefined || namesValue === null ? namesValue : namesValue instanceof ImmutableArray ? namesValue : new ImmutableArray(namesValue);
+    if (!((namesArrayValue instanceof ImmutableArray || Object.prototype.toString.call(namesArrayValue) === "[object ImmutableArray]" || Array.isArray(namesArrayValue)) && [...namesArrayValue].every(element => typeof element === "string"))) throw new Error("Invalid value for property \"names\".");
     props.names = namesArrayValue;
     const scoresValue = entries["2"] === undefined ? entries["scores"] : entries["2"];
     if (scoresValue === undefined) throw new Error("Missing required property \"scores\".");
-    const scoresArrayValue = scoresValue instanceof ImmutableArray ? scoresValue : Array.isArray(scoresValue) ? new ImmutableArray(scoresValue) : scoresValue;
+    const scoresArrayValue = scoresValue === undefined || scoresValue === null ? scoresValue : scoresValue instanceof ImmutableArray ? scoresValue : new ImmutableArray(scoresValue);
+    if (!((scoresArrayValue instanceof ImmutableArray || Object.prototype.toString.call(scoresArrayValue) === "[object ImmutableArray]" || Array.isArray(scoresArrayValue)) && [...scoresArrayValue].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"scores\".");
     props.scores = scoresArrayValue;
     const flagsValue = entries["3"] === undefined ? entries["flags"] : entries["3"];
     const flagsNormalized = flagsValue === null ? undefined : flagsValue;
-    const flagsArrayValue = flagsNormalized instanceof ImmutableArray ? flagsNormalized : Array.isArray(flagsNormalized) ? new ImmutableArray(flagsNormalized) : flagsNormalized;
+    const flagsArrayValue = flagsNormalized === undefined || flagsNormalized === null ? flagsNormalized : flagsNormalized instanceof ImmutableArray ? flagsNormalized : new ImmutableArray(flagsNormalized);
+    if (flagsArrayValue !== undefined && !((flagsArrayValue instanceof ImmutableArray || Object.prototype.toString.call(flagsArrayValue) === "[object ImmutableArray]" || Array.isArray(flagsArrayValue)) && [...flagsArrayValue].every(element => typeof element === "boolean"))) throw new Error("Invalid value for property \"flags\".");
     props.flags = flagsArrayValue;
     const labelsValue = entries["4"] === undefined ? entries["labels"] : entries["4"];
     if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
-    const labelsArrayValue = labelsValue instanceof ImmutableArray ? labelsValue : Array.isArray(labelsValue) ? new ImmutableArray(labelsValue) : labelsValue;
+    const labelsArrayValue = labelsValue === undefined || labelsValue === null ? labelsValue : labelsValue instanceof ImmutableArray ? labelsValue : new ImmutableArray(labelsValue);
+    if (!((labelsArrayValue instanceof ImmutableArray || Object.prototype.toString.call(labelsArrayValue) === "[object ImmutableArray]" || Array.isArray(labelsArrayValue)) && [...labelsArrayValue].every(element => typeof element === "object" && element !== null && element.name !== undefined && typeof element.name === "string"))) throw new Error("Invalid value for property \"labels\".");
     props.labels = labelsArrayValue;
     return props as ArrayMessage.Data;
   }
@@ -316,7 +322,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  setFlags(value: ImmutableArray<boolean>): ArrayMessage {
+  setFlags(value: boolean[] | Iterable<boolean>): ArrayMessage {
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -324,7 +330,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  setLabels(value: ImmutableArray<{
+  setLabels(value: {
+    name: string;
+  }[] | Iterable<{
     name: string;
   }>): ArrayMessage {
     return new ArrayMessage({
@@ -334,7 +342,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: value
     });
   }
-  setNames(value: ImmutableArray<string>): ArrayMessage {
+  setNames(value: string[] | Iterable<string>): ArrayMessage {
     return new ArrayMessage({
       names: value,
       scores: this.#scores,
@@ -342,7 +350,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  setScores(value: ImmutableArray<number>): ArrayMessage {
+  setScores(value: number[] | Iterable<number>): ArrayMessage {
     return new ArrayMessage({
       names: this.#names,
       scores: value,

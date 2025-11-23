@@ -3,21 +3,21 @@
 import { Message, MessagePropDescriptor, ImmutableSet } from "@propanejs/runtime";
 export namespace SetMessage {
   export interface Data {
-    tags: ReadonlySet<string>;
-    ids?: ReadonlySet<number> | undefined;
+    tags: Set<string> | Iterable<string>;
+    ids?: Set<number> | Iterable<number> | undefined;
   }
   export type Value = SetMessage | SetMessage.Data;
 }
 export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static EMPTY: SetMessage;
-  #tags: ReadonlySet<string>;
-  #ids: ReadonlySet<number> | undefined;
+  #tags: ImmutableSet<string>;
+  #ids: ImmutableSet<number> | undefined;
   constructor(props?: SetMessage.Value) {
     if (!props && SetMessage.EMPTY) return SetMessage.EMPTY;
     super(SetMessage.TYPE_TAG);
-    this.#tags = props ? props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : Array.isArray(props.tags) ? new ImmutableSet(props.tags) : props.tags instanceof Set || Object.prototype.toString.call(props.tags) === "[object Set]" ? new ImmutableSet(props.tags) : props.tags : new Set();
-    this.#ids = props ? props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : Array.isArray(props.ids) ? new ImmutableSet(props.ids) : props.ids instanceof Set || Object.prototype.toString.call(props.ids) === "[object Set]" ? new ImmutableSet(props.ids) : props.ids : undefined;
+    this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new Set();
+    this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
     if (!props) SetMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
@@ -35,20 +35,20 @@ export class SetMessage extends Message<SetMessage.Data> {
     const props = {} as Partial<SetMessage.Data>;
     const tagsValue = entries["1"] === undefined ? entries["tags"] : entries["1"];
     if (tagsValue === undefined) throw new Error("Missing required property \"tags\".");
-    const tagsSetValue = tagsValue instanceof ImmutableSet || Object.prototype.toString.call(tagsValue) === "[object ImmutableSet]" ? tagsValue : Array.isArray(tagsValue) ? new ImmutableSet(tagsValue) : tagsValue instanceof Set || Object.prototype.toString.call(tagsValue) === "[object Set]" ? new ImmutableSet(tagsValue) : tagsValue;
+    const tagsSetValue = tagsValue === undefined || tagsValue === null ? tagsValue : tagsValue instanceof ImmutableSet || Object.prototype.toString.call(tagsValue) === "[object ImmutableSet]" ? tagsValue : new ImmutableSet(tagsValue);
     if (!((tagsSetValue instanceof ImmutableSet || Object.prototype.toString.call(tagsSetValue) === "[object ImmutableSet]" || tagsSetValue instanceof Set || Object.prototype.toString.call(tagsSetValue) === "[object Set]") && [...tagsSetValue].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"tags\".");
     props.tags = tagsSetValue;
     const idsValue = entries["2"] === undefined ? entries["ids"] : entries["2"];
     const idsNormalized = idsValue === null ? undefined : idsValue;
-    const idsSetValue = idsNormalized instanceof ImmutableSet || Object.prototype.toString.call(idsNormalized) === "[object ImmutableSet]" ? idsNormalized : Array.isArray(idsNormalized) ? new ImmutableSet(idsNormalized) : idsNormalized instanceof Set || Object.prototype.toString.call(idsNormalized) === "[object Set]" ? new ImmutableSet(idsNormalized) : idsNormalized;
+    const idsSetValue = idsNormalized === undefined || idsNormalized === null ? idsNormalized : idsNormalized instanceof ImmutableSet || Object.prototype.toString.call(idsNormalized) === "[object ImmutableSet]" ? idsNormalized : new ImmutableSet(idsNormalized);
     if (idsSetValue !== undefined && !((idsSetValue instanceof ImmutableSet || Object.prototype.toString.call(idsSetValue) === "[object ImmutableSet]" || idsSetValue instanceof Set || Object.prototype.toString.call(idsSetValue) === "[object Set]") && [...idsSetValue].every(setValue => typeof setValue === "number"))) throw new Error("Invalid value for property \"ids\".");
     props.ids = idsSetValue;
     return props as SetMessage.Data;
   }
-  get tags(): ReadonlySet<string> {
+  get tags(): ImmutableSet<string> {
     return this.#tags;
   }
-  get ids(): ReadonlySet<number> | undefined {
+  get ids(): ImmutableSet<number> | undefined {
     return this.#ids;
   }
   addAllIds(values: Iterable<number>): SetMessage {
@@ -248,15 +248,15 @@ export class SetMessage extends Message<SetMessage.Data> {
       ids: this.#ids
     });
   }
-  setIds(value: ReadonlySet<number>): SetMessage {
+  setIds(value: Set<number> | Iterable<number>): SetMessage {
     return new SetMessage({
       tags: this.#tags,
-      ids: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value
+      ids: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value)
     });
   }
-  setTags(value: ReadonlySet<string>): SetMessage {
+  setTags(value: Set<string> | Iterable<string>): SetMessage {
     return new SetMessage({
-      tags: value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : Array.isArray(value) ? new ImmutableSet(value) : value instanceof Set || Object.prototype.toString.call(value) === "[object Set]" ? new ImmutableSet(value) : value,
+      tags: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value),
       ids: this.#ids
     });
   }

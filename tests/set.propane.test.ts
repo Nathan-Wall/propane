@@ -20,6 +20,17 @@ export default function runSetTests() {
   assert(data.tags.has('a') && data.tags.has('b'), 'deserialize keeps set values');
   assert(!data.ids, 'optional ids can be omitted');
 
+  // iterable inputs (not Set) should normalize
+  const iterableTags = (function* () {
+    yield 'x';
+    yield 'y';
+  })();
+  const iterableIds = [9, 10][Symbol.iterator]();
+  const iterableMsg = new SetMessage({ tags: iterableTags, ids: iterableIds });
+  assert(iterableMsg.tags instanceof ImmutableSet, 'iterable tags should normalize to ImmutableSet');
+  assert(iterableMsg.tags.has('x') && iterableMsg.tags.has('y'), 'iterable tags should keep entries');
+  assert(iterableMsg.ids?.has(9) && iterableMsg.ids?.has(10), 'iterable ids should normalize to ImmutableSet');
+
   // toJSON
   // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(msg));

@@ -199,15 +199,53 @@ export default function propanePlugin() {
       const setType = isSetTypeNode(propTypePath.node);
       const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
       const messageTypeName = getMessageReferenceName(propTypePath);
-      const runtimeType = mapType
-        ? wrapReadonlyMapType(t.cloneNode(propTypePath.node))
-        : setType
-          ? wrapReadonlySetType(t.cloneNode(propTypePath.node))
-          : arrayType
-            ? wrapReadonlyArrayType(t.cloneNode(propTypePath.node))
-            : t.cloneNode(propTypePath.node);
+      const runtimeType = mapType || setType || arrayType
+        ? wrapImmutableType(t.cloneNode(propTypePath.node))
+        : t.cloneNode(propTypePath.node);
 
-      let inputTypeAnnotation = runtimeType;
+      let inputTypeAnnotation = mapType || setType || arrayType
+        ? buildInputAcceptingMutable(t.cloneNode(propTypePath.node))
+        : t.cloneNode(propTypePath.node);
+
+      let displayType = t.cloneNode(propTypePath.node);
+      if (mapType && mapArgs) {
+        const mapRef = t.tsTypeReference(
+          t.identifier('Map'),
+          t.tsTypeParameterInstantiation([
+            t.cloneNode(mapArgs.keyType),
+            t.cloneNode(mapArgs.valueType),
+          ])
+        );
+        const iterableTuple = t.tsTupleType([
+          t.cloneNode(mapArgs.keyType),
+          t.cloneNode(mapArgs.valueType),
+        ]);
+        const iterableRef = t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([iterableTuple])
+        );
+        displayType = t.tsUnionType([mapRef, iterableRef]);
+      } else if (setType && setArg) {
+        const setRef = t.tsTypeReference(
+          t.identifier('Set'),
+          t.tsTypeParameterInstantiation([t.cloneNode(setArg)])
+        );
+        const iterableRef = t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([t.cloneNode(setArg)])
+        );
+        displayType = t.tsUnionType([setRef, iterableRef]);
+      } else if (arrayType && arrayElementType) {
+        const arrayRef = t.tsTypeReference(
+          t.identifier('Array'),
+          t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
+        );
+        const iterableRef = t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
+        );
+        displayType = t.tsUnionType([arrayRef, iterableRef]);
+      }
 
       if (messageTypeName) {
         inputTypeAnnotation = t.tsTypeReference(
@@ -216,6 +254,7 @@ export default function propanePlugin() {
             t.identifier('Value')
           )
         );
+        displayType = t.cloneNode(inputTypeAnnotation);
       }
 
       props.push({
@@ -233,7 +272,11 @@ export default function propanePlugin() {
         arrayElementType,
         mapKeyType: mapArgs ? mapArgs.keyType : null,
         mapValueType: mapArgs ? mapArgs.valueType : null,
+        mapKeyInputType: mapArgs ? buildInputAcceptingMutable(mapArgs.keyType) : null,
+        mapValueInputType: mapArgs ? buildInputAcceptingMutable(mapArgs.valueType) : null,
         setElementType: setArg,
+        setElementInputType: setArg ? buildInputAcceptingMutable(setArg) : null,
+        displayType,
       });
     }
 
@@ -495,6 +538,7 @@ function isSetReference(node) {
     && (
       node.typeName.name === 'Set'
       || node.typeName.name === 'ReadonlySet'
+      || node.typeName.name === 'ImmutableSet'
     )
   );
 }
@@ -505,6 +549,7 @@ function isMapReference(node) {
     && (
       node.typeName.name === 'Map'
       || node.typeName.name === 'ReadonlyMap'
+      || node.typeName.name === 'ImmutableMap'
     )
   );
 }
@@ -586,12 +631,6 @@ function assertSupportedMapKeyType(typePath) {
   }
 
   if (typePath.isTSTypeReference()) {
-    if (isMapReference(typePath.node)) {
-      throw typePath.buildCodeFrameError(
-        'Propane map keys cannot be maps.'
-      );
-    }
-
     if (isDateReference(typePath.node)) {
       throw typePath.buildCodeFrameError(
         'Propane map keys cannot be Date objects.'
@@ -709,7 +748,7 @@ function buildTypeNamespace(typeAlias, properties, exported) {
 
   const literalMembers = properties.map((prop) => {
     const key = t.identifier(prop.name);
-    let typeAnnotation = t.cloneNode(prop.inputTypeAnnotation);
+    let typeAnnotation = prop.displayType ? t.cloneNode(prop.displayType) : t.cloneNode(prop.inputTypeAnnotation);
     if (prop.optional) {
       if (t.isTSUnionType(typeAnnotation)) {
         typeAnnotation.types.push(t.tsUndefinedKeyword());
@@ -778,13 +817,7 @@ function buildClassFromProperties(typeName, properties) {
   );
 
   for (const prop of propDescriptors) {
-    let baseType = t.cloneNode(prop.typeAnnotation);
-    if (prop.isArray) {
-      baseType = wrapReadonlyArrayType(baseType);
-    }
-    if (prop.isMap) {
-      baseType = wrapReadonlyMapType(baseType);
-    }
+    let baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
 
     const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap || prop.isSet);
     const fieldTypeAnnotation = needsOptionalUnion
@@ -1245,6 +1278,17 @@ function buildFromEntriesMethod(propDescriptors, propsTypeRef) {
 
 function ensureBaseImport(programPath, state) {
   const program = programPath.node;
+  const hasImportBinding = (name) =>
+    program.body.some(
+      (stmt) =>
+        t.isImportDeclaration(stmt)
+        && stmt.specifiers.some(
+          (spec) =>
+            t.isImportSpecifier(spec) || t.isImportDefaultSpecifier(spec) || t.isImportNamespaceSpecifier(spec)
+              ? spec.local.name === name
+              : false
+        )
+    );
   const existingImport = program.body.find(
     (stmt) =>
       t.isImportDeclaration(stmt)
@@ -1252,13 +1296,19 @@ function ensureBaseImport(programPath, state) {
   );
   const requiredSpecifiers = ['Message', 'MessagePropDescriptor'];
   if (state.usesImmutableMap) {
-    requiredSpecifiers.push('ImmutableMap');
+    if (!hasImportBinding('ImmutableMap')) {
+      requiredSpecifiers.push('ImmutableMap');
+    }
   }
   if (state.usesImmutableSet) {
-    requiredSpecifiers.push('ImmutableSet');
+    if (!hasImportBinding('ImmutableSet')) {
+      requiredSpecifiers.push('ImmutableSet');
+    }
   }
   if (state.usesImmutableArray) {
-    requiredSpecifiers.push('ImmutableArray');
+    if (!hasImportBinding('ImmutableArray')) {
+      requiredSpecifiers.push('ImmutableArray');
+    }
   }
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');
@@ -1306,54 +1356,166 @@ function pathTransform(filename) {
   return normalized.split(path.sep).join('/');
 }
 
-function wrapReadonlyArrayType(node) {
+function wrapImmutableType(node) {
+  if (!node) {
+    return node;
+  }
+
+  if (t.isTSParenthesizedType(node)) {
+    return t.tsParenthesizedType(wrapImmutableType(t.cloneNode(node.typeAnnotation)));
+  }
+
   if (t.isTSArrayType(node)) {
     return t.tsTypeReference(
       t.identifier('ImmutableArray'),
-      t.tsTypeParameterInstantiation([node.elementType])
-    );
-  }
-
-  return node;
-}
-
-function wrapReadonlyMapType(node) {
-  if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(
-      wrapReadonlyMapType(t.cloneNode(node.typeAnnotation))
+      t.tsTypeParameterInstantiation([wrapImmutableType(t.cloneNode(node.elementType))])
     );
   }
 
   if (
     t.isTSTypeReference(node)
     && t.isIdentifier(node.typeName)
-    && node.typeName.name === 'Map'
   ) {
-    return t.tsTypeReference(
-      t.identifier('ReadonlyMap'),
-      node.typeParameters ? t.cloneNode(node.typeParameters) : null
-    );
+    const name = node.typeName.name;
+    if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
+      const params = node.typeParameters?.params ?? [];
+      const [key, value] = [
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
+        wrapImmutableType(params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword()),
+      ];
+      return t.tsTypeReference(
+        t.identifier('ImmutableMap'),
+        t.tsTypeParameterInstantiation([key, value])
+      );
+    }
+
+    if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
+      const params = node.typeParameters?.params ?? [];
+      const [elem] = [
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
+      ];
+      return t.tsTypeReference(
+        t.identifier('ImmutableSet'),
+        t.tsTypeParameterInstantiation([elem])
+      );
+    }
+
+    if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
+      const params = node.typeParameters?.params ?? [];
+      const [elem] = [
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
+      ];
+      return t.tsTypeReference(
+        t.identifier('ImmutableArray'),
+        t.tsTypeParameterInstantiation([elem])
+      );
+    }
   }
 
   return node;
 }
 
-function wrapReadonlySetType(node) {
+function buildInputAcceptingMutable(node) {
+  if (!node) {
+    return node;
+  }
+
   if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(
-      wrapReadonlySetType(t.cloneNode(node.typeAnnotation))
-    );
+    return t.tsParenthesizedType(buildInputAcceptingMutable(t.cloneNode(node.typeAnnotation)));
+  }
+
+  if (t.isTSArrayType(node)) {
+    const element = buildInputAcceptingMutable(t.cloneNode(node.elementType));
+    return t.tsUnionType([
+      t.tsTypeReference(
+        t.identifier('ImmutableArray'),
+        t.tsTypeParameterInstantiation([element])
+      ),
+      t.tsTypeReference(
+        t.identifier('ReadonlyArray'),
+        t.tsTypeParameterInstantiation([element])
+      ),
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([element])
+      ),
+    ]);
   }
 
   if (
     t.isTSTypeReference(node)
     && t.isIdentifier(node.typeName)
-    && node.typeName.name === 'Set'
   ) {
-    return t.tsTypeReference(
-      t.identifier('ReadonlySet'),
-      node.typeParameters ? t.cloneNode(node.typeParameters) : null
-    );
+    const name = node.typeName.name;
+
+    // Array-style reference (Array<T>, ReadonlyArray<T>, ImmutableArray<T>)
+    if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
+      const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
+        ? t.cloneNode(node.typeParameters.params[0])
+        : t.tsAnyKeyword());
+      return t.tsUnionType([
+        t.tsTypeReference(
+          t.identifier('ImmutableArray'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+        t.tsTypeReference(
+          t.identifier('ReadonlyArray'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+        t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+      ]);
+    }
+
+    // Set-style reference
+    if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
+      const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
+        ? t.cloneNode(node.typeParameters.params[0])
+        : t.tsAnyKeyword());
+      return t.tsUnionType([
+        t.tsTypeReference(
+          t.identifier('ImmutableSet'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+        t.tsTypeReference(
+          t.identifier('ReadonlySet'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+        t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([elem])
+        ),
+      ]);
+    }
+
+    // Map-style reference
+    if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
+      const keyParam = node.typeParameters?.params?.[0]
+        ? t.cloneNode(node.typeParameters.params[0])
+        : t.tsAnyKeyword();
+      const valueParam = node.typeParameters?.params?.[1]
+        ? t.cloneNode(node.typeParameters.params[1])
+        : t.tsAnyKeyword();
+      const key = buildInputAcceptingMutable(keyParam);
+      const value = buildInputAcceptingMutable(valueParam);
+      const tupleType = t.tsTupleType([key, value]);
+      return t.tsUnionType([
+        t.tsTypeReference(
+          t.identifier('ImmutableMap'),
+          t.tsTypeParameterInstantiation([key, value])
+        ),
+        t.tsTypeReference(
+          t.identifier('ReadonlyMap'),
+          t.tsTypeParameterInstantiation([key, value])
+        ),
+        t.tsTypeReference(
+          t.identifier('Iterable'),
+          t.tsTypeParameterInstantiation([tupleType])
+        ),
+      ]);
+    }
   }
 
   return node;
@@ -1417,123 +1579,82 @@ function buildEntryAccessExpression(prop, entriesId) {
 }
 
 function buildImmutableMapExpression(valueExpr) {
-  const arrayCheck = t.callExpression(
-    t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-    [t.cloneNode(valueExpr)]
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const immutableInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('ImmutableMap')
-  );
-  const immutableTagCheck = buildMapTagComparison(
-    valueExpr,
-    '[object ImmutableMap]'
-  );
   const immutableCheck = t.logicalExpression(
     '||',
-    immutableInstanceCheck,
-    immutableTagCheck
+    t.binaryExpression('instanceof', t.cloneNode(valueExpr), t.identifier('ImmutableMap')),
+    buildMapTagComparison(valueExpr, '[object ImmutableMap]')
   );
-
-  const mapInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('Map')
-  );
-  const mapTagCheck = buildMapTagComparison(
-    valueExpr,
-    '[object Map]'
-  );
-  const mapCheck = t.logicalExpression('||', mapInstanceCheck, mapTagCheck);
 
   const buildNewImmutableMap = () =>
     t.newExpression(t.identifier('ImmutableMap'), [t.cloneNode(valueExpr)]);
 
   return t.conditionalExpression(
-    arrayCheck,
-    buildNewImmutableMap(),
+    nilCheck,
+    t.cloneNode(valueExpr),
     t.conditionalExpression(
       immutableCheck,
       t.cloneNode(valueExpr),
-      t.conditionalExpression(
-        mapCheck,
-        buildNewImmutableMap(),
-        t.cloneNode(valueExpr)
-      )
+      buildNewImmutableMap()
     )
   );
 }
 
 function buildImmutableArrayExpression(valueExpr) {
-  const immutableInstanceCheck = t.binaryExpression(
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
+  );
+
+  const immutableCheck = t.binaryExpression(
     'instanceof',
     t.cloneNode(valueExpr),
     t.identifier('ImmutableArray')
-  );
-  const arrayCheck = t.callExpression(
-    t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-    [t.cloneNode(valueExpr)]
   );
 
   const toImmutable = () =>
     t.newExpression(t.identifier('ImmutableArray'), [t.cloneNode(valueExpr)]);
 
   return t.conditionalExpression(
-    immutableInstanceCheck,
+    nilCheck,
     t.cloneNode(valueExpr),
     t.conditionalExpression(
-      arrayCheck,
-      toImmutable(),
-      t.cloneNode(valueExpr)
+      immutableCheck,
+      t.cloneNode(valueExpr),
+      toImmutable()
     )
   );
 }
 
 function buildImmutableSetExpression(valueExpr) {
-  const arrayCheck = t.callExpression(
-    t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-    [t.cloneNode(valueExpr)]
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const immutableInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('ImmutableSet')
-  );
-  const immutableTagCheck = buildSetTagComparison(
-    valueExpr,
-    '[object ImmutableSet]'
-  );
   const immutableCheck = t.logicalExpression(
     '||',
-    immutableInstanceCheck,
-    immutableTagCheck
+    t.binaryExpression('instanceof', t.cloneNode(valueExpr), t.identifier('ImmutableSet')),
+    buildSetTagComparison(valueExpr, '[object ImmutableSet]')
   );
-
-  const setInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('Set')
-  );
-  const setTagCheck = buildSetTagComparison(valueExpr, '[object Set]');
-  const setCheck = t.logicalExpression('||', setInstanceCheck, setTagCheck);
 
   const buildNewImmutableSet = () =>
     t.newExpression(t.identifier('ImmutableSet'), [t.cloneNode(valueExpr)]);
 
   return t.conditionalExpression(
-    immutableCheck,
+    nilCheck,
     t.cloneNode(valueExpr),
     t.conditionalExpression(
-      arrayCheck,
-      buildNewImmutableSet(),
-      t.conditionalExpression(
-        setCheck,
-        buildNewImmutableSet(),
-        t.cloneNode(valueExpr)
-      )
+      immutableCheck,
+      t.cloneNode(valueExpr),
+      buildNewImmutableSet()
     )
   );
 }
@@ -1611,7 +1732,7 @@ function buildPropsObjectExpression(
 function buildSetterMethod(typeName, propDescriptors, targetProp) {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(targetProp.inputTypeAnnotation)
+    t.cloneNode(targetProp.displayType || targetProp.inputTypeAnnotation)
   );
 
   let setterValueExpr = t.cloneNode(valueId);
@@ -2817,15 +2938,24 @@ function buildClearMapOptions(prop) {
 }
 
 function cloneMapKeyType(prop) {
-  return prop.mapKeyType ? t.cloneNode(prop.mapKeyType) : t.tsAnyKeyword();
+  if (prop.mapKeyInputType) {
+    return t.cloneNode(prop.mapKeyInputType);
+  }
+  return prop.mapKeyType ? wrapImmutableType(t.cloneNode(prop.mapKeyType)) : t.tsAnyKeyword();
 }
 
 function cloneMapValueType(prop) {
-  return prop.mapValueType ? t.cloneNode(prop.mapValueType) : t.tsAnyKeyword();
+  if (prop.mapValueInputType) {
+    return t.cloneNode(prop.mapValueInputType);
+  }
+  return prop.mapValueType ? wrapImmutableType(t.cloneNode(prop.mapValueType)) : t.tsAnyKeyword();
 }
 
 function cloneSetElementType(prop) {
-  return prop.setElementType ? t.cloneNode(prop.setElementType) : t.tsAnyKeyword();
+  if (prop.setElementInputType) {
+    return t.cloneNode(prop.setElementInputType);
+  }
+  return prop.setElementType ? wrapImmutableType(t.cloneNode(prop.setElementType)) : t.tsAnyKeyword();
 }
 
 function buildMapSetParams(prop) {
@@ -2851,16 +2981,17 @@ function buildMapMergeParams(prop) {
     t.identifier('Iterable'),
     t.tsTypeParameterInstantiation([tupleType])
   );
-  const mapType = t.tsTypeReference(
-    t.identifier('Map'),
-    t.tsTypeParameterInstantiation([t.cloneNode(keyType), t.cloneNode(valueType)])
-  );
-  const readonlyMapType = t.tsTypeReference(
-    t.identifier('ReadonlyMap'),
-    t.tsTypeParameterInstantiation([keyType, valueType])
+  const mapInputUnion = buildInputAcceptingMutable(
+    t.tsTypeReference(
+      t.identifier('ImmutableMap'),
+      t.tsTypeParameterInstantiation([keyType, valueType])
+    )
   );
   entriesId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsUnionType([iterableType, mapType, readonlyMapType])
+    t.tsUnionType([
+      iterableType,
+      mapInputUnion,
+    ])
   );
   return [entriesId];
 }
@@ -3079,6 +3210,21 @@ function buildRuntimeTypeCheckExpression(typeNode, valueId) {
 
     if (isSetReference(typeNode)) {
       return buildSetTypeCheckExpression(typeNode, valueId);
+    }
+
+    if (
+      t.isIdentifier(typeNode.typeName)
+      && (
+        typeNode.typeName.name === 'Array'
+        || typeNode.typeName.name === 'ReadonlyArray'
+        || typeNode.typeName.name === 'ImmutableArray'
+      )
+    ) {
+      const elementParam = typeNode.typeParameters?.params?.[0];
+      const syntheticArray = t.tsArrayType(
+        wrapImmutableType(elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword())
+      );
+      return buildArrayTypeCheckExpression(syntheticArray, valueId);
     }
 
     return null;
@@ -3428,7 +3574,19 @@ function isArrayTypeNode(node) {
     return isArrayTypeNode(node.typeAnnotation);
   }
 
-  return t.isTSArrayType(node);
+  if (t.isTSArrayType(node)) {
+    return true;
+  }
+
+  return (
+    t.isTSTypeReference(node)
+    && t.isIdentifier(node.typeName)
+    && (
+      node.typeName.name === 'Array'
+      || node.typeName.name === 'ReadonlyArray'
+      || node.typeName.name === 'ImmutableArray'
+    )
+  );
 }
 
 function isSetTypeNode(node) {
@@ -3446,6 +3604,7 @@ function isSetTypeNode(node) {
     && (
       node.typeName.name === 'Set'
       || node.typeName.name === 'ReadonlySet'
+      || node.typeName.name === 'ImmutableSet'
     )
   );
 }
@@ -3465,6 +3624,7 @@ function isMapTypeNode(node) {
     && (
       node.typeName.name === 'Map'
       || node.typeName.name === 'ReadonlyMap'
+      || node.typeName.name === 'ImmutableMap'
     )
   );
 }
@@ -3484,6 +3644,7 @@ function getMapTypeArguments(node) {
     && (
       node.typeName.name === 'Map'
       || node.typeName.name === 'ReadonlyMap'
+      || node.typeName.name === 'ImmutableMap'
     )
     && node.typeParameters
     && node.typeParameters.params.length === 2
@@ -3510,6 +3671,7 @@ function getSetTypeArguments(node) {
     && (
       node.typeName.name === 'Set'
       || node.typeName.name === 'ReadonlySet'
+      || node.typeName.name === 'ImmutableSet'
     )
     && node.typeParameters
     && node.typeParameters.params.length === 1
@@ -3531,6 +3693,20 @@ function getArrayElementType(node) {
 
   if (t.isTSArrayType(node)) {
     return node.elementType;
+  }
+
+  if (
+    t.isTSTypeReference(node)
+    && t.isIdentifier(node.typeName)
+    && (
+      node.typeName.name === 'Array'
+      || node.typeName.name === 'ReadonlyArray'
+      || node.typeName.name === 'ImmutableArray'
+    )
+    && node.typeParameters
+    && node.typeParameters.params.length === 1
+  ) {
+    return node.typeParameters.params[0];
   }
 
   return null;

@@ -3,8 +3,8 @@
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace ToJson {
   export interface Data {
-    map: ReadonlyMap<string, number>;
-    imap: ReadonlyMap<string, number>;
+    map: Map<string, number> | Iterable<[string, number]>;
+    imap: Map<string, number> | Iterable<[string, number]>;
     big: bigint;
     date: Date;
     optional?: string | undefined;
@@ -20,8 +20,8 @@ export namespace ToJson {
 export class ToJson extends Message<ToJson.Data> {
   static TYPE_TAG = Symbol("ToJson");
   static EMPTY: ToJson;
-  #map: ReadonlyMap<string, number>;
-  #imap: ReadonlyMap<string, number>;
+  #map: ImmutableMap<string, number>;
+  #imap: ImmutableMap<string, number>;
   #big: bigint;
   #date: Date;
   #optional: string;
@@ -34,8 +34,8 @@ export class ToJson extends Message<ToJson.Data> {
   constructor(props?: ToJson.Value) {
     if (!props && ToJson.EMPTY) return ToJson.EMPTY;
     super(ToJson.TYPE_TAG);
-    this.#map = props ? Array.isArray(props.map) ? new ImmutableMap(props.map) : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : props.map instanceof Map || Object.prototype.toString.call(props.map) === "[object Map]" ? new ImmutableMap(props.map) : props.map : new Map();
-    this.#imap = props ? Array.isArray(props.imap) ? new ImmutableMap(props.imap) : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : props.imap instanceof Map || Object.prototype.toString.call(props.imap) === "[object Map]" ? new ImmutableMap(props.imap) : props.imap : new Map();
+    this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
+    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
     this.#big = props ? props.big : 0n;
     this.#date = props ? props.date : new Date(0);
     this.#optional = props ? props.optional : undefined;
@@ -78,12 +78,12 @@ export class ToJson extends Message<ToJson.Data> {
     const props = {} as Partial<ToJson.Data>;
     const mapValue = entries["1"] === undefined ? entries["map"] : entries["1"];
     if (mapValue === undefined) throw new Error("Missing required property \"map\".");
-    const mapMapValue = Array.isArray(mapValue) ? new ImmutableMap(mapValue) : mapValue instanceof ImmutableMap || Object.prototype.toString.call(mapValue) === "[object ImmutableMap]" ? mapValue : mapValue instanceof Map || Object.prototype.toString.call(mapValue) === "[object Map]" ? new ImmutableMap(mapValue) : mapValue;
+    const mapMapValue = mapValue === undefined || mapValue === null ? mapValue : mapValue instanceof ImmutableMap || Object.prototype.toString.call(mapValue) === "[object ImmutableMap]" ? mapValue : new ImmutableMap(mapValue);
     if (!((mapMapValue instanceof ImmutableMap || Object.prototype.toString.call(mapMapValue) === "[object ImmutableMap]" || mapMapValue instanceof Map || Object.prototype.toString.call(mapMapValue) === "[object Map]") && [...mapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
     props.map = mapMapValue;
     const imapValue = entries["2"] === undefined ? entries["imap"] : entries["2"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
-    const imapMapValue = Array.isArray(imapValue) ? new ImmutableMap(imapValue) : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : imapValue instanceof Map || Object.prototype.toString.call(imapValue) === "[object Map]" ? new ImmutableMap(imapValue) : imapValue;
+    const imapMapValue = imapValue === undefined || imapValue === null ? imapValue : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : new ImmutableMap(imapValue);
     if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValue;
     const bigValue = entries["3"] === undefined ? entries["big"] : entries["3"];
@@ -108,10 +108,10 @@ export class ToJson extends Message<ToJson.Data> {
     props.nested = nestedValue;
     return props as ToJson.Data;
   }
-  get map(): ReadonlyMap<string, number> {
+  get map(): ImmutableMap<string, number> {
     return this.#map;
   }
-  get imap(): ReadonlyMap<string, number> {
+  get imap(): ImmutableMap<string, number> {
     return this.#imap;
   }
   get big(): bigint {
@@ -295,7 +295,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  mergeImapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
+  mergeImapEntries(entries: Iterable<[string, number]> | ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -313,7 +313,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  mergeMapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
+  mergeMapEntries(entries: Iterable<[string, number]> | ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -353,10 +353,10 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  setImap(value: ReadonlyMap<string, number>): ToJson {
+  setImap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
     return new ToJson({
       map: this.#map,
-      imap: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      imap: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       big: this.#big,
       date: this.#date,
       optional: this.#optional,
@@ -384,9 +384,9 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  setMap(value: ReadonlyMap<string, number>): ToJson {
+  setMap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
     return new ToJson({
-      map: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value,
+      map: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       imap: this.#imap,
       big: this.#big,
       date: this.#date,

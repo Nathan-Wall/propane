@@ -1,0 +1,11 @@
+export type MapMapKey = {
+  /**
+   * Map keyed by another Map to exercise map-as-key support.
+   */
+  nested: Map<Map<string, number>, string>;
+
+  /**
+   * Optional map whose keys are readonly maps; verifies optional handling.
+   */
+  optional?: Map<ReadonlyMap<string, number>, number>;
+};

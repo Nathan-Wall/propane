@@ -1,4 +1,0 @@
-export type MapMapKeyFail = {
-  weird: Map<Map<string, string>, number>;
-};
-

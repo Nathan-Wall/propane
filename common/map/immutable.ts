@@ -12,9 +12,32 @@ function isMessageLike(value: unknown): value is {
   );
 }
 
+const MAP_OBJECT_TAG = '[object Map]';
+const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
+
+function isImmutableMapLike(value: unknown): value is ImmutableMap<unknown, unknown> {
+  return (
+    value instanceof ImmutableMap
+    || Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
+  );
+}
+
+function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
+  if (!value || typeof value !== 'object') return false;
+  const tag = Object.prototype.toString.call(value);
+  return tag === MAP_OBJECT_TAG || tag === IMMUTABLE_MAP_OBJECT_TAG;
+}
+
 function equalKeys(a: unknown, b: unknown): boolean {
   if (a === b || Object.is(a, b)) {
     return true;
+  }
+
+  // Structural compare for map keys.
+  if (isMapLike(a) && isMapLike(b)) {
+    const aMap = isImmutableMapLike(a) ? a : new ImmutableMap(a);
+    const bMap = isImmutableMapLike(b) ? b : new ImmutableMap(b);
+    return aMap.equals(bMap);
   }
 
   if (isMessageLike(a) && a.equals(b)) {
@@ -71,6 +94,15 @@ function hashKey(key: unknown): string {
   if (type === 'symbol') {
     const desc = (key as symbol).description ?? '';
     return `sym:${desc}`;
+  }
+
+  if (isImmutableMapLike(key)) {
+    return `map-h:${(key as ImmutableMap<unknown, unknown>).hashCode()}`;
+  }
+
+  if (isMapLike(key)) {
+    const wrapped = new ImmutableMap(key as ReadonlyMap<unknown, unknown>);
+    return `map-h:${wrapped.hashCode()}`;
   }
 
   if (isMessageLike(key)) {

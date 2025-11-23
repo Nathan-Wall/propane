@@ -3,18 +3,18 @@
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
 export namespace MapBigintKey {
   export interface Data {
-    values: ReadonlyMap<bigint, string>;
+    values: Map<bigint, string> | Iterable<[bigint, string]>;
   }
   export type Value = MapBigintKey | MapBigintKey.Data;
 }
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
-  #values: ReadonlyMap<bigint, string>;
+  #values: ImmutableMap<bigint, string>;
   constructor(props?: MapBigintKey.Value) {
     if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG);
-    this.#values = props ? Array.isArray(props.values) ? new ImmutableMap(props.values) : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : props.values instanceof Map || Object.prototype.toString.call(props.values) === "[object Map]" ? new ImmutableMap(props.values) : props.values : new Map();
+    this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
     if (!props) MapBigintKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -28,12 +28,12 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const props = {} as Partial<MapBigintKey.Data>;
     const valuesValue = entries["values"];
     if (valuesValue === undefined) throw new Error("Missing required property \"values\".");
-    const valuesMapValue = Array.isArray(valuesValue) ? new ImmutableMap(valuesValue) : valuesValue instanceof ImmutableMap || Object.prototype.toString.call(valuesValue) === "[object ImmutableMap]" ? valuesValue : valuesValue instanceof Map || Object.prototype.toString.call(valuesValue) === "[object Map]" ? new ImmutableMap(valuesValue) : valuesValue;
+    const valuesMapValue = valuesValue === undefined || valuesValue === null ? valuesValue : valuesValue instanceof ImmutableMap || Object.prototype.toString.call(valuesValue) === "[object ImmutableMap]" ? valuesValue : new ImmutableMap(valuesValue);
     if (!((valuesMapValue instanceof ImmutableMap || Object.prototype.toString.call(valuesMapValue) === "[object ImmutableMap]" || valuesMapValue instanceof Map || Object.prototype.toString.call(valuesMapValue) === "[object Map]") && [...valuesMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
     props.values = valuesMapValue;
     return props as MapBigintKey.Data;
   }
-  get values(): ReadonlyMap<bigint, string> {
+  get values(): ImmutableMap<bigint, string> {
     return this.#values;
   }
   clearValues(): MapBigintKey {
@@ -88,7 +88,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     });
   }
-  mergeValuesEntries(entries: Iterable<[bigint, string]> | Map<bigint, string> | ReadonlyMap<bigint, string>): MapBigintKey {
+  mergeValuesEntries(entries: Iterable<[bigint, string]> | ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
@@ -100,9 +100,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     });
   }
-  setValues(value: ReadonlyMap<bigint, string>): MapBigintKey {
+  setValues(value: Map<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     return new MapBigintKey({
-      values: Array.isArray(value) ? new ImmutableMap(value) : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : value instanceof Map || Object.prototype.toString.call(value) === "[object Map]" ? new ImmutableMap(value) : value
+      values: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
     });
   }
   setValuesEntry(key: bigint, value: string): MapBigintKey {

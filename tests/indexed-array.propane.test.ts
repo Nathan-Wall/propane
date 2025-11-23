@@ -1,5 +1,6 @@
 import { assert } from './assert.ts';
 import { ArrayMessage } from './indexed-array.propane.ts';
+import { ImmutableArray } from '../../common/array/immutable.ts';
 
 export default function runIndexedArrayTests() {
 
@@ -21,6 +22,20 @@ export default function runIndexedArrayTests() {
   assert(arrayRawData.flags === undefined, 'Array raw optional flags should be undefined.');
   assert(arrayRawData.labels[0], 'Array raw labels lost.');
   assert(arrayRawData.labels[0].name === 'Label B', 'Array raw labels lost.');
+
+  // iterable inputs (not Array) should normalize
+  const nameIter = new Set(['Iter', 'Able']).values();
+  const scoreIter = (function* () { yield 10; yield 20; })();
+  const labelIter = new Map<number, { name: string }>([[1, { name: 'MapLabel' }]]).values();
+  const iterableInstance = new ArrayMessage({
+    names: nameIter,
+    scores: scoreIter,
+    labels: labelIter,
+  });
+  assert(iterableInstance.names instanceof ImmutableArray, 'iterable names should normalize to ImmutableArray');
+  assert(iterableInstance.names[0] === 'Iter' && iterableInstance.names[1] === 'Able', 'iterable names normalize and preserve order');
+  assert(iterableInstance.scores[0] === 10 && iterableInstance.scores[1] === 20, 'iterable scores normalize');
+  assert(iterableInstance.labels[0].name === 'MapLabel', 'iterable labels normalize');
 
   const pushedNames = arrayInstance.pushNames('Delta', 'Echo');
   assert(arrayInstance.names.length === 3, 'pushNames should not mutate original array.');

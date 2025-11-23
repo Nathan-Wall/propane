@@ -71,6 +71,13 @@ export default function runCompoundTests() {
     name: 'Updated Indexed',
   });
   assert(updatedIndexed.indexed.name === 'Updated Indexed', 'Compound setter should accept indexed data.');
+  const updatedIndexedInstance = compoundFromData.setIndexed(
+    new Indexed({ ...simpleIndexed, name: 'Indexed Instance' })
+  );
+  assert(
+    updatedIndexedInstance.indexed.name === 'Indexed Instance',
+    'Compound setter should accept indexed message instances.'
+  );
   const compoundFromMessages = new Compound({
     user: new User(simpleUser),
     indexed: new Indexed(simpleIndexed),
