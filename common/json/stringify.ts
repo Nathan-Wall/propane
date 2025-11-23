@@ -15,6 +15,21 @@ export function normalizeForJson(value: unknown): unknown {
     return value.toJSON();
   }
 
+  if (
+    value
+    && typeof value === 'object'
+    && typeof (value as { toJSON?: unknown }).toJSON === 'function'
+  ) {
+    const jsonValue = (value as { toJSON: () => unknown }).toJSON();
+
+    // Avoid infinite recursion when toJSON returns the receiver.
+    if (jsonValue === value) {
+      return jsonValue;
+    }
+
+    return normalizeForJson(jsonValue);
+  }
+
   if (isImmutableMapLike(value)) {
     return [...value.entries()].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
   }

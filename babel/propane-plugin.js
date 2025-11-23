@@ -3871,6 +3871,22 @@ function handleImplicitTypes(propTypePath, propName, generatedTypes, parentName,
     return;
   }
 
+  if (propTypePath.isTSTypeLiteral()) {
+    const newTypeName = `${parentName}_${capitalize(propName)}`;
+    const newTypeAlias = t.tsTypeAliasDeclaration(
+      t.identifier(newTypeName),
+      null,
+      t.cloneNode(propTypePath.node)
+    );
+
+    generatedTypes.push(newTypeAlias);
+    declaredTypeNames.add(newTypeName);
+    declaredMessageTypeNames.add(newTypeName);
+
+    propTypePath.replaceWith(t.tsTypeReference(t.identifier(newTypeName)));
+    return;
+  }
+
   if (isSetTypeNode(propTypePath.node)) {
     const elementType = getSetTypeArguments(propTypePath.node);
     if (t.isTSTypeLiteral(elementType)) {

@@ -4,4 +4,5 @@ import {User} from './user.propane';
 export type Compound = {
   '1:user': User,
   '2:indexed': Indexed,
+  '3:inline': {value: string},
 };
