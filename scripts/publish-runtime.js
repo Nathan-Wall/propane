@@ -1,8 +1,8 @@
-'use strict';
 
-import path from 'path';
-import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
+
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

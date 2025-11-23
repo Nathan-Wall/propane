@@ -4,7 +4,7 @@ import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionStringBool {
   export interface Data {
     value: string | boolean;
-    optional?: string | boolean;
+    optional?: string | boolean | undefined;
   }
   export type Value = UnionStringBool | UnionStringBool.Data;
 }
@@ -14,9 +14,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   #value: string | boolean;
   #optional: string | boolean;
   constructor(props?: UnionStringBool.Value) {
-    if (!props) {
-      if (UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
-    }
+    if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
     super(UnionStringBool.TYPE_TAG);
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;

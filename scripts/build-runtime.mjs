@@ -1,7 +1,7 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import ts from 'typescript';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,15 +86,16 @@ function buildRuntime() {
     composite: false,
     noEmit: false,
     module: ts.ModuleKind.CommonJS,
-    target: ts.ScriptTarget.ES2019,
+    target: ts.ScriptTarget.ES2023,
   };
 
   const sourceFiles = collectSourceFiles(runtimeDir);
   const program = ts.createProgram(sourceFiles, compilerOptions);
   const emitResult = program.emit();
-  const diagnostics = ts
-    .getPreEmitDiagnostics(program)
-    .concat(emitResult.diagnostics);
+  const diagnostics = [
+    ...ts.getPreEmitDiagnostics(program),
+    ...emitResult.diagnostics,
+  ];
 
   if (diagnostics.length > 0) {
     console.error(formatDiagnostics(diagnostics));

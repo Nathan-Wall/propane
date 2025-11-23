@@ -1,9 +1,10 @@
 import { assert, isMapValue } from './assert.ts';
+import { computeExpectedHashCode } from './hash-helpers.ts';
 import { MapMessage } from './map.propane.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
 
 export default function runMapPropaneTests() {
-  
+
   const labelEntries: [string | number, number][] = [
     ['one', 1],
     [2, 4],
@@ -114,7 +115,7 @@ export default function runMapPropaneTests() {
   const emptyMetadataInstance = new MapMessage({
     labels,
     extras,
-    metadata: undefined,
+
   });
   const metadataSet = emptyMetadataInstance.setMetadataEntry('owner', { value: 'Bob' });
   assert(
@@ -130,14 +131,14 @@ export default function runMapPropaneTests() {
   assert(immutable.get('alpha') === 1, 'ImmutableMap get failed.');
   assert(immutable.has('beta'), 'ImmutableMap has failed.');
   assert(
-    JSON.stringify(Array.from(immutable.entries())) === JSON.stringify([['alpha', 1], ['beta', 2]]),
+    JSON.stringify([...immutable.entries()]) === JSON.stringify([['alpha', 1], ['beta', 2]]),
     'ImmutableMap entries incorrect.'
   );
 
   const seen = [];
-  immutable.forEach((value: number, key: string) => {
+  for (const [key, value] of immutable) {
     seen.push([key, value]);
-  });
+  }
   assert(seen.length === 2, 'ImmutableMap forEach did not visit entries.');
 
   const mutableCheck = immutable as {
@@ -145,9 +146,9 @@ export default function runMapPropaneTests() {
     delete?: unknown;
     clear?: unknown;
   };
-  assert(typeof mutableCheck.set === 'undefined', 'ImmutableMap should not expose set.');
-  assert(typeof mutableCheck.delete === 'undefined', 'ImmutableMap should not expose delete.');
-  assert(typeof mutableCheck.clear === 'undefined', 'ImmutableMap should not expose clear.');
+  assert(mutableCheck.set === undefined, 'ImmutableMap should not expose set.');
+  assert(mutableCheck.delete === undefined, 'ImmutableMap should not expose delete.');
+  assert(mutableCheck.clear === undefined, 'ImmutableMap should not expose clear.');
 
   const plainMap = immutable.toMap();
   plainMap.set('gamma', 3);
@@ -173,7 +174,7 @@ export default function runMapPropaneTests() {
   const msgKeyA = new MapMessage({
     labels: new Map([['alpha', 1]]),
     extras: new Map([['note', { note: null }]]),
-    metadata: undefined,
+
   });
   const msgKeyB = new MapMessage({
     labels: new Map([['alpha', 1]]),
@@ -187,4 +188,13 @@ export default function runMapPropaneTests() {
   assert(msgMap.size === 1, 'ImmutableMap should coalesce equal Message keys.');
   assert(msgMap.has(msgKeyB), 'ImmutableMap should find equal Message keys.');
   assert(msgMap.get(msgKeyA) === 'value-b', 'ImmutableMap should use last entry for equal Message keys.');
+
+  // Hashing should treat surrogate pairs as two code units (legacy charCodeAt behavior)
+  const emojiKey = 'test😀';
+  const emojiEntryHash = computeExpectedHashCode(`k:str:${emojiKey}|v:num:1`);
+  const emojiMap = new ImmutableMap([[emojiKey, 1]]);
+  assert(
+    emojiMap.hashCode() === emojiEntryHash,
+    'ImmutableMap hashCode should hash surrogate pairs by UTF-16 code unit.'
+  );
 }

@@ -5,7 +5,7 @@ export namespace ArrayMessage {
   export interface Data {
     names: ImmutableArray<string>;
     scores: ImmutableArray<number>;
-    flags?: ImmutableArray<boolean>;
+    flags?: ImmutableArray<boolean> | undefined;
     labels: ImmutableArray<{
       name: string;
     }>;
@@ -22,9 +22,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     name: string;
   }>;
   constructor(props?: ArrayMessage.Value) {
-    if (!props) {
-      if (ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
-    }
+    if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
     super(ArrayMessage.TYPE_TAG);
     this.#names = props ? props.names instanceof ImmutableArray ? props.names : Array.isArray(props.names) ? new ImmutableArray(props.names) : props.names : Object.freeze([]);
     this.#scores = props ? props.scores instanceof ImmutableArray ? props.scores : Array.isArray(props.scores) ? new ImmutableArray(props.scores) : props.scores : Object.freeze([]);
@@ -231,10 +229,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushFlags(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.push(...values);
+    const flagsNext = [...flagsArray, ...values];
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -243,10 +240,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushLabels(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.push(...values);
+    const labelsNext = [...labelsArray, ...values];
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -255,10 +251,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushNames(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.push(...values);
+    const namesNext = [...namesArray, ...values];
     return new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
@@ -267,10 +262,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   pushScores(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.push(...values);
+    const scoresNext = [...scoresArray, ...values];
     return new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
@@ -509,10 +503,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftFlags(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
-    const flagsNext = [...flagsArray];
-    flagsNext.unshift(...values);
+    const flagsNext = [...values, ...flagsArray];
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -521,10 +514,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftLabels(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const labelsArray = this.#labels;
-    const labelsNext = [...labelsArray];
-    labelsNext.unshift(...values);
+    const labelsNext = [...values, ...labelsArray];
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -533,10 +525,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftNames(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const namesArray = this.#names;
-    const namesNext = [...namesArray];
-    namesNext.unshift(...values);
+    const namesNext = [...values, ...namesArray];
     return new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
@@ -545,10 +536,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     });
   }
   unshiftScores(...values): ArrayMessage {
-    if (!values.length) return this;
+    if (values.length === 0) return this;
     const scoresArray = this.#scores;
-    const scoresNext = [...scoresArray];
-    scoresNext.unshift(...values);
+    const scoresNext = [...values, ...scoresArray];
     return new ArrayMessage({
       names: this.#names,
       scores: scoresNext,

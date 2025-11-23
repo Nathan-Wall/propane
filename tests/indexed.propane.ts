@@ -7,9 +7,9 @@ export namespace Indexed {
     name: string;
     age: number;
     active: boolean;
-    nickname?: string;
+    nickname?: string | undefined;
     score: number | null;
-    alias?: string | null;
+    alias?: string | null | undefined;
     status: string;
   }
   export type Value = Indexed | Indexed.Data;
@@ -26,9 +26,7 @@ export class Indexed extends Message<Indexed.Data> {
   #alias: string | null;
   #status: string;
   constructor(props?: Indexed.Value) {
-    if (!props) {
-      if (Indexed.EMPTY) return Indexed.EMPTY;
-    }
+    if (!props && Indexed.EMPTY) return Indexed.EMPTY;
     super(Indexed.TYPE_TAG);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";

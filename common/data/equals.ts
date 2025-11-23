@@ -2,32 +2,34 @@ type EqualsFn = (a: unknown, b: unknown) => boolean;
 
 function supportsEquals(value: unknown): value is { equals: (other: unknown) => boolean } {
   return (
-    !!value &&
-    typeof value === 'object' &&
-    typeof (value as { equals?: unknown }).equals === 'function'
+    !!value
+    && typeof value === 'object'
+    && typeof (value as { equals?: unknown }).equals === 'function'
   );
 }
 
 function isImmutableLike(value: unknown, tag: string): boolean {
   return (
-    !!value &&
-    typeof value === 'object' &&
-    ((value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === tag ||
-      Object.prototype.toString.call(value) === `[object ${tag}]`)
+    !!value
+    && typeof value === 'object'
+    && (
+      (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === tag
+      || Object.prototype.toString.call(value) === `[object ${tag}]`
+    )
   );
 }
 
 function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
   return (
-    value instanceof Map ||
-    isImmutableLike(value, 'ImmutableMap')
+    value instanceof Map
+    || isImmutableLike(value, 'ImmutableMap')
   );
 }
 
 function isSetLike(value: unknown): value is ReadonlySet<unknown> {
   return (
-    value instanceof Set ||
-    isImmutableLike(value, 'ImmutableSet')
+    value instanceof Set
+    || isImmutableLike(value, 'ImmutableSet')
   );
 }
 
@@ -66,11 +68,11 @@ export const equals: EqualsFn = (a, b): boolean => {
   }
 
   if (isArrayLike(a) && isArrayLike(b)) {
-    const arrA = Array.from(a);
-    const arrB = Array.from(b);
+    const arrA = [...a];
+    const arrB = [...b];
     if (arrA.length !== arrB.length) return false;
-    for (let i = 0; i < arrA.length; i += 1) {
-      if (!equals(arrA[i], arrB[i])) return false;
+    for (const [i, val] of arrA.entries()) {
+      if (!equals(val, arrB[i])) return false;
     }
     return true;
   }

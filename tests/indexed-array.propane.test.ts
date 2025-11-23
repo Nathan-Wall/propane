@@ -63,8 +63,8 @@ export default function runIndexedArrayTests() {
 
   const flagsShifted = flagsAdded.shiftFlags();
   assert(
-    flagsShifted.flags?.length === 1 &&
-      flagsShifted.flags[0] === false,
+    flagsShifted.flags?.length === 1
+      && flagsShifted.flags[0] === false,
     'shiftFlags should remove first entry.'
   );
 }

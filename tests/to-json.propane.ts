@@ -7,7 +7,7 @@ export namespace ToJson {
     imap: ReadonlyMap<string, number>;
     big: bigint;
     date: Date;
-    optional?: string;
+    optional?: string | undefined;
     nonFinite: number;
     nested: {
       array: (number | undefined)[];
@@ -32,13 +32,11 @@ export class ToJson extends Message<ToJson.Data> {
     imap: Map<string, Date>;
   };
   constructor(props?: ToJson.Value) {
-    if (!props) {
-      if (ToJson.EMPTY) return ToJson.EMPTY;
-    }
+    if (!props && ToJson.EMPTY) return ToJson.EMPTY;
     super(ToJson.TYPE_TAG);
     this.#map = props ? Array.isArray(props.map) ? new ImmutableMap(props.map) : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : props.map instanceof Map || Object.prototype.toString.call(props.map) === "[object Map]" ? new ImmutableMap(props.map) : props.map : new Map();
     this.#imap = props ? Array.isArray(props.imap) ? new ImmutableMap(props.imap) : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : props.imap instanceof Map || Object.prototype.toString.call(props.imap) === "[object Map]" ? new ImmutableMap(props.imap) : props.imap : new Map();
-    this.#big = props ? props.big : BigInt(0);
+    this.#big = props ? props.big : 0n;
     this.#date = props ? props.date : new Date(0);
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
@@ -106,7 +104,7 @@ export class ToJson extends Message<ToJson.Data> {
     props.nonFinite = nonFiniteValue;
     const nestedValue = entries["7"] === undefined ? entries["nested"] : entries["7"];
     if (nestedValue === undefined) throw new Error("Missing required property \"nested\".");
-    if (!(typeof nestedValue === "object" && nestedValue !== null && nestedValue.array !== undefined && (nestedValue.array instanceof ImmutableArray || Object.prototype.toString.call(nestedValue.array) === "[object ImmutableArray]" || Array.isArray(nestedValue.array)) && Array.from(nestedValue.array).every(element => typeof element === "number" || element === undefined) && nestedValue.map !== undefined && (nestedValue.map instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.map) === "[object ImmutableMap]" || nestedValue.map instanceof Map || Object.prototype.toString.call(nestedValue.map) === "[object Map]") && [...nestedValue.map.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint") && nestedValue.imap !== undefined && (nestedValue.imap instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.imap) === "[object ImmutableMap]" || nestedValue.imap instanceof Map || Object.prototype.toString.call(nestedValue.imap) === "[object Map]") && [...nestedValue.imap.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || Object.prototype.toString.call(mapValue) === "[object Date]")))) throw new Error("Invalid value for property \"nested\".");
+    if (!(typeof nestedValue === "object" && nestedValue !== null && nestedValue.array !== undefined && (nestedValue.array instanceof ImmutableArray || Object.prototype.toString.call(nestedValue.array) === "[object ImmutableArray]" || Array.isArray(nestedValue.array)) && [...nestedValue.array].every(element => typeof element === "number" || element === undefined) && nestedValue.map !== undefined && (nestedValue.map instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.map) === "[object ImmutableMap]" || nestedValue.map instanceof Map || Object.prototype.toString.call(nestedValue.map) === "[object Map]") && [...nestedValue.map.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint") && nestedValue.imap !== undefined && (nestedValue.imap instanceof ImmutableMap || Object.prototype.toString.call(nestedValue.imap) === "[object ImmutableMap]" || nestedValue.imap instanceof Map || Object.prototype.toString.call(nestedValue.imap) === "[object Map]") && [...nestedValue.imap.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || Object.prototype.toString.call(mapValue) === "[object Date]")))) throw new Error("Invalid value for property \"nested\".");
     props.nested = nestedValue;
     return props as ToJson.Data;
   }
@@ -139,7 +137,7 @@ export class ToJson extends Message<ToJson.Data> {
     const imapCurrent = this.imap;
     if (imapCurrent === undefined || imapCurrent.size === 0) return this;
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     imapMapNext.clear();
     return new ToJson({
@@ -156,7 +154,7 @@ export class ToJson extends Message<ToJson.Data> {
     const mapCurrent = this.map;
     if (mapCurrent === undefined || mapCurrent.size === 0) return this;
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.clear();
     return new ToJson({
@@ -173,7 +171,7 @@ export class ToJson extends Message<ToJson.Data> {
     const imapCurrent = this.imap;
     if (imapCurrent === undefined || !imapCurrent.has(key)) return this;
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     imapMapNext.delete(key);
     return new ToJson({
@@ -190,7 +188,7 @@ export class ToJson extends Message<ToJson.Data> {
     const mapCurrent = this.map;
     if (mapCurrent === undefined || !mapCurrent.has(key)) return this;
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.delete(key);
     return new ToJson({
@@ -215,7 +213,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   filterImapEntries(predicate: (value: number, key: string) => boolean): ToJson {
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     for (const [entryKey, entryValue] of imapMapNext) {
       if (!predicate(entryValue, entryKey)) imapMapNext.delete(entryKey);
@@ -233,7 +231,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   filterMapEntries(predicate: (value: number, key: string) => boolean): ToJson {
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     for (const [entryKey, entryValue] of mapMapNext) {
       if (!predicate(entryValue, entryKey)) mapMapNext.delete(entryKey);
@@ -251,7 +249,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   mapImapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     const imapMappedEntries = [];
     for (const [entryKey, entryValue] of imapMapNext) {
@@ -275,7 +273,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   mapMapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     const mapMappedEntries = [];
     for (const [entryKey, entryValue] of mapMapNext) {
@@ -299,7 +297,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   mergeImapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       imapMapNext.set(mergeKey, mergeValue);
@@ -317,7 +315,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   mergeMapEntries(entries: Iterable<[string, number]> | Map<string, number> | ReadonlyMap<string, number>): ToJson {
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       mapMapNext.set(mergeKey, mergeValue);
@@ -373,7 +371,7 @@ export class ToJson extends Message<ToJson.Data> {
       if (equals(existing, value)) return this;
     }
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     imapMapNext.set(key, value);
     return new ToJson({
@@ -404,7 +402,7 @@ export class ToJson extends Message<ToJson.Data> {
       if (equals(existing, value)) return this;
     }
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.set(key, value);
     return new ToJson({
@@ -456,7 +454,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   updateImapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
     const imapMapSource = this.#imap;
-    const imapMapEntries = Array.from(imapMapSource.entries());
+    const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
     const currentValue = imapMapNext.get(key);
     const updatedValue = updater(currentValue);
@@ -474,7 +472,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
     const mapMapSource = this.#map;
-    const mapMapEntries = Array.from(mapMapSource.entries());
+    const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
     const currentValue = mapMapNext.get(key);
     const updatedValue = updater(currentValue);

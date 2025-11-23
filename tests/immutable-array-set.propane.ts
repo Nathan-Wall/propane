@@ -16,9 +16,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   #arr: ImmutableArray<number>;
   #set: ImmutableSet<string>;
   constructor(props?: ImmutableArraySet.Value) {
-    if (!props) {
-      if (ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
-    }
+    if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
     super(ImmutableArraySet.TYPE_TAG);
     this.#arr = props ? props.arr : new ImmutableArray();
     this.#set = props ? props.set : new ImmutableSet();

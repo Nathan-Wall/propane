@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import ts from 'typescript';
 import propanePlugin from '../babel/propane-plugin.js';
@@ -88,17 +88,17 @@ function rewriteImports(code, outPath) {
   // Replace import from '@propanejs/runtime' with relative path to runtime/index.ts
   const runtimePath = path.relative(path.dirname(outPath), path.join(projectRoot, 'runtime', 'index.ts'));
   const normalized = runtimePath.startsWith('.') ? runtimePath : `./${runtimePath}`;
-  let result = code.replace(/@propanejs\/runtime/g, normalized.replace(/\\/g, '/'));
+  let result = code.replaceAll('@propanejs/runtime', normalized.replaceAll('\\', '/'));
 
   // Rewrite relative .propane imports to point at built JS artifacts
-  result = result.replace(/\.propane(['"])/g, '.propane.js$1');
+  result = result.replaceAll(/\.propane(['"])/g, '.propane.js$1');
 
   // Remove runtime-only type imports
-  result = result.replace(/,?\s*MessagePropDescriptor/g, '');
+  result = result.replaceAll(/,?\s*MessagePropDescriptor/g, '');
   result = result.replace(/^import\s*\{\s*Brand\s*\}\s*from[^;]+;\n?/m, '');
 
   // Append .ts to relative imports without an explicit extension (excluding the .propane.js ones we just set)
-  result = result.replace(/(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g, (match, p1, p2, p3) => {
+  result = result.replaceAll(/(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g, (match, p1, p2, p3) => {
     if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
       return match;
     }
@@ -106,7 +106,7 @@ function rewriteImports(code, outPath) {
   });
 
   // Fix path for shared common/types in build/tests output
-  result = result.replace(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.ts'");
+  result = result.replaceAll(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.ts'");
   return result;
 }
 
@@ -119,20 +119,20 @@ async function copyTests() {
     let content = fs.readFileSync(file, 'utf8');
 
     // Strip tmp prefixes introduced earlier
-    content = content.replace(/\.\/tmp\//g, './');
+    content = content.replaceAll('./tmp/', './');
     // Ensure we import compiled artifacts next to mirrored tests
-    content = content.replace(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
-    content = content.replace(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
+    content = content.replaceAll(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
+    content = content.replaceAll(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
     // Fix runtime relative path when mirrored into build/tests (./build/tests/* -> ../../runtime)
-    content = content.replace(/from ['"]\.\.\/runtime\//g, "from '../../runtime/");
+    content = content.replaceAll(/from ['"]\.\.\/runtime\//g, "from '../../runtime/");
     // Fix assert path
-    content = content.replace(/from ['"]\.\/assert\.ts['"]/g, "from './assert.ts'");
+    content = content.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.ts'");
 
     fs.writeFileSync(dest, content, 'utf8');
   }
 
   // copy loaders / runner
-  for (const helper of ['run-tests.ts', 'ts-loader.mjs', 'assert.ts']) {
+  for (const helper of ['run-tests.ts', 'ts-loader.mjs', 'assert.ts', 'hash-helpers.ts']) {
     fs.copyFileSync(path.join(testsDir, helper), path.join(outDir, helper));
   }
 }

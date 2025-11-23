@@ -1,9 +1,9 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { transformSync } from '@babel/core';
 import propanePlugin from '../babel/propane-plugin.js';
-import { spawnSync } from 'child_process';
+import { spawnSync } from 'node:child_process';
 import { assert } from './assert.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,9 +13,9 @@ const testsDir = path.join(projectRoot, 'tests');
 const builtTestsDir = path.join(projectRoot, 'build', 'tests');
 const failPattern = /(?:^|[.-])fail$/i;
 
-const COLOR_RESET = '\x1b[0m';
-const COLOR_GREEN = '\x1b[32m';
-const COLOR_RED = '\x1b[31m';
+const COLOR_RESET = '\u001b[0m';
+const COLOR_GREEN = '\u001b[32m';
+const COLOR_RED = '\u001b[31m';
 
 function formatStatus(status: 'PASS' | 'FAIL'): string {
   const color = status === 'PASS' ? COLOR_GREEN : COLOR_RED;
@@ -108,7 +108,7 @@ function findPropaneFiles(dir: string): string[] {
     }
   }
 
-  return files.sort();
+  return files.toSorted();
 }
 
 function findTestFiles(dir: string): string[] {
@@ -128,14 +128,17 @@ function findTestFiles(dir: string): string[] {
     }
 
     if (
-      entry.isFile() &&
-      (entry.name.endsWith('.test.js') || entry.name.endsWith('.test.ts'))
+      entry.isFile()
+      && (
+        entry.name.endsWith('.test.js')
+        || entry.name.endsWith('.test.ts')
+      )
     ) {
       files.push(fullPath);
     }
   }
 
-  return files.sort();
+  return files.toSorted();
 }
 
 function formatError(error: unknown): string {

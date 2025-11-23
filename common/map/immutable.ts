@@ -6,9 +6,9 @@ function isMessageLike(value: unknown): value is {
   serialize?: () => string;
 } {
   return Boolean(
-    value &&
-    typeof value === 'object' &&
-    typeof (value as { equals?: unknown }).equals === 'function'
+    value
+    && typeof value === 'object'
+    && typeof (value as { equals?: unknown }).equals === 'function'
   );
 }
 
@@ -121,6 +121,7 @@ function hashValue(value: unknown): string {
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
+    // eslint-disable-next-line unicorn/prefer-code-point
     hash = (hash * 31 + value.charCodeAt(i)) | 0;
   }
   return hash;
@@ -144,6 +145,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     const source: Iterable<readonly [K, V]> =
       entries instanceof Map || entries instanceof ImmutableMap
         ? entries.entries()
+        // eslint-disable-next-line unicorn/new-for-builtins
         : Symbol.iterator in Object(entries)
           ? (entries as Iterable<readonly [K, V]>)
           : (() => {
@@ -162,11 +164,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
         continue;
       }
       const match = bucket.findIndex(([k]) => equalKeys(k, key));
-      if (match >= 0) {
-        bucket[match] = [key, value];
-      } else {
+      if (match === -1) {
         bucket.push([key, value]);
         this.#size += 1;
+      } else {
+        bucket[match] = [key, value];
       }
     }
   }

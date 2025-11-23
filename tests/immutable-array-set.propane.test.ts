@@ -1,4 +1,5 @@
 import { assert } from './assert.ts';
+import { computeExpectedHashCode } from './hash-helpers.ts';
 import { ImmutableArray } from '../../common/array/immutable.ts';
 import { ImmutableSet } from '../../common/set/immutable.ts';
 import { ImmutableArraySet } from './immutable-array-set.propane.ts';
@@ -7,9 +8,10 @@ export default function runImmutableArraySetTests() {
   const arr = new ImmutableArray([1, 2, 3]);
   const set = new ImmutableSet(['a', 'b', 'a']);
 
-  const instance: ImmutableArraySetInstance = new ImmutableArraySet({ arr, set });
+  const instance: ImmutableArraySet = new ImmutableArraySet({ arr, set });
 
   // toJSON normalization
+  // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(instance));
   assert(JSON.stringify(json.arr) === JSON.stringify([1, 2, 3]), 'ImmutableArray should JSONify to plain array');
   assert(JSON.stringify(json.set) === JSON.stringify(['a', 'b']), 'ImmutableSet should JSONify to array of unique values');
@@ -35,4 +37,19 @@ export default function runImmutableArraySetTests() {
   const setOut = set.toSet();
   setOut.add('c');
   assert(!set.has('c'), 'toSet should not mutate original');
+
+  // Hashing should treat surrogate pairs as two code units (legacy charCodeAt behavior)
+  const emoji = 'test😀';
+  const expectedStringHash = computeExpectedHashCode(`str:${emoji}`);
+  const expectedArrayHash = (31 * 1 + expectedStringHash) | 0; // 1 is the initial array hash seed
+  assert(
+    new ImmutableArray([emoji]).hashCode() === expectedArrayHash,
+    'ImmutableArray hashCode should hash surrogate pairs by UTF-16 code unit.'
+  );
+
+  const expectedSetHash = expectedStringHash;
+  assert(
+    new ImmutableSet([emoji]).hashCode() === expectedSetHash,
+    'ImmutableSet hashCode should hash surrogate pairs by UTF-16 code unit.'
+  );
 }

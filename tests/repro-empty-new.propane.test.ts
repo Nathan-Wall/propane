@@ -1,5 +1,5 @@
-import { UnionFirstNumber, UnionFirstString, OptionalField, RequiredMessage } from './repro_empty_new.propane.ts';
-import assert from 'assert';
+import { UnionFirstNumber, UnionFirstString, OptionalField, RequiredMessage } from './repro-empty-new.propane.ts';
+import assert from 'node:assert';
 
 export default function () {
   console.log('Testing UnionFirstNumber...');

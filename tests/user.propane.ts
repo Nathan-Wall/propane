@@ -31,9 +31,7 @@ export class User extends Message<User.Data> {
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
   constructor(props?: User.Value) {
-    if (!props) {
-      if (User.EMPTY) return User.EMPTY;
-    }
+    if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";

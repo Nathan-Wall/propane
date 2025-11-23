@@ -15,7 +15,7 @@ export function isJsonValue(x: unknown): x is JsonValue {
     case 'boolean':
       return true;
     case 'object':
-      if (Array.isArray(x)) return x.every(isJsonValue);
+      if (Array.isArray(x)) return x.every((v) => isJsonValue(v));
       for (const v of Object.values(x as Record<string, unknown>)) {
         if (!isJsonValue(v)) return false;
       }

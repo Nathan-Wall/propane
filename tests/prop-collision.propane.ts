@@ -14,9 +14,7 @@ export class Foo extends Message<Foo.Data> {
   #name: string;
   #_name: string;
   constructor(props?: Foo.Value) {
-    if (!props) {
-      if (Foo.EMPTY) return Foo.EMPTY;
-    }
+    if (!props && Foo.EMPTY) return Foo.EMPTY;
     super(Foo.TYPE_TAG);
     this.#name = props ? props.name : "";
     this.#_name = props ? props._name : "";

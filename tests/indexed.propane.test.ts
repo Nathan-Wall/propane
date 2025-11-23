@@ -3,7 +3,7 @@ import { Indexed } from './indexed.propane.ts';
 
 export default function runIndexedPropaneTests() {
   if (typeof Indexed !== 'function') {
-    throw new Error('Indexed class was not exported.');
+    throw new TypeError('Indexed class was not exported.');
   }
 
   const instance: IndexedInstance = new Indexed({
@@ -73,7 +73,7 @@ export default function runIndexedPropaneTests() {
     age: 35,
     active: false,
     score: 0,
-    alias: undefined,
+
     status: 'MISSING',
   });
   const optionalSerial = optionalMissing.serialize();

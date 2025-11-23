@@ -16,9 +16,7 @@ export class Compound extends Message<Compound.Data> {
   #user: User;
   #indexed: Indexed;
   constructor(props?: Compound.Value) {
-    if (!props) {
-      if (Compound.EMPTY) return Compound.EMPTY;
-    }
+    if (!props && Compound.EMPTY) return Compound.EMPTY;
     super(Compound.TYPE_TAG);
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();

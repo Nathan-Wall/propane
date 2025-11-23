@@ -16,9 +16,7 @@ export class Hole extends Message<Hole.Data> {
   #value: number;
   #name: string;
   constructor(props?: Hole.Value) {
-    if (!props) {
-      if (Hole.EMPTY) return Hole.EMPTY;
-    }
+    if (!props && Hole.EMPTY) return Hole.EMPTY;
     super(Hole.TYPE_TAG);
     this.#id = props ? props.id : 0;
     this.#value = props ? props.value : 0;

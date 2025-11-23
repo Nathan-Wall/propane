@@ -12,9 +12,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   static EMPTY: MapBigintKey;
   #values: ReadonlyMap<bigint, string>;
   constructor(props?: MapBigintKey.Value) {
-    if (!props) {
-      if (MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
-    }
+    if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG);
     this.#values = props ? Array.isArray(props.values) ? new ImmutableMap(props.values) : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : props.values instanceof Map || Object.prototype.toString.call(props.values) === "[object Map]" ? new ImmutableMap(props.values) : props.values : new Map();
     if (!props) MapBigintKey.EMPTY = this;
@@ -42,7 +40,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const valuesCurrent = this.values;
     if (valuesCurrent === undefined || valuesCurrent.size === 0) return this;
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.clear();
     return new MapBigintKey({
@@ -53,7 +51,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const valuesCurrent = this.values;
     if (valuesCurrent === undefined || !valuesCurrent.has(key)) return this;
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.delete(key);
     return new MapBigintKey({
@@ -62,7 +60,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     for (const [entryKey, entryValue] of valuesMapNext) {
       if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
@@ -74,7 +72,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   mapValuesEntries(mapper: (value: string, key: bigint) => [bigint, string]): MapBigintKey {
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     const valuesMappedEntries = [];
     for (const [entryKey, entryValue] of valuesMapNext) {
@@ -92,7 +90,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   mergeValuesEntries(entries: Iterable<[bigint, string]> | Map<bigint, string> | ReadonlyMap<bigint, string>): MapBigintKey {
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       valuesMapNext.set(mergeKey, mergeValue);
@@ -114,7 +112,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       if (equals(existing, value)) return this;
     }
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.set(key, value);
     return new MapBigintKey({
@@ -123,7 +121,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
     const valuesMapSource = this.#values;
-    const valuesMapEntries = Array.from(valuesMapSource.entries());
+    const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     const currentValue = valuesMapNext.get(key);
     const updatedValue = updater(currentValue);

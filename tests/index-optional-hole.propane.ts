@@ -5,7 +5,7 @@ export namespace OptionalHole {
   export interface Data {
     id: number;
     created: Date;
-    note?: string;
+    note?: string | undefined;
     name: string;
   }
   export type Value = OptionalHole | OptionalHole.Data;
@@ -18,9 +18,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   #note: string;
   #name: string;
   constructor(props?: OptionalHole.Value) {
-    if (!props) {
-      if (OptionalHole.EMPTY) return OptionalHole.EMPTY;
-    }
+    if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(OptionalHole.TYPE_TAG);
     this.#id = props ? props.id : 0;
     this.#created = props ? props.created : new Date(0);

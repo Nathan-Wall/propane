@@ -5,6 +5,7 @@ import { defineConfig } from 'eslint/config';
 import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier/flat';
+import unicorn from 'eslint-plugin-unicorn';
 
 export default defineConfig(
   // 1) Global ignores (replacement for .eslintignore)
@@ -33,6 +34,30 @@ export default defineConfig(
   //    These require parserOptions.projectService: true.
   tseslint.configs.recommendedTypeChecked,
   tseslint.configs.stylisticTypeChecked,
+  unicorn.configs.recommended,
+  {
+    rules: {
+      'unicorn/catch-error-name': 'off',
+      'unicorn/escape-case': ['error', 'lowercase'],
+      'unicorn/expiring-todo-comments': 'off',
+      'unicorn/explicit-length-check': 'off',
+      'unicorn/no-anonymous-default-export': 'off',
+      'unicorn/no-array-reduce': 'off',
+      'unicorn/no-null': 'off',
+      'unicorn/no-process-exit': 'off',
+      'unicorn/no-useless-undefined': 'off',
+      'unicorn/prefer-math-trunc': 'off',
+      'unicorn/prefer-number-properties': [
+        'error',
+        {
+          checkNaN: false,
+          checkInfinity: false,
+        },
+      ],
+      'unicorn/prevent-abbreviations': 'off',
+      'unicorn/switch-case-braces': 'off',
+    },
+  },
 
   // 4) Project-wide language options + a few common rules
   {
@@ -94,10 +119,26 @@ export default defineConfig(
     extends: [tseslint.configs.disableTypeChecked],
   },
 
-  // 6) Keep Prettier in charge of formatting — must be last
+  // 6) Keep Prettier in charge of formatting — place before any project style overrides
   prettier,
 
-  // 7) Disable type-aware linting for test files (they rely on transpiled outputs)
+  // 7) Project formatting overrides
+  {
+    name: 'overrides/operator-linebreak',
+    rules: {
+      'operator-linebreak': [
+        'error',
+        'before',
+        {
+          overrides: {
+            '=': 'after',
+          },
+        },
+      ],
+    },
+  },
+
+  // 8) Disable type-aware linting for test files (they rely on transpiled outputs)
   {
     name: 'overrides/tests-no-type-check',
     files: ['tests/**/*.ts'],
@@ -112,6 +153,15 @@ export default defineConfig(
           caughtErrorsIgnorePattern: '^unused_',
         },
       ],
+    },
+  },
+
+  // 9) Suppress "Unused eslint-disable directive" for generated propane files
+  {
+    name: 'overrides/generated-propane-files',
+    files: ['**/*.propane.ts'],
+    linterOptions: {
+      reportUnusedDisableDirectives: 'off',
     },
   },
 );

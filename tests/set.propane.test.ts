@@ -21,7 +21,8 @@ export default function runSetTests() {
   assert(!data.ids, 'optional ids can be omitted');
 
   // toJSON
+  // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(msg));
-  assert(JSON.stringify(json.tags) === JSON.stringify(['a','b']), 'toJSON should output array for Set');
-  assert(JSON.stringify(json.ids) === JSON.stringify([1,2]), 'toJSON should output array for optional Set');
+  assert(JSON.stringify(json.tags) === JSON.stringify(['a', 'b']), 'toJSON should output array for Set');
+  assert(JSON.stringify(json.ids) === JSON.stringify([1, 2]), 'toJSON should output array for optional Set');
 }

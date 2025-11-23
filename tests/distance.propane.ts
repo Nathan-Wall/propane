@@ -16,9 +16,7 @@ export class Distance extends Message<Distance.Data> {
   #unit: DistanceUnit;
   #value: number;
   constructor(props?: Distance.Value) {
-    if (!props) {
-      if (Distance.EMPTY) return Distance.EMPTY;
-    }
+    if (!props && Distance.EMPTY) return Distance.EMPTY;
     super(Distance.TYPE_TAG);
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;

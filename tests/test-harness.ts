@@ -1,8 +1,8 @@
-'use strict';
 
-import fs from 'fs';
-import path from 'path';
-import vm from 'vm';
+
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
 import ts from 'typescript';
 
 export type TransformFn = (source: string, filename: string) => string;
@@ -207,12 +207,12 @@ function evaluateModule(code: string, resolvers?: ModuleResolvers): PropaneExpor
     typeof resolvers === 'function'
       ? resolvers
       : ((records: PropaneExports) =>
-          (id: string) => {
-            if (id in records) {
-              return records[id];
-            }
-            throw new Error(`Unexpected require: ${id}`);
-          })(resolvers ?? {});
+        (id: string) => {
+          if (id in records) {
+            return records[id];
+          }
+          throw new Error(`Unexpected require: ${id}`);
+        })(resolvers ?? {});
   const sandbox: Record<string, unknown> = {
     module,
     exports: module.exports,

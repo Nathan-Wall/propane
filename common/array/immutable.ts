@@ -6,9 +6,9 @@ function isMessageLike(value: unknown): value is {
   serialize?: () => string;
 } {
   return Boolean(
-    value &&
-      typeof value === 'object' &&
-      typeof (value as { equals?: unknown }).equals === 'function'
+    value
+    && typeof value === 'object'
+    && typeof (value as { equals?: unknown }).equals === 'function'
   );
 }
 
@@ -32,6 +32,7 @@ function equalValues(a: unknown, b: unknown): boolean {
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
+    // eslint-disable-next-line unicorn/prefer-code-point
     hash = (hash * 31 + value.charCodeAt(i)) | 0;
   }
   return hash;
@@ -76,8 +77,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       this.#defineIndexProps();
       return;
     }
+    // eslint-disable-next-line unicorn/new-for-builtins
     if (Symbol.iterator in Object(items)) {
-      this.#items = Array.from(items as Iterable<T>);
+      this.#items = [...(items as Iterable<T>)];
     } else {
       const arrayLike = items as ArrayLike<T>;
       this.#items = Array.from({ length: arrayLike.length }, (_, i) => arrayLike[i]);
@@ -118,15 +120,19 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   forEach(callbackfn: (value: T, index: number, array: readonly T[]) => void, thisArg?: unknown): void {
-    this.#items.forEach((v, i) => callbackfn.call(thisArg, v, i, this));
+    for (const [i, v] of this.#items.entries()) {
+      callbackfn.call(thisArg, v, i, this);
+    }
   }
 
   map<U>(fn: (value: T, index: number, array: readonly T[]) => U): ImmutableArray<U> {
+    // eslint-disable-next-line unicorn/no-array-callback-reference
     return new ImmutableArray(this.#items.map(fn));
   }
 
   filter(fn: (value: T, index: number, array: readonly T[]) => boolean): ImmutableArray<T> {
-    return new ImmutableArray(this.#items.filter((v, i) => fn(v, i, this)));
+    // eslint-disable-next-line unicorn/no-array-callback-reference
+    return new ImmutableArray(this.#items.filter(fn));
   }
 
   equals(other: readonly T[] | null | undefined): boolean {
@@ -134,7 +140,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     const otherItems = Array.isArray(other)
       ? other
       : typeof (other as Iterable<T>)[Symbol.iterator] === 'function'
-        ? Array.from(other as Iterable<T>)
+        ? [...(other as Iterable<T>)]
         : null;
     if (!otherItems) return false;
     if (this.length !== otherItems.length) return false;

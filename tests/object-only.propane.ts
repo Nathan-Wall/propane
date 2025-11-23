@@ -18,9 +18,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   #age: number;
   #active: boolean;
   constructor(props?: ObjectOnly.Value) {
-    if (!props) {
-      if (ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
-    }
+    if (!props && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
     super(ObjectOnly.TYPE_TAG);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";

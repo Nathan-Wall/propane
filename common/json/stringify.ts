@@ -52,27 +52,27 @@ export function normalizeForJson(value: unknown): unknown {
 
 function isImmutableMapLike(value: unknown): value is { entries: () => IterableIterator<unknown[]> } {
   return (
-    !!value &&
-    typeof value === 'object' &&
-    typeof (value as { entries?: unknown }).entries === 'function' &&
-    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableMap'
+    !!value
+    && typeof value === 'object'
+    && typeof (value as { entries?: unknown }).entries === 'function'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableMap'
   );
 }
 
 function isImmutableSetLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
   return (
-    !!value &&
-    typeof value === 'object' &&
-    typeof (value as { values?: unknown }).values === 'function' &&
-    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableSet'
+    !!value
+    && typeof value === 'object'
+    && typeof (value as { values?: unknown }).values === 'function'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableSet'
   );
 }
 
 function isImmutableArrayLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
   return (
-    !!value &&
-    typeof value === 'object' &&
-    typeof (value as { values?: unknown }).values === 'function' &&
-    (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableArray'
+    !!value
+    && typeof value === 'object'
+    && typeof (value as { values?: unknown }).values === 'function'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableArray'
   );
 }

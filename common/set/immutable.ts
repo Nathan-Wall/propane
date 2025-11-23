@@ -6,9 +6,9 @@ function isMessageLike(value: unknown): value is {
   serialize?: () => string;
 } {
   return Boolean(
-    value &&
-      typeof value === 'object' &&
-      typeof (value as { equals?: unknown }).equals === 'function'
+    value
+    && typeof value === 'object'
+    && typeof (value as { equals?: unknown }).equals === 'function'
   );
 }
 
@@ -32,6 +32,7 @@ function equalValues(a: unknown, b: unknown): boolean {
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
+    // eslint-disable-next-line unicorn/prefer-code-point
     hash = (hash * 31 + value.charCodeAt(i)) | 0;
   }
   return hash;
@@ -73,15 +74,16 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
 
   constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[]) {
     const source: Iterable<T> =
-      !values
-        ? []
-        : values instanceof Set || values instanceof ImmutableSet
+      values
+        ? values instanceof Set || values instanceof ImmutableSet
           ? values.values()
+          // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(values)
             ? (values as Iterable<T>)
             : (() => {
               throw new TypeError('ImmutableSet constructor expects an iterable of values.');
-            })();
+              })()
+        : [];
 
     this.#buckets = new Map();
     this.#size = 0;

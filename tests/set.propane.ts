@@ -4,7 +4,7 @@ import { Message, MessagePropDescriptor, ImmutableSet } from "@propanejs/runtime
 export namespace SetMessage {
   export interface Data {
     tags: ReadonlySet<string>;
-    ids?: ReadonlySet<number>;
+    ids?: ReadonlySet<number> | undefined;
   }
   export type Value = SetMessage | SetMessage.Data;
 }
@@ -14,9 +14,7 @@ export class SetMessage extends Message<SetMessage.Data> {
   #tags: ReadonlySet<string>;
   #ids: ReadonlySet<number> | undefined;
   constructor(props?: SetMessage.Value) {
-    if (!props) {
-      if (SetMessage.EMPTY) return SetMessage.EMPTY;
-    }
+    if (!props && SetMessage.EMPTY) return SetMessage.EMPTY;
     super(SetMessage.TYPE_TAG);
     this.#tags = props ? props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : Array.isArray(props.tags) ? new ImmutableSet(props.tags) : props.tags instanceof Set || Object.prototype.toString.call(props.tags) === "[object Set]" ? new ImmutableSet(props.tags) : props.tags : new Set();
     this.#ids = props ? props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : Array.isArray(props.ids) ? new ImmutableSet(props.ids) : props.ids instanceof Set || Object.prototype.toString.call(props.ids) === "[object Set]" ? new ImmutableSet(props.ids) : props.ids : undefined;

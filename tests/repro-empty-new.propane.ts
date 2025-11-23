@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
-// Generated from tests/repro_empty_new.propane
+// Generated from tests/repro-empty-new.propane
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace UnionFirstNumber {
   export interface Data {
@@ -12,9 +12,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static EMPTY: UnionFirstNumber;
   #val: number | string;
   constructor(props?: UnionFirstNumber.Value) {
-    if (!props) {
-      if (UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
-    }
+    if (!props && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
     super(UnionFirstNumber.TYPE_TAG);
     this.#val = props ? props.val : 0;
     if (!props) UnionFirstNumber.EMPTY = this;
@@ -54,9 +52,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static EMPTY: UnionFirstString;
   #val: string | number;
   constructor(props?: UnionFirstString.Value) {
-    if (!props) {
-      if (UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
-    }
+    if (!props && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
     super(UnionFirstString.TYPE_TAG);
     this.#val = props ? props.val : "";
     if (!props) UnionFirstString.EMPTY = this;
@@ -87,7 +83,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
 }
 export namespace OptionalField {
   export interface Data {
-    val?: string;
+    val?: string | undefined;
   }
   export type Value = OptionalField | OptionalField.Data;
 }
@@ -96,9 +92,7 @@ export class OptionalField extends Message<OptionalField.Data> {
   static EMPTY: OptionalField;
   #val: string;
   constructor(props?: OptionalField.Value) {
-    if (!props) {
-      if (OptionalField.EMPTY) return OptionalField.EMPTY;
-    }
+    if (!props && OptionalField.EMPTY) return OptionalField.EMPTY;
     super(OptionalField.TYPE_TAG);
     this.#val = props ? props.val : undefined;
     if (!props) OptionalField.EMPTY = this;
@@ -141,9 +135,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
   constructor(props?: RequiredMessage.Value) {
-    if (!props) {
-      if (RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
-    }
+    if (!props && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
     super(RequiredMessage.TYPE_TAG);
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
     if (!props) RequiredMessage.EMPTY = this;

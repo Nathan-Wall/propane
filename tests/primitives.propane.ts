@@ -22,14 +22,12 @@ export class Primitives extends Message<Primitives.Data> {
   #empty: null;
   #missing: undefined;
   constructor(props?: Primitives.Value) {
-    if (!props) {
-      if (Primitives.EMPTY) return Primitives.EMPTY;
-    }
+    if (!props && Primitives.EMPTY) return Primitives.EMPTY;
     super(Primitives.TYPE_TAG);
     this.#flag = props ? props.flag : false;
     this.#count = props ? props.count : 0;
     this.#label = props ? props.label : "";
-    this.#size = props ? props.size : BigInt(0);
+    this.#size = props ? props.size : 0n;
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
     if (!props) Primitives.EMPTY = this;

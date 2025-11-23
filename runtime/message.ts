@@ -32,7 +32,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface MessageConstructor<T extends DataObject> {
-  new (props: T): Message<T>;
+  new(props: T): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -189,9 +189,9 @@ export function parseCerealString(value: string) {
 
 function canUseBareString(value: string) {
   return (
-    SIMPLE_STRING_RE.test(value) &&
-    !RESERVED_STRINGS.has(value) &&
-    !NUMERIC_STRING_RE.test(value)
+    SIMPLE_STRING_RE.test(value)
+    && !RESERVED_STRINGS.has(value)
+    && !NUMERIC_STRING_RE.test(value)
   );
 }
 
@@ -255,10 +255,10 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
   }
 
   return (
-    value instanceof Map ||
-    value instanceof ImmutableMap ||
-    Object.prototype.toString.call(value) === MAP_OBJECT_TAG ||
-    Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
+    value instanceof Map
+    || value instanceof ImmutableMap
+    || Object.prototype.toString.call(value) === MAP_OBJECT_TAG
+    || Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
   );
 }
 
@@ -268,10 +268,10 @@ function isSetValue(value: unknown): value is ReadonlySet<unknown> {
   }
 
   return (
-    value instanceof Set ||
-    value instanceof ImmutableSet ||
-    Object.prototype.toString.call(value) === '[object Set]' ||
-    Object.prototype.toString.call(value) === '[object ImmutableSet]'
+    value instanceof Set
+    || value instanceof ImmutableSet
+    || Object.prototype.toString.call(value) === '[object Set]'
+    || Object.prototype.toString.call(value) === '[object ImmutableSet]'
   );
 }
 
@@ -337,6 +337,8 @@ function splitTopLevel(content: string): string[] {
     start = end + 1;
   };
 
+  // We care about exact code-unit positions here, not Unicode code points.
+  // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < content.length; i += 1) {
     const char = content[i];
     if (inString) {
@@ -469,7 +471,6 @@ function parseObjectLiteral(literal: string): Record<string, unknown> {
     if (numericKey != null) {
       expectedIndex = numericKey + 1;
     }
-
     return entries;
   }, {});
 }
@@ -534,7 +535,7 @@ function parseObjectKey(token: string): string {
     const parsed = parseJson(trimmed);
 
     if (typeof parsed !== 'string') {
-      throw new Error(`Invalid object key literal: ${token}`);
+      throw new TypeError(`Invalid object key literal: ${token}`);
     }
 
     return parsed;
@@ -561,6 +562,7 @@ function parseNumericIndex(key: string): number | null {
 function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
+    // eslint-disable-next-line unicorn/prefer-code-point
     hash = (hash * 31 + value.charCodeAt(i)) | 0;
   }
   return hash;
@@ -572,13 +574,13 @@ function parseStringOrDate(token: string): string | Date {
     const parsed = parseJson(jsonPortion);
 
     if (typeof parsed !== 'string') {
-      throw new Error(`Invalid date literal token: ${token}`);
+      throw new TypeError(`Invalid date literal token: ${token}`);
     }
 
     const date = new Date(parsed);
 
     if (Number.isNaN(date.getTime())) {
-      throw new Error(`Invalid date value: ${parsed}`);
+      throw new TypeError(`Invalid date value: ${parsed}`);
     }
 
     return date;
@@ -587,7 +589,7 @@ function parseStringOrDate(token: string): string | Date {
   const parsedString = parseJson(token);
 
   if (typeof parsedString !== 'string') {
-    throw new Error(`Invalid string literal token: ${token}`);
+    throw new TypeError(`Invalid string literal token: ${token}`);
   }
 
   return parsedString;
