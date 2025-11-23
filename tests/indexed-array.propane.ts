@@ -1,16 +1,52 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
-  import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
-  export namespace ArrayMessage {
-    export interface Data {
+import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
+namespace ArrayMessage_Labels_Item {
+  export interface Data {
+    name: string;
+  }
+  export type Value = ArrayMessage_Labels_Item | ArrayMessage_Labels_Item.Data;
+}
+class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
+  static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
+  static EMPTY: ArrayMessage_Labels_Item;
+  #name: string;
+  constructor(props?: ArrayMessage_Labels_Item.Value) {
+    if (!props && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
+    super(ArrayMessage_Labels_Item.TYPE_TAG);
+    this.#name = props ? props.name : "";
+    if (!props) ArrayMessage_Labels_Item.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
+    return [{
+      name: "name",
+      fieldNumber: null,
+      getValue: () => this.#name
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): ArrayMessage_Labels_Item.Data {
+    const props = {} as Partial<ArrayMessage_Labels_Item.Data>;
+    const nameValue = entries["name"];
+    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
+    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
+    props.name = nameValue;
+    return props as ArrayMessage_Labels_Item.Data;
+  }
+  get name(): string {
+    return this.#name;
+  }
+  setName(value: string): ArrayMessage_Labels_Item {
+    return new ArrayMessage_Labels_Item({
+      name: value
+    });
+  }
+}
+export namespace ArrayMessage {
+  export interface Data {
     names: string[] | Iterable<string>;
     scores: number[] | Iterable<number>;
     flags?: boolean[] | Iterable<boolean> | undefined;
-    labels: {
-      name: string;
-    }[] | Iterable<{
-      name: string;
-    }>;
+    labels: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>;
   }
   export type Value = ArrayMessage | ArrayMessage.Data;
 }
@@ -20,16 +56,14 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   #names: ImmutableArray<string>;
   #scores: ImmutableArray<number>;
   #flags: ImmutableArray<boolean> | undefined;
-  #labels: ImmutableArray<{
-    name: string;
-  }>;
+  #labels: ImmutableArray<ArrayMessage_Labels_Item>;
   constructor(props?: ArrayMessage.Value) {
     if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
     super(ArrayMessage.TYPE_TAG);
     this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : Object.freeze([]);
     this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
-    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableArray ? props.labels : new ImmutableArray(props.labels) : Object.freeze([]);
+    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
     if (!props) ArrayMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
@@ -71,7 +105,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     const labelsValue = entries["4"] === undefined ? entries["labels"] : entries["4"];
     if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
     const labelsArrayValue = labelsValue === undefined || labelsValue === null ? labelsValue : labelsValue instanceof ImmutableArray ? labelsValue : new ImmutableArray(labelsValue);
-    if (!((labelsArrayValue instanceof ImmutableArray || Object.prototype.toString.call(labelsArrayValue) === "[object ImmutableArray]" || Array.isArray(labelsArrayValue)) && [...labelsArrayValue].every(element => typeof element === "object" && element !== null && element.name !== undefined && typeof element.name === "string"))) throw new Error("Invalid value for property \"labels\".");
+    if (!(labelsArrayValue instanceof ImmutableArray || Object.prototype.toString.call(labelsArrayValue) === "[object ImmutableArray]" || Array.isArray(labelsArrayValue))) throw new Error("Invalid value for property \"labels\".");
     props.labels = labelsArrayValue;
     return props as ArrayMessage.Data;
   }
@@ -84,9 +118,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   get flags(): ImmutableArray<boolean> | undefined {
     return this.#flags;
   }
-  get labels(): ImmutableArray<{
-    name: string;
-  }> {
+  get labels(): ImmutableArray<ArrayMessage_Labels_Item> {
     return this.#labels;
   }
   copyWithinFlags(target: number, start: number, end?: number): ArrayMessage {
@@ -151,9 +183,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  fillLabels(value: {
-    name: string;
-  }, start?: number, end?: number): ArrayMessage {
+  fillLabels(value: ArrayMessage_Labels_Item, start?: number, end?: number): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.fill(value, start, end);
@@ -330,11 +360,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  setLabels(value: {
-    name: string;
-  }[] | Iterable<{
-    name: string;
-  }>): ArrayMessage {
+  setLabels(value: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>): ArrayMessage {
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -417,11 +443,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       labels: this.#labels
     });
   }
-  sortLabels(compareFn?: (a: {
-    name: string;
-  }, b: {
-    name: string;
-  }) => number): ArrayMessage {
+  sortLabels(compareFn?: (a: ArrayMessage_Labels_Item, b: ArrayMessage_Labels_Item) => number): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.sort(compareFn);

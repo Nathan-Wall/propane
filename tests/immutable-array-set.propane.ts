@@ -5,7 +5,7 @@ import { ImmutableSet } from '../common/set/immutable';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export namespace ImmutableArraySet {
   export interface Data {
-    arr: Array<number> | Iterable<number>;
+    arr: number[] | Iterable<number>;
     set: Set<string> | Iterable<string>;
   }
   export type Value = ImmutableArraySet | ImmutableArraySet.Data;
@@ -195,7 +195,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       set: this.#set
     });
   }
-  setArr(value: Array<number> | Iterable<number>): ImmutableArraySet {
+  setArr(value: number[] | Iterable<number>): ImmutableArraySet {
     return new ImmutableArraySet({
       arr: value,
       set: this.#set

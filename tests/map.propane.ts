@@ -1,19 +1,91 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
+namespace MapMessage_Metadata_Value {
+  export interface Data {
+    value: string;
+  }
+  export type Value = MapMessage_Metadata_Value | MapMessage_Metadata_Value.Data;
+}
+class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
+  static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
+  static EMPTY: MapMessage_Metadata_Value;
+  #value: string;
+  constructor(props?: MapMessage_Metadata_Value.Value) {
+    if (!props && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
+    super(MapMessage_Metadata_Value.TYPE_TAG);
+    this.#value = props ? props.value : "";
+    if (!props) MapMessage_Metadata_Value.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Metadata_Value.Data>[] {
+    return [{
+      name: "value",
+      fieldNumber: null,
+      getValue: () => this.#value
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): MapMessage_Metadata_Value.Data {
+    const props = {} as Partial<MapMessage_Metadata_Value.Data>;
+    const valueValue = entries["value"];
+    if (valueValue === undefined) throw new Error("Missing required property \"value\".");
+    if (!(typeof valueValue === "string")) throw new Error("Invalid value for property \"value\".");
+    props.value = valueValue;
+    return props as MapMessage_Metadata_Value.Data;
+  }
+  get value(): string {
+    return this.#value;
+  }
+  setValue(value: string): MapMessage_Metadata_Value {
+    return new MapMessage_Metadata_Value({
+      value: value
+    });
+  }
+}
+namespace MapMessage_Extras_Value {
+  export interface Data {
+    note: string | null;
+  }
+  export type Value = MapMessage_Extras_Value | MapMessage_Extras_Value.Data;
+}
+class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Data> {
+  static TYPE_TAG = Symbol("MapMessage_Extras_Value");
+  static EMPTY: MapMessage_Extras_Value;
+  #note: string | null;
+  constructor(props?: MapMessage_Extras_Value.Value) {
+    if (!props && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
+    super(MapMessage_Extras_Value.TYPE_TAG);
+    this.#note = props ? props.note : "";
+    if (!props) MapMessage_Extras_Value.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Extras_Value.Data>[] {
+    return [{
+      name: "note",
+      fieldNumber: null,
+      getValue: () => this.#note
+    }];
+  }
+  protected $fromEntries(entries: Record<string, unknown>): MapMessage_Extras_Value.Data {
+    const props = {} as Partial<MapMessage_Extras_Value.Data>;
+    const noteValue = entries["note"];
+    if (noteValue === undefined) throw new Error("Missing required property \"note\".");
+    if (!(typeof noteValue === "string" || noteValue === null)) throw new Error("Invalid value for property \"note\".");
+    props.note = noteValue;
+    return props as MapMessage_Extras_Value.Data;
+  }
+  get note(): string | null {
+    return this.#note;
+  }
+  setNote(value: string | null): MapMessage_Extras_Value {
+    return new MapMessage_Extras_Value({
+      note: value
+    });
+  }
+}
 export namespace MapMessage {
   export interface Data {
     labels: Map<string | number, number> | Iterable<[string | number, number]>;
-    metadata?: Map<string, {
-      value: string;
-    }> | Iterable<[string, {
-      value: string;
-    }]> | undefined;
-    extras: Map<string, {
-      note: string | null;
-    }> | Iterable<[string, {
-      note: string | null;
-    }]>;
+    metadata?: Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]> | undefined;
+    extras: Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>;
   }
   export type Value = MapMessage | MapMessage.Data;
 }
@@ -21,18 +93,14 @@ export class MapMessage extends Message<MapMessage.Data> {
   static TYPE_TAG = Symbol("MapMessage");
   static EMPTY: MapMessage;
   #labels: ImmutableMap<string | number, number>;
-  #metadata: ImmutableMap<string, {
-    value: string;
-  }> | undefined;
-  #extras: ImmutableMap<string, {
-    note: string | null;
-  }>;
+  #metadata: ImmutableMap<string, MapMessage_Metadata_Value> | undefined;
+  #extras: ImmutableMap<string, MapMessage_Extras_Value>;
   constructor(props?: MapMessage.Value) {
     if (!props && MapMessage.EMPTY) return MapMessage.EMPTY;
     super(MapMessage.TYPE_TAG);
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new Map();
-    this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : props.metadata instanceof ImmutableMap || Object.prototype.toString.call(props.metadata) === "[object ImmutableMap]" ? props.metadata : new ImmutableMap(props.metadata) : undefined;
-    this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : props.extras instanceof ImmutableMap || Object.prototype.toString.call(props.extras) === "[object ImmutableMap]" ? props.extras : new ImmutableMap(props.extras) : new Map();
+    this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])) : undefined;
+    this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new Map();
     if (!props) MapMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage.Data>[] {
@@ -60,26 +128,22 @@ export class MapMessage extends Message<MapMessage.Data> {
     const metadataValue = entries["2"] === undefined ? entries["metadata"] : entries["2"];
     const metadataNormalized = metadataValue === null ? undefined : metadataValue;
     const metadataMapValue = metadataNormalized === undefined || metadataNormalized === null ? metadataNormalized : metadataNormalized instanceof ImmutableMap || Object.prototype.toString.call(metadataNormalized) === "[object ImmutableMap]" ? metadataNormalized : new ImmutableMap(metadataNormalized);
-    if (metadataMapValue !== undefined && !((metadataMapValue instanceof ImmutableMap || Object.prototype.toString.call(metadataMapValue) === "[object ImmutableMap]" || metadataMapValue instanceof Map || Object.prototype.toString.call(metadataMapValue) === "[object Map]") && [...metadataMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "object" && mapValue !== null && mapValue.value !== undefined && typeof mapValue.value === "string"))) throw new Error("Invalid value for property \"metadata\".");
+    if (metadataMapValue !== undefined && !((metadataMapValue instanceof ImmutableMap || Object.prototype.toString.call(metadataMapValue) === "[object ImmutableMap]" || metadataMapValue instanceof Map || Object.prototype.toString.call(metadataMapValue) === "[object Map]") && [...metadataMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataMapValue;
     const extrasValue = entries["3"] === undefined ? entries["extras"] : entries["3"];
     if (extrasValue === undefined) throw new Error("Missing required property \"extras\".");
     const extrasMapValue = extrasValue === undefined || extrasValue === null ? extrasValue : extrasValue instanceof ImmutableMap || Object.prototype.toString.call(extrasValue) === "[object ImmutableMap]" ? extrasValue : new ImmutableMap(extrasValue);
-    if (!((extrasMapValue instanceof ImmutableMap || Object.prototype.toString.call(extrasMapValue) === "[object ImmutableMap]" || extrasMapValue instanceof Map || Object.prototype.toString.call(extrasMapValue) === "[object Map]") && [...extrasMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "object" && mapValue !== null && mapValue.note !== undefined && (typeof mapValue.note === "string" || mapValue.note === null)))) throw new Error("Invalid value for property \"extras\".");
+    if (!((extrasMapValue instanceof ImmutableMap || Object.prototype.toString.call(extrasMapValue) === "[object ImmutableMap]" || extrasMapValue instanceof Map || Object.prototype.toString.call(extrasMapValue) === "[object Map]") && [...extrasMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
     props.extras = extrasMapValue;
     return props as MapMessage.Data;
   }
   get labels(): ImmutableMap<string | number, number> {
     return this.#labels;
   }
-  get metadata(): ImmutableMap<string, {
-    value: string;
-  }> | undefined {
+  get metadata(): ImmutableMap<string, MapMessage_Metadata_Value> | undefined {
     return this.#metadata;
   }
-  get extras(): ImmutableMap<string, {
-    note: string | null;
-  }> {
+  get extras(): ImmutableMap<string, MapMessage_Extras_Value> {
     return this.#extras;
   }
   clearExtras(): MapMessage {
@@ -166,9 +230,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  filterExtrasEntries(predicate: (value: {
-    note: string | null;
-  }, key: string) => boolean): MapMessage {
+  filterExtrasEntries(predicate: (value: MapMessage_Extras_Value, key: string) => boolean): MapMessage {
     const extrasMapSource = this.#extras;
     const extrasMapEntries = [...extrasMapSource.entries()];
     const extrasMapNext = new Map(extrasMapEntries);
@@ -196,9 +258,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  filterMetadataEntries(predicate: (value: {
-    value: string;
-  }, key: string) => boolean): MapMessage {
+  filterMetadataEntries(predicate: (value: MapMessage_Metadata_Value, key: string) => boolean): MapMessage {
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : [...metadataMapSource.entries()];
     const metadataMapNext = new Map(metadataMapEntries);
@@ -212,11 +272,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  mapExtrasEntries(mapper: (value: {
-    note: string | null;
-  }, key: string) => [string, {
-    note: string | null;
-  }]): MapMessage {
+  mapExtrasEntries(mapper: (value: MapMessage_Extras_Value, key: string) => [string, MapMessage_Extras_Value]): MapMessage {
     const extrasMapSource = this.#extras;
     const extrasMapEntries = [...extrasMapSource.entries()];
     const extrasMapNext = new Map(extrasMapEntries);
@@ -256,11 +312,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  mapMetadataEntries(mapper: (value: {
-    value: string;
-  }, key: string) => [string, {
-    value: string;
-  }]): MapMessage {
+  mapMetadataEntries(mapper: (value: MapMessage_Metadata_Value, key: string) => [string, MapMessage_Metadata_Value]): MapMessage {
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : [...metadataMapSource.entries()];
     const metadataMapNext = new Map(metadataMapEntries);
@@ -280,15 +332,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  mergeExtrasEntries(entries: Iterable<[string, {
-    note: string | null;
-  }]> | ImmutableMap<string, {
-    note: string | null;
-  }> | ReadonlyMap<string, {
-    note: string | null;
-  }> | Iterable<[string, {
-    note: string | null;
-  }]>): MapMessage {
+  mergeExtrasEntries(entries: Iterable<[string, MapMessage_Extras_Value]> | ImmutableMap<string, MapMessage_Extras_Value> | ReadonlyMap<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>): MapMessage {
     const extrasMapSource = this.#extras;
     const extrasMapEntries = [...extrasMapSource.entries()];
     const extrasMapNext = new Map(extrasMapEntries);
@@ -316,15 +360,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  mergeMetadataEntries(entries: Iterable<[string, {
-    value: string;
-  }]> | ImmutableMap<string, {
-    value: string;
-  }> | ReadonlyMap<string, {
-    value: string;
-  }> | Iterable<[string, {
-    value: string;
-  }]>): MapMessage {
+  mergeMetadataEntries(entries: Iterable<[string, MapMessage_Metadata_Value]> | ImmutableMap<string, MapMessage_Metadata_Value> | ReadonlyMap<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>): MapMessage {
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : [...metadataMapSource.entries()];
     const metadataMapNext = new Map(metadataMapEntries);
@@ -338,20 +374,14 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  setExtras(value: Map<string, {
-    note: string | null;
-  }> | Iterable<[string, {
-    note: string | null;
-  }]>): MapMessage {
+  setExtras(value: Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>): MapMessage {
     return new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,
       extras: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
     });
   }
-  setExtrasEntry(key: string, value: {
-    note: string | null;
-  }): MapMessage {
+  setExtrasEntry(key: string, value: MapMessage_Extras_Value): MapMessage {
     const extrasCurrent = this.extras;
     if (extrasCurrent && extrasCurrent.has(key)) {
       const existing = extrasCurrent.get(key);
@@ -390,20 +420,14 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  setMetadata(value: Map<string, {
-    value: string;
-  }> | Iterable<[string, {
-    value: string;
-  }]>): MapMessage {
+  setMetadata(value: Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>): MapMessage {
     return new MapMessage({
       labels: this.#labels,
       metadata: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       extras: this.#extras
     });
   }
-  setMetadataEntry(key: string, value: {
-    value: string;
-  }): MapMessage {
+  setMetadataEntry(key: string, value: MapMessage_Metadata_Value): MapMessage {
     const metadataCurrent = this.metadata;
     if (metadataCurrent && metadataCurrent.has(key)) {
       const existing = metadataCurrent.get(key);
@@ -419,11 +443,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  updateExtrasEntry(key: string, updater: (currentValue: {
-    note: string | null;
-  } | undefined) => {
-    note: string | null;
-  }): MapMessage {
+  updateExtrasEntry(key: string, updater: (currentValue: MapMessage_Extras_Value | undefined) => MapMessage_Extras_Value): MapMessage {
     const extrasMapSource = this.#extras;
     const extrasMapEntries = [...extrasMapSource.entries()];
     const extrasMapNext = new Map(extrasMapEntries);
@@ -451,11 +471,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       extras: this.#extras
     });
   }
-  updateMetadataEntry(key: string, updater: (currentValue: {
-    value: string;
-  } | undefined) => {
-    value: string;
-  }): MapMessage {
+  updateMetadataEntry(key: string, updater: (currentValue: MapMessage_Metadata_Value | undefined) => MapMessage_Metadata_Value): MapMessage {
     const metadataMapSource = this.#metadata;
     const metadataMapEntries = metadataMapSource === undefined ? [] : [...metadataMapSource.entries()];
     const metadataMapNext = new Map(metadataMapEntries);

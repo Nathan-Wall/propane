@@ -107,7 +107,8 @@ export default function propanePlugin() {
       return null;
     }
 
-    const properties = extractProperties(typeLiteralPath.get('members'));
+    const generatedTypes = [];
+    const properties = extractProperties(typeLiteralPath.get('members'), generatedTypes, typeAlias.id.name);
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;
       state.usesEquals = true;
@@ -121,19 +122,19 @@ export default function propanePlugin() {
     declaredMessageTypeNames.add(typeAlias.id.name);
 
     const typeNamespace = buildTypeNamespace(typeAlias, properties, exported);
-    const classDecl = buildClassFromProperties(typeAlias.id.name, properties);
+    const classDecl = buildClassFromProperties(typeAlias.id.name, properties, declaredMessageTypeNames);
 
     state.usesPropaneBase = true;
 
     if (exported) {
       const classExport = t.exportNamedDeclaration(classDecl, []);
-      return [typeNamespace, classExport];
+      return [...generatedTypes, typeNamespace, classExport];
     }
 
-    return [typeNamespace, classDecl];
+    return [...generatedTypes, typeNamespace, classDecl];
   }
 
-  function extractProperties(memberPaths) {
+  function extractProperties(memberPaths, generatedTypes, parentName) {
     const props = [];
     const usedFieldNumbers = new Set();
     const usedNames = new Set();
@@ -190,6 +191,11 @@ export default function propanePlugin() {
         );
       }
 
+      // Handle implicit message types in Array/Set/Map
+      if (generatedTypes && parentName) {
+        handleImplicitTypes(propTypePath, name, generatedTypes, parentName, declaredTypeNames, declaredMessageTypeNames);
+      }
+
       assertSupportedType(propTypePath, declaredTypeNames);
 
       const mapType = isMapTypeNode(propTypePath.node);
@@ -236,10 +242,7 @@ export default function propanePlugin() {
         );
         displayType = t.tsUnionType([setRef, iterableRef]);
       } else if (arrayType && arrayElementType) {
-        const arrayRef = t.tsTypeReference(
-          t.identifier('Array'),
-          t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
-        );
+        const arrayRef = t.tsArrayType(t.cloneNode(arrayElementType));
         const iterableRef = t.tsTypeReference(
           t.identifier('Iterable'),
           t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
@@ -802,7 +805,7 @@ function buildTypeNamespace(typeAlias, properties, exported) {
   return namespaceDecl;
 }
 
-function buildClassFromProperties(typeName, properties) {
+function buildClassFromProperties(typeName, properties, declaredMessageTypeNames) {
   const backingFields = [];
   const getters = [];
   const propDescriptors = properties.map((prop) => ({
@@ -883,11 +886,26 @@ function buildClassFromProperties(typeName, properties) {
     let valueExpr = t.cloneNode(propsAccess);
 
     if (prop.isArray) {
-      valueExpr = buildImmutableArrayExpression(propsAccess);
+      const elementTypeName = getTypeName(prop.arrayElementType);
+      if (elementTypeName && declaredMessageTypeNames.has(elementTypeName)) {
+        valueExpr = buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName);
+      } else {
+        valueExpr = buildImmutableArrayExpression(propsAccess);
+      }
     } else if (prop.isMap) {
-      valueExpr = buildImmutableMapExpression(propsAccess);
+      const valueTypeName = getTypeName(prop.mapValueType);
+      if (valueTypeName && declaredMessageTypeNames.has(valueTypeName)) {
+        valueExpr = buildImmutableMapOfMessagesExpression(propsAccess, valueTypeName);
+      } else {
+        valueExpr = buildImmutableMapExpression(propsAccess);
+      }
     } else if (prop.isSet) {
-      valueExpr = buildImmutableSetExpression(propsAccess);
+      const elementTypeName = getTypeName(prop.setElementType);
+      if (elementTypeName && declaredMessageTypeNames.has(elementTypeName)) {
+        valueExpr = buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName);
+      } else {
+        valueExpr = buildImmutableSetExpression(propsAccess);
+      }
     }
 
     if (prop.isMessageType && prop.messageTypeName) {
@@ -1448,7 +1466,7 @@ function buildInputAcceptingMutable(node) {
   ) {
     const name = node.typeName.name;
 
-    // Array-style reference (Array<T>, ReadonlyArray<T>, ImmutableArray<T>)
+    // Array-style reference (T[], ReadonlyArray<T>, ImmutableArray<T>)
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
@@ -1816,7 +1834,7 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           append: [t.spreadElement(t.identifier('values'))],
         }
       )
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1832,7 +1850,7 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1848,7 +1866,7 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1860,9 +1878,9 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           prepend: [t.spreadElement(t.identifier('values'))],
         }
       )
-,
+      ,
       buildSpliceMethod(typeName, propDescriptors, prop)
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1878,9 +1896,9 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildSortMethod(typeName, propDescriptors, prop)
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1900,7 +1918,7 @@ function buildArrayMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -2194,7 +2212,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
         ],
         buildSetEntryOptions(prop)
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2211,7 +2229,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
         ],
         buildDeleteEntryOptions(prop)
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2228,7 +2246,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
         ],
         buildClearMapOptions(prop)
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2256,7 +2274,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2291,7 +2309,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2355,7 +2373,7 @@ function buildMapMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildMapMutationMethod(
         typeName,
         propDescriptors,
@@ -2419,7 +2437,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2446,7 +2464,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2462,7 +2480,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2489,7 +2507,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2505,7 +2523,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ),
         ]
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2559,7 +2577,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -2617,7 +2635,7 @@ function buildSetMutatorMethods(typeName, propDescriptors) {
           ];
         }
       )
-,
+      ,
       buildSetMutationMethod(
         typeName,
         propDescriptors,
@@ -3735,6 +3753,167 @@ function isPrimitiveLikeType(typePath) {
   }
 
   return false;
+}
+
+function getTypeName(typeNode) {
+  if (t.isTSTypeReference(typeNode) && t.isIdentifier(typeNode.typeName)) {
+    return typeNode.typeName.name;
+  }
+  return null;
+}
+
+function buildImmutableArrayOfMessagesExpression(valueExpr, messageTypeName) {
+  const nilCheck = t.logicalExpression('||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
+  );
+
+  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const mapCall = t.callExpression(
+    t.memberExpression(arrayFrom, t.identifier('map')),
+    [
+      t.arrowFunctionExpression(
+        [t.identifier('v')],
+        t.conditionalExpression(
+          t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+          t.identifier('v'),
+          t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+        )
+      )
+    ]
+  );
+
+  const newImmutable = t.newExpression(t.identifier('ImmutableArray'), [mapCall]);
+
+  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+}
+
+function buildImmutableSetOfMessagesExpression(valueExpr, messageTypeName) {
+  const nilCheck = t.logicalExpression('||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
+  );
+
+  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const mapCall = t.callExpression(
+    t.memberExpression(arrayFrom, t.identifier('map')),
+    [
+      t.arrowFunctionExpression(
+        [t.identifier('v')],
+        t.conditionalExpression(
+          t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+          t.identifier('v'),
+          t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+        )
+      )
+    ]
+  );
+
+  const newImmutable = t.newExpression(t.identifier('ImmutableSet'), [mapCall]);
+
+  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+}
+
+function buildImmutableMapOfMessagesExpression(valueExpr, messageTypeName) {
+  const nilCheck = t.logicalExpression('||',
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
+  );
+
+  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const mapCall = t.callExpression(
+    t.memberExpression(arrayFrom, t.identifier('map')),
+    [
+      t.arrowFunctionExpression(
+        [t.arrayPattern([t.identifier('k'), t.identifier('v')])],
+        t.arrayExpression([
+          t.identifier('k'),
+          t.conditionalExpression(
+            t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+            t.identifier('v'),
+            t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+          )
+        ])
+      )
+    ]
+  );
+
+  const newImmutable = t.newExpression(t.identifier('ImmutableMap'), [mapCall]);
+
+  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+}
+
+function handleImplicitTypes(propTypePath, propName, generatedTypes, parentName, declaredTypeNames, declaredMessageTypeNames) {
+  if (isArrayTypeNode(propTypePath.node)) {
+    const elementType = getArrayElementType(propTypePath.node);
+    if (t.isTSTypeLiteral(elementType)) {
+      const newItemName = `${parentName}_${capitalize(propName)}_Item`;
+      const newTypeAlias = t.tsTypeAliasDeclaration(
+        t.identifier(newItemName),
+        null,
+        t.cloneNode(elementType)
+      );
+      generatedTypes.push(newTypeAlias);
+      declaredTypeNames.add(newItemName);
+      declaredMessageTypeNames.add(newItemName);
+
+      const newRef = t.tsTypeReference(t.identifier(newItemName));
+
+      if (t.isTSArrayType(propTypePath.node)) {
+        propTypePath.replaceWith(t.tsArrayType(newRef));
+      } else {
+        propTypePath.replaceWith(t.tsTypeReference(
+          propTypePath.node.typeName,
+          t.tsTypeParameterInstantiation([newRef])
+        ));
+      }
+    }
+    return;
+  }
+
+  if (isSetTypeNode(propTypePath.node)) {
+    const elementType = getSetTypeArguments(propTypePath.node);
+    if (t.isTSTypeLiteral(elementType)) {
+      const newItemName = `${parentName}_${capitalize(propName)}_Item`;
+      const newTypeAlias = t.tsTypeAliasDeclaration(
+        t.identifier(newItemName),
+        null,
+        t.cloneNode(elementType)
+      );
+      generatedTypes.push(newTypeAlias);
+      declaredTypeNames.add(newItemName);
+      declaredMessageTypeNames.add(newItemName);
+
+      const newRef = t.tsTypeReference(t.identifier(newItemName));
+      propTypePath.replaceWith(t.tsTypeReference(
+        propTypePath.node.typeName,
+        t.tsTypeParameterInstantiation([newRef])
+      ));
+    }
+    return;
+  }
+
+  if (isMapTypeNode(propTypePath.node)) {
+    const { keyType, valueType } = getMapTypeArguments(propTypePath.node);
+    if (t.isTSTypeLiteral(valueType)) {
+      const newItemName = `${parentName}_${capitalize(propName)}_Value`;
+      const newTypeAlias = t.tsTypeAliasDeclaration(
+        t.identifier(newItemName),
+        null,
+        t.cloneNode(valueType)
+      );
+      generatedTypes.push(newTypeAlias);
+      declaredTypeNames.add(newItemName);
+      declaredMessageTypeNames.add(newItemName);
+
+      const newRef = t.tsTypeReference(t.identifier(newItemName));
+      propTypePath.replaceWith(t.tsTypeReference(
+        propTypePath.node.typeName,
+        t.tsTypeParameterInstantiation([t.cloneNode(keyType), newRef])
+      ));
+    }
+    return;
+  }
 }
 
 function assertSupportedTopLevelType(typePath) {
