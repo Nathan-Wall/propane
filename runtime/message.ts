@@ -442,7 +442,6 @@ function splitTopLevel(content: string): string[] {
   };
 
   // We care about exact code-unit positions here, not Unicode code points.
-  // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < content.length; i += 1) {
     const char = content[i];
     if (inString) {

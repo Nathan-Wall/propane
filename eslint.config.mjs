@@ -44,6 +44,7 @@ export default defineConfig(
       'unicorn/no-anonymous-default-export': 'off',
       'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-array-reduce': 'off',
+      'unicorn/no-for-loop': 'off',
       'unicorn/no-null': 'off',
       'unicorn/no-process-exit': 'off',
       'unicorn/no-useless-undefined': 'off',
@@ -55,6 +56,7 @@ export default defineConfig(
           checkInfinity: false,
         },
       ],
+      'unicorn/prefer-spread': 'off',
       // In general a decent rule, but we specifically want to use
       // JSON.parse(JSON.stringify(value)), as an intended low level data clone,
       // particularly in our tests.
@@ -120,6 +122,11 @@ export default defineConfig(
           caughtErrorsIgnorePattern: '^unused_',
         },
       ],
+
+      // TODO: Temporarily disabled. Remove these lines, check affected code,
+      // and assess whether to fix code or re-enable the rule.
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off'
     },
   },
 

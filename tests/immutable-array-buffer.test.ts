@@ -23,5 +23,5 @@ export default function runImmutableArrayBufferTests() {
 
   // JSON normalization
   const json = JSON.stringify({ data: imm });
-  assert(json === `{\"data\":\"${imm.toString()}\"}`, 'toJSON should emit base64 string with prefix.');
+  assert(json === `{"data":"${imm.toString()}"}`, 'toJSON should emit base64 string with prefix.');
 }

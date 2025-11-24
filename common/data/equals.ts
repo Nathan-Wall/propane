@@ -57,7 +57,7 @@ function arrayBufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
   const viewA = new Uint8Array(a);
   const viewB = new Uint8Array(b);
 
-  // eslint-disable-next-line unicorn/no-for-loop
+
   for (let i = 0; i < viewA.length; i += 1) {
     if (viewA[i] !== viewB[i]) {
       return false;

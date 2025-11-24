@@ -3,7 +3,6 @@ import type { NodePath } from '@babel/traverse';
 import {
   isArrayBufferReference,
   isImmutableArrayBufferReference,
-  isArrayTypeNode,
   isBrandReference,
   isDateReference,
   isImmutableDateReference,
@@ -18,19 +17,15 @@ import {
 
 export function assertSupportedMapType(typePath: NodePath<t.TSTypeReference>, declaredTypeNames: Set<string>): void {
   const typeParametersPath = typePath.get('typeParameters');
-  if (
-    !typeParametersPath
-    || !typeParametersPath.node
-    || typeParametersPath.node.params.length !== 2
-  ) {
+  if (typeParametersPath?.node?.params.length !== 2) {
     throw typePath.buildCodeFrameError(
       'Propane Map types must specify both key and value types.'
     );
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath as NodePath<t.TSType>);
-  assertSupportedType(valueTypePath as NodePath<t.TSType>, declaredTypeNames);
+  assertSupportedMapKeyType(keyTypePath!);
+  assertSupportedType(valueTypePath!, declaredTypeNames);
 }
 
 export function assertSupportedSetType(typePath: NodePath<t.TSTypeReference>, declaredTypeNames: Set<string>): void {
@@ -41,29 +36,29 @@ export function assertSupportedSetType(typePath: NodePath<t.TSTypeReference>, de
   }
 
   const typeParams = typeNode.typeParameters;
-  if (!typeParams || typeParams.params.length !== 1) {
+  if (typeParams?.params.length !== 1) {
     throw typePath.buildCodeFrameError(
       'Propane Set types must specify a single element type, e.g. Set<string>.'
     );
   }
 
-  const elementPath = typePath.get('typeParameters').get('params')[0] as NodePath<t.TSType>;
+  const elementPath = typePath.get('typeParameters').get('params')[0]!;
   assertSupportedType(elementPath, declaredTypeNames);
 }
 
 export function assertSupportedMapKeyType(typePath: NodePath<t.TSType>): void {
-  if (!typePath || !typePath.node) {
+  if (!typePath?.node) {
     throw typePath.buildCodeFrameError('Missing Map key type.');
   }
 
   if (typePath.isTSParenthesizedType()) {
-    assertSupportedMapKeyType(typePath.get('typeAnnotation') as NodePath<t.TSType>);
+    assertSupportedMapKeyType(typePath.get('typeAnnotation'));
     return;
   }
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath as NodePath<t.TSType>);
+      assertSupportedMapKeyType(memberPath);
     }
     return;
   }
@@ -80,13 +75,13 @@ export function assertSupportedMapKeyType(typePath: NodePath<t.TSType>): void {
     );
   }
 
-  if (typePath.isTSTypeReference() && isDateReference(typePath.node as t.TSTypeReference)) {
+  if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
     throw typePath.buildCodeFrameError(
       'Propane map keys cannot be Date objects.'
     );
   }
 
-  if (typePath.isTSTypeReference() && isUrlReference(typePath.node as t.TSTypeReference)) {
+  if (typePath.isTSTypeReference() && isUrlReference(typePath.node)) {
     throw typePath.buildCodeFrameError(
       'Propane map keys cannot be URL objects.'
     );
@@ -106,7 +101,7 @@ export function assertSupportedTopLevelType(typePath: NodePath<t.TSType>): void 
 }
 
 export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNames: Set<string>): void {
-  if (!typePath || !typePath.node) {
+  if (!typePath?.node) {
     throw new Error('Missing type information for propane property.');
   }
 
@@ -116,13 +111,13 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedType(memberPath as NodePath<t.TSType>, declaredTypeNames);
+      assertSupportedType(memberPath, declaredTypeNames);
     }
     return;
   }
 
   if (typePath.isTSArrayType()) {
-    assertSupportedType(typePath.get('elementType') as NodePath<t.TSType>, declaredTypeNames);
+    assertSupportedType(typePath.get('elementType'), declaredTypeNames);
     return;
   }
 
@@ -144,16 +139,16 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
     }
 
     if (isMapReference(typePath.node)) {
-      assertSupportedMapType(typePath as NodePath<t.TSTypeReference>, declaredTypeNames);
+      assertSupportedMapType(typePath, declaredTypeNames);
       return;
     }
 
     if (isSetReference(typePath.node)) {
-      assertSupportedSetType(typePath as NodePath<t.TSTypeReference>, declaredTypeNames);
+      assertSupportedSetType(typePath, declaredTypeNames);
       return;
     }
 
-    if (isAllowedTypeReference(typePath as NodePath<t.TSTypeReference>, declaredTypeNames)) {
+    if (isAllowedTypeReference(typePath, declaredTypeNames)) {
       return;
     }
 
@@ -163,7 +158,7 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
   }
 
   if (typePath.isTSParenthesizedType()) {
-    assertSupportedType(typePath.get('typeAnnotation') as NodePath<t.TSType>, declaredTypeNames);
+    assertSupportedType(typePath.get('typeAnnotation'), declaredTypeNames);
     return;
   }
 
@@ -183,13 +178,13 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
       }
 
       const nestedTypeAnnotation = memberPath.get('typeAnnotation');
-      if (!nestedTypeAnnotation || !nestedTypeAnnotation.node) {
+      if (!nestedTypeAnnotation?.node) {
         throw memberPath.buildCodeFrameError(
           'Propane nested object properties must include type annotations.'
         );
       }
 
-      assertSupportedType(nestedTypeAnnotation.get('typeAnnotation') as NodePath<t.TSType>, declaredTypeNames);
+      assertSupportedType(nestedTypeAnnotation.get('typeAnnotation'), declaredTypeNames);
     }
     return;
   }
@@ -229,12 +224,12 @@ export function registerTypeAlias(typeAlias: t.TSTypeAliasDeclaration, declaredT
 }
 
 function isPrimitiveLikeType(typePath: NodePath<t.TSType>): boolean {
-  if (!typePath || !typePath.node) {
+  if (!typePath?.node) {
     return false;
   }
 
   if (typePath.isTSParenthesizedType()) {
-    return isPrimitiveLikeType(typePath.get('typeAnnotation') as NodePath<t.TSType>);
+    return isPrimitiveLikeType(typePath.get('typeAnnotation'));
   }
 
   if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {
@@ -243,7 +238,7 @@ function isPrimitiveLikeType(typePath: NodePath<t.TSType>): boolean {
 
   if (typePath.isTSUnionType()) {
     const unionTypes = typePath.get('types');
-    return unionTypes.length > 0 && unionTypes.every((member) => isPrimitiveLikeType(member as NodePath<t.TSType>));
+    return unionTypes.length > 0 && unionTypes.every((member) => isPrimitiveLikeType(member));
   }
 
   if (typePath.isTSTypeReference()) {
