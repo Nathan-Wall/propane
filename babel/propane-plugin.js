@@ -21,13 +21,19 @@ import {
   isImmutableDateReference,
   isImmutableUrlReference,
   isMapReference,
-  isPrimitiveKeyword,
-  isPrimitiveLikeType,
-  isPrimitiveLiteral,
   isSetReference,
   isUrlReference,
   resolveQualifiedRoot,
 } from './propane-type-guards.js';
+import {
+  assertSupportedMapKeyType,
+  assertSupportedMapType,
+  assertSupportedSetType,
+  assertSupportedTopLevelType,
+  assertSupportedType,
+  isAllowedTypeReference,
+  registerTypeAlias,
+} from './propane-validation.js';
 
 const MESSAGE_SOURCE = '@propanejs/runtime';
 const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
@@ -526,84 +532,6 @@ function getDefaultValueForType(typeNode) {
 
   // Fallback for unknown types, though validation should catch most
   return t.identifier('undefined');
-}
-
-function assertSupportedMapType(typePath, declaredTypeNames) {
-  const typeParametersPath = typePath.get('typeParameters');
-  if (
-    !typeParametersPath
-    || !typeParametersPath.node
-    || typeParametersPath.node.params.length !== 2
-  ) {
-    throw typePath.buildCodeFrameError(
-      'Propane Map types must specify both key and value types.'
-    );
-  }
-
-  const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath);
-  assertSupportedType(valueTypePath, declaredTypeNames);
-}
-
-function assertSupportedSetType(typePath, declaredTypeNames) {
-  const typeNode = typePath.node;
-
-  if (!t.isTSTypeReference(typeNode)) {
-    throw typePath.buildCodeFrameError('Invalid Set type.');
-  }
-
-  const typeParams = typeNode.typeParameters;
-  if (!typeParams || typeParams.params.length !== 1) {
-    throw typePath.buildCodeFrameError(
-      'Propane Set types must specify a single element type, e.g. Set<string>.'
-    );
-  }
-
-  assertSupportedType(typePath.get('typeParameters').get('params')[0], declaredTypeNames);
-}
-
-function assertSupportedMapKeyType(typePath) {
-  if (!typePath || !typePath.node) {
-    throw typePath.buildCodeFrameError('Missing Map key type.');
-  }
-
-  if (typePath.isTSParenthesizedType()) {
-    assertSupportedMapKeyType(typePath.get('typeAnnotation'));
-    return;
-  }
-
-  if (typePath.isTSUnionType()) {
-    for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath);
-    }
-    return;
-  }
-
-  if (typePath.isTSTypeLiteral()) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be objects.'
-    );
-  }
-
-  if (typePath.isTSArrayType()) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be arrays.'
-    );
-  }
-
-  if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be Date objects.'
-    );
-  }
-
-  if (typePath.isTSTypeReference() && isUrlReference(typePath.node)) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be URL objects.'
-    );
-  }
-
-  assertSupportedType(typePath);
 }
 
 function normalizePropertyKey(memberPath) {
@@ -3948,138 +3876,5 @@ function handleImplicitTypes(propTypePath, propName, generatedTypes, parentName,
       ));
     }
     return;
-  }
-}
-
-function assertSupportedTopLevelType(typePath) {
-  if (isPrimitiveLikeType(typePath)) {
-    return;
-  }
-
-  throw typePath.buildCodeFrameError(
-    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, URL, ArrayBuffer, Brand).'
-  );
-}
-
-function assertSupportedType(typePath, declaredTypeNames) {
-  if (!typePath || !typePath.node) {
-    throw new Error('Missing type information for propane property.');
-  }
-
-  if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {
-    return;
-  }
-
-  if (typePath.isTSUnionType()) {
-    for (const memberPath of typePath.get('types')) {
-      assertSupportedType(memberPath, declaredTypeNames);
-    }
-    return;
-  }
-
-  if (typePath.isTSArrayType()) {
-    assertSupportedType(typePath.get('elementType'), declaredTypeNames);
-    return;
-  }
-
-  if (typePath.isTSTypeReference()) {
-    if (isDateReference(typePath.node) || isImmutableDateReference(typePath.node)) {
-      return;
-    }
-
-    if (isUrlReference(typePath.node) || isImmutableUrlReference(typePath.node)) {
-      return;
-    }
-
-    if (isBrandReference(typePath.node)) {
-      return;
-    }
-
-    if (isArrayBufferReference(typePath.node) || isImmutableArrayBufferReference(typePath.node)) {
-      return;
-    }
-
-    if (isMapReference(typePath.node)) {
-      assertSupportedMapType(typePath, declaredTypeNames);
-      return;
-    }
-
-    if (isSetReference(typePath.node)) {
-      assertSupportedSetType(typePath, declaredTypeNames);
-      return;
-    }
-
-    if (isAllowedTypeReference(typePath, declaredTypeNames)) {
-      return;
-    }
-
-    throw typePath.buildCodeFrameError(
-      'Propane property references must refer to imported or locally declared identifiers.'
-    );
-  }
-
-  if (typePath.isTSParenthesizedType()) {
-    assertSupportedType(typePath.get('typeAnnotation'), declaredTypeNames);
-    return;
-  }
-
-  if (typePath.isTSTypeLiteral()) {
-    for (const memberPath of typePath.get('members')) {
-      if (!memberPath.isTSPropertySignature()) {
-        throw memberPath.buildCodeFrameError(
-          'Propane nested object types can only contain property signatures.'
-        );
-      }
-
-      const keyPath = memberPath.get('key');
-      if (!keyPath.isIdentifier() || memberPath.node.computed) {
-        throw memberPath.buildCodeFrameError(
-          'Propane nested object properties must use simple identifier names.'
-        );
-      }
-
-      const nestedTypeAnnotation = memberPath.get('typeAnnotation');
-      if (!nestedTypeAnnotation || !nestedTypeAnnotation.node) {
-        throw memberPath.buildCodeFrameError(
-          'Propane nested object properties must include type annotations.'
-        );
-      }
-
-      assertSupportedType(nestedTypeAnnotation.get('typeAnnotation'), declaredTypeNames);
-    }
-    return;
-  }
-
-  throw typePath.buildCodeFrameError(
-    'Unsupported type in propane file. Only primitives, identifiers, Date, Brand, or object literals are allowed.'
-  );
-}
-
-function isAllowedTypeReference(typePath, declaredTypeNames) {
-  const typeName = typePath.node.typeName;
-
-  if (t.isIdentifier(typeName)) {
-    if (declaredTypeNames.has(typeName.name)) {
-      return true;
-    }
-
-    return Boolean(typePath.scope.getBinding(typeName.name));
-  }
-
-  if (t.isTSQualifiedName(typeName)) {
-    const root = resolveQualifiedRoot(typeName);
-    if (root && declaredTypeNames.has(root.name)) {
-      return true;
-    }
-
-    return root ? Boolean(typePath.scope.getBinding(root.name)) : false;
-  }
-
-  return false;
-}
-
-function registerTypeAlias(typeAlias, declaredTypeNames) {
-  if (t.isIdentifier(typeAlias.id)) {
-    declaredTypeNames.add(typeAlias.id.name);
   }
 }
