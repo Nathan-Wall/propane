@@ -15,6 +15,10 @@ export function normalizeForJson(value: unknown): unknown {
     return value.toJSON();
   }
 
+  if (isArrayBuffer(value)) {
+    return `base64:${arrayBufferToBase64(value)}`;
+  }
+
   if (
     value
     && typeof value === 'object'
@@ -63,6 +67,32 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   return value;
+}
+
+function isArrayBuffer(value: unknown): value is ArrayBuffer {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return value instanceof ArrayBuffer || Object.prototype.toString.call(value) === '[object ArrayBuffer]';
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(buffer).toString('base64');
+  }
+
+  if (typeof btoa === 'function') {
+    let binary = '';
+    const view = new Uint8Array(buffer);
+    for (const byte of view) {
+      // eslint-disable-next-line unicorn/prefer-code-point
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+  }
+
+  throw new Error('Base64 encoding is not supported in this environment.');
 }
 
 function isImmutableMapLike(value: unknown): value is { entries: () => IterableIterator<unknown[]> } {

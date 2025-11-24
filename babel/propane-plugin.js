@@ -526,6 +526,9 @@ function getDefaultValueForType(typeNode) {
       if (typeName.name === 'Date') {
         return t.newExpression(t.identifier('Date'), [t.numericLiteral(0)]);
       }
+      if (typeName.name === 'ArrayBuffer') {
+        return t.newExpression(t.identifier('ArrayBuffer'), [t.numericLiteral(0)]);
+      }
       // Assume it's a message type
       return t.newExpression(t.identifier(typeName.name), []);
     }
@@ -537,6 +540,10 @@ function getDefaultValueForType(typeNode) {
 
 function isDateReference(node) {
   return t.isIdentifier(node.typeName) && node.typeName.name === 'Date';
+}
+
+function isArrayBufferReference(node) {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'ArrayBuffer';
 }
 
 function isSetReference(node) {
@@ -3220,6 +3227,10 @@ function buildRuntimeTypeCheckExpression(typeNode, valueId) {
       return buildDateCheckExpression(valueId);
     }
 
+    if (isArrayBufferReference(typeNode)) {
+      return buildArrayBufferCheckExpression(valueId);
+    }
+
     if (isBrandReference(typeNode)) {
       return typeofCheck(valueId, 'string');
     }
@@ -3290,6 +3301,22 @@ function buildDateCheckExpression(valueId) {
   );
 
   return t.logicalExpression('||', instanceOfDate, tagEqualsDate);
+}
+
+function buildArrayBufferCheckExpression(valueId) {
+  const instanceOfArrayBuffer = t.binaryExpression(
+    'instanceof',
+    valueId,
+    t.identifier('ArrayBuffer')
+  );
+
+  const tagEqualsArrayBuffer = t.binaryExpression(
+    '===',
+    buildObjectToStringCall(valueId),
+    t.stringLiteral('[object ArrayBuffer]')
+  );
+
+  return t.logicalExpression('||', instanceOfArrayBuffer, tagEqualsArrayBuffer);
 }
 
 function buildLiteralTypeCheck(typeNode, valueId) {
@@ -3751,7 +3778,11 @@ function isPrimitiveLikeType(typePath) {
   }
 
   if (typePath.isTSTypeReference()) {
-    return isDateReference(typePath.node) || isBrandReference(typePath.node);
+    return (
+      isDateReference(typePath.node)
+      || isArrayBufferReference(typePath.node)
+      || isBrandReference(typePath.node)
+    );
   }
 
   return false;
@@ -3940,7 +3971,7 @@ function assertSupportedTopLevelType(typePath) {
   }
 
   throw typePath.buildCodeFrameError(
-    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, Brand).'
+    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, ArrayBuffer, Brand).'
   );
 }
 
@@ -3971,6 +4002,10 @@ function assertSupportedType(typePath, declaredTypeNames) {
     }
 
     if (isBrandReference(typePath.node)) {
+      return;
+    }
+
+    if (isArrayBufferReference(typePath.node)) {
       return;
     }
 

@@ -3,7 +3,6 @@ import { normalizeForJson } from '../common/json/stringify.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
 import { ImmutableSet } from '../common/set/immutable.ts';
 import { ImmutableArray } from '../common/array/immutable.ts';
-import { ImmutableSet } from '../common/set/immutable.ts';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -11,10 +10,12 @@ const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 const DATE_OBJECT_TAG = '[object Date]';
+const ARRAY_BUFFER_OBJECT_TAG = '[object ArrayBuffer]';
 const DATE_PREFIX = 'D';
+const ARRAY_BUFFER_PREFIX = 'B';
 
 export type DataPrimitive = string | number | boolean | null | undefined;
-export type DataValue = DataPrimitive | DataObject | DataArray;
+export type DataValue = DataPrimitive | Date | ArrayBuffer | DataObject | DataArray;
 export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
@@ -209,6 +210,10 @@ function serializePrimitive(value: unknown): string {
     return serializeArrayLiteral(Array.isArray(value) ? value : [...value]);
   }
 
+  if (isArrayBufferValue(value)) {
+    return serializeArrayBufferLiteral(value);
+  }
+
   if (isMapValue(value)) {
     return serializeMapLiteral(value);
   }
@@ -281,6 +286,32 @@ function isDateValue(value: unknown): value is Date {
   }
 
   return value instanceof Date || Object.prototype.toString.call(value) === DATE_OBJECT_TAG;
+}
+
+function isArrayBufferValue(value: unknown): value is ArrayBuffer {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return (
+    value instanceof ArrayBuffer
+    || Object.prototype.toString.call(value) === ARRAY_BUFFER_OBJECT_TAG
+  );
+}
+
+function serializeArrayBufferLiteral(buffer: ArrayBuffer): string {
+  return `${ARRAY_BUFFER_PREFIX}${JSON.stringify(arrayBufferToBase64(buffer))}`;
+}
+
+function parseArrayBufferLiteral(token: string): ArrayBuffer {
+  const jsonPortion = token.slice(ARRAY_BUFFER_PREFIX.length);
+  const parsed = parseJson(jsonPortion);
+
+  if (typeof parsed !== 'string') {
+    throw new TypeError(`Invalid ArrayBuffer literal token: ${token}`);
+  }
+
+  return base64ToArrayBuffer(parsed);
 }
 
 interface ObjectEntry {
@@ -405,6 +436,10 @@ function parseLiteralToken(token: string) {
 
   if (trimmed === 'false') {
     return false;
+  }
+
+  if (trimmed.startsWith(`${ARRAY_BUFFER_PREFIX}"`)) {
+    return parseArrayBufferLiteral(trimmed);
   }
 
   const num = Number(trimmed);
@@ -593,4 +628,41 @@ function parseStringOrDate(token: string): string | Date {
   }
 
   return parsedString;
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(buffer).toString('base64');
+  }
+
+  if (typeof btoa === 'function') {
+    let binary = '';
+    const view = new Uint8Array(buffer);
+    for (const byte of view) {
+      // eslint-disable-next-line unicorn/prefer-code-point
+      binary += String.fromCharCode(byte);
+    }
+    return btoa(binary);
+  }
+
+  throw new Error('Base64 encoding is not supported in this environment.');
+}
+
+function base64ToArrayBuffer(encoded: string): ArrayBuffer {
+  if (typeof Buffer !== 'undefined') {
+    const buf = Buffer.from(encoded, 'base64');
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+  }
+
+  if (typeof atob === 'function') {
+    const binary = atob(encoded);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
+      // eslint-disable-next-line unicorn/prefer-code-point
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+
+  throw new Error('Base64 decoding is not supported in this environment.');
 }

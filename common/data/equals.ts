@@ -37,6 +37,35 @@ function isArrayLike(value: unknown): value is ArrayLike<unknown> {
   return Array.isArray(value) || isImmutableLike(value, 'ImmutableArray');
 }
 
+function isArrayBufferLike(value: unknown): value is ArrayBuffer {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  return (
+    value instanceof ArrayBuffer
+    || Object.prototype.toString.call(value) === '[object ArrayBuffer]'
+  );
+}
+
+function arrayBufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
+  if (a.byteLength !== b.byteLength) {
+    return false;
+  }
+
+  const viewA = new Uint8Array(a);
+  const viewB = new Uint8Array(b);
+
+  // eslint-disable-next-line unicorn/no-for-loop
+  for (let i = 0; i < viewA.length; i += 1) {
+    if (viewA[i] !== viewB[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export const equals: EqualsFn = (a, b): boolean => {
   if (a === b || Object.is(a, b)) {
     return true;
@@ -48,6 +77,10 @@ export const equals: EqualsFn = (a, b): boolean => {
 
   if (supportsEquals(b)) {
     return b.equals(a);
+  }
+
+  if (isArrayBufferLike(a) && isArrayBufferLike(b)) {
+    return arrayBufferEquals(a, b);
   }
 
   if (isMapLike(a) && isMapLike(b)) {

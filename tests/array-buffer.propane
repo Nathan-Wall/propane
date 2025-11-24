@@ -1,0 +1,6 @@
+export type ArrayBufferMessage = {
+  '1:id': number;
+  '2:data': ArrayBuffer;
+  '3:extra'?: ArrayBuffer;
+  '4:chunks': ArrayBuffer[];
+};
