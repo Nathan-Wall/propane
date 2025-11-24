@@ -23,6 +23,7 @@ export default function propanePlugin() {
           state.usesEquals = false;
           state.usesImmutableDate = false;
           state.usesImmutableUrl = false;
+          state.usesImmutableArrayBuffer = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
           const filename = fileOpts.filename || '';
@@ -212,11 +213,16 @@ export default function propanePlugin() {
       const messageTypeName = getMessageReferenceName(propTypePath);
       const isDateType = propTypePath.isTSTypeReference() && isDateReference(propTypePath.node);
       const isUrlType = propTypePath.isTSTypeReference() && isUrlReference(propTypePath.node);
+      const isArrayBufferType = propTypePath.isTSTypeReference()
+        && (isArrayBufferReference(propTypePath.node) || isImmutableArrayBufferReference(propTypePath.node));
       if (isDateType) {
         state.usesImmutableDate = true;
       }
       if (isUrlType) {
         state.usesImmutableUrl = true;
+      }
+      if (isArrayBufferType) {
+        state.usesImmutableArrayBuffer = true;
       }
       const runtimeType = mapType || setType || arrayType
         ? wrapImmutableType(t.cloneNode(propTypePath.node))
@@ -273,6 +279,20 @@ export default function propanePlugin() {
           t.tsTypeReference(t.identifier('URL')),
         ]);
         inputTypeAnnotation = displayType;
+      } else if (isArrayBufferType) {
+        displayType = t.tsUnionType([
+          t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
+          t.tsTypeReference(t.identifier('ArrayBuffer')),
+        ]);
+        inputTypeAnnotation = t.tsUnionType([
+          displayType,
+          t.tsTypeReference(t.identifier('ArrayBufferView')),
+          t.tsTypeReference(
+            t.identifier('Iterable'),
+            t.tsTypeParameterInstantiation([t.tsNumberKeyword()])
+          ),
+          t.tsArrayType(t.tsNumberKeyword()),
+        ]);
       }
 
       if (messageTypeName) {
@@ -295,6 +315,7 @@ export default function propanePlugin() {
         isMap: mapType,
         isDateType,
         isUrlType,
+        isArrayBufferType,
         isMessageType: Boolean(messageTypeName),
         messageTypeName,
         typeAnnotation: runtimeType,
@@ -552,8 +573,8 @@ function getDefaultValueForType(typeNode) {
       if (typeName.name === 'URL' || typeName.name === 'ImmutableUrl') {
         return t.newExpression(t.identifier('ImmutableUrl'), [t.stringLiteral('about:blank')]);
       }
-      if (typeName.name === 'ArrayBuffer') {
-        return t.newExpression(t.identifier('ArrayBuffer'), [t.numericLiteral(0)]);
+      if (typeName.name === 'ArrayBuffer' || typeName.name === 'ImmutableArrayBuffer') {
+        return t.newExpression(t.identifier('ImmutableArrayBuffer'), []);
       }
       // Assume it's a message type
       return t.newExpression(t.identifier(typeName.name), []);
@@ -582,6 +603,10 @@ function isImmutableUrlReference(node) {
 
 function isArrayBufferReference(node) {
   return t.isIdentifier(node.typeName) && node.typeName.name === 'ArrayBuffer';
+}
+
+function isImmutableArrayBufferReference(node) {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableArrayBuffer';
 }
 
 function isSetReference(node) {
@@ -887,7 +912,7 @@ function buildClassFromProperties(typeName, properties, declaredMessageTypeNames
   for (const prop of propDescriptors) {
     let baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
 
-    const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap || prop.isSet);
+    const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType);
     const fieldTypeAnnotation = needsOptionalUnion
       ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
       : baseType;
@@ -975,6 +1000,14 @@ function buildClassFromProperties(typeName, properties, declaredMessageTypeNames
       );
     } else if (prop.isUrlType) {
       valueExpr = buildImmutableUrlNormalizationExpression(
+        valueExpr,
+        {
+          allowUndefined: Boolean(prop.optional),
+          allowNull: typeAllowsNull(prop.typeAnnotation),
+        }
+      );
+    } else if (prop.isArrayBufferType) {
+      valueExpr = buildImmutableArrayBufferNormalizationExpression(
         valueExpr,
         {
           allowUndefined: Boolean(prop.optional),
@@ -1288,6 +1321,23 @@ function buildFromEntriesMethod(propDescriptors, propsTypeRef) {
         ])
       );
       checkedValueId = arrayValueId;
+    } else if (prop.isArrayBufferType) {
+      const abValueId = t.identifier(`${prop.name}ArrayBufferValue`);
+      statements.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(
+            abValueId,
+            buildImmutableArrayBufferNormalizationExpression(
+              checkedValueId,
+              {
+                allowUndefined: Boolean(prop.optional),
+                allowNull: allowsNull,
+              }
+            )
+          ),
+        ])
+      );
+      checkedValueId = abValueId;
     } else if (prop.isMessageType && prop.messageTypeName) {
       const messageValueId = t.identifier(`${prop.name}MessageValue`);
       statements.push(
@@ -1403,6 +1453,9 @@ function ensureBaseImport(programPath, state) {
   if (state.usesImmutableUrl && !hasImportBinding('ImmutableUrl')) {
     requiredSpecifiers.push('ImmutableUrl');
   }
+  if (state.usesImmutableArrayBuffer && !hasImportBinding('ImmutableArrayBuffer')) {
+    requiredSpecifiers.push('ImmutableArrayBuffer');
+  }
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');
   }
@@ -1475,6 +1528,9 @@ function wrapImmutableType(node) {
     }
     if (name === 'URL') {
       return t.tsTypeReference(t.identifier('ImmutableUrl'));
+    }
+    if (name === 'ArrayBuffer' || name === 'ImmutableArrayBuffer') {
+      return t.tsTypeReference(t.identifier('ImmutableArrayBuffer'));
     }
     if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
       const params = node.typeParameters?.params ?? [];
@@ -1558,6 +1614,13 @@ function buildInputAcceptingMutable(node) {
       return t.tsUnionType([
         t.tsTypeReference(t.identifier('ImmutableUrl')),
         t.tsTypeReference(t.identifier('URL')),
+      ]);
+    }
+
+    if (name === 'ArrayBuffer' || name === 'ImmutableArrayBuffer') {
+      return t.tsUnionType([
+        t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
+        t.tsTypeReference(t.identifier('ArrayBuffer')),
       ]);
     }
 
@@ -1827,6 +1890,52 @@ function buildImmutableUrlNormalizationExpression(
     instanceCheck,
     t.cloneNode(valueExpr),
     newInstance
+  );
+
+  if (allowNull) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral()),
+      t.cloneNode(valueExpr),
+      normalized
+    );
+  }
+
+  if (allowUndefined) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.identifier('undefined'),
+      normalized
+    );
+  }
+
+  return normalized;
+}
+
+function buildImmutableArrayBufferNormalizationExpression(
+  valueExpr,
+  { allowUndefined = false, allowNull = false } = {}
+) {
+  const instanceCheck = t.binaryExpression(
+    'instanceof',
+    t.cloneNode(valueExpr),
+    t.identifier('ImmutableArrayBuffer')
+  );
+  const isArrayBufferView = t.callExpression(
+    t.memberExpression(t.identifier('ArrayBuffer'), t.identifier('isView')),
+    [t.cloneNode(valueExpr)]
+  );
+  const newFromView = t.newExpression(
+    t.identifier('ImmutableArrayBuffer'),
+    [t.cloneNode(valueExpr)]
+  );
+  const newInstance = t.newExpression(t.identifier('ImmutableArrayBuffer'), [
+    t.cloneNode(valueExpr),
+  ]);
+
+  let normalized = t.conditionalExpression(
+    instanceCheck,
+    t.cloneNode(valueExpr),
+    t.conditionalExpression(isArrayBufferView, newFromView, newInstance)
   );
 
   if (allowNull) {
@@ -3393,7 +3502,7 @@ function buildRuntimeTypeCheckExpression(typeNode, valueId) {
       return buildUrlCheckExpression(valueId);
     }
 
-    if (isArrayBufferReference(typeNode)) {
+    if (isArrayBufferReference(typeNode) || isImmutableArrayBufferReference(typeNode)) {
       return buildArrayBufferCheckExpression(valueId);
     }
 
@@ -3532,14 +3641,28 @@ function buildArrayBufferCheckExpression(valueId) {
     valueId,
     t.identifier('ArrayBuffer')
   );
+  const instanceOfImmutableArrayBuffer = t.binaryExpression(
+    'instanceof',
+    valueId,
+    t.identifier('ImmutableArrayBuffer')
+  );
 
   const tagEqualsArrayBuffer = t.binaryExpression(
     '===',
     buildObjectToStringCall(valueId),
     t.stringLiteral('[object ArrayBuffer]')
   );
+  const tagEqualsImmutableArrayBuffer = t.binaryExpression(
+    '===',
+    buildObjectToStringCall(valueId),
+    t.stringLiteral('[object ImmutableArrayBuffer]')
+  );
 
-  return t.logicalExpression('||', instanceOfArrayBuffer, tagEqualsArrayBuffer);
+  return t.logicalExpression(
+    '||',
+    t.logicalExpression('||', instanceOfArrayBuffer, instanceOfImmutableArrayBuffer),
+    t.logicalExpression('||', tagEqualsArrayBuffer, tagEqualsImmutableArrayBuffer)
+  );
 }
 
 function buildLiteralTypeCheck(typeNode, valueId) {
@@ -4007,6 +4130,7 @@ function isPrimitiveLikeType(typePath) {
       || isUrlReference(typePath.node)
       || isImmutableUrlReference(typePath.node)
       || isArrayBufferReference(typePath.node)
+      || isImmutableArrayBufferReference(typePath.node)
       || isBrandReference(typePath.node)
     );
   }
@@ -4235,7 +4359,7 @@ function assertSupportedType(typePath, declaredTypeNames) {
       return;
     }
 
-    if (isArrayBufferReference(typePath.node)) {
+    if (isArrayBufferReference(typePath.node) || isImmutableArrayBufferReference(typePath.node)) {
       return;
     }
 

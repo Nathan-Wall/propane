@@ -1,5 +1,6 @@
 import { ImmutableDate } from '../time/date.ts';
 import { ImmutableUrl } from '../web/url.ts';
+import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.ts';
 
 export function normalizeForJson(value: unknown): unknown {
   if (value === undefined) {
@@ -76,12 +77,18 @@ export function normalizeForJson(value: unknown): unknown {
   return value;
 }
 
-function isArrayBuffer(value: unknown): value is ArrayBuffer {
+function isArrayBuffer(value: unknown): value is ArrayBuffer | ImmutableArrayBuffer {
   if (!value || typeof value !== 'object') {
     return false;
   }
 
-  return value instanceof ArrayBuffer || Object.prototype.toString.call(value) === '[object ArrayBuffer]';
+  const tag = Object.prototype.toString.call(value);
+  return (
+    value instanceof ArrayBuffer
+    || value instanceof ImmutableArrayBuffer
+    || tag === '[object ArrayBuffer]'
+    || tag === '[object ImmutableArrayBuffer]'
+  );
 }
 
 function isUrl(value: unknown): value is URL | ImmutableUrl {
@@ -99,13 +106,14 @@ function isUrl(value: unknown): value is URL | ImmutableUrl {
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const raw = buffer instanceof ImmutableArrayBuffer ? buffer.toArrayBuffer() : buffer;
   if (typeof Buffer !== 'undefined') {
-    return Buffer.from(buffer).toString('base64');
+    return Buffer.from(raw).toString('base64');
   }
 
   if (typeof btoa === 'function') {
     let binary = '';
-    const view = new Uint8Array(buffer);
+    const view = new Uint8Array(raw);
     for (const byte of view) {
       // eslint-disable-next-line unicorn/prefer-code-point
       binary += String.fromCharCode(byte);

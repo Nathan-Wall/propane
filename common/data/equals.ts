@@ -45,6 +45,7 @@ function isArrayBufferLike(value: unknown): value is ArrayBuffer {
   return (
     value instanceof ArrayBuffer
     || Object.prototype.toString.call(value) === '[object ArrayBuffer]'
+    || Object.prototype.toString.call(value) === '[object ImmutableArrayBuffer]'
   );
 }
 

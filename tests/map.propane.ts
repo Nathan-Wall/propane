@@ -120,12 +120,12 @@ export class MapMessage extends Message<MapMessage.Data> {
     const metadataValue = entries["2"] === undefined ? entries["metadata"] : entries["2"];
     const metadataNormalized = metadataValue === null ? undefined : metadataValue;
     const metadataMapValue = metadataNormalized === undefined || metadataNormalized === null ? metadataNormalized : metadataNormalized instanceof ImmutableMap || Object.prototype.toString.call(metadataNormalized) === "[object ImmutableMap]" ? metadataNormalized : new ImmutableMap(metadataNormalized);
-    if (metadataMapValue !== undefined && !((metadataMapValue instanceof ImmutableMap || Object.prototype.toString.call(metadataMapValue) === "[object ImmutableMap]" || metadataMapValue instanceof Map || Object.prototype.toString.call(metadataMapValue) === "[object Map]") && [...metadataMapValue.entries()].every(([mapKey, unused_mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
+    if (metadataMapValue !== undefined && !((metadataMapValue instanceof ImmutableMap || Object.prototype.toString.call(metadataMapValue) === "[object ImmutableMap]" || metadataMapValue instanceof Map || Object.prototype.toString.call(metadataMapValue) === "[object Map]") && [...metadataMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataMapValue;
     const extrasValue = entries["3"] === undefined ? entries["extras"] : entries["3"];
     if (extrasValue === undefined) throw new Error("Missing required property \"extras\".");
     const extrasMapValue = extrasValue === undefined || extrasValue === null ? extrasValue : extrasValue instanceof ImmutableMap || Object.prototype.toString.call(extrasValue) === "[object ImmutableMap]" ? extrasValue : new ImmutableMap(extrasValue);
-    if (!((extrasMapValue instanceof ImmutableMap || Object.prototype.toString.call(extrasMapValue) === "[object ImmutableMap]" || extrasMapValue instanceof Map || Object.prototype.toString.call(extrasMapValue) === "[object Map]") && [...extrasMapValue.entries()].every(([mapKey, unused_mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
+    if (!((extrasMapValue instanceof ImmutableMap || Object.prototype.toString.call(extrasMapValue) === "[object ImmutableMap]" || extrasMapValue instanceof Map || Object.prototype.toString.call(extrasMapValue) === "[object Map]") && [...extrasMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
     props.extras = extrasMapValue;
     return props as MapMessage.Data;
   }

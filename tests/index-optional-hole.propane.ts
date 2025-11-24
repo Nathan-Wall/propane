@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static EMPTY: OptionalHole;
   #id: number;
-  #created: Date;
+  #created: ImmutableDate;
   #note: string;
   #name: string;
   constructor(props?: OptionalHole.Value) {
     if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(OptionalHole.TYPE_TAG);
     this.#id = props ? props.id : 0;
-    this.#created = props ? props.created : new Date(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#note = props ? props.note : undefined;
     this.#name = props ? props.name : "";
     if (!props) OptionalHole.EMPTY = this;
@@ -44,7 +44,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     props.id = idValue;
     const createdValue = entries["2"] === undefined ? entries["created"] : entries["2"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || Object.prototype.toString.call(createdValue) === "[object Date]")) throw new Error("Invalid value for property \"created\".");
+    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate || Object.prototype.toString.call(createdValue) === "[object Date]" || Object.prototype.toString.call(createdValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"created\".");
     props.created = createdValue;
     const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
     const noteNormalized = noteValue === null ? undefined : noteValue;
@@ -59,7 +59,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   get id(): number {
     return this.#id;
   }
-  get created(): Date {
+  get created(): ImmutableDate {
     return this.#created;
   }
   get note(): string {
@@ -75,7 +75,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: this.#name
     });
   }
-  setCreated(value: Date): OptionalHole {
+  setCreated(value: ImmutableDate | Date): OptionalHole {
     return new OptionalHole({
       id: this.#id,
       created: value,
@@ -111,7 +111,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
 export namespace OptionalHole {
   export interface Data {
     id: number;
-    created: Date;
+    created: ImmutableDate | Date;
     note?: string | undefined;
     name: string;
   }

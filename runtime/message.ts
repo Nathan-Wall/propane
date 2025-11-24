@@ -3,6 +3,7 @@ import { normalizeForJson } from '../common/json/stringify.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
 import { ImmutableSet } from '../common/set/immutable.ts';
 import { ImmutableArray } from '../common/array/immutable.ts';
+import { ImmutableArrayBuffer } from '../common/data/immutable-array-buffer.ts';
 import { ImmutableDate } from '../common/time/date.ts';
 import { ImmutableUrl } from '../common/web/url.ts';
 
@@ -16,6 +17,7 @@ const IMMUTABLE_DATE_OBJECT_TAG = '[object ImmutableDate]';
 const URL_OBJECT_TAG = '[object URL]';
 const IMMUTABLE_URL_OBJECT_TAG = '[object ImmutableUrl]';
 const ARRAY_BUFFER_OBJECT_TAG = '[object ArrayBuffer]';
+const IMMUTABLE_ARRAY_BUFFER_OBJECT_TAG = '[object ImmutableArrayBuffer]';
 const DATE_PREFIX = 'D';
 const URL_PREFIX = 'U';
 const ARRAY_BUFFER_PREFIX = 'B';
@@ -28,6 +30,7 @@ export type DataValue =
   | URL
   | ImmutableUrl
   | ArrayBuffer
+  | ImmutableArrayBuffer
   | DataObject
   | DataArray;
 export type DataArray = DataValue[];
@@ -232,7 +235,7 @@ function serializePrimitive(value: unknown): string {
   }
 
   if (isArrayBufferValue(value)) {
-    return serializeArrayBufferLiteral(value);
+    return serializeArrayBufferLiteral(unwrapArrayBuffer(value));
   }
 
   if (isUrlValue(value)) {
@@ -333,14 +336,16 @@ function isUrlValue(value: unknown): value is URL {
   );
 }
 
-function isArrayBufferValue(value: unknown): value is ArrayBuffer {
+function isArrayBufferValue(value: unknown): value is ArrayBuffer | ImmutableArrayBuffer {
   if (!value || typeof value !== 'object') {
     return false;
   }
 
   return (
     value instanceof ArrayBuffer
+    || value instanceof ImmutableArrayBuffer
     || Object.prototype.toString.call(value) === ARRAY_BUFFER_OBJECT_TAG
+    || Object.prototype.toString.call(value) === IMMUTABLE_ARRAY_BUFFER_OBJECT_TAG
   );
 }
 
@@ -357,6 +362,10 @@ function parseArrayBufferLiteral(token: string): ArrayBuffer {
   }
 
   return base64ToArrayBuffer(parsed);
+}
+
+function unwrapArrayBuffer(value: ArrayBuffer | ImmutableArrayBuffer): ArrayBuffer {
+  return value instanceof ImmutableArrayBuffer ? value.toArrayBuffer() : value;
 }
 
 function serializeUrlLiteral(url: URL): string {

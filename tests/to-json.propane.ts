@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, equals } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "@propanejs/runtime";
 class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static EMPTY: ToJson_Nested;
   #array: ImmutableArray<(number | undefined)>;
   #map: ImmutableMap<string, bigint>;
-  #imap: ImmutableMap<string, Date>;
+  #imap: ImmutableMap<string, ImmutableDate>;
   constructor(props?: ToJson_Nested.Value) {
     if (!props && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
     super(ToJson_Nested.TYPE_TAG);
@@ -45,7 +45,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     const imapValue = entries["imap"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
     const imapMapValue = imapValue === undefined || imapValue === null ? imapValue : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : new ImmutableMap(imapValue);
-    if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || Object.prototype.toString.call(mapValue) === "[object Date]")))) throw new Error("Invalid value for property \"imap\".");
+    if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || mapValue instanceof ImmutableDate || Object.prototype.toString.call(mapValue) === "[object Date]" || Object.prototype.toString.call(mapValue) === "[object ImmutableDate]")))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValue;
     return props as ToJson_Nested.Data;
   }
@@ -55,7 +55,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
   get map(): ImmutableMap<string, bigint> {
     return this.#map;
   }
-  get imap(): ImmutableMap<string, Date> {
+  get imap(): ImmutableMap<string, ImmutableDate> {
     return this.#imap;
   }
   clearImap(): ToJson_Nested {
@@ -130,7 +130,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     });
   }
-  filterImapEntries(predicate: (value: Date, key: string) => boolean): ToJson_Nested {
+  filterImapEntries(predicate: (value: ImmutableDate | Date, key: string) => boolean): ToJson_Nested {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -158,7 +158,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     });
   }
-  mapImapEntries(mapper: (value: Date, key: string) => [string, Date]): ToJson_Nested {
+  mapImapEntries(mapper: (value: ImmutableDate | Date, key: string) => [string, ImmutableDate | Date]): ToJson_Nested {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -198,7 +198,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     });
   }
-  mergeImapEntries(entries: Iterable<[string, Date]> | ImmutableMap<string, Date> | ReadonlyMap<string, Date> | Iterable<[string, Date]>): ToJson_Nested {
+  mergeImapEntries(entries: Iterable<[string, ImmutableDate | Date]> | ImmutableMap<string, ImmutableDate | Date> | ReadonlyMap<string, ImmutableDate | Date> | Iterable<[string, ImmutableDate | Date]>): ToJson_Nested {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -271,7 +271,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
     });
   }
-  setImapEntry(key: string, value: Date): ToJson_Nested {
+  setImapEntry(key: string, value: ImmutableDate | Date): ToJson_Nested {
     const imapCurrent = this.imap;
     if (imapCurrent && imapCurrent.has(key)) {
       const existing = imapCurrent.get(key);
@@ -354,7 +354,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     });
   }
-  updateImapEntry(key: string, updater: (currentValue: Date | undefined) => Date): ToJson_Nested {
+  updateImapEntry(key: string, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date): ToJson_Nested {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -397,7 +397,7 @@ export class ToJson extends Message<ToJson.Data> {
   #map: ImmutableMap<string, number>;
   #imap: ImmutableMap<string, number>;
   #big: bigint;
-  #date: Date;
+  #date: ImmutableDate;
   #optional: string;
   #nonFinite: number;
   #nested: ToJson_Nested;
@@ -407,7 +407,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
     this.#big = props ? props.big : 0n;
-    this.#date = props ? props.date : new Date(0);
+    this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date) : new ImmutableDate(0);
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
@@ -462,7 +462,7 @@ export class ToJson extends Message<ToJson.Data> {
     props.big = bigValue;
     const dateValue = entries["4"] === undefined ? entries["date"] : entries["4"];
     if (dateValue === undefined) throw new Error("Missing required property \"date\".");
-    if (!(dateValue instanceof Date || Object.prototype.toString.call(dateValue) === "[object Date]")) throw new Error("Invalid value for property \"date\".");
+    if (!(dateValue instanceof Date || dateValue instanceof ImmutableDate || Object.prototype.toString.call(dateValue) === "[object Date]" || Object.prototype.toString.call(dateValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"date\".");
     props.date = dateValue;
     const optionalValue = entries["5"] === undefined ? entries["optional"] : entries["5"];
     const optionalNormalized = optionalValue === null ? undefined : optionalValue;
@@ -487,7 +487,7 @@ export class ToJson extends Message<ToJson.Data> {
   get big(): bigint {
     return this.#big;
   }
-  get date(): Date {
+  get date(): ImmutableDate {
     return this.#date;
   }
   get optional(): string {
@@ -708,7 +708,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     });
   }
-  setDate(value: Date): ToJson {
+  setDate(value: ImmutableDate | Date): ToJson {
     return new ToJson({
       map: this.#map,
       imap: this.#imap,
@@ -856,7 +856,7 @@ export namespace ToJson {
     map: Map<string, number> | Iterable<[string, number]>;
     imap: Map<string, number> | Iterable<[string, number]>;
     big: bigint;
-    date: Date;
+    date: ImmutableDate | Date;
     optional?: string | undefined;
     nonFinite: number;
     nested: ToJson_Nested.Value;

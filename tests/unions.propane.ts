@@ -47,7 +47,7 @@ export class Unions extends Message<Unions.Data> {
     props.email = emailValue;
     const metadataValue = entries["metadata"];
     if (metadataValue === undefined) throw new Error("Missing required property \"metadata\".");
-    if (!(typeof metadataValue === "object" && metadataValue !== null && metadataValue.created !== undefined && (metadataValue.created instanceof Date || Object.prototype.toString.call(metadataValue.created) === "[object Date]") || typeof metadataValue === "object" && metadataValue !== null && metadataValue.updated !== undefined && (metadataValue.updated instanceof Date || Object.prototype.toString.call(metadataValue.updated) === "[object Date]"))) throw new Error("Invalid value for property \"metadata\".");
+    if (!(typeof metadataValue === "object" && metadataValue !== null && metadataValue.created !== undefined && (metadataValue.created instanceof Date || metadataValue.created instanceof ImmutableDate || Object.prototype.toString.call(metadataValue.created) === "[object Date]" || Object.prototype.toString.call(metadataValue.created) === "[object ImmutableDate]") || typeof metadataValue === "object" && metadataValue !== null && metadataValue.updated !== undefined && (metadataValue.updated instanceof Date || metadataValue.updated instanceof ImmutableDate || Object.prototype.toString.call(metadataValue.updated) === "[object Date]" || Object.prototype.toString.call(metadataValue.updated) === "[object ImmutableDate]"))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataValue;
     return props as Unions.Data;
   }

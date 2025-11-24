@@ -149,6 +149,7 @@ async function copyCommon() {
     ['map', 'immutable.ts'],
     ['array', 'immutable.ts'],
     ['set', 'immutable.ts'],
+    ['data', 'immutable-array-buffer.ts'],
     ['time', 'date.ts'],
     ['web', 'url.ts'],
   ];

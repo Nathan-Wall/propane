@@ -3,7 +3,7 @@
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static EMPTY: User;
@@ -11,8 +11,8 @@ export class User extends Message<User.Data> {
   #name: string;
   #email: Email;
   #passwordHash: Hash;
-  #created: Date;
-  #updated: Date;
+  #created: ImmutableDate;
+  #updated: ImmutableDate;
   #active: boolean;
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
@@ -23,8 +23,8 @@ export class User extends Message<User.Data> {
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();
     this.#passwordHash = props ? props.passwordHash : new Hash();
-    this.#created = props ? props.created : new Date(0);
-    this.#updated = props ? props.updated : new Date(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
@@ -87,11 +87,11 @@ export class User extends Message<User.Data> {
     props.passwordHash = passwordHashValue;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || Object.prototype.toString.call(createdValue) === "[object Date]")) throw new Error("Invalid value for property \"created\".");
+    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate || Object.prototype.toString.call(createdValue) === "[object Date]" || Object.prototype.toString.call(createdValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"created\".");
     props.created = createdValue;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue instanceof Date || Object.prototype.toString.call(updatedValue) === "[object Date]")) throw new Error("Invalid value for property \"updated\".");
+    if (!(updatedValue instanceof Date || updatedValue instanceof ImmutableDate || Object.prototype.toString.call(updatedValue) === "[object Date]" || Object.prototype.toString.call(updatedValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedValue;
     const activeValue = entries["active"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");
@@ -119,10 +119,10 @@ export class User extends Message<User.Data> {
   get passwordHash(): Hash {
     return this.#passwordHash;
   }
-  get created(): Date {
+  get created(): ImmutableDate {
     return this.#created;
   }
-  get updated(): Date {
+  get updated(): ImmutableDate {
     return this.#updated;
   }
   get active(): boolean {
@@ -147,7 +147,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     });
   }
-  setCreated(value: Date): User {
+  setCreated(value: ImmutableDate | Date): User {
     return new User({
       id: this.#id,
       name: this.#name,
@@ -238,7 +238,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     });
   }
-  setUpdated(value: Date): User {
+  setUpdated(value: ImmutableDate | Date): User {
     return new User({
       id: this.#id,
       name: this.#name,
@@ -258,8 +258,8 @@ export namespace User {
     name: string;
     email: Email;
     passwordHash: Hash;
-    created: Date;
-    updated: Date;
+    created: ImmutableDate | Date;
+    updated: ImmutableDate | Date;
     active: boolean;
     eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
     height: Distance.Value;
