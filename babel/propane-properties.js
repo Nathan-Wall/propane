@@ -29,7 +29,7 @@ export function assertValidPropertyName(name, keyPath) {
         throw keyPath.buildCodeFrameError('Propane property names cannot contain "$".');
     }
 }
-export function extractProperties(memberPaths, generatedTypes, parentName, state, declaredTypeNames, declaredMessageTypeNames, getMessageReferenceName) {
+export function extractProperties(memberPaths, generatedTypes, parentName, state, declaredTypeNames, declaredMessageTypeNames, getMessageReferenceName, assertSupportedType) {
     const props = [];
     const usedFieldNumbers = new Set();
     const usedNames = new Set();
@@ -64,7 +64,8 @@ export function extractProperties(memberPaths, generatedTypes, parentName, state
         }
         // Handle implicit message types in Array/Set/Map
         handleImplicitTypes(propTypePath, name, generatedTypes, parentName, declaredTypeNames, declaredMessageTypeNames);
-        // assertSupportedType is done by caller before
+        // Validate supported types after implicit type expansion
+        assertSupportedType(propTypePath, declaredTypeNames);
         const mapType = isMapTypeNode(propTypePath.node);
         const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
         const arrayType = isArrayTypeNode(propTypePath.node);

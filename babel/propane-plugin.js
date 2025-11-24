@@ -172,7 +172,8 @@ export default function propanePlugin() {
       state,
       declaredTypeNames,
       declaredMessageTypeNames,
-      getMessageReferenceName
+      getMessageReferenceName,
+      assertSupportedType
     );
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;

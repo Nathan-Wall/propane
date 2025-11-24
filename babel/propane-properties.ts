@@ -106,7 +106,8 @@ export function extractProperties(
   state: PluginStateFlags,
   declaredTypeNames: Set<string>,
   declaredMessageTypeNames: Set<string>,
-  getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null
+  getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null,
+  assertSupportedType: (typePath: NodePath<t.TSType>, declaredTypeNames: Set<string>) => void
 ): PropDescriptor[] {
   const props: PropDescriptor[] = [];
   const usedFieldNumbers = new Set<number>();
@@ -174,7 +175,8 @@ export function extractProperties(
       declaredMessageTypeNames
     );
 
-    // assertSupportedType is done by caller before
+    // Validate supported types after implicit type expansion
+    assertSupportedType(propTypePath, declaredTypeNames);
 
     const mapType = isMapTypeNode(propTypePath.node);
     const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
