@@ -126,12 +126,10 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   map<U>(fn: (value: T, index: number, array: readonly T[]) => U): ImmutableArray<U> {
-    // eslint-disable-next-line unicorn/no-array-callback-reference
     return new ImmutableArray(this.#items.map(fn));
   }
 
   filter(fn: (value: T, index: number, array: readonly T[]) => boolean): ImmutableArray<T> {
-    // eslint-disable-next-line unicorn/no-array-callback-reference
     return new ImmutableArray(this.#items.filter(fn));
   }
 

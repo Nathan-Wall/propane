@@ -1,3 +1,6 @@
+import { ImmutableDate } from '../time/date.ts';
+import { ImmutableUrl } from '../web/url.ts';
+
 export function normalizeForJson(value: unknown): unknown {
   if (value === undefined) {
     return null;
@@ -11,8 +14,12 @@ export function normalizeForJson(value: unknown): unknown {
     return `${value.toString()}n`;
   }
 
-  if (value instanceof Date) {
+  if (value instanceof Date || value instanceof ImmutableDate) {
     return value.toJSON();
+  }
+
+  if (isUrl(value)) {
+    return value.toString();
   }
 
   if (isArrayBuffer(value)) {
@@ -75,6 +82,20 @@ function isArrayBuffer(value: unknown): value is ArrayBuffer {
   }
 
   return value instanceof ArrayBuffer || Object.prototype.toString.call(value) === '[object ArrayBuffer]';
+}
+
+function isUrl(value: unknown): value is URL | ImmutableUrl {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const tag = Object.prototype.toString.call(value);
+  return (
+    value instanceof URL
+    || value instanceof ImmutableUrl
+    || tag === '[object URL]'
+    || tag === '[object ImmutableUrl]'
+  );
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {

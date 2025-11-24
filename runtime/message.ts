@@ -3,6 +3,8 @@ import { normalizeForJson } from '../common/json/stringify.ts';
 import { ImmutableMap } from '../common/map/immutable.ts';
 import { ImmutableSet } from '../common/set/immutable.ts';
 import { ImmutableArray } from '../common/array/immutable.ts';
+import { ImmutableDate } from '../common/time/date.ts';
+import { ImmutableUrl } from '../common/web/url.ts';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -10,12 +12,24 @@ const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 const DATE_OBJECT_TAG = '[object Date]';
+const IMMUTABLE_DATE_OBJECT_TAG = '[object ImmutableDate]';
+const URL_OBJECT_TAG = '[object URL]';
+const IMMUTABLE_URL_OBJECT_TAG = '[object ImmutableUrl]';
 const ARRAY_BUFFER_OBJECT_TAG = '[object ArrayBuffer]';
 const DATE_PREFIX = 'D';
+const URL_PREFIX = 'U';
 const ARRAY_BUFFER_PREFIX = 'B';
 
 export type DataPrimitive = string | number | boolean | null | undefined;
-export type DataValue = DataPrimitive | Date | ArrayBuffer | DataObject | DataArray;
+export type DataValue =
+  | DataPrimitive
+  | Date
+  | ImmutableDate
+  | URL
+  | ImmutableUrl
+  | ArrayBuffer
+  | DataObject
+  | DataArray;
 export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
@@ -197,8 +211,15 @@ function canUseBareString(value: string) {
 }
 
 
-function jsonStringifyDate(value: Date) {
-  return JSON.stringify(value.toISOString());
+function jsonStringifyDate(value: Date | ImmutableDate) {
+  if (value instanceof Date) {
+    return JSON.stringify(value.toISOString());
+  }
+  return JSON.stringify(value.toString());
+}
+
+function jsonStringifyUrl(value: URL) {
+  return JSON.stringify(value.toString());
 }
 
 function serializePrimitive(value: unknown): string {
@@ -212,6 +233,10 @@ function serializePrimitive(value: unknown): string {
 
   if (isArrayBufferValue(value)) {
     return serializeArrayBufferLiteral(value);
+  }
+
+  if (isUrlValue(value)) {
+    return serializeUrlLiteral(value);
   }
 
   if (isMapValue(value)) {
@@ -285,7 +310,27 @@ function isDateValue(value: unknown): value is Date {
     return false;
   }
 
-  return value instanceof Date || Object.prototype.toString.call(value) === DATE_OBJECT_TAG;
+  const tag = Object.prototype.toString.call(value);
+  return (
+    value instanceof Date
+    || value instanceof ImmutableDate
+    || tag === DATE_OBJECT_TAG
+    || tag === IMMUTABLE_DATE_OBJECT_TAG
+  );
+}
+
+function isUrlValue(value: unknown): value is URL {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const tag = Object.prototype.toString.call(value);
+  return (
+    value instanceof URL
+    || value instanceof ImmutableUrl
+    || tag === URL_OBJECT_TAG
+    || tag === IMMUTABLE_URL_OBJECT_TAG
+  );
 }
 
 function isArrayBufferValue(value: unknown): value is ArrayBuffer {
@@ -312,6 +357,25 @@ function parseArrayBufferLiteral(token: string): ArrayBuffer {
   }
 
   return base64ToArrayBuffer(parsed);
+}
+
+function serializeUrlLiteral(url: URL): string {
+  return `${URL_PREFIX}${jsonStringifyUrl(url)}`;
+}
+
+function parseUrlLiteral(token: string): URL {
+  const jsonPortion = token.slice(URL_PREFIX.length);
+  const parsed = parseJson(jsonPortion);
+
+  if (typeof parsed !== 'string') {
+    throw new TypeError(`Invalid URL literal token: ${token}`);
+  }
+
+  try {
+    return new URL(parsed);
+  } catch {
+    throw new TypeError(`Invalid URL value: ${parsed}`);
+  }
 }
 
 interface ObjectEntry {
@@ -436,6 +500,10 @@ function parseLiteralToken(token: string) {
 
   if (trimmed === 'false') {
     return false;
+  }
+
+  if (trimmed.startsWith(`${URL_PREFIX}"`)) {
+    return parseUrlLiteral(trimmed);
   }
 
   if (trimmed.startsWith(`${ARRAY_BUFFER_PREFIX}"`)) {

@@ -64,7 +64,6 @@ export default function runArrayBufferTests() {
   assert(buffersEqual(roundTripChunks[0], chunkA), 'First chunk should match.');
   assert(buffersEqual(roundTripChunks[1], chunkB), 'Second chunk should match.');
 
-  // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(message));
   assert(json.data === `base64:${toBase64(data)}`, 'ArrayBuffer should normalize to base64 string in JSON.');
   assert(json.extra === `base64:${toBase64(extra)}`, 'Optional ArrayBuffer should normalize to base64 string in JSON.');

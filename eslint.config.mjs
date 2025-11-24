@@ -42,6 +42,7 @@ export default defineConfig(
       'unicorn/expiring-todo-comments': 'off',
       'unicorn/explicit-length-check': 'off',
       'unicorn/no-anonymous-default-export': 'off',
+      'unicorn/no-array-callback-reference': 'off',
       'unicorn/no-array-reduce': 'off',
       'unicorn/no-null': 'off',
       'unicorn/no-process-exit': 'off',
@@ -54,6 +55,10 @@ export default defineConfig(
           checkInfinity: false,
         },
       ],
+      // In general a decent rule, but we specifically want to use
+      // JSON.parse(JSON.stringify(value)), as an intended low level data clone,
+      // particularly in our tests.
+      'unicorn/prefer-structured-clone': 'off',
       'unicorn/prevent-abbreviations': 'off',
       'unicorn/switch-case-braces': 'off',
     },

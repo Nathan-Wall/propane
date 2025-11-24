@@ -149,6 +149,8 @@ async function copyCommon() {
     ['map', 'immutable.ts'],
     ['array', 'immutable.ts'],
     ['set', 'immutable.ts'],
+    ['time', 'date.ts'],
+    ['web', 'url.ts'],
   ];
 
   for (const [subdir, file] of filesToCopy) {

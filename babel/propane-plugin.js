@@ -21,7 +21,8 @@ export default function propanePlugin() {
           state.usesImmutableSet = false;
           state.usesImmutableArray = false;
           state.usesEquals = false;
-          state.usesImmutableSet = false;
+          state.usesImmutableDate = false;
+          state.usesImmutableUrl = false;
 
           const fileOpts = (state.file && state.file.opts) || {};
           const filename = fileOpts.filename || '';
@@ -108,7 +109,7 @@ export default function propanePlugin() {
     }
 
     const generatedTypes = [];
-    const properties = extractProperties(typeLiteralPath.get('members'), generatedTypes, typeAlias.id.name);
+    const properties = extractProperties(typeLiteralPath.get('members'), generatedTypes, typeAlias.id.name, state);
     if (properties.some((prop) => prop.isMap)) {
       state.usesImmutableMap = true;
       state.usesEquals = true;
@@ -138,7 +139,7 @@ export default function propanePlugin() {
     return [...generatedTypes, classDecl, typeNamespace];
   }
 
-  function extractProperties(memberPaths, generatedTypes, parentName) {
+  function extractProperties(memberPaths, generatedTypes, parentName, state) {
     const props = [];
     const usedFieldNumbers = new Set();
     const usedNames = new Set();
@@ -209,6 +210,14 @@ export default function propanePlugin() {
       const setType = isSetTypeNode(propTypePath.node);
       const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
       const messageTypeName = getMessageReferenceName(propTypePath);
+      const isDateType = propTypePath.isTSTypeReference() && isDateReference(propTypePath.node);
+      const isUrlType = propTypePath.isTSTypeReference() && isUrlReference(propTypePath.node);
+      if (isDateType) {
+        state.usesImmutableDate = true;
+      }
+      if (isUrlType) {
+        state.usesImmutableUrl = true;
+      }
       const runtimeType = mapType || setType || arrayType
         ? wrapImmutableType(t.cloneNode(propTypePath.node))
         : t.cloneNode(propTypePath.node);
@@ -252,6 +261,18 @@ export default function propanePlugin() {
           t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
         );
         displayType = t.tsUnionType([arrayRef, iterableRef]);
+      } else if (isDateType) {
+        displayType = t.tsUnionType([
+          t.tsTypeReference(t.identifier('ImmutableDate')),
+          t.tsTypeReference(t.identifier('Date')),
+        ]);
+        inputTypeAnnotation = displayType;
+      } else if (isUrlType) {
+        displayType = t.tsUnionType([
+          t.tsTypeReference(t.identifier('ImmutableUrl')),
+          t.tsTypeReference(t.identifier('URL')),
+        ]);
+        inputTypeAnnotation = displayType;
       }
 
       if (messageTypeName) {
@@ -272,6 +293,8 @@ export default function propanePlugin() {
         isArray: arrayType,
         isSet: setType,
         isMap: mapType,
+        isDateType,
+        isUrlType,
         isMessageType: Boolean(messageTypeName),
         messageTypeName,
         typeAnnotation: runtimeType,
@@ -523,8 +546,11 @@ function getDefaultValueForType(typeNode) {
   if (t.isTSTypeReference(typeNode)) {
     const typeName = typeNode.typeName;
     if (t.isIdentifier(typeName)) {
-      if (typeName.name === 'Date') {
-        return t.newExpression(t.identifier('Date'), [t.numericLiteral(0)]);
+      if (typeName.name === 'Date' || typeName.name === 'ImmutableDate') {
+        return t.newExpression(t.identifier('ImmutableDate'), [t.numericLiteral(0)]);
+      }
+      if (typeName.name === 'URL' || typeName.name === 'ImmutableUrl') {
+        return t.newExpression(t.identifier('ImmutableUrl'), [t.stringLiteral('about:blank')]);
       }
       if (typeName.name === 'ArrayBuffer') {
         return t.newExpression(t.identifier('ArrayBuffer'), [t.numericLiteral(0)]);
@@ -540,6 +566,18 @@ function getDefaultValueForType(typeNode) {
 
 function isDateReference(node) {
   return t.isIdentifier(node.typeName) && node.typeName.name === 'Date';
+}
+
+function isImmutableDateReference(node) {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableDate';
+}
+
+function isUrlReference(node) {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'URL';
+}
+
+function isImmutableUrlReference(node) {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableUrl';
 }
 
 function isArrayBufferReference(node) {
@@ -647,6 +685,12 @@ function assertSupportedMapKeyType(typePath) {
   if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
     throw typePath.buildCodeFrameError(
       'Propane map keys cannot be Date objects.'
+    );
+  }
+
+  if (typePath.isTSTypeReference() && isUrlReference(typePath.node)) {
+    throw typePath.buildCodeFrameError(
+      'Propane map keys cannot be URL objects.'
     );
   }
 
@@ -921,6 +965,22 @@ function buildClassFromProperties(typeName, properties, declaredMessageTypeNames
       valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
         ? buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName)
         : buildImmutableSetExpression(propsAccess);
+    } else if (prop.isDateType) {
+      valueExpr = buildImmutableDateNormalizationExpression(
+        valueExpr,
+        {
+          allowUndefined: Boolean(prop.optional),
+          allowNull: typeAllowsNull(prop.typeAnnotation),
+        }
+      );
+    } else if (prop.isUrlType) {
+      valueExpr = buildImmutableUrlNormalizationExpression(
+        valueExpr,
+        {
+          allowUndefined: Boolean(prop.optional),
+          allowNull: typeAllowsNull(prop.typeAnnotation),
+        }
+      );
     }
 
     if (prop.isMessageType && prop.messageTypeName) {
@@ -1337,6 +1397,12 @@ function ensureBaseImport(programPath, state) {
   if (state.usesImmutableArray && !hasImportBinding('ImmutableArray')) {
     requiredSpecifiers.push('ImmutableArray');
   }
+  if (state.usesImmutableDate && !hasImportBinding('ImmutableDate')) {
+    requiredSpecifiers.push('ImmutableDate');
+  }
+  if (state.usesImmutableUrl && !hasImportBinding('ImmutableUrl')) {
+    requiredSpecifiers.push('ImmutableUrl');
+  }
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');
   }
@@ -1404,6 +1470,12 @@ function wrapImmutableType(node) {
     && t.isIdentifier(node.typeName)
   ) {
     const name = node.typeName.name;
+    if (name === 'Date') {
+      return t.tsTypeReference(t.identifier('ImmutableDate'));
+    }
+    if (name === 'URL') {
+      return t.tsTypeReference(t.identifier('ImmutableUrl'));
+    }
     if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
       const params = node.typeParameters?.params ?? [];
       const [key, value] = [
@@ -1474,6 +1546,20 @@ function buildInputAcceptingMutable(node) {
     && t.isIdentifier(node.typeName)
   ) {
     const name = node.typeName.name;
+
+    if (name === 'Date' || name === 'ImmutableDate') {
+      return t.tsUnionType([
+        t.tsTypeReference(t.identifier('ImmutableDate')),
+        t.tsTypeReference(t.identifier('Date')),
+      ]);
+    }
+
+    if (name === 'URL' || name === 'ImmutableUrl') {
+      return t.tsUnionType([
+        t.tsTypeReference(t.identifier('ImmutableUrl')),
+        t.tsTypeReference(t.identifier('URL')),
+      ]);
+    }
 
     // Array-style reference (T[], ReadonlyArray<T>, ImmutableArray<T>)
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
@@ -1684,6 +1770,82 @@ function buildImmutableSetExpression(valueExpr) {
       buildNewImmutableSet()
     )
   );
+}
+
+function buildImmutableDateNormalizationExpression(
+  valueExpr,
+  { allowUndefined = false, allowNull = false } = {}
+) {
+  const instanceCheck = t.binaryExpression(
+    'instanceof',
+    t.cloneNode(valueExpr),
+    t.identifier('ImmutableDate')
+  );
+  const newInstance = t.newExpression(t.identifier('ImmutableDate'), [
+    t.cloneNode(valueExpr),
+  ]);
+
+  let normalized = t.conditionalExpression(
+    instanceCheck,
+    t.cloneNode(valueExpr),
+    newInstance
+  );
+
+  if (allowNull) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral()),
+      t.cloneNode(valueExpr),
+      normalized
+    );
+  }
+
+  if (allowUndefined) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.identifier('undefined'),
+      normalized
+    );
+  }
+
+  return normalized;
+}
+
+function buildImmutableUrlNormalizationExpression(
+  valueExpr,
+  { allowUndefined = false, allowNull = false } = {}
+) {
+  const instanceCheck = t.binaryExpression(
+    'instanceof',
+    t.cloneNode(valueExpr),
+    t.identifier('ImmutableUrl')
+  );
+  const newInstance = t.newExpression(t.identifier('ImmutableUrl'), [
+    t.cloneNode(valueExpr),
+  ]);
+
+  let normalized = t.conditionalExpression(
+    instanceCheck,
+    t.cloneNode(valueExpr),
+    newInstance
+  );
+
+  if (allowNull) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral()),
+      t.cloneNode(valueExpr),
+      normalized
+    );
+  }
+
+  if (allowUndefined) {
+    normalized = t.conditionalExpression(
+      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.identifier('undefined'),
+      normalized
+    );
+  }
+
+  return normalized;
 }
 
 function buildMessageNormalizationExpression(
@@ -3223,8 +3385,12 @@ function buildRuntimeTypeCheckExpression(typeNode, valueId) {
   }
 
   if (t.isTSTypeReference(typeNode)) {
-    if (isDateReference(typeNode)) {
+    if (isDateReference(typeNode) || isImmutableDateReference(typeNode)) {
       return buildDateCheckExpression(valueId);
+    }
+
+    if (isUrlReference(typeNode) || isImmutableUrlReference(typeNode)) {
+      return buildUrlCheckExpression(valueId);
     }
 
     if (isArrayBufferReference(typeNode)) {
@@ -3282,6 +3448,11 @@ function buildDateCheckExpression(valueId) {
     valueId,
     t.identifier('Date')
   );
+  const instanceOfImmutableDate = t.binaryExpression(
+    'instanceof',
+    valueId,
+    t.identifier('ImmutableDate')
+  );
 
   const objectToStringCall = t.callExpression(
     t.memberExpression(
@@ -3300,7 +3471,59 @@ function buildDateCheckExpression(valueId) {
     t.stringLiteral('[object Date]')
   );
 
-  return t.logicalExpression('||', instanceOfDate, tagEqualsDate);
+  const tagEqualsImmutableDate = t.binaryExpression(
+    '===',
+    objectToStringCall,
+    t.stringLiteral('[object ImmutableDate]')
+  );
+
+  return t.logicalExpression(
+    '||',
+    t.logicalExpression('||', instanceOfDate, instanceOfImmutableDate),
+    t.logicalExpression('||', tagEqualsDate, tagEqualsImmutableDate)
+  );
+}
+
+function buildUrlCheckExpression(valueId) {
+  const instanceOfUrl = t.binaryExpression(
+    'instanceof',
+    valueId,
+    t.identifier('URL')
+  );
+  const instanceOfImmutableUrl = t.binaryExpression(
+    'instanceof',
+    valueId,
+    t.identifier('ImmutableUrl')
+  );
+
+  const objectToStringCall = t.callExpression(
+    t.memberExpression(
+      t.memberExpression(
+        t.memberExpression(t.identifier('Object'), t.identifier('prototype')),
+        t.identifier('toString')
+      ),
+      t.identifier('call')
+    ),
+    [valueId]
+  );
+
+  const tagEqualsUrl = t.binaryExpression(
+    '===',
+    objectToStringCall,
+    t.stringLiteral('[object URL]')
+  );
+
+  const tagEqualsImmutableUrl = t.binaryExpression(
+    '===',
+    objectToStringCall,
+    t.stringLiteral('[object ImmutableUrl]')
+  );
+
+  return t.logicalExpression(
+    '||',
+    t.logicalExpression('||', instanceOfUrl, instanceOfImmutableUrl),
+    t.logicalExpression('||', tagEqualsUrl, tagEqualsImmutableUrl)
+  );
 }
 
 function buildArrayBufferCheckExpression(valueId) {
@@ -3780,6 +4003,9 @@ function isPrimitiveLikeType(typePath) {
   if (typePath.isTSTypeReference()) {
     return (
       isDateReference(typePath.node)
+      || isImmutableDateReference(typePath.node)
+      || isUrlReference(typePath.node)
+      || isImmutableUrlReference(typePath.node)
       || isArrayBufferReference(typePath.node)
       || isBrandReference(typePath.node)
     );
@@ -3971,7 +4197,7 @@ function assertSupportedTopLevelType(typePath) {
   }
 
   throw typePath.buildCodeFrameError(
-    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, ArrayBuffer, Brand).'
+    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, URL, ArrayBuffer, Brand).'
   );
 }
 
@@ -3997,7 +4223,11 @@ function assertSupportedType(typePath, declaredTypeNames) {
   }
 
   if (typePath.isTSTypeReference()) {
-    if (isDateReference(typePath.node)) {
+    if (isDateReference(typePath.node) || isImmutableDateReference(typePath.node)) {
+      return;
+    }
+
+    if (isUrlReference(typePath.node) || isImmutableUrlReference(typePath.node)) {
       return;
     }
 

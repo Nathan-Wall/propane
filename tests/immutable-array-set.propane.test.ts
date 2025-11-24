@@ -11,7 +11,6 @@ export default function runImmutableArraySetTests() {
   const instance: ImmutableArraySet = new ImmutableArraySet({ arr, set });
 
   // toJSON normalization
-  // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(instance));
   assert(JSON.stringify(json.arr) === JSON.stringify([1, 2, 3]), 'ImmutableArray should JSONify to plain array');
   assert(JSON.stringify(json.set) === JSON.stringify(['a', 'b']), 'ImmutableSet should JSONify to array of unique values');

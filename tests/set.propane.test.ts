@@ -32,7 +32,6 @@ export default function runSetTests() {
   assert(iterableMsg.ids?.has(9) && iterableMsg.ids?.has(10), 'iterable ids should normalize to ImmutableSet');
 
   // toJSON
-  // eslint-disable-next-line unicorn/prefer-structured-clone
   const json = JSON.parse(JSON.stringify(msg));
   assert(JSON.stringify(json.tags) === JSON.stringify(['a', 'b']), 'toJSON should output array for Set');
   assert(JSON.stringify(json.ids) === JSON.stringify([1, 2]), 'toJSON should output array for optional Set');

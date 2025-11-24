@@ -1,0 +1,6 @@
+export type UrlMessage = {
+  '1:id': number;
+  '2:primary': URL;
+  '3:secondary'?: URL;
+  '4:links': URL[];
+};
