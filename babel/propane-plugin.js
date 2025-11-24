@@ -1,7 +1,11 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { parse } from '@babel/parser';
 import * as t from '@babel/types';
+import { capitalize, pathTransform } from './propane-utils.js';
+import {
+  analyzePropaneModule,
+  getFilename,
+  getImportedName,
+  resolveImportPath,
+} from './propane-imports.js';
 
 const MESSAGE_SOURCE = '@propanejs/runtime';
 const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
@@ -421,89 +425,6 @@ function insertPrimitiveTypeAlias(typeAliasPath, exported) {
   }
 }
 
-function resolveImportPath(importSource, filename) {
-  if (!filename || typeof importSource !== 'string' || !importSource.startsWith('.')) {
-    return null;
-  }
-
-  const dir = path.dirname(filename);
-  const basePath = path.resolve(dir, importSource);
-
-  const candidates = [
-    basePath,
-    `${basePath}.propane`,
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
-
-function analyzePropaneModule(filename) {
-  try {
-    const source = fs.readFileSync(filename, 'utf8');
-    const ast = parse(source, {
-      sourceType: 'module',
-      plugins: ['typescript'],
-    });
-
-    const names = new Set();
-
-    for (const node of ast.program.body) {
-      if (
-        node.type === 'ExportNamedDeclaration'
-        && node.declaration
-        && node.declaration.type === 'TSTypeAliasDeclaration'
-        && node.declaration.id
-        && node.declaration.id.type === 'Identifier'
-        && node.declaration.typeAnnotation
-        && node.declaration.typeAnnotation.type === 'TSTypeLiteral'
-      ) {
-        names.add(node.declaration.id.name);
-      }
-    }
-
-    return names;
-  } catch {
-    return new Set();
-  }
-}
-
-function getImportedName(importPath) {
-  if (importPath.isImportSpecifier()) {
-    const imported = importPath.node.imported;
-    if (t.isIdentifier(imported)) {
-      return imported.name;
-    }
-    if (t.isStringLiteral(imported)) {
-      return imported.value;
-    }
-    return null;
-  }
-
-  if (importPath.isImportDefaultSpecifier()) {
-    return 'default';
-  }
-
-  return null;
-}
-
-function getFilename(typePath) {
-  const file = typePath.hub && typePath.hub.file;
-  const opts = file && file.opts;
-  return (opts && opts.filename) || null;
-}
-
-function capitalize(name) {
-  if (!name) {
-    return '';
-  }
-  return name.charAt(0).toUpperCase() + name.slice(1);
-}
 function getDefaultValue(prop) {
   if (prop.optional) {
     return t.identifier('undefined');
@@ -1492,14 +1413,6 @@ function ensureBaseImport(programPath, state) {
   } else {
     program.body.splice(insertionIndex, 0, importDecl);
   }
-}
-
-function pathTransform(filename) {
-  const relative = path.relative(process.cwd(), filename);
-  const normalized = relative && !relative.startsWith('..')
-    ? relative
-    : filename;
-  return normalized.split(path.sep).join('/');
 }
 
 function wrapImmutableType(node) {
