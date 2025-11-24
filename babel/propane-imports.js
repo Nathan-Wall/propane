@@ -2,80 +2,66 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from '@babel/parser';
 import * as t from '@babel/types';
-
 export function resolveImportPath(importSource, filename) {
-  if (!filename || typeof importSource !== 'string' || !importSource.startsWith('.')) {
-    return null;
-  }
-
-  const dir = path.dirname(filename);
-  const basePath = path.resolve(dir, importSource);
-
-  const candidates = [
-    basePath,
-    `${basePath}.propane`,
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return candidate;
+    if (!filename || typeof importSource !== 'string' || !importSource.startsWith('.')) {
+        return null;
     }
-  }
-
-  return null;
+    const dir = path.dirname(filename);
+    const basePath = path.resolve(dir, importSource);
+    const candidates = [
+        basePath,
+        `${basePath}.propane`,
+    ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+            return candidate;
+        }
+    }
+    return null;
 }
-
 export function analyzePropaneModule(filename) {
-  try {
-    const source = fs.readFileSync(filename, 'utf8');
-    const ast = parse(source, {
-      sourceType: 'module',
-      plugins: ['typescript'],
-    });
-
-    const names = new Set();
-
-    for (const node of ast.program.body) {
-      if (
-        node.type === 'ExportNamedDeclaration'
-        && node.declaration
-        && node.declaration.type === 'TSTypeAliasDeclaration'
-        && node.declaration.id
-        && node.declaration.id.type === 'Identifier'
-        && node.declaration.typeAnnotation
-        && node.declaration.typeAnnotation.type === 'TSTypeLiteral'
-      ) {
-        names.add(node.declaration.id.name);
-      }
+    try {
+        const source = fs.readFileSync(filename, 'utf8');
+        const ast = parse(source, {
+            sourceType: 'module',
+            plugins: ['typescript'],
+        });
+        const names = new Set();
+        for (const node of ast.program.body) {
+            if (node.type === 'ExportNamedDeclaration'
+                && node.declaration
+                && node.declaration.type === 'TSTypeAliasDeclaration'
+                && node.declaration.id
+                && node.declaration.id.type === 'Identifier'
+                && node.declaration.typeAnnotation
+                && node.declaration.typeAnnotation.type === 'TSTypeLiteral') {
+                names.add(node.declaration.id.name);
+            }
+        }
+        return names;
     }
-
-    return names;
-  } catch {
-    return new Set();
-  }
+    catch {
+        return new Set();
+    }
 }
-
 export function getImportedName(importPath) {
-  if (importPath.isImportSpecifier()) {
-    const imported = importPath.node.imported;
-    if (t.isIdentifier(imported)) {
-      return imported.name;
+    if (importPath.isImportSpecifier()) {
+        const imported = importPath.node.imported;
+        if (t.isIdentifier(imported)) {
+            return imported.name;
+        }
+        if (t.isStringLiteral(imported)) {
+            return imported.value;
+        }
+        return null;
     }
-    if (t.isStringLiteral(imported)) {
-      return imported.value;
+    if (importPath.isImportDefaultSpecifier()) {
+        return 'default';
     }
     return null;
-  }
-
-  if (importPath.isImportDefaultSpecifier()) {
-    return 'default';
-  }
-
-  return null;
 }
-
 export function getFilename(typePath) {
-  const file = typePath.hub && typePath.hub.file;
-  const opts = file && file.opts;
-  return (opts && opts.filename) || null;
+    const file = typePath.hub && typePath.hub.file;
+    const opts = file && file.opts;
+    return (opts && opts.filename) || null;
 }
