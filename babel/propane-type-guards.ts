@@ -190,11 +190,13 @@ export function getMapTypeArguments(node: t.TSType | null | undefined): { keyTyp
       || node.typeName.name === 'ReadonlyMap'
       || node.typeName.name === 'ImmutableMap'
     )
-    && node.typeParameters
-    && node.typeParameters.params.length === 2
   ) {
-    const [keyType, valueType] = node.typeParameters.params;
-    return { keyType, valueType };
+    const params = node.typeParameters?.params;
+    if (params?.length === 2) {
+      const keyType = params[0]!;
+      const valueType = params[1]!;
+      return { keyType, valueType };
+    }
   }
 
   return null;
@@ -217,10 +219,11 @@ export function getSetTypeArguments(node: t.TSType | null | undefined): t.TSType
       || node.typeName.name === 'ReadonlySet'
       || node.typeName.name === 'ImmutableSet'
     )
-    && node.typeParameters
-    && node.typeParameters.params.length === 1
   ) {
-    return node.typeParameters.params[0];
+    const params = node.typeParameters?.params;
+    if (params?.length === 1) {
+      return params[0]!;
+    }
   }
 
   return null;
@@ -247,17 +250,18 @@ export function getArrayElementType(node: t.TSType | null | undefined): t.TSType
       || node.typeName.name === 'ReadonlyArray'
       || node.typeName.name === 'ImmutableArray'
     )
-    && node.typeParameters
-    && node.typeParameters.params.length === 1
   ) {
-    return node.typeParameters.params[0];
+    const params = node.typeParameters?.params;
+    if (params?.length === 1) {
+      return params[0]!;
+    }
   }
 
   return null;
 }
 
 export function isPrimitiveLikeType(typePath: NodePath<t.TSType> | null | undefined): boolean {
-  if (!typePath || !typePath.node) {
+  if (!typePath?.node) {
     return false;
   }
 

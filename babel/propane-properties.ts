@@ -152,14 +152,14 @@ export function extractProperties(
     }
 
     const typeAnnotationPath = memberPath.get('typeAnnotation');
-    if (!typeAnnotationPath || !typeAnnotationPath.node) {
+    if (!typeAnnotationPath?.node) {
       throw memberPath.buildCodeFrameError(
         'Propane properties must include a type annotation.'
       );
     }
 
     const propTypePath = typeAnnotationPath.get('typeAnnotation') as NodePath<t.TSType>;
-    if (!propTypePath || !propTypePath.node) {
+    if (!propTypePath?.node) {
       throw memberPath.buildCodeFrameError(
         'Propane properties must include a type annotation.'
       );
@@ -185,10 +185,10 @@ export function extractProperties(
     const setType = isSetTypeNode(propTypePath.node);
     const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
     const messageTypeName = getMessageReferenceName(propTypePath);
-    const isDateType = propTypePath.isTSTypeReference() && isDateReference(propTypePath.node as t.TSTypeReference);
-    const isUrlType = propTypePath.isTSTypeReference() && isUrlReference(propTypePath.node as t.TSTypeReference);
+    const isDateType = propTypePath.isTSTypeReference() && isDateReference(propTypePath.node);
+    const isUrlType = propTypePath.isTSTypeReference() && isUrlReference(propTypePath.node);
     const isArrayBufferType = propTypePath.isTSTypeReference()
-      && (isArrayBufferReference(propTypePath.node as t.TSTypeReference) || isImmutableArrayBufferReference(propTypePath.node as t.TSTypeReference));
+      && (isArrayBufferReference(propTypePath.node) || isImmutableArrayBufferReference(propTypePath.node));
 
     if (mapType) {
       state.usesImmutableMap = true;
@@ -498,13 +498,13 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
   }
 
   if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(wrapImmutableType(t.cloneNode(node.typeAnnotation)) as t.TSType);
+    return t.tsParenthesizedType(wrapImmutableType(t.cloneNode(node.typeAnnotation))!);
   }
 
   if (t.isTSArrayType(node)) {
     return t.tsTypeReference(
       t.identifier('ImmutableArray'),
-      t.tsTypeParameterInstantiation([wrapImmutableType(t.cloneNode(node.elementType)) as t.TSType])
+      t.tsTypeParameterInstantiation([wrapImmutableType(t.cloneNode(node.elementType))!])
     );
   }
 
@@ -525,8 +525,8 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
       const params = node.typeParameters?.params ?? [];
       const [key, value] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()) as t.TSType,
-        wrapImmutableType(params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword()) as t.TSType,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
+        wrapImmutableType(params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword())!,
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableMap'),
@@ -537,7 +537,7 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()) as t.TSType,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableSet'),
@@ -548,7 +548,7 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()) as t.TSType,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableArray'),
@@ -566,11 +566,11 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
   }
 
   if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(buildInputAcceptingMutable(t.cloneNode(node.typeAnnotation)) as t.TSType);
+    return t.tsParenthesizedType(buildInputAcceptingMutable(t.cloneNode(node.typeAnnotation))!);
   }
 
   if (t.isTSArrayType(node)) {
-    const element = buildInputAcceptingMutable(t.cloneNode(node.elementType)) as t.TSType;
+    const element = buildInputAcceptingMutable(t.cloneNode(node.elementType))!;
     return t.tsUnionType([
       t.tsTypeReference(
         t.identifier('ImmutableArray'),
@@ -618,7 +618,7 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
-        : t.tsAnyKeyword()) as t.TSType;
+        : t.tsAnyKeyword())!;
       return t.tsUnionType([
         t.tsTypeReference(
           t.identifier('ImmutableArray'),
@@ -639,7 +639,7 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
     if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
       const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
-        : t.tsAnyKeyword()) as t.TSType;
+        : t.tsAnyKeyword())!;
       return t.tsUnionType([
         t.tsTypeReference(
           t.identifier('ImmutableSet'),
@@ -664,8 +664,8 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
       const valueParam = node.typeParameters?.params?.[1]
         ? t.cloneNode(node.typeParameters.params[1])
         : t.tsAnyKeyword();
-      const key = buildInputAcceptingMutable(keyParam) as t.TSType;
-      const value = buildInputAcceptingMutable(valueParam) as t.TSType;
+      const key = buildInputAcceptingMutable(keyParam)!;
+      const value = buildInputAcceptingMutable(valueParam)!;
       const tupleType = t.tsTupleType([key, value]);
       return t.tsUnionType([
         t.tsTypeReference(
