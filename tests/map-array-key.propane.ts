@@ -9,7 +9,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
   #optionalArrayMap: ImmutableMap<ImmutableArray<boolean>, ImmutableDate> | undefined;
   constructor(props?: MapArrayKey.Value) {
     if (!props && MapArrayKey.EMPTY) return MapArrayKey.EMPTY;
-    super(MapArrayKey.TYPE_TAG);
+    super(MapArrayKey.TYPE_TAG, "MapArrayKey");
     this.#arrayValues = props ? props.arrayValues === undefined || props.arrayValues === null ? props.arrayValues : new ImmutableMap(Array.from(props.arrayValues).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new Map();
     this.#numberArrayMap = props ? props.numberArrayMap === undefined || props.numberArrayMap === null ? props.numberArrayMap : new ImmutableMap(Array.from(props.numberArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new Map();
     this.#optionalArrayMap = props ? props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;

@@ -10,7 +10,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   #links: ImmutableArray<ImmutableUrl>;
   constructor(props?: UrlMessage.Value) {
     if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
-    super(UrlMessage.TYPE_TAG);
+    super(UrlMessage.TYPE_TAG, "UrlMessage");
     this.#id = props ? props.id : 0;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;

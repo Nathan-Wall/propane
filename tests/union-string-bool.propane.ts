@@ -8,7 +8,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   #optional: string | boolean;
   constructor(props?: UnionStringBool.Value) {
     if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
-    super(UnionStringBool.TYPE_TAG);
+    super(UnionStringBool.TYPE_TAG, "UnionStringBool");
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
     if (!props) UnionStringBool.EMPTY = this;

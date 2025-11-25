@@ -9,7 +9,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   #imap: ImmutableMap<string, ImmutableDate>;
   constructor(props?: ToJson_Nested.Value) {
     if (!props && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
-    super(ToJson_Nested.TYPE_TAG);
+    super(ToJson_Nested.TYPE_TAG, "ToJson_Nested");
     this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : Object.freeze([]);
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
@@ -403,7 +403,7 @@ export class ToJson extends Message<ToJson.Data> {
   #nested: ToJson_Nested;
   constructor(props?: ToJson.Value) {
     if (!props && ToJson.EMPTY) return ToJson.EMPTY;
-    super(ToJson.TYPE_TAG);
+    super(ToJson.TYPE_TAG, "ToJson");
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
     this.#big = props ? props.big : 0n;

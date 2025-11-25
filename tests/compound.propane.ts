@@ -9,7 +9,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   #value: string;
   constructor(props?: Compound_Inline.Value) {
     if (!props && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
-    super(Compound_Inline.TYPE_TAG);
+    super(Compound_Inline.TYPE_TAG, "Compound_Inline");
     this.#value = props ? props.value : "";
     if (!props) Compound_Inline.EMPTY = this;
   }
@@ -51,7 +51,7 @@ export class Compound extends Message<Compound.Data> {
   #inline: Compound_Inline;
   constructor(props?: Compound.Value) {
     if (!props && Compound.EMPTY) return Compound.EMPTY;
-    super(Compound.TYPE_TAG);
+    super(Compound.TYPE_TAG, "Compound");
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();

@@ -14,7 +14,7 @@ export class Indexed extends Message<Indexed.Data> {
   #status: string;
   constructor(props?: Indexed.Value) {
     if (!props && Indexed.EMPTY) return Indexed.EMPTY;
-    super(Indexed.TYPE_TAG);
+    super(Indexed.TYPE_TAG, "Indexed");
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;

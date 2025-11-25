@@ -11,7 +11,7 @@ class SimpleMessage extends Message<SimpleProps> {
   #text: string;
 
   constructor(text: string) {
-    super(SimpleMessage.TYPE_TAG);
+    super(SimpleMessage.TYPE_TAG, 'SimpleMessage');
     this.#text = text;
   }
 

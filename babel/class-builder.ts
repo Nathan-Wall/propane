@@ -5,7 +5,7 @@ import {
   getDefaultValue,
   wrapImmutableType,
 } from './properties';
-import type { PropDescriptor } from './properties';
+import type { PropDescriptor, PluginStateFlags } from './properties';
 import {
   typeAllowsNull,
   buildRuntimeTypeCheckExpression,
@@ -86,7 +86,8 @@ function needsMapConversions(conversions: MapConversionInfo): boolean {
 export function buildClassFromProperties(
   typeName: string,
   properties: PropDescriptor[],
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  state: PluginStateFlags
 ): t.ClassDeclaration {
   const backingFields: t.ClassPrivateProperty[] = [];
   const getters: t.ClassMethod[] = [];
@@ -145,6 +146,7 @@ export function buildClassFromProperties(
               t.identifier(typeName),
               t.identifier('TYPE_TAG')
             ),
+            t.stringLiteral(typeName),
           ])
         ),
       ])
@@ -283,6 +285,7 @@ export function buildClassFromProperties(
             t.identifier(typeName),
             t.identifier('TYPE_TAG')
           ),
+          t.stringLiteral(typeName),
         ])
       ),
       ...constructorAssignments,
@@ -314,7 +317,8 @@ export function buildClassFromProperties(
   const fromEntriesMethod = buildFromEntriesMethod(
     propDescriptors,
     propsTypeRef,
-    declaredMessageTypeNames
+    declaredMessageTypeNames,
+    state
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
 
@@ -405,8 +409,8 @@ function buildDescriptorMethod(
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   propsTypeRef: t.TSTypeReference
 ): t.ClassMethod {
-  const descriptorEntries = propDescriptors.map((prop) =>
-    t.objectExpression([
+  const descriptorEntries = propDescriptors.map((prop) => {
+    const properties: t.ObjectProperty[] = [
       t.objectProperty(t.identifier('name'), t.stringLiteral(prop.name)),
       t.objectProperty(
         t.identifier('fieldNumber'),
@@ -421,8 +425,22 @@ function buildDescriptorMethod(
           t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
         )
       ),
-    ])
-  );
+    ];
+
+    // Add unionMessageTypes if the property is a union with message types
+    if (prop.unionMessageTypes.length > 0) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('unionMessageTypes'),
+          t.arrayExpression(
+            prop.unionMessageTypes.map((name) => t.stringLiteral(name))
+          )
+        )
+      );
+    }
+
+    return t.objectExpression(properties);
+  });
 
   const body = t.blockStatement([
     t.returnStatement(t.arrayExpression(descriptorEntries)),
@@ -452,7 +470,8 @@ function buildDescriptorMethod(
 function buildFromEntriesMethod(
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   propsTypeRef: t.TSTypeReference,
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  state: PluginStateFlags
 ): t.ClassMethod {
   const argsId = t.identifier('entries');
   argsId.typeAnnotation = t.tsTypeAnnotation(
@@ -607,6 +626,22 @@ function buildFromEntriesMethod(
         ])
       );
       checkedValueId = messageValueId;
+    } else if (prop.unionMessageTypes.length > 0) {
+      // Handle tagged message unions
+      state.usesTaggedMessageData = true;
+
+      const unionValueId = t.identifier(`${prop.name}UnionValue`);
+      // Build the if-else chain for handling each message type in the union
+      const constructorStatements = buildTaggedMessageUnionHandler(
+        checkedValueId as t.Expression,
+        unionValueId,
+        prop.unionMessageTypes,
+        prop.name,
+        prop.optional
+      );
+
+      statements.push(...constructorStatements);
+      checkedValueId = unionValueId;
     }
 
     const typeCheckExpr = buildRuntimeTypeCheckExpression(
@@ -705,6 +740,97 @@ function buildErrorThrow(message: string): t.ThrowStatement {
   return t.throwStatement(
     t.newExpression(t.identifier('Error'), [t.stringLiteral(message)])
   );
+}
+
+/**
+ * Builds statements to handle tagged message unions in $fromEntries.
+ * Generates code like:
+ * ```
+ * let valueUnionValue = value;
+ * if (isTaggedMessageData(value)) {
+ *   if (value.$tag === 'MessageA') {
+ *     valueUnionValue = new MessageA(value.$data);
+ *   } else if (value.$tag === 'MessageB') {
+ *     valueUnionValue = new MessageB(value.$data);
+ *   }
+ * }
+ * ```
+ */
+function buildTaggedMessageUnionHandler(
+  sourceExpr: t.Expression,
+  targetId: t.Identifier,
+  messageTypes: string[],
+  propName: string,
+  isOptional: boolean
+): t.Statement[] {
+  const statements: t.Statement[] = [];
+
+  // let valueUnionValue = value;
+  statements.push(
+    t.variableDeclaration('let', [
+      t.variableDeclarator(targetId, t.cloneNode(sourceExpr)),
+    ])
+  );
+
+  // Build nested if-else for each message type
+  // if (value.$tag === 'MessageA') { ... } else if (value.$tag === 'MessageB') { ... }
+  let innerIf: t.IfStatement | null = null;
+
+  for (let i = messageTypes.length - 1; i >= 0; i -= 1) {
+    const msgType = messageTypes[i]!;
+    const tagCheck = t.binaryExpression(
+      '===',
+      t.memberExpression(sourceExpr, t.identifier('$tag')),
+      t.stringLiteral(msgType)
+    );
+
+    // new MessageType(value.$data)
+    const constructorCall = t.newExpression(
+      t.identifier(msgType),
+      [t.memberExpression(t.cloneNode(sourceExpr), t.identifier('$data'))]
+    );
+
+    const assignStmt = t.expressionStatement(
+      t.assignmentExpression('=', t.cloneNode(targetId), constructorCall)
+    );
+
+    if (innerIf) {
+      innerIf = t.ifStatement(
+        tagCheck,
+        t.blockStatement([assignStmt]),
+        innerIf
+      );
+    } else {
+      innerIf = t.ifStatement(tagCheck, t.blockStatement([assignStmt]));
+    }
+  }
+
+  if (innerIf) {
+    // Wrap in isTaggedMessageData check
+    const taggedCheck = t.callExpression(
+      t.identifier('isTaggedMessageData'),
+      [t.cloneNode(sourceExpr)]
+    );
+
+    // For optional properties, also check it's not undefined
+    const outerCondition = isOptional
+      ? t.logicalExpression(
+        '&&',
+        t.binaryExpression(
+          '!==',
+          t.cloneNode(sourceExpr),
+          t.identifier('undefined')
+        ),
+        taggedCheck
+      )
+      : taggedCheck;
+
+    statements.push(
+      t.ifStatement(outerCondition, t.blockStatement([innerIf]))
+    );
+  }
+
+  return statements;
 }
 
 function buildSetterMethod(

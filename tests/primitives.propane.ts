@@ -12,7 +12,7 @@ export class Primitives extends Message<Primitives.Data> {
   #missing: undefined;
   constructor(props?: Primitives.Value) {
     if (!props && Primitives.EMPTY) return Primitives.EMPTY;
-    super(Primitives.TYPE_TAG);
+    super(Primitives.TYPE_TAG, "Primitives");
     this.#flag = props ? props.flag : false;
     this.#count = props ? props.count : 0;
     this.#label = props ? props.label : "";

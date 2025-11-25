@@ -10,7 +10,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   #chunks: ImmutableArray<ImmutableArrayBuffer>;
   constructor(props?: ArrayBufferMessage.Value) {
     if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
-    super(ArrayBufferMessage.TYPE_TAG);
+    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage");
     this.#id = props ? props.id : 0;
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;

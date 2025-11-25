@@ -14,7 +14,7 @@ export class Unions extends Message<Unions.Data> {
   };
   constructor(props?: Unions.Value) {
     if (!props && Unions.EMPTY) return Unions.EMPTY;
-    super(Unions.TYPE_TAG);
+    super(Unions.TYPE_TAG, "Unions");
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;

@@ -1,0 +1,15 @@
+export type Cat = {
+  '1:name': string;
+  '2:meows': boolean;
+};
+
+export type Dog = {
+  '1:name': string;
+  '2:barks': boolean;
+};
+
+export type PetOwner = {
+  '1:ownerName': string;
+  '2:pet': Cat | Dog;
+  '3:optionalPet'?: Cat | Dog;
+};

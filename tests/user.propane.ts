@@ -18,7 +18,7 @@ export class User extends Message<User.Data> {
   #height: Distance;
   constructor(props?: User.Value) {
     if (!props && User.EMPTY) return User.EMPTY;
-    super(User.TYPE_TAG);
+    super(User.TYPE_TAG, "User");
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();

@@ -8,7 +8,7 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
   #version: number;
   constructor(props?: MapObjectKey_ObjectKeys_Key.Value) {
     if (!props && MapObjectKey_ObjectKeys_Key.EMPTY) return MapObjectKey_ObjectKeys_Key.EMPTY;
-    super(MapObjectKey_ObjectKeys_Key.TYPE_TAG);
+    super(MapObjectKey_ObjectKeys_Key.TYPE_TAG, "MapObjectKey_ObjectKeys_Key");
     this.#id = props ? props.id : "";
     this.#version = props ? props.version : 0;
     if (!props) MapObjectKey_ObjectKeys_Key.EMPTY = this;
@@ -68,7 +68,7 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   #name: string;
   constructor(props?: MapObjectKey_OptionalObjectMap_Key.Value) {
     if (!props && MapObjectKey_OptionalObjectMap_Key.EMPTY) return MapObjectKey_OptionalObjectMap_Key.EMPTY;
-    super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG);
+    super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG, "MapObjectKey_OptionalObjectMap_Key");
     this.#name = props ? props.name : "";
     if (!props) MapObjectKey_OptionalObjectMap_Key.EMPTY = this;
   }
@@ -109,7 +109,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   #optionalObjectMap: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> | undefined;
   constructor(props?: MapObjectKey.Value) {
     if (!props && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
-    super(MapObjectKey.TYPE_TAG);
+    super(MapObjectKey.TYPE_TAG, "MapObjectKey");
     this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new Map();
     this.#optionalObjectMap = props ? props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (!props) MapObjectKey.EMPTY = this;

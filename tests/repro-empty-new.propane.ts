@@ -7,7 +7,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   #val: number | string;
   constructor(props?: UnionFirstNumber.Value) {
     if (!props && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
-    super(UnionFirstNumber.TYPE_TAG);
+    super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber");
     this.#val = props ? props.val : 0;
     if (!props) UnionFirstNumber.EMPTY = this;
   }
@@ -47,7 +47,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   #val: string | number;
   constructor(props?: UnionFirstString.Value) {
     if (!props && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
-    super(UnionFirstString.TYPE_TAG);
+    super(UnionFirstString.TYPE_TAG, "UnionFirstString");
     this.#val = props ? props.val : "";
     if (!props) UnionFirstString.EMPTY = this;
   }
@@ -87,7 +87,7 @@ export class OptionalField extends Message<OptionalField.Data> {
   #val: string;
   constructor(props?: OptionalField.Value) {
     if (!props && OptionalField.EMPTY) return OptionalField.EMPTY;
-    super(OptionalField.TYPE_TAG);
+    super(OptionalField.TYPE_TAG, "OptionalField");
     this.#val = props ? props.val : undefined;
     if (!props) OptionalField.EMPTY = this;
   }
@@ -130,7 +130,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   #sub: UnionFirstNumber;
   constructor(props?: RequiredMessage.Value) {
     if (!props && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
-    super(RequiredMessage.TYPE_TAG);
+    super(RequiredMessage.TYPE_TAG, "RequiredMessage");
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
     if (!props) RequiredMessage.EMPTY = this;
   }

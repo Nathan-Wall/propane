@@ -8,7 +8,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   #optional: ImmutableMap<ImmutableMap<string, number>, number> | undefined;
   constructor(props?: MapMapKey.Value) {
     if (!props && MapMapKey.EMPTY) return MapMapKey.EMPTY;
-    super(MapMapKey.TYPE_TAG);
+    super(MapMapKey.TYPE_TAG, "MapMapKey");
     this.#nested = props ? props.nested === undefined || props.nested === null ? props.nested : props.nested instanceof ImmutableMap || Object.prototype.toString.call(props.nested) === "[object ImmutableMap]" ? props.nested : new ImmutableMap(props.nested) : new Map();
     this.#optional = props ? props.optional === undefined || props.optional === null ? props.optional : props.optional instanceof ImmutableMap || Object.prototype.toString.call(props.optional) === "[object ImmutableMap]" ? props.optional : new ImmutableMap(props.optional) : undefined;
     if (!props) MapMapKey.EMPTY = this;

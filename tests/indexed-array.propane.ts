@@ -7,7 +7,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   #name: string;
   constructor(props?: ArrayMessage_Labels_Item.Value) {
     if (!props && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
-    super(ArrayMessage_Labels_Item.TYPE_TAG);
+    super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item");
     this.#name = props ? props.name : "";
     if (!props) ArrayMessage_Labels_Item.EMPTY = this;
   }
@@ -50,7 +50,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   #labels: ImmutableArray<ArrayMessage_Labels_Item>;
   constructor(props?: ArrayMessage.Value) {
     if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
-    super(ArrayMessage.TYPE_TAG);
+    super(ArrayMessage.TYPE_TAG, "ArrayMessage");
     this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : Object.freeze([]);
     this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;

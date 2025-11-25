@@ -8,7 +8,7 @@ export class Foo extends Message<Foo.Data> {
   #_name: string;
   constructor(props?: Foo.Value) {
     if (!props && Foo.EMPTY) return Foo.EMPTY;
-    super(Foo.TYPE_TAG);
+    super(Foo.TYPE_TAG, "Foo");
     this.#name = props ? props.name : "";
     this.#_name = props ? props._name : "";
     if (!props) Foo.EMPTY = this;

@@ -10,7 +10,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   #set: ImmutableSet<string>;
   constructor(props?: ImmutableArraySet.Value) {
     if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
-    super(ImmutableArraySet.TYPE_TAG);
+    super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet");
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : Object.freeze([]);
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new Set();
     if (!props) ImmutableArraySet.EMPTY = this;

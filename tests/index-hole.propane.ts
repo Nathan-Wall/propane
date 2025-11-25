@@ -9,7 +9,7 @@ export class Hole extends Message<Hole.Data> {
   #name: string;
   constructor(props?: Hole.Value) {
     if (!props && Hole.EMPTY) return Hole.EMPTY;
-    super(Hole.TYPE_TAG);
+    super(Hole.TYPE_TAG, "Hole");
     this.#id = props ? props.id : 0;
     this.#value = props ? props.value : 0;
     this.#name = props ? props.name : "";

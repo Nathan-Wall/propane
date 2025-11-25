@@ -7,7 +7,7 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   #value: string;
   constructor(props?: MapMessage_Metadata_Value.Value) {
     if (!props && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
-    super(MapMessage_Metadata_Value.TYPE_TAG);
+    super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value");
     this.#value = props ? props.value : "";
     if (!props) MapMessage_Metadata_Value.EMPTY = this;
   }
@@ -47,7 +47,7 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   #note: string | null;
   constructor(props?: MapMessage_Extras_Value.Value) {
     if (!props && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
-    super(MapMessage_Extras_Value.TYPE_TAG);
+    super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value");
     this.#note = props ? props.note : "";
     if (!props) MapMessage_Extras_Value.EMPTY = this;
   }
@@ -89,7 +89,7 @@ export class MapMessage extends Message<MapMessage.Data> {
   #extras: ImmutableMap<string, MapMessage_Extras_Value>;
   constructor(props?: MapMessage.Value) {
     if (!props && MapMessage.EMPTY) return MapMessage.EMPTY;
-    super(MapMessage.TYPE_TAG);
+    super(MapMessage.TYPE_TAG, "MapMessage");
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new Map();
     this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])) : undefined;
     this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new Map();

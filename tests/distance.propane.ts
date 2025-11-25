@@ -10,7 +10,7 @@ export class Distance extends Message<Distance.Data> {
   #value: number;
   constructor(props?: Distance.Value) {
     if (!props && Distance.EMPTY) return Distance.EMPTY;
-    super(Distance.TYPE_TAG);
+    super(Distance.TYPE_TAG, "Distance");
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;
     if (!props) Distance.EMPTY = this;

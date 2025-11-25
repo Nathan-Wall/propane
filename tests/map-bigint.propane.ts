@@ -7,7 +7,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   #values: ImmutableMap<bigint, string>;
   constructor(props?: MapBigintKey.Value) {
     if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
-    super(MapBigintKey.TYPE_TAG);
+    super(MapBigintKey.TYPE_TAG, "MapBigintKey");
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
     if (!props) MapBigintKey.EMPTY = this;
   }

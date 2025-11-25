@@ -85,7 +85,8 @@ export function buildDeclarations(
   const classDecl = buildClassFromProperties(
     typeAlias.id.name,
     properties,
-    declaredMessageTypeNames
+    declaredMessageTypeNames,
+    state
   );
 
   state.usesPropaneBase = true;

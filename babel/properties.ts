@@ -13,6 +13,7 @@ import {
   isUrlReference,
 } from './type-guards';
 import { capitalize } from './utils';
+import { getTypeName } from './type-guards';
 
 export interface PluginStateFlags {
   usesImmutableMap: boolean;
@@ -22,6 +23,7 @@ export interface PluginStateFlags {
   usesImmutableUrl: boolean;
   usesImmutableArrayBuffer: boolean;
   usesEquals: boolean;
+  usesTaggedMessageData: boolean;
 }
 
 export interface PropDescriptor {
@@ -37,6 +39,7 @@ export interface PropDescriptor {
   isArrayBufferType: boolean;
   isMessageType: boolean;
   messageTypeName: string | null;
+  unionMessageTypes: string[];
   typeAnnotation: t.TSType;
   inputTypeAnnotation: t.TSType;
   arrayElementType: t.TSType | null;
@@ -187,6 +190,10 @@ export function extractProperties(
     const setType = isSetTypeNode(propTypePath.node);
     const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
     const messageTypeName = getMessageReferenceName(propTypePath);
+    const unionMessageTypes = extractUnionMessageTypes(
+      propTypePath,
+      getMessageReferenceName
+    );
     const isDateType = propTypePath.isTSTypeReference()
       && isDateReference(propTypePath.node);
     const isUrlType = propTypePath.isTSTypeReference()
@@ -331,6 +338,7 @@ export function extractProperties(
       isArrayBufferType,
       isMessageType: Boolean(messageTypeName),
       messageTypeName,
+      unionMessageTypes,
       typeAnnotation: runtimeType,
       inputTypeAnnotation,
       arrayElementType,
@@ -802,4 +810,23 @@ export function buildInputAcceptingMutable(
   }
 
   return node;
+}
+
+function extractUnionMessageTypes(
+  typePath: NodePath<t.TSType>,
+  getMessageReferenceName: (path: NodePath<t.TSType>) => string | null
+): string[] {
+  if (!typePath.isTSUnionType()) {
+    return [];
+  }
+
+  const messageTypes: string[] = [];
+  for (const memberPath of typePath.get('types')) {
+    const messageName = getMessageReferenceName(memberPath);
+    if (messageName) {
+      messageTypes.push(messageName);
+    }
+  }
+
+  return messageTypes;
 }

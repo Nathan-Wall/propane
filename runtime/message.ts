@@ -39,10 +39,27 @@ export interface DataObject {
 }
 export type MapKey = DataPrimitive | Date | ImmutableDate | URL | ImmutableUrl;
 
+export interface TaggedMessageData {
+  $tag: string;
+  $data: Record<string, unknown>;
+}
+
+export function isTaggedMessageData(value: unknown): value is TaggedMessageData {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && '$tag' in value
+    && '$data' in value
+    && typeof (value as TaggedMessageData).$tag === 'string'
+  );
+}
+
 export interface MessagePropDescriptor<T extends object> {
   name: keyof T;
   fieldNumber: number | null;
   getValue: () => T[keyof T];
+  /** When present, indicates the value should be tagged for union discrimination */
+  unionMessageTypes?: string[];
 }
 
 type MessageFromEntries<T extends DataObject> = Message<T> & {
@@ -56,6 +73,7 @@ interface MessageConstructor<T extends DataObject> {
 
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
+  readonly #typeName: string;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
@@ -63,8 +81,13 @@ export abstract class Message<T extends DataObject> {
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
 
-  protected constructor(typeTag: symbol) {
+  protected constructor(typeTag: symbol, typeName: string) {
     this.#typeTag = typeTag;
+    this.#typeName = typeName;
+  }
+
+  get $typeName(): string {
+    return this.#typeName;
   }
 
   // Immutable.js compatibility: provide a stable hash based on canonical
@@ -130,8 +153,10 @@ export abstract class Message<T extends DataObject> {
 
     for (const descriptor of descriptors) {
       const value = descriptor.getValue();
+      const tagMessages = (descriptor.unionMessageTypes?.length ?? 0) > 0;
+
       if (descriptor.fieldNumber == null) {
-        entries.push({ key: String(descriptor.name), value });
+        entries.push({ key: String(descriptor.name), value, tagMessages });
         continue;
       }
 
@@ -145,6 +170,7 @@ export abstract class Message<T extends DataObject> {
       entries.push({
         key: shouldOmitKey ? null : String(fieldNumber),
         value,
+        tagMessages,
       });
 
       expectedIndex = fieldNumber + 1;
@@ -282,6 +308,18 @@ function serializeSetLiteral(values: ReadonlySet<unknown>): string {
   return `S${serializeArrayLiteral([...values.values()])}`;
 }
 
+function serializeTaggedMessage(message: Message<DataObject>): string {
+  const typeName = message.$typeName;
+  const descriptors = (
+    message as unknown as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
+  ).$getPropDescriptors();
+  const entries: ObjectEntry[] = descriptors.map((descriptor) => ({
+    key: String(descriptor.name),
+    value: descriptor.getValue(),
+  }));
+  return `$${typeName}${serializeObjectLiteral(entries)}`;
+}
+
 function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
   if (!value || typeof value !== 'object') {
     return false;
@@ -375,6 +413,21 @@ function unwrapArrayBuffer(
     : value;
 }
 
+function parseTaggedMessage(token: string): TaggedMessageData {
+  // Format: $TypeName{...}
+  // Find the opening brace to separate type name from data
+  const braceIndex = token.indexOf('{');
+  if (braceIndex === -1) {
+    throw new TypeError(`Invalid tagged message token: ${token}`);
+  }
+
+  const typeName = token.slice(1, braceIndex); // Skip the '$' prefix
+  const dataStr = token.slice(braceIndex);
+  const data = parseObjectLiteral(dataStr);
+
+  return { $tag: typeName, $data: data };
+}
+
 function serializeUrlLiteral(url: URL): string {
   return `${URL_PREFIX}${jsonStringifyUrl(url)}`;
 }
@@ -397,6 +450,8 @@ function parseUrlLiteral(token: string): URL {
 interface ObjectEntry {
   key: string | null;
   value: unknown;
+  /** When true, Message values should be serialized with type tags */
+  tagMessages?: boolean;
 }
 
 function serializeObjectLiteral(
@@ -405,11 +460,14 @@ function serializeObjectLiteral(
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
     : Object.entries(recordOrEntries).map(([key, value]) => ({ key, value }));
-  const serialized = entries.map(({ key, value }) =>
-    key == null
-      ? serializePrimitive(value)
-      : `${serializeObjectKey(key)}:${serializePrimitive(value)}`
-  );
+  const serialized = entries.map(({ key, value, tagMessages }) => {
+    const serializedValue = tagMessages && value instanceof Message
+      ? serializeTaggedMessage(value)
+      : serializePrimitive(value);
+    return key == null
+      ? serializedValue
+      : `${serializeObjectKey(key)}:${serializedValue}`;
+  });
   return `{${serialized.join(',')}}`;
 }
 
@@ -532,6 +590,10 @@ function parseLiteralToken(token: string) {
 
   if (trimmed.startsWith('[')) {
     return parseArrayLiteral(trimmed);
+  }
+
+  if (trimmed.startsWith('$')) {
+    return parseTaggedMessage(trimmed);
   }
 
   if (trimmed.startsWith('{')) {
