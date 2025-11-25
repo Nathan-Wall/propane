@@ -10,6 +10,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item");
     this.#name = props ? props.name : "";
     if (!props) ArrayMessage_Labels_Item.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
     return [{
@@ -56,6 +57,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
     if (!props) ArrayMessage.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
     return [{
@@ -470,10 +472,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   spliceFlags(start: number, deleteCount?: number, ...items): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    flagsNext.splice(...args);
+    flagsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -484,10 +483,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   spliceLabels(start: number, deleteCount?: number, ...items): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    labelsNext.splice(...args);
+    labelsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
@@ -498,10 +494,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   spliceNames(start: number, deleteCount?: number, ...items): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    namesNext.splice(...args);
+    namesNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
@@ -512,10 +505,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   spliceScores(start: number, deleteCount?: number, ...items): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    scoresNext.splice(...args);
+    scoresNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ArrayMessage({
       names: this.#names,
       scores: scoresNext,

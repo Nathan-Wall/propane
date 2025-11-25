@@ -8,12 +8,15 @@ import {
   isArrayTypeNode,
   isDateReference,
   isImmutableArrayBufferReference,
+  isMapReference,
   isMapTypeNode,
+  isSetReference,
   isSetTypeNode,
   isUrlReference,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getTypeName,
 } from './type-guards';
 import { capitalize } from './utils';
-import { getTypeName } from './type-guards';
 
 export interface PluginStateFlags {
   usesImmutableMap: boolean;
@@ -201,6 +204,9 @@ export function extractProperties(
     const isArrayBufferType = propTypePath.isTSTypeReference()
       && (isArrayBufferReference(propTypePath.node)
         || isImmutableArrayBufferReference(propTypePath.node));
+
+    // Recursively scan for type usage to ensure imports are generated
+    scanTypeForUsage(propTypePath, state);
 
     if (mapType) {
       state.usesImmutableMap = true;
@@ -829,4 +835,70 @@ function extractUnionMessageTypes(
   }
 
   return messageTypes;
+}
+
+function scanTypeForUsage(
+  typePath: NodePath<t.TSType>,
+  state: PluginStateFlags
+): void {
+  if (!typePath?.node) return;
+
+  if (typePath.isTSTypeReference()) {
+    if (isDateReference(typePath.node)) state.usesImmutableDate = true;
+    if (isUrlReference(typePath.node)) state.usesImmutableUrl = true;
+    if (
+      isArrayBufferReference(typePath.node)
+      || isImmutableArrayBufferReference(typePath.node)
+    ) {
+      state.usesImmutableArrayBuffer = true;
+    }
+    if (isMapReference(typePath.node)) {
+      state.usesImmutableMap = true;
+      state.usesEquals = true;
+      const params = typePath.get('typeParameters');
+      if (params.isTSTypeParameterInstantiation()) {
+        for (const p of params.get('params')) { // Line 856
+          scanTypeForUsage(p, state);
+        }
+      }
+    }
+    if (isSetReference(typePath.node)) {
+      state.usesImmutableSet = true;
+      const params = typePath.get('typeParameters');
+      if (params.isTSTypeParameterInstantiation()) {
+        for (const p of params.get('params')) { // Line 863
+          scanTypeForUsage(p, state);
+        }
+      }
+    }
+  }
+
+  if (isArrayTypeNode(typePath.node)) {
+    state.usesImmutableArray = true;
+  }
+
+  if (typePath.isTSArrayType()) {
+    scanTypeForUsage(typePath.get('elementType'), state);
+  }
+
+  if (typePath.isTSUnionType()) {
+    for (const member of typePath.get('types')) {
+      scanTypeForUsage(member, state);
+    }
+  }
+
+  if (typePath.isTSTypeLiteral()) {
+     for (const member of typePath.get('members')) {
+         if (member.isTSPropertySignature()) {
+             const annotation = member.get('typeAnnotation');
+             if (annotation.isTSTypeAnnotation()) {
+                scanTypeForUsage(annotation.get('typeAnnotation'), state);
+             }
+         }
+     }
+  }
+
+  if (typePath.isTSParenthesizedType()) {
+      scanTypeForUsage(typePath.get('typeAnnotation'), state);
+  }
 }

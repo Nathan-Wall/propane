@@ -12,7 +12,7 @@ export default function runIndexedArrayTests() {
   });
 
   assert(
-    arrayInstance.serialize() === ':{[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{"name":"Label A"}]}',
+    arrayInstance.serialize() === ':{[Alpha,Beta,Gamma Value],[1,2,3],[true,false],[{name:Label A}]}',
     'Array serialization incorrect.'
   );
 

@@ -10,6 +10,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     super(MapBigintKey.TYPE_TAG, "MapBigintKey");
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
     if (!props) MapBigintKey.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
     return [{

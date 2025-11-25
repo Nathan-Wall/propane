@@ -212,6 +212,7 @@ export default defineConfig(
       '@typescript-eslint/no-unused-vars': 'off',
       'unicorn/prefer-spread': 'off',
       'max-len': 'off',
+      'unicorn/no-negated-condition': 'off',
     },
   },
 

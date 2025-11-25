@@ -16,6 +16,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
     this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : Object.freeze([]);
     if (!props) UrlMessage.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
     return [{
@@ -190,10 +191,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   spliceLinks(start: number, deleteCount?: number, ...items): UrlMessage {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    linksNext.splice(...args);
+    linksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new UrlMessage({
       id: this.#id,
       primary: this.#primary,

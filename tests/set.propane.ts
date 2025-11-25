@@ -12,6 +12,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new Set();
     this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
     if (!props) SetMessage.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
     return [{

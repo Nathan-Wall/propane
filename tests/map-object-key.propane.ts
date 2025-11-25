@@ -12,6 +12,7 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
     this.#id = props ? props.id : "";
     this.#version = props ? props.version : 0;
     if (!props) MapObjectKey_ObjectKeys_Key.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey_ObjectKeys_Key.Data>[] {
     return [{
@@ -71,6 +72,7 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
     super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG, "MapObjectKey_OptionalObjectMap_Key");
     this.#name = props ? props.name : "";
     if (!props) MapObjectKey_OptionalObjectMap_Key.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey_OptionalObjectMap_Key.Data>[] {
     return [{
@@ -113,6 +115,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new Map();
     this.#optionalObjectMap = props ? props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (!props) MapObjectKey.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey.Data>[] {
     return [{

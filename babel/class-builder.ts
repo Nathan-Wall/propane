@@ -273,6 +273,14 @@ export function buildClassFromProperties(
     )
   );
 
+  // Return interned instance for automatic deduplication
+  const returnInterned = t.returnStatement(
+    t.callExpression(
+      t.memberExpression(t.thisExpression(), t.identifier('intern')),
+      []
+    )
+  );
+
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
@@ -290,6 +298,7 @@ export function buildClassFromProperties(
       ),
       ...constructorAssignments,
       memoizationSet,
+      returnInterned,
     ])
   );
 
@@ -763,14 +772,12 @@ function buildTaggedMessageUnionHandler(
   propName: string,
   isOptional: boolean
 ): t.Statement[] {
-  const statements: t.Statement[] = [];
-
   // let valueUnionValue = value;
-  statements.push(
+  const statements: t.Statement[] = [
     t.variableDeclaration('let', [
       t.variableDeclarator(targetId, t.cloneNode(sourceExpr)),
-    ])
-  );
+    ]),
+  ];
 
   // Build nested if-else for each message type
   // if (value.$tag === 'MessageA') { ... } else if (value.$tag === 'MessageB') { ... }
@@ -809,15 +816,11 @@ function buildTaggedMessageUnionHandler(
       t.assignmentExpression('=', t.cloneNode(targetId), constructorCall)
     );
 
-    if (innerIf) {
-      innerIf = t.ifStatement(
-        tagCheck,
-        t.blockStatement([propsDecl, assignStmt]),
-        innerIf
-      );
-    } else {
-      innerIf = t.ifStatement(tagCheck, t.blockStatement([propsDecl, assignStmt]));
-    }
+    innerIf = t.ifStatement(
+      tagCheck,
+      t.blockStatement([propsDecl, assignStmt]),
+      innerIf
+    );
   }
 
   if (innerIf) {
@@ -1158,37 +1161,23 @@ function buildSpliceMethod(
     `splice${capitalize(prop.name)}`,
     [startId, deleteCountId, itemsParam],
     (nextRef) => {
-      const argsId = t.identifier('args');
+      const allArgs: (t.Expression | t.SpreadElement)[] = [
+        t.identifier('start'),
+        t.spreadElement(
+          t.conditionalExpression(
+            t.binaryExpression('!==', deleteCountId, t.identifier('undefined')),
+            t.arrayExpression([deleteCountId]),
+            t.arrayExpression([])
+          )
+        ),
+        t.spreadElement(t.identifier('items')),
+      ];
+
       return [
-        t.variableDeclaration('const', [
-          t.variableDeclarator(
-            argsId,
-            t.arrayExpression([t.identifier('start')])
-          ),
-        ]),
-        t.ifStatement(
-          t.binaryExpression(
-            '!==',
-            t.identifier('deleteCount'),
-            t.identifier('undefined')
-          ),
-          t.expressionStatement(
-            t.callExpression(
-              t.memberExpression(argsId, t.identifier('push')),
-              [t.identifier('deleteCount')]
-            )
-          )
-        ),
-        t.expressionStatement(
-          t.callExpression(
-            t.memberExpression(argsId, t.identifier('push')),
-            [t.spreadElement(t.identifier('items'))]
-          )
-        ),
         t.expressionStatement(
           t.callExpression(
             t.memberExpression(nextRef(), t.identifier('splice')),
-            [t.spreadElement(argsId)]
+            allArgs
           )
         ),
       ];
@@ -1220,13 +1209,17 @@ function buildArrayMutationMethod(
 
   if (methodName.startsWith('push') || methodName.startsWith('unshift')) {
     const valuesParam = params[0];
-    const valuesId =
-      t.isIdentifier(valuesParam)
-        ? valuesParam
-        : t.isRestElement(valuesParam)
-          && t.isIdentifier(valuesParam.argument)
-          ? valuesParam.argument
-          : null;
+    const valuesId = (function () {
+      if (t.isIdentifier(valuesParam)) {
+        return valuesParam;
+      } else if (
+        t.isRestElement(valuesParam)
+        && t.isIdentifier(valuesParam.argument)
+      ) {
+        return valuesParam.argument;
+      }
+      return null;
+    })();
     if (valuesId) {
       preludeStatements.push(
         t.ifStatement(
@@ -1246,7 +1239,11 @@ function buildArrayMutationMethod(
 
   if (methodName.startsWith('pop') || methodName.startsWith('shift')) {
     const lengthAccess = t.memberExpression(
-      t.logicalExpression('??', currentExpr, t.arrayExpression([])),
+      t.logicalExpression(
+        '??',
+        currentExpr,
+        t.arrayExpression([])
+      ),
       t.identifier('length')
     );
     preludeStatements.push(

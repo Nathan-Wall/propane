@@ -16,6 +16,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     this.#note = props ? props.note : undefined;
     this.#name = props ? props.name : "";
     if (!props) OptionalHole.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
     return [{

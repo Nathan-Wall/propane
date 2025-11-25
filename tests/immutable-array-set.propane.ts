@@ -14,6 +14,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : Object.freeze([]);
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new Set();
     if (!props) ImmutableArraySet.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
     return [{
@@ -222,10 +223,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   spliceArr(start: number, deleteCount?: number, ...items): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    arrNext.splice(...args);
+    arrNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ImmutableArraySet({
       arr: arrNext,
       set: this.#set

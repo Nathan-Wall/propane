@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static EMPTY: Unions;
@@ -19,6 +19,7 @@ export class Unions extends Message<Unions.Data> {
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
     if (!props) Unions.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
     return [{

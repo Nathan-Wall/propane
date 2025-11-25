@@ -33,12 +33,12 @@ function addJsExtension(specifier) {
   return `${specifier}.js`;
 }
 
+const replacer = (_, start, spec, end) => `${start}${addJsExtension(spec)}${end}`;
+
 function rewriteSpecifiers(code) {
   const fromPattern = /(from\s+['"])(\.\.?\/[^'";]+)(['"])/g;
   const exportPattern = /(export\s+\*\s+from\s+['"])(\.\.?\/[^'";]+)(['"])/g;
   const dynamicImportPattern = /(import\(\s*['"])(\.\.?\/[^'";]+)(['"]\s*\))/g;
-
-  const replacer = (_, start, spec, end) => `${start}${addJsExtension(spec)}${end}`;
 
   return code
     .replaceAll(fromPattern, replacer)
@@ -108,7 +108,7 @@ async function main() {
   );
 
   // Create package.json for dist
-  const pkg = JSON.parse(await fs.readFile(path.join(projectRoot, 'package.json'), 'utf8'));
+  const unused_pkg = JSON.parse(await fs.readFile(path.join(projectRoot, 'package.json'), 'utf8'));
   const distPkg = {
     type: 'module',
   };

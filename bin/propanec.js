@@ -10,7 +10,8 @@ const __dirname = path.dirname(__filename);
 
 // Load the babel plugin from the dist directory
 const pluginPath = path.resolve(__dirname, '..', 'dist', 'babel', 'plugin.js');
-const propanePlugin = (await import(pluginPath)).default;
+const pluginModule = await import(pluginPath);
+const propanePlugin = pluginModule.default;
 
 const args = process.argv.slice(2);
 
@@ -19,21 +20,32 @@ let watch = false;
 const targets = [];
 
 for (const arg of args) {
-  if (arg === '--watch' || arg === '-w') {
-    watch = true;
-  } else if (arg === '--help' || arg === '-h') {
-    printUsage();
-    process.exit(0);
-  } else if (arg === '--version' || arg === '-v') {
-    const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
-    console.log(`propanec v${pkg.version}`);
-    process.exit(0);
-  } else if (!arg.startsWith('-')) {
-    targets.push(arg);
-  } else {
-    console.error(`Unknown option: ${arg}`);
-    printUsage();
-    process.exit(1);
+  switch (arg) {
+    case '--watch':
+    case '-w':
+      watch = true;
+      break;
+    case '--help':
+    case '-h':
+      printUsage();
+      process.exit(0);
+      break;
+    case '--version':
+    case '-v': {
+      const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
+      console.log(`propanec v${pkg.version}`);
+      process.exit(0);
+    }
+      break;
+    default:
+      if (arg.startsWith('-')) {
+        console.error(`Unknown option: ${arg}`);
+        printUsage();
+        process.exit(1);
+      } else {
+        targets.push(arg);
+      }
+      break;
   }
 }
 
@@ -56,7 +68,7 @@ Examples:
 }
 
 if (!targets.length) {
-  console.error('Error: No files or directories specified.\n');
+  console.error('Error: No files or directories specified.');
   printUsage();
   process.exit(1);
 }
@@ -111,7 +123,10 @@ function transpileFile(sourcePath) {
 
     const relSource = path.relative(process.cwd(), sourcePath);
     const relOutput = path.relative(process.cwd(), outputPath);
-    console.log(`✓ ${relSource} → ${relOutput}`);
+    console.log(
+      `✓ ${relSource} → `
+      + `${relOutput}`
+    );
 
     return true;
   } catch (err) {
@@ -122,7 +137,9 @@ function transpileFile(sourcePath) {
 }
 
 function compileAll() {
-  const propaneFiles = [...new Set(targets.flatMap((target) => collectPropaneFiles(target)))];
+  const propaneFiles = [...new Set(
+    targets.flatMap((target) => collectPropaneFiles(target))
+  )];
 
   if (!propaneFiles.length) {
     console.error('No .propane files found.');
@@ -146,14 +163,6 @@ if (watch) {
   console.log('\nWatching for changes...\n');
 
   const directories = new Set();
-  for (const target of targets) {
-    const resolved = path.resolve(target);
-    if (fs.existsSync(resolved)) {
-      const stats = fs.statSync(resolved);
-      directories.add(stats.isDirectory() ? resolved : path.dirname(resolved));
-    }
-  }
-
   for (const dir of directories) {
     fs.watch(dir, { recursive: true }, (eventType, filename) => {
       if (filename && filename.endsWith('.propane')) {
@@ -167,3 +176,4 @@ if (watch) {
 } else if (!success) {
   process.exit(1);
 }
+

@@ -12,6 +12,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
     super(Compound_Inline.TYPE_TAG, "Compound_Inline");
     this.#value = props ? props.value : "";
     if (!props) Compound_Inline.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound_Inline.Data>[] {
     return [{
@@ -56,6 +57,7 @@ export class Compound extends Message<Compound.Data> {
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
     if (!props) Compound.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
     return [{

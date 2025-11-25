@@ -24,6 +24,7 @@ export class Indexed extends Message<Indexed.Data> {
     this.#alias = props ? props.alias : undefined;
     this.#status = props ? props.status : "";
     if (!props) Indexed.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Indexed.Data>[] {
     return [{

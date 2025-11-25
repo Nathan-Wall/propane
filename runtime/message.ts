@@ -22,7 +22,12 @@ const DATE_PREFIX = 'D';
 const URL_PREFIX = 'U';
 const ARRAY_BUFFER_PREFIX = 'B';
 
-export type DataPrimitive = string | number | boolean | null | undefined;
+export type DataPrimitive =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined;
 export type DataValue =
   | DataPrimitive
   | Date
@@ -37,14 +42,21 @@ export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
 }
-export type MapKey = DataPrimitive | Date | ImmutableDate | URL | ImmutableUrl;
+export type MapKey =
+  | DataPrimitive
+  | Date
+  | ImmutableDate
+  | URL
+  | ImmutableUrl;
 
 export interface TaggedMessageData {
   $tag: string;
   $data: Record<string, unknown>;
 }
 
-export function isTaggedMessageData(value: unknown): value is TaggedMessageData {
+export function isTaggedMessageData(
+  value: unknown
+): value is TaggedMessageData {
   return (
     value !== null
     && typeof value === 'object'
@@ -70,6 +82,16 @@ interface MessageConstructor<T extends DataObject> {
   new(props: T): Message<T>;
   prototype: MessageFromEntries<T>;
 }
+
+// Intern pool for message instances, keyed by serialized form
+// Uses WeakRef to allow garbage collection of unused instances
+const internPool = new Map<string, WeakRef<Message<DataObject>>>();
+const registry = new FinalizationRegistry<string>((key) => {
+  const ref = internPool.get(key);
+  if (ref && !ref.deref()) {
+    internPool.delete(key);
+  }
+});
 
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
@@ -209,6 +231,24 @@ export abstract class Message<T extends DataObject> {
     const props = proto.$fromEntries(payload);
     return new this(props);
   }
+
+  /**
+   * Returns a canonical instance for this message.
+   * If an equivalent message has been interned before, returns that instance.
+   * Otherwise, interns this message and returns it.
+   */
+  private intern(): this {
+    const key = this.serialize();
+    const existing = internPool.get(key)?.deref();
+
+    if (existing && existing.#typeTag === this.#typeTag) {
+      return existing as this;
+    }
+
+    internPool.set(key, new WeakRef(this));
+    registry.register(this, key);
+    return this;
+  }
 }
 
 export function parseCerealString(value: string) {
@@ -242,14 +282,14 @@ function canUseBareString(value: string) {
 }
 
 
-function jsonStringifyDate(value: Date | ImmutableDate) {
+function jsonStringifyDate(value: Date | ImmutableDate): string {
   if (value instanceof Date) {
     return JSON.stringify(value.toISOString());
   }
   return JSON.stringify(value.toString());
 }
 
-function jsonStringifyUrl(value: URL) {
+function jsonStringifyUrl(value: URL): string {
   return JSON.stringify(value.toString());
 }
 
@@ -278,11 +318,26 @@ function serializePrimitive(value: unknown): string {
     return serializeSetLiteral(value);
   }
 
+  if (typeof value === 'bigint') {
+    return `${value.toString()}n`;
+  }
+
+  if (value instanceof Message) {
+    const descriptors = (
+      value as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
+    ).$getPropDescriptors();
+    const entries = descriptors.map((d) => ({
+      key: String(d.name),
+      value: d.getValue(),
+    }));
+    return serializeObjectLiteral(entries);
+  }
+
   if (value && typeof value === 'object') {
     if (isDateValue(value)) {
       return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
     }
-    return JSON.stringify(value);
+    return serializeObjectLiteral(value as Record<string, unknown>);
   }
 
   if (typeof value === 'string') {
@@ -313,7 +368,7 @@ function serializeSetLiteral(values: ReadonlySet<unknown>): string {
 function serializeTaggedMessage(message: Message<DataObject>): string {
   const typeName = message.$typeName;
   const descriptors = (
-    message as unknown as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
+    message as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
   ).$getPropDescriptors();
 
   const entries: ObjectEntry[] = [];
@@ -487,9 +542,10 @@ function serializeObjectLiteral(
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
     : Object.entries(recordOrEntries).map(([key, value]) => ({ key, value }));
+
   const serialized = entries.map(({ key, value, tagMessages }) => {
     const serializedValue = tagMessages && value instanceof Message
-      ? serializeTaggedMessage(value)
+      ? serializeTaggedMessage(value as Message<DataObject>)
       : serializePrimitive(value);
     return key == null
       ? serializedValue

@@ -16,6 +16,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
     this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : Object.freeze([]);
     if (!props) ArrayBufferMessage.EMPTY = this;
+    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
     return [{
@@ -192,10 +193,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   spliceChunks(start: number, deleteCount?: number, ...items): ArrayBufferMessage {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
-    const args = [start];
-    if (deleteCount !== undefined) args.push(deleteCount);
-    args.push(...items);
-    chunksNext.splice(...args);
+    chunksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
