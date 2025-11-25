@@ -1,0 +1,7 @@
+export type StringFirst = {
+  '1:value': string | number;
+};
+
+export type NumberFirst = {
+  '1:value': number | string;
+};

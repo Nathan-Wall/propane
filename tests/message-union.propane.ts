@@ -165,9 +165,11 @@ export class PetOwner extends Message<PetOwner.Data> {
     let petUnionValue = petValue;
     if (isTaggedMessageData(petValue)) {
       if (petValue.$tag === "Cat") {
-        petUnionValue = new Cat(petValue.$data);
+        const petCatProps = Cat.prototype.$fromEntries(petValue.$data);
+        petUnionValue = new Cat(petCatProps);
       } else if (petValue.$tag === "Dog") {
-        petUnionValue = new Dog(petValue.$data);
+        const petDogProps = Dog.prototype.$fromEntries(petValue.$data);
+        petUnionValue = new Dog(petDogProps);
       }
     }
     props.pet = petUnionValue;
@@ -176,9 +178,11 @@ export class PetOwner extends Message<PetOwner.Data> {
     let optionalPetUnionValue = optionalPetNormalized;
     if (optionalPetNormalized !== undefined && isTaggedMessageData(optionalPetNormalized)) {
       if (optionalPetNormalized.$tag === "Cat") {
-        optionalPetUnionValue = new Cat(optionalPetNormalized.$data);
+        const optionalPetCatProps = Cat.prototype.$fromEntries(optionalPetNormalized.$data);
+        optionalPetUnionValue = new Cat(optionalPetCatProps);
       } else if (optionalPetNormalized.$tag === "Dog") {
-        optionalPetUnionValue = new Dog(optionalPetNormalized.$data);
+        const optionalPetDogProps = Dog.prototype.$fromEntries(optionalPetNormalized.$data);
+        optionalPetUnionValue = new Dog(optionalPetDogProps);
       }
     }
     props.optionalPet = optionalPetUnionValue;
