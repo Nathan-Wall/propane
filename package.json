@@ -1,19 +1,29 @@
 {
   "name": "propanejs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Materialized types for TypeScript",
   "type": "module",
-  "main": "index.js",
+  "main": "dist/runtime/index.js",
+  "types": "dist/runtime/index.d.ts",
+  "bin": {
+    "propanec": "bin/propanec.js"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
   "directories": {
     "test": "tests"
   },
   "scripts": {
+    "build": "node scripts/build-dist.js",
     "test": "npm run build:babel && node scripts/build-fixtures.js && node build/tests/run-tests.js",
     "lint": "eslint .",
     "build:babel": "node scripts/build-babel.js",
     "propane:compile": "npm run build:babel && node scripts/propane-compiler.js",
     "runtime:build": "npm --prefix runtime run build",
     "runtime:publish": "node scripts/publish-runtime.js",
+    "prepublishOnly": "npm run build",
     "prepare": "husky"
   },
   "repository": {
