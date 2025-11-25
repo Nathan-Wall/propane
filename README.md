@@ -91,11 +91,13 @@ export type User = {
 };
 ```
 
-**Recommended:** You can also specify field numbers for each field.
-This can be helpful for large codebases where different pieces may be updated
-at different rates.
+### Field Numbers
+
+**Recommended:** You can also specify field numbers.
+This can be helpful for large projects where requirements are fluid and
+migrations are necessary.
 Serialization and deserialization will match against field numbers instead of
-field names, allowing field namse to be changed more easily as the project
+field names, allowing field names to be changed more easily as the project
 develops.
 This also enables compact serialization for smaller message sizes.
 
