@@ -12,12 +12,17 @@ export function buildTypeNamespace(
 
   const literalMembers = properties.map((prop) => {
     const key = t.identifier(prop.name);
-    let typeAnnotation = prop.displayType ? t.cloneNode(prop.displayType) : t.cloneNode(prop.inputTypeAnnotation);
+    let typeAnnotation = prop.displayType
+      ? t.cloneNode(prop.displayType)
+      : t.cloneNode(prop.inputTypeAnnotation);
     if (prop.optional) {
       if (t.isTSUnionType(typeAnnotation)) {
         typeAnnotation.types.push(t.tsUndefinedKeyword());
       } else {
-        typeAnnotation = t.tsUnionType([typeAnnotation, t.tsUndefinedKeyword()]);
+        typeAnnotation = t.tsUnionType([
+          typeAnnotation,
+          t.tsUndefinedKeyword(),
+        ]);
       }
     }
     const propSignature = t.tsPropertySignature(
@@ -66,7 +71,11 @@ export function buildTypeNamespace(
       return importEquals;
     });
 
-  const moduleBlock = t.tsModuleBlock([exportedTypeDecl, exportedUnionDecl, ...aliasDecls]);
+  const moduleBlock = t.tsModuleBlock([
+    exportedTypeDecl,
+    exportedUnionDecl,
+    ...aliasDecls,
+  ]);
   const namespaceDecl = t.tsModuleDeclaration(namespaceId, moduleBlock);
   namespaceDecl.declare = typeAlias.declare ?? null;
   namespaceDecl.kind = 'namespace';

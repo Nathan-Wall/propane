@@ -98,13 +98,17 @@ function rewriteImports(code, outPath) {
   result = result.replaceAll(/,?\s*MessagePropDescriptor/g, '');
   result = result.replace(/^import\s*\{\s*Brand\s*\}\s*from[^;]+;\n?/m, '');
 
-  // Append .js to relative imports without an explicit extension (excluding the .propane.js ones we just set)
-  result = result.replaceAll(/(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g, (match, p1, p2, p3) => {
-    if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
-      return match;
+  // Append .js to relative imports without an explicit extension
+  // (excluding the .propane.js ones we just set)
+  result = result.replaceAll(
+    /(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g,
+    (match, p1, p2, p3) => {
+      if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
+        return match;
+      }
+      return `${p1}${p2}.js${p3}`;
     }
-    return `${p1}${p2}.js${p3}`;
-  });
+  );
 
   // Fix path for shared common/types in build/tests output
   result = result.replaceAll(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.js'");

@@ -19,7 +19,9 @@ export function assertThrows(fn: () => unknown, message: string): void {
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 
-export function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
+export function isMapValue(
+  value: unknown
+): value is ReadonlyMap<unknown, unknown> {
   if (!value || typeof value !== 'object') {
     return false;
   }

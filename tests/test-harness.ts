@@ -47,7 +47,10 @@ export function createTestContext({
   transform: TransformFn;
 }): TestContext {
   const runtimeExports = buildRuntimeExports(projectRoot);
-  function loadFixtureClass<T = unknown>(fixture: string, exportName: string): T {
+  function loadFixtureClass<T = unknown>(
+    fixture: string,
+    exportName: string
+  ): T {
     return buildClassFromFixture<T>({
       projectRoot,
       transform,
@@ -155,7 +158,8 @@ function loadPropaneModule({
 
   const source = fs.readFileSync(normalized, 'utf8');
   const transformed = transform(source, normalized);
-  const relative = path.relative(projectRoot, normalized) || path.basename(normalized);
+  const relative = path.relative(projectRoot, normalized)
+    || path.basename(normalized);
   const js = transpileTs(transformed, `${relative}.ts`);
   const dir = path.dirname(normalized);
 
@@ -201,7 +205,10 @@ function transpileTs(source: string, fileName: string): string {
   return result.outputText;
 }
 
-function evaluateModule(code: string, resolvers?: ModuleResolvers): PropaneExports {
+function evaluateModule(
+  code: string,
+  resolvers?: ModuleResolvers
+): PropaneExports {
   const module = { exports: {} as PropaneExports };
   const resolve: (id: string) => unknown =
     typeof resolvers === 'function'

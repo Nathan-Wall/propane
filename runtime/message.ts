@@ -336,7 +336,9 @@ function isUrlValue(value: unknown): value is URL {
   );
 }
 
-function isArrayBufferValue(value: unknown): value is ArrayBuffer | ImmutableArrayBuffer {
+function isArrayBufferValue(
+  value: unknown
+): value is ArrayBuffer | ImmutableArrayBuffer {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -345,7 +347,8 @@ function isArrayBufferValue(value: unknown): value is ArrayBuffer | ImmutableArr
     value instanceof ArrayBuffer
     || value instanceof ImmutableArrayBuffer
     || Object.prototype.toString.call(value) === ARRAY_BUFFER_OBJECT_TAG
-    || Object.prototype.toString.call(value) === IMMUTABLE_ARRAY_BUFFER_OBJECT_TAG
+    || Object.prototype.toString.call(value)
+      === IMMUTABLE_ARRAY_BUFFER_OBJECT_TAG
   );
 }
 
@@ -364,8 +367,12 @@ function parseArrayBufferLiteral(token: string): ArrayBuffer {
   return base64ToArrayBuffer(parsed);
 }
 
-function unwrapArrayBuffer(value: ArrayBuffer | ImmutableArrayBuffer): ArrayBuffer {
-  return value instanceof ImmutableArrayBuffer ? value.toArrayBuffer() : value;
+function unwrapArrayBuffer(
+  value: ArrayBuffer | ImmutableArrayBuffer
+): ArrayBuffer {
+  return value instanceof ImmutableArrayBuffer
+    ? value.toArrayBuffer()
+    : value;
 }
 
 function serializeUrlLiteral(url: URL): string {

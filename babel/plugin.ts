@@ -21,7 +21,8 @@ export interface PropaneState {
 export default function propanePlugin() {
   const declaredTypeNames = new Set<string>();
   const declaredMessageTypeNames = new Set<string>();
-  const getMessageReferenceName: MessageReferenceResolver = createMessageReferenceResolver(declaredMessageTypeNames);
+  const getMessageReferenceName: MessageReferenceResolver =
+    createMessageReferenceResolver(declaredMessageTypeNames);
 
   return {
     name: 'propane-plugin',
@@ -59,16 +60,27 @@ export default function propanePlugin() {
           }
         },
       },
-      ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: PropaneState) {
+      ExportNamedDeclaration(
+        path: NodePath<t.ExportNamedDeclaration>,
+        state: PropaneState
+      ) {
         if (!path.parentPath?.isProgram()) {
           return;
         }
         const declarationPath = path.get('declaration');
-        if (Array.isArray(declarationPath) || !declarationPath.isTSTypeAliasDeclaration()) {
+        if (
+          Array.isArray(declarationPath)
+          || !declarationPath.isTSTypeAliasDeclaration()
+        ) {
           return;
         }
 
-        if (declarationPath.node && (declarationPath.node as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS]) {
+        if (
+          declarationPath.node
+          && (declarationPath.node as t.TSTypeAliasDeclaration & {
+            [GENERATED_ALIAS]?: boolean;
+          })[GENERATED_ALIAS]
+        ) {
           return;
         }
 
@@ -86,12 +98,20 @@ export default function propanePlugin() {
           path.replaceWithMultiple(replacement);
         }
       },
-      TSTypeAliasDeclaration(path: NodePath<t.TSTypeAliasDeclaration>, state: PropaneState) {
+      TSTypeAliasDeclaration(
+        path: NodePath<t.TSTypeAliasDeclaration>,
+        state: PropaneState
+      ) {
         if (path.parentPath?.isExportNamedDeclaration()) {
           return;
         }
 
-        if (path.node && (path.node as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS]) {
+        if (
+          path.node
+          && (path.node as t.TSTypeAliasDeclaration & {
+            [GENERATED_ALIAS]?: boolean;
+          })[GENERATED_ALIAS]
+        ) {
           return;
         }
 

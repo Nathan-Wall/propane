@@ -1,15 +1,24 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
-import { analyzePropaneModule, getFilename, getImportedName, resolveImportPath } from './imports';
+import {
+  analyzePropaneModule,
+  getFilename,
+  getImportedName,
+  resolveImportPath,
+} from './imports';
 
-export type MessageReferenceResolver = (typePath: NodePath<t.TSType>) => string | null;
+export type MessageReferenceResolver = (
+  typePath: NodePath<t.TSType>
+) => string | null;
 
 export function createMessageReferenceResolver(
   declaredMessageTypeNames: Set<string>
 ): MessageReferenceResolver {
   const messageModuleCache = new Map<string, Set<string>>();
 
-  return function getMessageReferenceName(typePath: NodePath<t.TSType>): string | null {
+  return function getMessageReferenceName(
+    typePath: NodePath<t.TSType>
+  ): string | null {
     if (!typePath?.isTSTypeReference()) {
       return null;
     }

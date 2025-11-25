@@ -43,7 +43,10 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   if (isImmutableMapLike(value)) {
-    return [...value.entries()].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
+    return [...value.entries()].map(([k, v]) => [
+      normalizeForJson(k),
+      normalizeForJson(v)
+    ]);
   }
 
   if (isImmutableSetLike(value)) {
@@ -55,7 +58,10 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   if (value instanceof Map) {
-    return [...value.entries()].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
+    return [...value.entries()].map(([k, v]) => [
+      normalizeForJson(k),
+      normalizeForJson(v)
+    ]);
   }
 
   if (value instanceof Set) {
@@ -77,7 +83,9 @@ export function normalizeForJson(value: unknown): unknown {
   return value;
 }
 
-function isArrayBuffer(value: unknown): value is ArrayBuffer | ImmutableArrayBuffer {
+function isArrayBuffer(
+  value: unknown
+): value is ArrayBuffer | ImmutableArrayBuffer {
   if (!value || typeof value !== 'object') {
     return false;
   }
@@ -106,7 +114,9 @@ function isUrl(value: unknown): value is URL | ImmutableUrl {
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const raw = buffer instanceof ImmutableArrayBuffer ? buffer.toArrayBuffer() : buffer;
+  const raw = buffer instanceof ImmutableArrayBuffer
+    ? buffer.toArrayBuffer()
+    : buffer;
   if (typeof Buffer !== 'undefined') {
     return Buffer.from(raw).toString('base64');
   }
@@ -124,29 +134,38 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   throw new Error('Base64 encoding is not supported in this environment.');
 }
 
-function isImmutableMapLike(value: unknown): value is { entries: () => IterableIterator<unknown[]> } {
+function isImmutableMapLike(
+  value: unknown
+): value is { entries: () => IterableIterator<unknown[]> } {
   return (
     !!value
     && typeof value === 'object'
     && typeof (value as { entries?: unknown }).entries === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableMap'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+      === 'ImmutableMap'
   );
 }
 
-function isImmutableSetLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
+function isImmutableSetLike(
+  value: unknown
+): value is { values: () => IterableIterator<unknown> } {
   return (
     !!value
     && typeof value === 'object'
     && typeof (value as { values?: unknown }).values === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableSet'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+      === 'ImmutableSet'
   );
 }
 
-function isImmutableArrayLike(value: unknown): value is { values: () => IterableIterator<unknown> } {
+function isImmutableArrayLike(
+  value: unknown
+): value is { values: () => IterableIterator<unknown> } {
   return (
     !!value
     && typeof value === 'object'
     && typeof (value as { values?: unknown }).values === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === 'ImmutableArray'
+    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+      === 'ImmutableArray'
   );
 }

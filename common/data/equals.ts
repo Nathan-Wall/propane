@@ -1,6 +1,8 @@
 type EqualsFn = (a: unknown, b: unknown) => boolean;
 
-function supportsEquals(value: unknown): value is { equals: (other: unknown) => boolean } {
+function supportsEquals(
+  value: unknown
+): value is { equals: (other: unknown) => boolean } {
   return (
     !!value
     && typeof value === 'object'

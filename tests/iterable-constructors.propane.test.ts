@@ -29,7 +29,8 @@ export default function runIterableConstructorTests() {
   assert(set.size === 2, 'ImmutableSet should consume iterable values.');
   assert(set.has('a') && set.has('b'), 'ImmutableSet should contain iterable entries.');
 
-  const mapIterable: Iterable<readonly [string, number]> & { length: number } = {
+  const mapIterable: Iterable<readonly [string, number]>
+    & { length: number } = {
     length: 0,
     *[Symbol.iterator]() {
       yield ['x', 1] as const;

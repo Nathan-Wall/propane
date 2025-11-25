@@ -18,7 +18,13 @@ interface BuildDeclarationsOptions {
 
 export function buildDeclarations(
   typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
-  { exported, state, declaredTypeNames, declaredMessageTypeNames, getMessageReferenceName }: BuildDeclarationsOptions
+  {
+    exported,
+    state,
+    declaredTypeNames,
+    declaredMessageTypeNames,
+    getMessageReferenceName
+  }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
 
@@ -63,11 +69,24 @@ export function buildDeclarations(
   declaredMessageTypeNames.add(typeAlias.id.name);
 
   const generatedTypeNames = generatedTypes
-    .map((node) => (t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id) ? node.id.name : null))
+    .map((node) => (
+      t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id)
+        ? node.id.name
+        : null
+    ))
     .filter((name): name is string => name !== null);
 
-  const typeNamespace = buildTypeNamespace(typeAlias, properties, exported, generatedTypeNames);
-  const classDecl = buildClassFromProperties(typeAlias.id.name, properties, declaredMessageTypeNames);
+  const typeNamespace = buildTypeNamespace(
+    typeAlias,
+    properties,
+    exported,
+    generatedTypeNames
+  );
+  const classDecl = buildClassFromProperties(
+    typeAlias.id.name,
+    properties,
+    declaredMessageTypeNames
+  );
 
   state.usesPropaneBase = true;
 
@@ -85,7 +104,10 @@ export function buildDeclarations(
   return [...generatedStatements, classDecl, typeNamespace];
 }
 
-export function insertPrimitiveTypeAlias(typeAliasPath: NodePath<t.TSTypeAliasDeclaration>, exported: boolean) {
+export function insertPrimitiveTypeAlias(
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
+  exported: boolean
+) {
   if (!t.isIdentifier(typeAliasPath.node.id)) {
     return;
   }
@@ -98,7 +120,9 @@ export function insertPrimitiveTypeAlias(typeAliasPath: NodePath<t.TSTypeAliasDe
       : null,
     t.tsTypeReference(t.identifier(typeAliasPath.node.id.name))
   );
-  (alias as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS] = true;
+  (alias as t.TSTypeAliasDeclaration & {
+    [GENERATED_ALIAS]?: boolean;
+  })[GENERATED_ALIAS] = true;
 
   const aliasDecl = exported
     ? t.exportNamedDeclaration(alias, [])

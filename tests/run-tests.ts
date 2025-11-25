@@ -62,7 +62,9 @@ for (const testFile of testFiles) {
   const relativeName = path.relative(projectRoot, testFile);
   try {
     const moduleUrl = pathToFileURL(testFile).href;
-    const mod = (await import(moduleUrl)) as { default?: () => Promise<void> | void };
+    const mod = (await import(moduleUrl)) as {
+      default?: () => Promise<void> | void;
+    };
     const runTests = mod?.default;
     assert(typeof runTests === 'function', 'Test file must export a default function.');
     await runTests();

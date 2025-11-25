@@ -58,7 +58,9 @@ export default function runIndexedArrayTests() {
   const reversedNames = arrayInstance.reverseNames();
   assert(reversedNames.names[0] === 'Gamma Value', 'reverseNames should reverse order.');
 
-  const sortedScores = arrayInstance.sortScores((a: number, b: number) => b - a);
+  const sortedScores = arrayInstance.sortScores(
+    (a: number, b: number) => b - a
+  );
   assert(sortedScores.scores[0] === 3 && sortedScores.scores[2] === 1, 'sortScores should reorder values using comparator.');
 
   const filledNames = arrayInstance.fillNames('Filled', 1, 3);

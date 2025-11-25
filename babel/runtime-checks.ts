@@ -15,7 +15,10 @@ import {
 } from './type-guards';
 import { wrapImmutableType } from './properties';
 
-export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, valueId: t.Expression): t.Expression | null {
+export function buildRuntimeTypeCheckExpression(
+  typeNode: t.TSType | null,
+  valueId: t.Expression
+): t.Expression | null {
   if (!typeNode) {
     return null;
   }
@@ -57,7 +60,9 @@ export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, value
 
   if (t.isTSUnionType(typeNode)) {
     const checks = typeNode.types
-      .map((subType) => buildRuntimeTypeCheckExpression(subType, valueId))
+      .map((subType) =>
+        buildRuntimeTypeCheckExpression(subType, valueId)
+      )
       .filter(Boolean) as t.Expression[];
 
     if (!checks.length) {
@@ -74,15 +79,24 @@ export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, value
   }
 
   if (t.isTSTypeReference(typeNode)) {
-    if (isDateReference(typeNode) || isImmutableDateReference(typeNode)) {
+    if (
+      isDateReference(typeNode)
+      || isImmutableDateReference(typeNode)
+    ) {
       return buildDateCheckExpression(valueId);
     }
 
-    if (isUrlReference(typeNode) || isImmutableUrlReference(typeNode)) {
+    if (
+      isUrlReference(typeNode)
+      || isImmutableUrlReference(typeNode)
+    ) {
       return buildUrlCheckExpression(valueId);
     }
 
-    if (isArrayBufferReference(typeNode) || isImmutableArrayBufferReference(typeNode)) {
+    if (
+      isArrayBufferReference(typeNode)
+      || isImmutableArrayBufferReference(typeNode)
+    ) {
       return buildArrayBufferCheckExpression(valueId);
     }
 
@@ -100,15 +114,15 @@ export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, value
 
     if (
       t.isIdentifier(typeNode.typeName)
-      && (
-        typeNode.typeName.name === 'Array'
+      && (typeNode.typeName.name === 'Array'
         || typeNode.typeName.name === 'ReadonlyArray'
-        || typeNode.typeName.name === 'ImmutableArray'
-      )
+        || typeNode.typeName.name === 'ImmutableArray')
     ) {
       const elementParam = typeNode.typeParameters?.params?.[0];
       const syntheticArray = t.tsArrayType(
-        wrapImmutableType(elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword())
+        wrapImmutableType(
+          elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword()
+        )
       );
       return buildArrayTypeCheckExpression(syntheticArray, valueId);
     }
@@ -123,7 +137,10 @@ export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, value
   return null;
 }
 
-export function typeofCheck(valueId: t.Expression, type: string): t.Expression {
+export function typeofCheck(
+  valueId: t.Expression,
+  type: string
+): t.Expression {
   return t.binaryExpression(
     '===',
     t.unaryExpression('typeof', valueId),
@@ -131,7 +148,9 @@ export function typeofCheck(valueId: t.Expression, type: string): t.Expression {
   );
 }
 
-export function buildDateCheckExpression(valueId: t.Expression): t.Expression {
+export function buildDateCheckExpression(
+  valueId: t.Expression
+): t.Expression {
   const instanceOfDate = t.binaryExpression(
     'instanceof',
     valueId,
@@ -197,7 +216,9 @@ export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
   );
 }
 
-export function buildArrayBufferCheckExpression(valueId: t.Expression): t.Expression {
+export function buildArrayBufferCheckExpression(
+  valueId: t.Expression
+): t.Expression {
   const instanceOfArrayBuffer = t.binaryExpression(
     'instanceof',
     valueId,
@@ -222,24 +243,47 @@ export function buildArrayBufferCheckExpression(valueId: t.Expression): t.Expres
 
   return t.logicalExpression(
     '||',
-    t.logicalExpression('||', instanceOfArrayBuffer, instanceOfImmutableArrayBuffer),
-    t.logicalExpression('||', tagEqualsArrayBuffer, tagEqualsImmutableArrayBuffer)
+    t.logicalExpression(
+      '||',
+      instanceOfArrayBuffer,
+      instanceOfImmutableArrayBuffer
+    ),
+    t.logicalExpression(
+      '||',
+      tagEqualsArrayBuffer,
+      tagEqualsImmutableArrayBuffer
+    )
   );
 }
 
-export function buildLiteralTypeCheck(typeNode: t.TSLiteralType, valueId: t.Expression): t.Expression | null {
+export function buildLiteralTypeCheck(
+  typeNode: t.TSLiteralType,
+  valueId: t.Expression
+): t.Expression | null {
   const literal = typeNode.literal;
 
   if (t.isStringLiteral(literal)) {
-    return t.binaryExpression('===', valueId, t.stringLiteral(literal.value));
+    return t.binaryExpression(
+      '===',
+      valueId,
+      t.stringLiteral(literal.value)
+    );
   }
 
   if (t.isNumericLiteral(literal)) {
-    return t.binaryExpression('===', valueId, t.numericLiteral(literal.value));
+    return t.binaryExpression(
+      '===',
+      valueId,
+      t.numericLiteral(literal.value)
+    );
   }
 
   if (t.isBooleanLiteral(literal)) {
-    return t.binaryExpression('===', valueId, t.booleanLiteral(literal.value));
+    return t.binaryExpression(
+      '===',
+      valueId,
+      t.booleanLiteral(literal.value)
+    );
   }
 
   if (t.isBigIntLiteral(literal)) {
@@ -253,7 +297,10 @@ export function buildLiteralTypeCheck(typeNode: t.TSLiteralType, valueId: t.Expr
   return null;
 }
 
-export function buildMapTypeCheckExpression(typeNode: t.TSTypeReference, valueId: t.Expression): t.Expression {
+export function buildMapTypeCheckExpression(
+  typeNode: t.TSTypeReference,
+  valueId: t.Expression
+): t.Expression {
   const immutableInstanceCheck = t.binaryExpression(
     'instanceof',
     valueId,
@@ -274,7 +321,11 @@ export function buildMapTypeCheckExpression(typeNode: t.TSTypeReference, valueId
     t.identifier('Map')
   );
   const mapTagCheck = buildMapTagComparison(valueId, '[object Map]');
-  const mapCheck = t.logicalExpression('||', mapInstanceCheck, mapTagCheck);
+  const mapCheck = t.logicalExpression(
+    '||',
+    mapInstanceCheck,
+    mapTagCheck
+  );
   const baseCheck = t.logicalExpression('||', immutableCheck, mapCheck);
 
   const mapArgs = getMapTypeArguments(typeNode);
@@ -286,7 +337,10 @@ export function buildMapTypeCheckExpression(typeNode: t.TSTypeReference, valueId
   const keyId = t.identifier('mapKey');
   const valueElementId = t.identifier('mapValue');
 
-  const keyCheck = buildRuntimeTypeCheckExpression(mapArgs.keyType, keyId);
+  const keyCheck = buildRuntimeTypeCheckExpression(
+    mapArgs.keyType,
+    keyId
+  );
   const valueCheck = buildRuntimeTypeCheckExpression(
     mapArgs.valueType,
     valueElementId
@@ -330,7 +384,10 @@ export function buildMapTypeCheckExpression(typeNode: t.TSTypeReference, valueId
   return t.logicalExpression('&&', baseCheck, everyCall);
 }
 
-export function buildSetTypeCheckExpression(typeNode: t.TSTypeReference, valueId: t.Expression): t.Expression {
+export function buildSetTypeCheckExpression(
+  typeNode: t.TSTypeReference,
+  valueId: t.Expression
+): t.Expression {
   const immutableInstanceCheck = t.binaryExpression(
     'instanceof',
     valueId,
@@ -351,7 +408,11 @@ export function buildSetTypeCheckExpression(typeNode: t.TSTypeReference, valueId
     t.identifier('Set')
   );
   const setTagCheck = buildSetTagComparison(valueId, '[object Set]');
-  const setCheck = t.logicalExpression('||', setInstanceCheck, setTagCheck);
+  const setCheck = t.logicalExpression(
+    '||',
+    setInstanceCheck,
+    setTagCheck
+  );
   const baseCheck = t.logicalExpression('||', immutableCheck, setCheck);
 
   const elementType = getSetTypeArguments(typeNode);
@@ -360,8 +421,14 @@ export function buildSetTypeCheckExpression(typeNode: t.TSTypeReference, valueId
   }
 
   const elementId = t.identifier('setValue');
-  const elementCheck = buildRuntimeTypeCheckExpression(elementType, elementId);
-  if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+  const elementCheck = buildRuntimeTypeCheckExpression(
+    elementType,
+    elementId
+  );
+  if (
+    !elementCheck
+    || t.isBooleanLiteral(elementCheck, { value: true })
+  ) {
     return baseCheck;
   }
 
@@ -377,7 +444,10 @@ export function buildSetTypeCheckExpression(typeNode: t.TSTypeReference, valueId
   );
 }
 
-export function buildArrayTypeCheckExpression(typeNode: t.TSArrayType | t.TSTypeReference, valueId: t.Expression): t.Expression {
+export function buildArrayTypeCheckExpression(
+  typeNode: t.TSArrayType | t.TSTypeReference,
+  valueId: t.Expression
+): t.Expression {
   const immutableInstanceCheck = t.binaryExpression(
     'instanceof',
     valueId,
@@ -388,13 +458,20 @@ export function buildArrayTypeCheckExpression(typeNode: t.TSArrayType | t.TSType
     '[object ImmutableArray]'
   );
   const arrayInstanceCheck = t.callExpression(
-    t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+    t.memberExpression(
+      t.identifier('Array'),
+      t.identifier('isArray')
+    ),
     [valueId]
   );
   const baseCheck = t.logicalExpression(
     '||',
     immutableInstanceCheck,
-    t.logicalExpression('||', immutableTagCheck, arrayInstanceCheck)
+    t.logicalExpression(
+      '||',
+      immutableTagCheck,
+      arrayInstanceCheck
+    )
   );
 
   const elementId = t.identifier('element');
@@ -403,7 +480,10 @@ export function buildArrayTypeCheckExpression(typeNode: t.TSArrayType | t.TSType
     elementId
   );
 
-  if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+  if (
+    !elementCheck
+    || t.isBooleanLiteral(elementCheck, { value: true })
+  ) {
     return baseCheck;
   }
 
@@ -440,7 +520,9 @@ export function typeAllowsNull(typeNode: t.TSType | null): boolean {
   return false;
 }
 
-export function buildNonNullObjectCheck(valueId: t.Expression): t.Expression {
+export function buildNonNullObjectCheck(
+  valueId: t.Expression
+): t.Expression {
   return t.logicalExpression(
     '&&',
     typeofCheck(valueId, 'object'),
@@ -448,7 +530,10 @@ export function buildNonNullObjectCheck(valueId: t.Expression): t.Expression {
   );
 }
 
-export function buildTypeLiteralCheckExpression(typeLiteral: t.TSTypeLiteral, valueId: t.Expression): t.Expression {
+export function buildTypeLiteralCheckExpression(
+  typeLiteral: t.TSTypeLiteral,
+  valueId: t.Expression
+): t.Expression {
   const baseCheck = buildNonNullObjectCheck(valueId);
 
   const propertyChecks = typeLiteral.members.map((member) => {
@@ -514,7 +599,10 @@ export function buildTypeLiteralCheckExpression(typeLiteral: t.TSTypeLiteral, va
   return t.logicalExpression('&&', baseCheck, combinedChecks);
 }
 
-export function buildMapTagComparison(valueExpr: t.Expression, tag: string): t.Expression {
+export function buildMapTagComparison(
+  valueExpr: t.Expression,
+  tag: string
+): t.Expression {
   return t.binaryExpression(
     '===',
     buildObjectToStringCall(valueExpr),
@@ -522,7 +610,10 @@ export function buildMapTagComparison(valueExpr: t.Expression, tag: string): t.E
   );
 }
 
-export function buildSetTagComparison(valueExpr: t.Expression, tag: string): t.Expression {
+export function buildSetTagComparison(
+  valueExpr: t.Expression,
+  tag: string
+): t.Expression {
   return t.binaryExpression(
     '===',
     buildObjectToStringCall(valueExpr),
@@ -530,11 +621,16 @@ export function buildSetTagComparison(valueExpr: t.Expression, tag: string): t.E
   );
 }
 
-export function buildObjectToStringCall(valueExpr: t.Expression): t.CallExpression {
+export function buildObjectToStringCall(
+  valueExpr: t.Expression
+): t.CallExpression {
   return t.callExpression(
     t.memberExpression(
       t.memberExpression(
-        t.memberExpression(t.identifier('Object'), t.identifier('prototype')),
+        t.memberExpression(
+          t.identifier('Object'),
+          t.identifier('prototype')
+        ),
         t.identifier('toString')
       ),
       t.identifier('call')

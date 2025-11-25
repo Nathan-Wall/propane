@@ -50,8 +50,10 @@ export default function runToJsonTests() {
   assert(parsed.optional === null, 'Undefined fields should serialize as null.');
   assert(parsed.nonFinite === null, 'Non-finite numbers should serialize as null.');
 
-  assert(JSON.stringify(parsed.nested.array) === JSON.stringify([1, null, null]),
-    'Arrays should normalize undefined and non-finite to null.');
+  assert(
+    JSON.stringify(parsed.nested.array) === JSON.stringify([1, null, null]),
+    'Arrays should normalize undefined and non-finite to null.'
+  );
 
   assert(JSON.stringify(parsed.nested.map) === JSON.stringify([
     ['big', '5n'],

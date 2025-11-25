@@ -4,8 +4,15 @@ import { parse } from '@babel/parser';
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 
-export function resolveImportPath(importSource: unknown, filename: string | null): string | null {
-  if (!filename || typeof importSource !== 'string' || !importSource.startsWith('.')) {
+export function resolveImportPath(
+  importSource: unknown,
+  filename: string | null
+): string | null {
+  if (
+    !filename
+    || typeof importSource !== 'string'
+    || !importSource.startsWith('.')
+  ) {
     return null;
   }
 
@@ -58,7 +65,9 @@ export function analyzePropaneModule(filename: string): Set<string> {
 }
 
 export function getImportedName(
-  importPath: NodePath<t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier>
+  importPath: NodePath<
+    t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier
+  >
 ): string | null {
   if (importPath.isImportSpecifier()) {
     const imported = importPath.node.imported;

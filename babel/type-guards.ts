@@ -6,7 +6,9 @@ export function isDateReference(node: t.TSTypeReference): boolean {
 }
 
 export function isImmutableDateReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableDate';
+  return (
+    t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableDate'
+  );
 }
 
 export function isUrlReference(node: t.TSTypeReference): boolean {
@@ -21,8 +23,13 @@ export function isArrayBufferReference(node: t.TSTypeReference): boolean {
   return t.isIdentifier(node.typeName) && node.typeName.name === 'ArrayBuffer';
 }
 
-export function isImmutableArrayBufferReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableArrayBuffer';
+export function isImmutableArrayBufferReference(
+  node: t.TSTypeReference
+): boolean {
+  return (
+    t.isIdentifier(node.typeName)
+    && node.typeName.name === 'ImmutableArrayBuffer'
+  );
 }
 
 export function isSetReference(node: t.TSTypeReference): boolean {
@@ -60,7 +67,9 @@ export function isBrandReference(node: t.TSTypeReference): boolean {
   return t.isTSStringKeyword(first);
 }
 
-export function isPrimitiveKeyword(typePath: NodePath<t.TSType> | null | undefined): boolean {
+export function isPrimitiveKeyword(
+  typePath: NodePath<t.TSType> | null | undefined
+): boolean {
   if (!typePath || typeof typePath.isTSStringKeyword !== 'function') {
     return false;
   }
@@ -75,7 +84,9 @@ export function isPrimitiveKeyword(typePath: NodePath<t.TSType> | null | undefin
   );
 }
 
-export function isPrimitiveLiteral(typePath: NodePath<t.TSType> | null | undefined): boolean {
+export function isPrimitiveLiteral(
+  typePath: NodePath<t.TSType> | null | undefined
+): boolean {
   if (!typePath || typeof typePath.isTSLiteralType !== 'function') {
     return false;
   }
@@ -97,7 +108,9 @@ export function isPrimitiveLiteral(typePath: NodePath<t.TSType> | null | undefin
   );
 }
 
-export function resolveQualifiedRoot(qualifiedName: t.TSQualifiedName): t.Identifier | null {
+export function resolveQualifiedRoot(
+  qualifiedName: t.TSQualifiedName
+): t.Identifier | null {
   if (t.isIdentifier(qualifiedName.left)) {
     return qualifiedName.left;
   }
@@ -173,7 +186,9 @@ export function isMapTypeNode(node: t.TSType | null | undefined): boolean {
   );
 }
 
-export function getMapTypeArguments(node: t.TSType | null | undefined): { keyType: t.TSType; valueType: t.TSType } | null {
+export function getMapTypeArguments(
+  node: t.TSType | null | undefined
+): { keyType: t.TSType; valueType: t.TSType } | null {
   if (!node) {
     return null;
   }
@@ -202,7 +217,9 @@ export function getMapTypeArguments(node: t.TSType | null | undefined): { keyTyp
   return null;
 }
 
-export function getSetTypeArguments(node: t.TSType | null | undefined): t.TSType | null {
+export function getSetTypeArguments(
+  node: t.TSType | null | undefined
+): t.TSType | null {
   if (!node) {
     return null;
   }
@@ -229,7 +246,9 @@ export function getSetTypeArguments(node: t.TSType | null | undefined): t.TSType
   return null;
 }
 
-export function getArrayElementType(node: t.TSType | null | undefined): t.TSType | null {
+export function getArrayElementType(
+  node: t.TSType | null | undefined
+): t.TSType | null {
   if (!node) {
     return null;
   }
@@ -260,7 +279,9 @@ export function getArrayElementType(node: t.TSType | null | undefined): t.TSType
   return null;
 }
 
-export function isPrimitiveLikeType(typePath: NodePath<t.TSType> | null | undefined): boolean {
+export function isPrimitiveLikeType(
+  typePath: NodePath<t.TSType> | null | undefined
+): boolean {
   if (!typePath?.node) {
     return false;
   }
@@ -275,7 +296,10 @@ export function isPrimitiveLikeType(typePath: NodePath<t.TSType> | null | undefi
 
   if (typePath.isTSUnionType()) {
     const unionTypes = typePath.get('types');
-    return unionTypes.length > 0 && unionTypes.every((member) => isPrimitiveLikeType(member));
+    return (
+      unionTypes.length > 0
+      && unionTypes.every((member) => isPrimitiveLikeType(member))
+    );
   }
 
   if (typePath.isTSTypeReference()) {

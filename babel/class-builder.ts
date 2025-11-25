@@ -25,7 +25,10 @@ import {
 import type { MapConversionInfo } from './normalizers';
 import { getTypeName, isDateReference, isUrlReference } from './type-guards';
 
-function getMapConversionInfo(prop: PropDescriptor, declaredMessageTypeNames: Set<string>): MapConversionInfo {
+function getMapConversionInfo(
+  prop: PropDescriptor,
+  declaredMessageTypeNames: Set<string>
+): MapConversionInfo {
   const conversions: MapConversionInfo = {};
 
   // Check key type
@@ -61,8 +64,12 @@ function getMapConversionInfo(prop: PropDescriptor, declaredMessageTypeNames: Se
 
 function needsMapConversions(conversions: MapConversionInfo): boolean {
   return Boolean(
-    conversions.keyIsDate || conversions.keyIsUrl || conversions.keyIsMessage
-    || conversions.valueIsDate || conversions.valueIsUrl || conversions.valueIsMessage
+    conversions.keyIsDate
+    || conversions.keyIsUrl
+    || conversions.keyIsMessage
+    || conversions.valueIsDate
+    || conversions.valueIsUrl
+    || conversions.valueIsMessage
   );
 }
 
@@ -131,7 +138,8 @@ export function buildClassFromProperties(
           ])
         ),
       ])
-    ) as unknown as t.ClassDeclaration; // Note: unreachable path in current usage
+    ) as unknown as t.ClassDeclaration;
+    // Note: unreachable path in current usage
   }
 
   const constructorParam = t.identifier('props');
@@ -150,17 +158,33 @@ export function buildClassFromProperties(
 
     if (prop.isArray) {
       const elementTypeName = getTypeName(prop.arrayElementType!);
-      valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
-        ? buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName)
-        : buildImmutableArrayExpression(propsAccess);
+      valueExpr =
+        elementTypeName && declaredMessageTypeNames.has(elementTypeName)
+          ? buildImmutableArrayOfMessagesExpression(
+            propsAccess,
+            elementTypeName
+          )
+          : buildImmutableArrayExpression(propsAccess);
     } else if (prop.isMap) {
-      const conversions = getMapConversionInfo(prop, declaredMessageTypeNames);
-      valueExpr = needsMapConversions(conversions) ? buildImmutableMapWithConversionsExpression(propsAccess, conversions) : buildImmutableMapExpression(propsAccess);
+      const conversions = getMapConversionInfo(
+        prop,
+        declaredMessageTypeNames
+      );
+      valueExpr = needsMapConversions(conversions)
+        ? buildImmutableMapWithConversionsExpression(
+          propsAccess,
+          conversions
+        )
+        : buildImmutableMapExpression(propsAccess);
     } else if (prop.isSet) {
       const elementTypeName = getTypeName(prop.setElementType!);
-      valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
-        ? buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName)
-        : buildImmutableSetExpression(propsAccess);
+      valueExpr =
+        elementTypeName && declaredMessageTypeNames.has(elementTypeName)
+          ? buildImmutableSetOfMessagesExpression(
+            propsAccess,
+            elementTypeName
+          )
+          : buildImmutableSetExpression(propsAccess);
     } else if (prop.isDateType) {
       valueExpr = buildImmutableDateNormalizationExpression(
         valueExpr,
@@ -277,11 +301,20 @@ export function buildClassFromProperties(
     ),
   ];
 
-  const fromEntriesMethod = buildFromEntriesMethod(propDescriptors, propsTypeRef, declaredMessageTypeNames);
+  const fromEntriesMethod = buildFromEntriesMethod(
+    propDescriptors,
+    propsTypeRef,
+    declaredMessageTypeNames
+  );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
 
   const setterMethods = propDescriptors.map((prop) =>
-    buildSetterMethod(typeName, propDescriptors, prop, declaredMessageTypeNames)
+    buildSetterMethod(
+      typeName,
+      propDescriptors,
+      prop,
+      declaredMessageTypeNames
+    )
   );
   const deleteMethods = propDescriptors
     .filter((prop) => prop.optional)
@@ -358,7 +391,10 @@ function buildPropsObjectExpression(
   );
 }
 
-function buildDescriptorMethod(propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], propsTypeRef: t.TSTypeReference): t.ClassMethod {
+function buildDescriptorMethod(
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  propsTypeRef: t.TSTypeReference
+): t.ClassMethod {
   const descriptorEntries = propDescriptors.map((prop) =>
     t.objectExpression([
       t.objectProperty(t.identifier('name'), t.stringLiteral(prop.name)),
@@ -403,12 +439,19 @@ function buildDescriptorMethod(propDescriptors: (PropDescriptor & { privateName:
   return method;
 }
 
-function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], propsTypeRef: t.TSTypeReference, declaredMessageTypeNames: Set<string>): t.ClassMethod {
+function buildFromEntriesMethod(
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  propsTypeRef: t.TSTypeReference,
+  declaredMessageTypeNames: Set<string>
+): t.ClassMethod {
   const argsId = t.identifier('entries');
   argsId.typeAnnotation = t.tsTypeAnnotation(
     t.tsTypeReference(
       t.identifier('Record'),
-      t.tsTypeParameterInstantiation([t.tsStringKeyword(), t.tsUnknownKeyword()])
+      t.tsTypeParameterInstantiation([
+        t.tsStringKeyword(),
+        t.tsUnknownKeyword()
+      ])
     )
   );
   const propsId = t.identifier('props');
@@ -481,9 +524,15 @@ function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName
 
     if (prop.isMap) {
       const mapValueId = t.identifier(`${prop.name}MapValue`);
-      const conversions = getMapConversionInfo(prop, declaredMessageTypeNames);
+      const conversions = getMapConversionInfo(
+        prop,
+        declaredMessageTypeNames
+      );
       const mapExpr = needsMapConversions(conversions)
-        ? buildImmutableMapWithConversionsExpression(checkedValueId as t.Expression, conversions)
+        ? buildImmutableMapWithConversionsExpression(
+          checkedValueId as t.Expression,
+          conversions
+        )
         : buildImmutableMapExpression(checkedValueId as t.Expression);
       statements.push(
         t.variableDeclaration('const', [
@@ -611,7 +660,10 @@ function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName
   return method;
 }
 
-function buildEntryAccessExpression(prop: PropDescriptor & { privateName: t.PrivateName }, entriesId: t.Identifier): t.Expression {
+function buildEntryAccessExpression(
+  prop: PropDescriptor & { privateName: t.PrivateName },
+  entriesId: t.Identifier
+): t.Expression {
   const namedAccess = t.memberExpression(
     entriesId,
     t.stringLiteral(prop.name),
@@ -645,7 +697,12 @@ function buildErrorThrow(message: string): t.ThrowStatement {
   );
 }
 
-function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], targetProp: PropDescriptor & { privateName: t.PrivateName }, declaredMessageTypeNames: Set<string>): t.ClassMethod {
+function buildSetterMethod(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  targetProp: PropDescriptor & { privateName: t.PrivateName },
+  declaredMessageTypeNames: Set<string>
+): t.ClassMethod {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
     t.cloneNode(targetProp.displayType ?? targetProp.inputTypeAnnotation)
@@ -654,9 +711,15 @@ function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & 
   let setterValueExpr: t.Expression = t.cloneNode(valueId);
 
   if (targetProp.isMap) {
-    const conversions = getMapConversionInfo(targetProp, declaredMessageTypeNames);
+    const conversions = getMapConversionInfo(
+      targetProp,
+      declaredMessageTypeNames
+    );
     setterValueExpr = needsMapConversions(conversions)
-      ? buildImmutableMapWithConversionsExpression(setterValueExpr, conversions)
+      ? buildImmutableMapWithConversionsExpression(
+        setterValueExpr,
+        conversions
+      )
       : buildImmutableMapExpression(setterValueExpr);
   } else if (targetProp.isSet) {
     setterValueExpr = buildImmutableSetExpression(setterValueExpr);
@@ -686,14 +749,23 @@ function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & 
   ]);
 
   const methodName = `set${capitalize(targetProp.name)}`;
-  const method = t.classMethod('method', t.identifier(methodName), [valueId], body);
+  const method = t.classMethod(
+    'method',
+    t.identifier(methodName),
+    [valueId],
+    body
+  );
   method.returnType = t.tsTypeAnnotation(
     t.tsTypeReference(t.identifier(typeName))
   );
   return method;
 }
 
-function buildDeleteMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], targetProp: PropDescriptor & { privateName: t.PrivateName }): t.ClassMethod {
+function buildDeleteMethod(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  targetProp: PropDescriptor & { privateName: t.PrivateName }
+): t.ClassMethod {
   const propsObject = buildPropsObjectExpression(
     propDescriptors,
     targetProp,
@@ -715,7 +787,10 @@ function buildDeleteMethod(typeName: string, propDescriptors: (PropDescriptor & 
   return method;
 }
 
-function buildArrayMutatorMethods(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]): t.ClassMethod[] {
+function buildArrayMutatorMethods(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
   for (const prop of propDescriptors) {
@@ -870,7 +945,11 @@ function buildCopyWithinParams(): t.Identifier[] {
   return [targetId, startId, endId];
 }
 
-function buildSortMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], prop: PropDescriptor & { privateName: t.PrivateName }): t.ClassMethod {
+function buildSortMethod(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  prop: PropDescriptor & { privateName: t.PrivateName }
+): t.ClassMethod {
   const compareId = t.identifier('compareFn');
   const firstParam = t.identifier('a');
   firstParam.typeAnnotation = t.tsTypeAnnotation(
@@ -905,7 +984,11 @@ function buildSortMethod(typeName: string, propDescriptors: (PropDescriptor & { 
   );
 }
 
-function buildSpliceMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], prop: PropDescriptor & { privateName: t.PrivateName }): t.ClassMethod {
+function buildSpliceMethod(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  prop: PropDescriptor & { privateName: t.PrivateName }
+): t.ClassMethod {
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
   const deleteCountId = t.identifier('deleteCount');
@@ -969,7 +1052,10 @@ function buildArrayMutationMethod(
   methodName: string,
   params: (t.Identifier | t.RestElement)[],
   buildMutations: (nextRef: () => t.Identifier) => t.Statement[],
-  cloneOptions: { prepend?: t.SpreadElement[]; append?: t.SpreadElement[] } = {}
+  cloneOptions: {
+    prepend?: t.SpreadElement[];
+    append?: t.SpreadElement[];
+  } = {}
 ): t.ClassMethod {
   const { statements, nextName } = buildArrayCloneSetup(prop, cloneOptions);
   const nextRef = () => t.identifier(nextName);
@@ -984,14 +1070,23 @@ function buildArrayMutationMethod(
   if (methodName.startsWith('push') || methodName.startsWith('unshift')) {
     const valuesParam = params[0];
     const valuesId =
-      t.isIdentifier(valuesParam) ? valuesParam
-        : t.isRestElement(valuesParam) && t.isIdentifier(valuesParam.argument)
+      t.isIdentifier(valuesParam)
+        ? valuesParam
+        : t.isRestElement(valuesParam)
+          && t.isIdentifier(valuesParam.argument)
           ? valuesParam.argument
           : null;
     if (valuesId) {
       preludeStatements.push(
         t.ifStatement(
-          t.binaryExpression('===', t.memberExpression(t.cloneNode(valuesId), t.identifier('length')), t.numericLiteral(0)),
+          t.binaryExpression(
+            '===',
+            t.memberExpression(
+              t.cloneNode(valuesId),
+              t.identifier('length')
+            ),
+            t.numericLiteral(0)
+          ),
           t.returnStatement(t.thisExpression())
         )
       );
@@ -1038,7 +1133,16 @@ function buildArrayMutationMethod(
   return method;
 }
 
-function buildArrayCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName }, { prepend = [], append = [] }: { prepend?: t.SpreadElement[]; append?: t.SpreadElement[] } = {}) {
+function buildArrayCloneSetup(
+  prop: PropDescriptor & { privateName: t.PrivateName },
+  {
+    prepend = [],
+    append = []
+  }: {
+    prepend?: t.SpreadElement[];
+    append?: t.SpreadElement[];
+  } = {}
+) {
   const sourceName = `${prop.name}Array`;
   const nextName = `${prop.name}Next`;
 
@@ -1079,7 +1183,10 @@ function buildArrayCloneSetup(prop: PropDescriptor & { privateName: t.PrivateNam
   return { statements, nextName };
 }
 
-function buildMapMutatorMethods(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]): t.ClassMethod[] {
+function buildMapMutatorMethods(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
   for (const prop of propDescriptors) {
@@ -1148,7 +1255,9 @@ function buildMapMutatorMethods(typeName: string, propDescriptors: (PropDescript
           return [
             t.forOfStatement(
               t.variableDeclaration('const', [
-                t.variableDeclarator(t.arrayPattern([mergeKeyId, mergeValueId])),
+                t.variableDeclarator(
+                  t.arrayPattern([mergeKeyId, mergeValueId])
+                ),
               ]),
               t.identifier('entries'),
               t.blockStatement([
@@ -1279,7 +1388,10 @@ function buildMapMutatorMethods(typeName: string, propDescriptors: (PropDescript
                 t.ifStatement(
                   t.unaryExpression(
                     '!',
-                    t.callExpression(t.identifier('predicate'), [valueId, keyId])
+                    t.callExpression(
+                      t.identifier('predicate'),
+                      [valueId, keyId]
+                    )
                   ),
                   t.expressionStatement(
                     t.callExpression(
@@ -1299,7 +1411,10 @@ function buildMapMutatorMethods(typeName: string, propDescriptors: (PropDescript
   return methods;
 }
 
-function buildSetMutatorMethods(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]): t.ClassMethod[] {
+function buildSetMutatorMethods(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
   for (const prop of propDescriptors) {
@@ -1566,7 +1681,10 @@ function buildMapMutationMethod(
   methodName: string,
   params: (t.Identifier | t.RestElement)[],
   buildMutations: (mapRef: () => t.Identifier) => t.Statement[],
-  options: { prelude?: t.Statement[]; skipNoopGuard?: boolean } = {}
+  options: {
+    prelude?: t.Statement[];
+    skipNoopGuard?: boolean;
+  } = {}
 ): t.ClassMethod {
   const { prelude = [], skipNoopGuard = false } = options;
   const { statements, nextName } = buildMapCloneSetup(prop);
@@ -1600,7 +1718,9 @@ function buildMapMutationMethod(
   return method;
 }
 
-function buildMapCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName }) {
+function buildMapCloneSetup(
+  prop: PropDescriptor & { privateName: t.PrivateName }
+) {
   const sourceName = `${prop.name}MapSource`;
   const entriesName = `${prop.name}MapEntries`;
   const nextName = `${prop.name}MapNext`;
@@ -1626,7 +1746,10 @@ function buildMapCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName 
       t.arrayExpression([
         t.spreadElement(
           t.callExpression(
-            t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
+            t.memberExpression(
+              t.identifier(sourceName),
+              t.identifier('entries')
+            ),
             []
           )
         )
@@ -1635,7 +1758,10 @@ function buildMapCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName 
     : t.arrayExpression([
       t.spreadElement(
         t.callExpression(
-          t.memberExpression(t.identifier(sourceName), t.identifier('entries')),
+          t.memberExpression(
+            t.identifier(sourceName),
+            t.identifier('entries')
+          ),
           []
         )
       )
@@ -1697,7 +1823,9 @@ function buildSetMutationMethod(
   return method;
 }
 
-function buildSetCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName }) {
+function buildSetCloneSetup(
+  prop: PropDescriptor & { privateName: t.PrivateName }
+) {
   const sourceName = `${prop.name}SetSource`;
   const entriesName = `${prop.name}SetEntries`;
   const nextName = `${prop.name}SetNext`;
@@ -1741,11 +1869,22 @@ function buildSetCloneSetup(prop: PropDescriptor & { privateName: t.PrivateName 
   return { statements, nextName, entriesName };
 }
 
-function buildNoopGuard(currentExpr: t.Expression, nextExpr: t.Expression): t.IfStatement {
-  const sameRef = t.binaryExpression('===', t.cloneNode(currentExpr), t.cloneNode(nextExpr));
+function buildNoopGuard(
+  currentExpr: t.Expression,
+  nextExpr: t.Expression
+): t.IfStatement {
+  const sameRef = t.binaryExpression(
+    '===',
+    t.cloneNode(currentExpr),
+    t.cloneNode(nextExpr)
+  );
   const equalsCall = t.logicalExpression(
     '&&',
-    t.binaryExpression('!==', t.cloneNode(currentExpr), t.identifier('undefined')),
+    t.binaryExpression(
+      '!==',
+      t.cloneNode(currentExpr),
+      t.identifier('undefined')
+    ),
     t.callExpression(
       t.memberExpression(t.cloneNode(currentExpr), t.identifier('equals')),
       [t.cloneNode(nextExpr)]
@@ -1769,11 +1908,17 @@ function buildSetEntryOptions(prop: PropDescriptor) {
     t.memberExpression(currentId, t.identifier('get')),
     [t.identifier('key')]
   );
-  const equalsCall = t.callExpression(t.identifier('equals'), [existingId, valueId]);
+  const equalsCall = t.callExpression(
+    t.identifier('equals'),
+    [existingId, valueId]
+  );
 
   const prelude = [
     t.variableDeclaration('const', [
-      t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      t.variableDeclarator(
+        currentId,
+        t.memberExpression(t.thisExpression(), t.identifier(prop.name))
+      ),
     ]),
     t.ifStatement(
       t.logicalExpression(
@@ -1801,7 +1946,10 @@ function buildDeleteEntryOptions(prop: PropDescriptor) {
   );
   const prelude = [
     t.variableDeclaration('const', [
-      t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      t.variableDeclarator(
+        currentId,
+        t.memberExpression(t.thisExpression(), t.identifier(prop.name))
+      ),
     ]),
     t.ifStatement(
       t.logicalExpression(
@@ -1820,7 +1968,10 @@ function buildClearMapOptions(prop: PropDescriptor) {
   const sizeAccess = t.memberExpression(currentId, t.identifier('size'));
   const prelude = [
     t.variableDeclaration('const', [
-      t.variableDeclarator(currentId, t.memberExpression(t.thisExpression(), t.identifier(prop.name))),
+      t.variableDeclarator(
+        currentId,
+        t.memberExpression(t.thisExpression(), t.identifier(prop.name))
+      ),
     ]),
     t.ifStatement(
       t.logicalExpression(
@@ -1838,21 +1989,27 @@ function cloneMapKeyType(prop: PropDescriptor): t.TSType {
   if (prop.mapKeyInputType) {
     return t.cloneNode(prop.mapKeyInputType);
   }
-  return prop.mapKeyType ? wrapImmutableType(t.cloneNode(prop.mapKeyType)) : t.tsAnyKeyword();
+  return prop.mapKeyType
+    ? wrapImmutableType(t.cloneNode(prop.mapKeyType))
+    : t.tsAnyKeyword();
 }
 
 function cloneMapValueType(prop: PropDescriptor): t.TSType {
   if (prop.mapValueInputType) {
     return t.cloneNode(prop.mapValueInputType);
   }
-  return prop.mapValueType ? wrapImmutableType(t.cloneNode(prop.mapValueType)) : t.tsAnyKeyword();
+  return prop.mapValueType
+    ? wrapImmutableType(t.cloneNode(prop.mapValueType))
+    : t.tsAnyKeyword();
 }
 
 function cloneSetElementType(prop: PropDescriptor): t.TSType {
   if (prop.setElementInputType) {
     return t.cloneNode(prop.setElementInputType);
   }
-  return prop.setElementType ? wrapImmutableType(t.cloneNode(prop.setElementType)) : t.tsAnyKeyword();
+  return prop.setElementType
+    ? wrapImmutableType(t.cloneNode(prop.setElementType))
+    : t.tsAnyKeyword();
 }
 
 function buildMapSetParams(prop: PropDescriptor): t.Identifier[] {

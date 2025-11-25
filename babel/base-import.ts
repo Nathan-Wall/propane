@@ -4,7 +4,10 @@ import type { PropaneState } from './plugin';
 
 export const MESSAGE_SOURCE = '@propanejs/runtime';
 
-export function ensureBaseImport(programPath: NodePath<t.Program>, state: PropaneState) {
+export function ensureBaseImport(
+  programPath: NodePath<t.Program>,
+  state: PropaneState
+) {
   const program = programPath.node;
   const hasImportBinding = (name: string) =>
     program.body.some(
@@ -12,7 +15,9 @@ export function ensureBaseImport(programPath: NodePath<t.Program>, state: Propan
         t.isImportDeclaration(stmt)
         && stmt.specifiers.some(
           (spec) =>
-            t.isImportSpecifier(spec) || t.isImportDefaultSpecifier(spec) || t.isImportNamespaceSpecifier(spec)
+            t.isImportSpecifier(spec)
+            || t.isImportDefaultSpecifier(spec)
+            || t.isImportNamespaceSpecifier(spec)
               ? spec.local.name === name
               : false
         )
@@ -49,7 +54,11 @@ export function ensureBaseImport(programPath: NodePath<t.Program>, state: Propan
     const existingSpecifiers = new Set(
       existingImport.specifiers
         .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
-        .map((spec) => t.isIdentifier(spec.imported) ? spec.imported.name : spec.imported.value)
+        .map((spec) =>
+          t.isIdentifier(spec.imported)
+            ? spec.imported.name
+            : spec.imported.value
+        )
     );
     for (const name of requiredSpecifiers) {
       if (!existingSpecifiers.has(name)) {

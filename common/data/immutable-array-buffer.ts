@@ -1,5 +1,5 @@
-// Immutable wrapper around ArrayBuffer providing value semantics (equals/hashCode)
-// and safe cloning utilities.
+// Immutable wrapper around ArrayBuffer providing value semantics
+// (equals/hashCode) and safe cloning utilities.
 
 // Simple deterministic string hash (Java-style) using UTF-16 code units.
 function hashString(value: string): number {
@@ -19,7 +19,9 @@ function cloneBuffer(input: ArrayBuffer): ArrayBuffer {
   return input.slice(0);
 }
 
-function fromInput(input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>): ArrayBuffer {
+function fromInput(
+  input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
+): ArrayBuffer {
   if (!input) {
     return new ArrayBuffer(0);
   }
@@ -37,7 +39,10 @@ function fromInput(input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | I
     ? input
     : typeof (input as Iterable<number>)[Symbol.iterator] === 'function'
       ? [...(input as Iterable<number>)]
-      : Array.from({ length: (input as ArrayLike<number>).length }, (_, i) => (input as ArrayLike<number>)[i]);
+      : Array.from(
+        { length: (input as ArrayLike<number>).length },
+        (_, i) => (input as ArrayLike<number>)[i]
+      );
 
   return new Uint8Array(bytes).buffer;
 }
@@ -75,7 +80,9 @@ export class ImmutableArrayBuffer {
   #hash?: number;
   readonly [Symbol.toStringTag] = 'ImmutableArrayBuffer';
 
-  constructor(input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>) {
+  constructor(
+    input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
+  ) {
     this.#buffer = fromInput(input);
     Object.freeze(this);
   }
@@ -120,7 +127,9 @@ export class ImmutableArrayBuffer {
   }
 }
 
-export function isImmutableArrayBuffer(value: unknown): value is ImmutableArrayBuffer {
+export function isImmutableArrayBuffer(
+  value: unknown
+): value is ImmutableArrayBuffer {
   return (
     value instanceof ImmutableArrayBuffer
     || Object.prototype.toString.call(value) === '[object ImmutableArrayBuffer]'

@@ -13,11 +13,14 @@ const tsconfigPath = path.join(projectRoot, 'tsconfig.json');
 function readTsConfig() {
   const configFile = ts.readConfigFile(tsconfigPath, ts.sys.readFile);
   if (configFile.error) {
-    throw new Error(ts.formatDiagnosticsWithColorAndContext([configFile.error], {
-      getCurrentDirectory: () => projectRoot,
-      getCanonicalFileName: (fileName) => fileName,
-      getNewLine: () => ts.sys.newLine,
-    }));
+    throw new Error(ts.formatDiagnosticsWithColorAndContext(
+      [configFile.error],
+      {
+        getCurrentDirectory: () => projectRoot,
+        getCanonicalFileName: (fileName) => fileName,
+        getNewLine: () => ts.sys.newLine,
+      }
+    ));
   }
 
   const parsed = ts.parseJsonConfigFileContent(

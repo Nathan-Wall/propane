@@ -71,7 +71,11 @@ export default function runArrayBufferTests() {
     `base64:${toBase64(chunkB)}`,
   ]), 'ArrayBuffer arrays should normalize to base64 strings in JSON.');
 
-  const withoutExtra = new ArrayBufferMessage({ id: 7, data: data, chunks: [] });
+  const withoutExtra = new ArrayBufferMessage({
+    id: 7,
+    data: data,
+    chunks: [],
+  });
   const serializedWithoutExtra = withoutExtra.serialize();
   assert(!serializedWithoutExtra.includes('undefined'), 'Optional ArrayBuffer should be omitted when undefined.');
 }

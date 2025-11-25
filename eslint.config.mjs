@@ -94,17 +94,6 @@ export default defineConfig(
       curly: ['error', 'all'],
       eqeqeq: ['error', 'smart'],
       'no-console': 'off',
-      'max-len': [
-        'error',
-        {
-          code: 80,
-          tabWidth: 2,
-          ignoreStrings: true,
-          ignoreTemplateLiterals: true,
-          ignoreComments: true,
-          ignoreUrls: true,
-        },
-      ],
 
       // TS quality & DX
       '@typescript-eslint/consistent-type-imports': 'error',
@@ -151,9 +140,9 @@ export default defineConfig(
   // 6) Keep Prettier in charge of formatting — place before any project style overrides
   prettier,
 
-  // 7) Project formatting overrides
+  // 7) Project formatting overrides (after Prettier to re-enable rules it disables)
   {
-    name: 'overrides/operator-linebreak',
+    name: 'overrides/formatting',
     rules: {
       'operator-linebreak': [
         'error',
@@ -162,6 +151,17 @@ export default defineConfig(
           overrides: {
             '=': 'after',
           },
+        },
+      ],
+      'max-len': [
+        'error',
+        {
+          code: 80,
+          tabWidth: 2,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreComments: true,
+          ignoreUrls: true,
         },
       ],
     },
@@ -211,6 +211,8 @@ export default defineConfig(
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'unicorn/prefer-spread': 'off',
+      'max-len': 'off',
     },
   },
+
 );

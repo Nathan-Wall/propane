@@ -2,7 +2,8 @@ const $brand = Symbol('brand');
 
 export type Brand<T, B> = T & { readonly [$brand]: B };
 
-export const brand = <B>(unused_b: B) => <T>(t: T): Brand<T, B> => t as Brand<T, B>;
+export const brand = <B>(unused_b: B) => <T>(t: T): Brand<T, B> =>
+  t as Brand<T, B>;
 
 export const unbrand = <B>(unused_b: B) => <T>(t: Brand<T, B>): T => t as T;
 

@@ -4,16 +4,26 @@ import {
   buildSetTagComparison,
 } from './runtime-checks';
 
-export function buildImmutableMapExpression(valueExpr: t.Expression): t.Expression {
+export function buildImmutableMapExpression(
+  valueExpr: t.Expression
+): t.Expression {
   const nilCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
   const immutableCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('instanceof', t.cloneNode(valueExpr), t.identifier('ImmutableMap')),
+    t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableMap')
+    ),
     buildMapTagComparison(valueExpr, '[object ImmutableMap]')
   );
 
@@ -31,10 +41,16 @@ export function buildImmutableMapExpression(valueExpr: t.Expression): t.Expressi
   );
 }
 
-export function buildImmutableArrayExpression(valueExpr: t.Expression): t.Expression {
+export function buildImmutableArrayExpression(
+  valueExpr: t.Expression
+): t.Expression {
   const nilCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
@@ -58,16 +74,26 @@ export function buildImmutableArrayExpression(valueExpr: t.Expression): t.Expres
   );
 }
 
-export function buildImmutableSetExpression(valueExpr: t.Expression): t.Expression {
+export function buildImmutableSetExpression(
+  valueExpr: t.Expression
+): t.Expression {
   const nilCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
   const immutableCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('instanceof', t.cloneNode(valueExpr), t.identifier('ImmutableSet')),
+    t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableSet')
+    ),
     buildSetTagComparison(valueExpr, '[object ImmutableSet]')
   );
 
@@ -87,7 +113,10 @@ export function buildImmutableSetExpression(valueExpr: t.Expression): t.Expressi
 
 export function buildImmutableDateNormalizationExpression(
   valueExpr: t.Expression,
-  { allowUndefined = false, allowNull = false }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+  {
+    allowUndefined = false,
+    allowNull = false
+  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
@@ -114,7 +143,11 @@ export function buildImmutableDateNormalizationExpression(
 
   if (allowUndefined) {
     normalized = t.conditionalExpression(
-      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.binaryExpression(
+        '===',
+        t.cloneNode(valueExpr),
+        t.identifier('undefined')
+      ),
       t.identifier('undefined'),
       normalized
     );
@@ -125,7 +158,10 @@ export function buildImmutableDateNormalizationExpression(
 
 export function buildImmutableUrlNormalizationExpression(
   valueExpr: t.Expression,
-  { allowUndefined = false, allowNull = false }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+  {
+    allowUndefined = false,
+    allowNull = false
+  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
@@ -152,7 +188,11 @@ export function buildImmutableUrlNormalizationExpression(
 
   if (allowUndefined) {
     normalized = t.conditionalExpression(
-      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.binaryExpression(
+        '===',
+        t.cloneNode(valueExpr),
+        t.identifier('undefined')
+      ),
       t.identifier('undefined'),
       normalized
     );
@@ -163,7 +203,10 @@ export function buildImmutableUrlNormalizationExpression(
 
 export function buildImmutableArrayBufferNormalizationExpression(
   valueExpr: t.Expression,
-  { allowUndefined = false, allowNull = false }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+  {
+    allowUndefined = false,
+    allowNull = false
+  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
@@ -198,7 +241,11 @@ export function buildImmutableArrayBufferNormalizationExpression(
 
   if (allowUndefined) {
     normalized = t.conditionalExpression(
-      t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+      t.binaryExpression(
+        '===',
+        t.cloneNode(valueExpr),
+        t.identifier('undefined')
+      ),
       t.identifier('undefined'),
       normalized
     );
@@ -210,7 +257,10 @@ export function buildImmutableArrayBufferNormalizationExpression(
 export function buildMessageNormalizationExpression(
   valueExpr: t.Expression,
   className: string,
-  { allowUndefined = false, allowNull = false }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+  {
+    allowUndefined = false,
+    allowNull = false
+  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
@@ -254,65 +304,126 @@ export function buildMessageNormalizationExpression(
   return normalized;
 }
 
-export function buildImmutableArrayOfMessagesExpression(valueExpr: t.Expression, messageTypeName: string): t.Expression {
-  const nilCheck = t.logicalExpression('||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+export function buildImmutableArrayOfMessagesExpression(
+  valueExpr: t.Expression,
+  messageTypeName: string
+): t.Expression {
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const arrayFrom = t.callExpression(
+    t.memberExpression(t.identifier('Array'), t.identifier('from')),
+    [t.cloneNode(valueExpr)]
+  );
   const mapCall = t.callExpression(
     t.memberExpression(arrayFrom, t.identifier('map')),
     [
       t.arrowFunctionExpression(
         [t.identifier('v')],
         t.conditionalExpression(
-          t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+          t.binaryExpression(
+            'instanceof',
+            t.identifier('v'),
+            t.identifier(messageTypeName)
+          ),
           t.identifier('v'),
-          t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+          t.newExpression(
+            t.identifier(messageTypeName),
+            [t.identifier('v')]
+          )
         )
       )
     ]
   );
 
-  const newImmutable = t.newExpression(t.identifier('ImmutableArray'), [mapCall]);
+  const newImmutable = t.newExpression(
+    t.identifier('ImmutableArray'),
+    [mapCall]
+  );
 
-  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+  return t.conditionalExpression(
+    nilCheck,
+    t.cloneNode(valueExpr),
+    newImmutable
+  );
 }
 
-export function buildImmutableSetOfMessagesExpression(valueExpr: t.Expression, messageTypeName: string): t.Expression {
-  const nilCheck = t.logicalExpression('||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+export function buildImmutableSetOfMessagesExpression(
+  valueExpr: t.Expression,
+  messageTypeName: string
+): t.Expression {
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const arrayFrom = t.callExpression(
+    t.memberExpression(t.identifier('Array'), t.identifier('from')),
+    [t.cloneNode(valueExpr)]
+  );
   const mapCall = t.callExpression(
     t.memberExpression(arrayFrom, t.identifier('map')),
     [
       t.arrowFunctionExpression(
         [t.identifier('v')],
         t.conditionalExpression(
-          t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+          t.binaryExpression(
+            'instanceof',
+            t.identifier('v'),
+            t.identifier(messageTypeName)
+          ),
           t.identifier('v'),
-          t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+          t.newExpression(
+            t.identifier(messageTypeName),
+            [t.identifier('v')]
+          )
         )
       )
     ]
   );
 
-  const newImmutable = t.newExpression(t.identifier('ImmutableSet'), [mapCall]);
+  const newImmutable = t.newExpression(
+    t.identifier('ImmutableSet'),
+    [mapCall]
+  );
 
-  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+  return t.conditionalExpression(
+    nilCheck,
+    t.cloneNode(valueExpr),
+    newImmutable
+  );
 }
 
-export function buildImmutableMapOfMessagesExpression(valueExpr: t.Expression, messageTypeName: string): t.Expression {
-  const nilCheck = t.logicalExpression('||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+export function buildImmutableMapOfMessagesExpression(
+  valueExpr: t.Expression,
+  messageTypeName: string
+): t.Expression {
+  const nilCheck = t.logicalExpression(
+    '||',
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const arrayFrom = t.callExpression(t.memberExpression(t.identifier('Array'), t.identifier('from')), [t.cloneNode(valueExpr)]);
+  const arrayFrom = t.callExpression(
+    t.memberExpression(t.identifier('Array'), t.identifier('from')),
+    [t.cloneNode(valueExpr)]
+  );
   const mapCall = t.callExpression(
     t.memberExpression(arrayFrom, t.identifier('map')),
     [
@@ -321,18 +432,32 @@ export function buildImmutableMapOfMessagesExpression(valueExpr: t.Expression, m
         t.arrayExpression([
           t.identifier('k'),
           t.conditionalExpression(
-            t.binaryExpression('instanceof', t.identifier('v'), t.identifier(messageTypeName)),
+            t.binaryExpression(
+              'instanceof',
+              t.identifier('v'),
+              t.identifier(messageTypeName)
+            ),
             t.identifier('v'),
-            t.newExpression(t.identifier(messageTypeName), [t.identifier('v')])
+            t.newExpression(
+              t.identifier(messageTypeName),
+              [t.identifier('v')]
+            )
           )
         ])
       )
     ]
   );
 
-  const newImmutable = t.newExpression(t.identifier('ImmutableMap'), [mapCall]);
+  const newImmutable = t.newExpression(
+    t.identifier('ImmutableMap'),
+    [mapCall]
+  );
 
-  return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
+  return t.conditionalExpression(
+    nilCheck,
+    t.cloneNode(valueExpr),
+    newImmutable
+  );
 }
 
 export interface MapConversionInfo {
@@ -350,13 +475,21 @@ export function buildImmutableMapWithConversionsExpression(
 ): t.Expression {
   const nilCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('===', t.cloneNode(valueExpr), t.identifier('undefined')),
+    t.binaryExpression(
+      '===',
+      t.cloneNode(valueExpr),
+      t.identifier('undefined')
+    ),
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
   const immutableCheck = t.logicalExpression(
     '||',
-    t.binaryExpression('instanceof', t.cloneNode(valueExpr), t.identifier('ImmutableMap')),
+    t.binaryExpression(
+      'instanceof',
+      t.cloneNode(valueExpr),
+      t.identifier('ImmutableMap')
+    ),
     buildMapTagComparison(valueExpr, '[object ImmutableMap]')
   );
 
@@ -366,21 +499,42 @@ export function buildImmutableMapWithConversionsExpression(
 
   if (conversions.keyIsDate) {
     keyConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(keyId), t.identifier('ImmutableDate')),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(keyId),
+        t.identifier('ImmutableDate')
+      ),
       t.cloneNode(keyId),
-      t.newExpression(t.identifier('ImmutableDate'), [t.cloneNode(keyId)])
+      t.newExpression(
+        t.identifier('ImmutableDate'),
+        [t.cloneNode(keyId)]
+      )
     );
   } else if (conversions.keyIsUrl) {
     keyConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(keyId), t.identifier('ImmutableUrl')),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(keyId),
+        t.identifier('ImmutableUrl')
+      ),
       t.cloneNode(keyId),
-      t.newExpression(t.identifier('ImmutableUrl'), [t.cloneNode(keyId)])
+      t.newExpression(
+        t.identifier('ImmutableUrl'),
+        [t.cloneNode(keyId)]
+      )
     );
   } else if (conversions.keyIsMessage) {
     keyConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(keyId), t.identifier(conversions.keyIsMessage)),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(keyId),
+        t.identifier(conversions.keyIsMessage)
+      ),
       t.cloneNode(keyId),
-      t.newExpression(t.identifier(conversions.keyIsMessage), [t.cloneNode(keyId)])
+      t.newExpression(
+        t.identifier(conversions.keyIsMessage),
+        [t.cloneNode(keyId)]
+      )
     );
   }
 
@@ -390,27 +544,53 @@ export function buildImmutableMapWithConversionsExpression(
 
   if (conversions.valueIsDate) {
     valueConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(valueId), t.identifier('ImmutableDate')),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(valueId),
+        t.identifier('ImmutableDate')
+      ),
       t.cloneNode(valueId),
-      t.newExpression(t.identifier('ImmutableDate'), [t.cloneNode(valueId)])
+      t.newExpression(
+        t.identifier('ImmutableDate'),
+        [t.cloneNode(valueId)]
+      )
     );
   } else if (conversions.valueIsUrl) {
     valueConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(valueId), t.identifier('ImmutableUrl')),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(valueId),
+        t.identifier('ImmutableUrl')
+      ),
       t.cloneNode(valueId),
-      t.newExpression(t.identifier('ImmutableUrl'), [t.cloneNode(valueId)])
+      t.newExpression(
+        t.identifier('ImmutableUrl'),
+        [t.cloneNode(valueId)]
+      )
     );
   } else if (conversions.valueIsMessage) {
     valueConversion = t.conditionalExpression(
-      t.binaryExpression('instanceof', t.cloneNode(valueId), t.identifier(conversions.valueIsMessage)),
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(valueId),
+        t.identifier(conversions.valueIsMessage)
+      ),
       t.cloneNode(valueId),
-      t.newExpression(t.identifier(conversions.valueIsMessage), [t.cloneNode(valueId)])
+      t.newExpression(
+        t.identifier(conversions.valueIsMessage),
+        [t.cloneNode(valueId)]
+      )
     );
   }
 
   // If no conversions needed, use the simple ImmutableMap expression
-  const needsConversion = conversions.keyIsDate || conversions.keyIsUrl || conversions.keyIsMessage
-    || conversions.valueIsDate || conversions.valueIsUrl || conversions.valueIsMessage;
+  const needsConversion =
+    conversions.keyIsDate
+    || conversions.keyIsUrl
+    || conversions.keyIsMessage
+    || conversions.valueIsDate
+    || conversions.valueIsUrl
+    || conversions.valueIsMessage;
 
   if (!needsConversion) {
     return t.conditionalExpression(
@@ -419,7 +599,10 @@ export function buildImmutableMapWithConversionsExpression(
       t.conditionalExpression(
         immutableCheck,
         t.cloneNode(valueExpr),
-        t.newExpression(t.identifier('ImmutableMap'), [t.cloneNode(valueExpr)])
+        t.newExpression(
+          t.identifier('ImmutableMap'),
+          [t.cloneNode(valueExpr)]
+        )
       )
     );
   }
@@ -439,7 +622,10 @@ export function buildImmutableMapWithConversionsExpression(
     ]
   );
 
-  const newImmutableMap = t.newExpression(t.identifier('ImmutableMap'), [mapCall]);
+  const newImmutableMap = t.newExpression(
+    t.identifier('ImmutableMap'),
+    [mapCall]
+  );
 
   return t.conditionalExpression(
     nilCheck,

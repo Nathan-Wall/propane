@@ -54,7 +54,11 @@ function transpileFile(sourcePath) {
   console.log(`Transpiled ${path.relative(process.cwd(), sourcePath)} -> ${path.relative(process.cwd(), outputPath)}`);
 }
 
-const propaneFiles = [...new Set(targets.flatMap((target) => collectPropaneFiles(path.resolve(target))))];
+const propaneFiles = [
+  ...new Set(targets.flatMap(
+    (target) => collectPropaneFiles(path.resolve(target))
+  )),
+];
 
 if (!propaneFiles.length) {
   console.error('No .propane files found for the provided paths.');

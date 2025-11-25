@@ -81,7 +81,9 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
           : Symbol.iterator in Object(values)
             ? (values as Iterable<T>)
             : (() => {
-              throw new TypeError('ImmutableSet constructor expects an iterable of values.');
+              throw new TypeError(
+                'ImmutableSet constructor expects an iterable of values.'
+              );
               })()
         : [];
 
@@ -142,7 +144,10 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     return this.values();
   }
 
-  forEach(callbackfn: (value: T, value2: T, set: ReadonlySet<T>) => void, thisArg?: unknown): void {
+  forEach(
+    callbackfn: (value: T, value2: T, set: ReadonlySet<T>) => void,
+    thisArg?: unknown
+  ): void {
     for (const bucket of this.#buckets.values()) {
       for (const v of bucket) {
         callbackfn.call(thisArg, v, v, this);

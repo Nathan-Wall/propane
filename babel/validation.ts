@@ -15,7 +15,10 @@ import {
   resolveQualifiedRoot,
 } from './type-guards';
 
-export function assertSupportedMapType(typePath: NodePath<t.TSTypeReference>, declaredTypeNames: Set<string>): void {
+export function assertSupportedMapType(
+  typePath: NodePath<t.TSTypeReference>,
+  declaredTypeNames: Set<string>
+): void {
   const typeParametersPath = typePath.get('typeParameters');
   if (typeParametersPath?.node?.params.length !== 2) {
     throw typePath.buildCodeFrameError(
@@ -28,7 +31,10 @@ export function assertSupportedMapType(typePath: NodePath<t.TSTypeReference>, de
   assertSupportedType(valueTypePath!, declaredTypeNames);
 }
 
-export function assertSupportedSetType(typePath: NodePath<t.TSTypeReference>, declaredTypeNames: Set<string>): void {
+export function assertSupportedSetType(
+  typePath: NodePath<t.TSTypeReference>,
+  declaredTypeNames: Set<string>
+): void {
   const typeNode = typePath.node;
 
   if (!t.isTSTypeReference(typeNode)) {
@@ -38,7 +44,8 @@ export function assertSupportedSetType(typePath: NodePath<t.TSTypeReference>, de
   const typeParams = typeNode.typeParameters;
   if (typeParams?.params.length !== 1) {
     throw typePath.buildCodeFrameError(
-      'Propane Set types must specify a single element type, e.g. Set<string>.'
+      'Propane Set types must specify a single element type, '
+      + 'e.g. Set<string>.'
     );
   }
 
@@ -46,7 +53,9 @@ export function assertSupportedSetType(typePath: NodePath<t.TSTypeReference>, de
   assertSupportedType(elementPath, declaredTypeNames);
 }
 
-export function assertSupportedMapKeyType(typePath: NodePath<t.TSType>): void {
+export function assertSupportedMapKeyType(
+  typePath: NodePath<t.TSType>
+): void {
   if (!typePath?.node) {
     throw typePath.buildCodeFrameError('Missing Map key type.');
   }
@@ -83,20 +92,28 @@ export function assertSupportedMapKeyType(typePath: NodePath<t.TSType>): void {
     return; // URL is allowed as a map key
   }
 
-  assertSupportedType(typePath, new Set()); // key types must still be valid primitives/identifiers; declared set unused here
+  // key types must still be valid primitives/identifiers; declared set unused
+  assertSupportedType(typePath, new Set());
 }
 
-export function assertSupportedTopLevelType(typePath: NodePath<t.TSType>): void {
+export function assertSupportedTopLevelType(
+  typePath: NodePath<t.TSType>
+): void {
   if (isPrimitiveLikeType(typePath)) {
     return;
   }
 
   throw typePath.buildCodeFrameError(
-    'Propane files must export an object type or a primitive-like alias (string, number, boolean, bigint, null, undefined, Date, URL, ArrayBuffer, Brand).'
+    'Propane files must export an object type or a primitive-like '
+    + 'alias (string, number, boolean, bigint, null, undefined, '
+    + 'Date, URL, ArrayBuffer, Brand).'
   );
 }
 
-export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNames: Set<string>): void {
+export function assertSupportedType(
+  typePath: NodePath<t.TSType>,
+  declaredTypeNames: Set<string>
+): void {
   if (!typePath?.node) {
     throw new Error('Missing type information for propane property.');
   }
@@ -130,7 +147,10 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
       return;
     }
 
-    if (isArrayBufferReference(typePath.node) || isImmutableArrayBufferReference(typePath.node)) {
+    if (
+      isArrayBufferReference(typePath.node)
+      || isImmutableArrayBufferReference(typePath.node)
+    ) {
       return;
     }
 
@@ -149,7 +169,8 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
     }
 
     throw typePath.buildCodeFrameError(
-      'Propane property references must refer to imported or locally declared identifiers.'
+      'Propane property references must refer to imported or locally '
+      + 'declared identifiers.'
     );
   }
 
@@ -162,35 +183,45 @@ export function assertSupportedType(typePath: NodePath<t.TSType>, declaredTypeNa
     for (const memberPath of typePath.get('members')) {
       if (!memberPath.isTSPropertySignature()) {
         throw memberPath.buildCodeFrameError(
-          'Propane nested object types can only contain property signatures.'
+          'Propane nested object types can only contain property '
+          + 'signatures.'
         );
       }
 
       const keyPath = memberPath.get('key');
       if (!keyPath.isIdentifier() || memberPath.node.computed) {
         throw memberPath.buildCodeFrameError(
-          'Propane nested object properties must use simple identifier names.'
+          'Propane nested object properties must use simple identifier '
+          + 'names.'
         );
       }
 
       const nestedTypeAnnotation = memberPath.get('typeAnnotation');
       if (!nestedTypeAnnotation?.node) {
         throw memberPath.buildCodeFrameError(
-          'Propane nested object properties must include type annotations.'
+          'Propane nested object properties must include type '
+          + 'annotations.'
         );
       }
 
-      assertSupportedType(nestedTypeAnnotation.get('typeAnnotation'), declaredTypeNames);
+      assertSupportedType(
+        nestedTypeAnnotation.get('typeAnnotation'),
+        declaredTypeNames
+      );
     }
     return;
   }
 
   throw typePath.buildCodeFrameError(
-    'Unsupported type in propane file. Only primitives, identifiers, Date, Brand, or object literals are allowed.'
+    'Unsupported type in propane file. Only primitives, identifiers, '
+    + 'Date, Brand, or object literals are allowed.'
   );
 }
 
-export function isAllowedTypeReference(typePath: NodePath<t.TSTypeReference>, declaredTypeNames: Set<string>): boolean {
+export function isAllowedTypeReference(
+  typePath: NodePath<t.TSTypeReference>,
+  declaredTypeNames: Set<string>
+): boolean {
   const typeName = typePath.node.typeName;
 
   if (t.isIdentifier(typeName)) {
@@ -213,7 +244,10 @@ export function isAllowedTypeReference(typePath: NodePath<t.TSTypeReference>, de
   return false;
 }
 
-export function registerTypeAlias(typeAlias: t.TSTypeAliasDeclaration, declaredTypeNames: Set<string>): void {
+export function registerTypeAlias(
+  typeAlias: t.TSTypeAliasDeclaration,
+  declaredTypeNames: Set<string>
+): void {
   if (t.isIdentifier(typeAlias.id)) {
     declaredTypeNames.add(typeAlias.id.name);
   }
@@ -234,7 +268,10 @@ function isPrimitiveLikeType(typePath: NodePath<t.TSType>): boolean {
 
   if (typePath.isTSUnionType()) {
     const unionTypes = typePath.get('types');
-    return unionTypes.length > 0 && unionTypes.every((member) => isPrimitiveLikeType(member));
+    return (
+      unionTypes.length > 0
+      && unionTypes.every((member) => isPrimitiveLikeType(member))
+    );
   }
 
   if (typePath.isTSTypeReference()) {

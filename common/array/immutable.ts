@@ -82,7 +82,10 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       this.#items = [...(items as Iterable<T>)];
     } else {
       const arrayLike = items as ArrayLike<T>;
-      this.#items = Array.from({ length: arrayLike.length }, (_, i) => arrayLike[i]);
+      this.#items = Array.from(
+        { length: arrayLike.length },
+        (_, i) => arrayLike[i]
+      );
     }
     this.#defineIndexProps();
     Object.freeze(this.#items);
@@ -119,17 +122,24 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     return this.values();
   }
 
-  forEach(callbackfn: (value: T, index: number, array: readonly T[]) => void, thisArg?: unknown): void {
+  forEach(
+    callbackfn: (value: T, index: number, array: readonly T[]) => void,
+    thisArg?: unknown
+  ): void {
     for (const [i, v] of this.#items.entries()) {
       callbackfn.call(thisArg, v, i, this);
     }
   }
 
-  map<U>(fn: (value: T, index: number, array: readonly T[]) => U): ImmutableArray<U> {
+  map<U>(
+    fn: (value: T, index: number, array: readonly T[]) => U
+  ): ImmutableArray<U> {
     return new ImmutableArray(this.#items.map(fn));
   }
 
-  filter(fn: (value: T, index: number, array: readonly T[]) => boolean): ImmutableArray<T> {
+  filter(
+    fn: (value: T, index: number, array: readonly T[]) => boolean
+  ): ImmutableArray<T> {
     return new ImmutableArray(this.#items.filter(fn));
   }
 

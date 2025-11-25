@@ -37,7 +37,9 @@ export default function runOptionalHoleTests() {
   );
   const optionalHoleHydrated = OptionalHole.deserialize(optionalHoleSerialized);
   assert(optionalHoleHydrated.cerealize().name === 'Optional', 'Optional hole deserialize failed.');
-  const optionalHoleWithNoteHydrated = OptionalHole.deserialize(optionalHoleWithNoteSerialized);
+  const optionalHoleWithNoteHydrated = OptionalHole.deserialize(
+    optionalHoleWithNoteSerialized
+  );
   const optionalHoleWithNoteCereal = optionalHoleWithNoteHydrated.cerealize();
   assert(optionalHoleWithNoteCereal.note === 'HELLO', 'Optional field lost during serialization.');
 }

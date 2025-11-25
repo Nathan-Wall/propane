@@ -15,7 +15,9 @@ function isMessageLike(value: unknown): value is {
 const MAP_OBJECT_TAG = '[object Map]';
 const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
 
-function isImmutableMapLike(value: unknown): value is ImmutableMap<unknown, unknown> {
+function isImmutableMapLike(
+  value: unknown
+): value is ImmutableMap<unknown, unknown> {
   return (
     value instanceof ImmutableMap
     || Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
@@ -166,7 +168,10 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   constructor(
-    entries?: Iterable<readonly [K, V]> | readonly (readonly [K, V])[] | ReadonlyMap<K, V>
+    entries?:
+      | Iterable<readonly [K, V]>
+      | readonly (readonly [K, V])[]
+      | ReadonlyMap<K, V>
   ) {
     if (!entries) {
       this.#buckets = new Map();
@@ -181,7 +186,9 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
         : Symbol.iterator in Object(entries)
           ? (entries as Iterable<readonly [K, V]>)
           : (() => {
-            throw new TypeError('ImmutableMap constructor expects an iterable of entries.');
+            throw new TypeError(
+              'ImmutableMap constructor expects an iterable of entries.'
+            );
           })();
 
     this.#buckets = new Map();
@@ -320,6 +327,9 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   }
 
   toJSON(): unknown {
-    return [...this].map(([k, v]) => [normalizeForJson(k), normalizeForJson(v)]);
+    return [...this].map(([k, v]) => [
+      normalizeForJson(k),
+      normalizeForJson(v)
+    ]);
   }
 }
