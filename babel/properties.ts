@@ -191,6 +191,21 @@ export function extractProperties(
     if (mapType) {
       state.usesImmutableMap = true;
       state.usesEquals = true;
+      // Check if map key or value types need ImmutableDate/ImmutableUrl
+      if (mapArgs) {
+        if (t.isTSTypeReference(mapArgs.keyType) && isDateReference(mapArgs.keyType)) {
+          state.usesImmutableDate = true;
+        }
+        if (t.isTSTypeReference(mapArgs.keyType) && isUrlReference(mapArgs.keyType)) {
+          state.usesImmutableUrl = true;
+        }
+        if (t.isTSTypeReference(mapArgs.valueType) && isDateReference(mapArgs.valueType)) {
+          state.usesImmutableDate = true;
+        }
+        if (t.isTSTypeReference(mapArgs.valueType) && isUrlReference(mapArgs.valueType)) {
+          state.usesImmutableUrl = true;
+        }
+      }
     }
     if (setType) {
       state.usesImmutableSet = true;

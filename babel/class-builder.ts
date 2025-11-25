@@ -17,12 +17,55 @@ import {
   buildImmutableDateNormalizationExpression,
   buildImmutableMapExpression,
   buildImmutableMapOfMessagesExpression,
+  buildImmutableMapWithConversionsExpression,
   buildImmutableSetExpression,
   buildImmutableSetOfMessagesExpression,
   buildImmutableUrlNormalizationExpression,
   buildMessageNormalizationExpression,
+  MapConversionInfo,
 } from './normalizers';
-import { getTypeName } from './type-guards';
+import { getTypeName, isDateReference, isUrlReference } from './type-guards';
+
+function getMapConversionInfo(prop: PropDescriptor, declaredMessageTypeNames: Set<string>): MapConversionInfo {
+  const conversions: MapConversionInfo = {};
+
+  // Check key type
+  if (prop.mapKeyType && t.isTSTypeReference(prop.mapKeyType)) {
+    if (isDateReference(prop.mapKeyType)) {
+      conversions.keyIsDate = true;
+    } else if (isUrlReference(prop.mapKeyType)) {
+      conversions.keyIsUrl = true;
+    } else {
+      const keyTypeName = getTypeName(prop.mapKeyType);
+      if (keyTypeName && declaredMessageTypeNames.has(keyTypeName)) {
+        conversions.keyIsMessage = keyTypeName;
+      }
+    }
+  }
+
+  // Check value type
+  if (prop.mapValueType && t.isTSTypeReference(prop.mapValueType)) {
+    if (isDateReference(prop.mapValueType)) {
+      conversions.valueIsDate = true;
+    } else if (isUrlReference(prop.mapValueType)) {
+      conversions.valueIsUrl = true;
+    } else {
+      const valueTypeName = getTypeName(prop.mapValueType);
+      if (valueTypeName && declaredMessageTypeNames.has(valueTypeName)) {
+        conversions.valueIsMessage = valueTypeName;
+      }
+    }
+  }
+
+  return conversions;
+}
+
+function needsMapConversions(conversions: MapConversionInfo): boolean {
+  return Boolean(
+    conversions.keyIsDate || conversions.keyIsUrl || conversions.keyIsMessage
+    || conversions.valueIsDate || conversions.valueIsUrl || conversions.valueIsMessage
+  );
+}
 
 export function buildClassFromProperties(
   typeName: string,
@@ -111,10 +154,12 @@ export function buildClassFromProperties(
         ? buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName)
         : buildImmutableArrayExpression(propsAccess);
     } else if (prop.isMap) {
-      const valueTypeName = getTypeName(prop.mapValueType as t.TSType);
-      valueExpr = valueTypeName && declaredMessageTypeNames.has(valueTypeName)
-        ? buildImmutableMapOfMessagesExpression(propsAccess, valueTypeName)
-        : buildImmutableMapExpression(propsAccess);
+      const conversions = getMapConversionInfo(prop, declaredMessageTypeNames);
+      if (needsMapConversions(conversions)) {
+        valueExpr = buildImmutableMapWithConversionsExpression(propsAccess, conversions);
+      } else {
+        valueExpr = buildImmutableMapExpression(propsAccess);
+      }
     } else if (prop.isSet) {
       const elementTypeName = getTypeName(prop.setElementType as t.TSType);
       valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
@@ -236,11 +281,11 @@ export function buildClassFromProperties(
     ),
   ];
 
-  const fromEntriesMethod = buildFromEntriesMethod(propDescriptors, propsTypeRef);
+  const fromEntriesMethod = buildFromEntriesMethod(propDescriptors, propsTypeRef, declaredMessageTypeNames);
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
 
   const setterMethods = propDescriptors.map((prop) =>
-    buildSetterMethod(typeName, propDescriptors, prop)
+    buildSetterMethod(typeName, propDescriptors, prop, declaredMessageTypeNames)
   );
   const deleteMethods = propDescriptors
     .filter((prop) => prop.optional)
@@ -362,7 +407,7 @@ function buildDescriptorMethod(propDescriptors: (PropDescriptor & { privateName:
   return method;
 }
 
-function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], propsTypeRef: t.TSTypeReference): t.ClassMethod {
+function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], propsTypeRef: t.TSTypeReference, declaredMessageTypeNames: Set<string>): t.ClassMethod {
   const argsId = t.identifier('entries');
   argsId.typeAnnotation = t.tsTypeAnnotation(
     t.tsTypeReference(
@@ -440,12 +485,13 @@ function buildFromEntriesMethod(propDescriptors: (PropDescriptor & { privateName
 
     if (prop.isMap) {
       const mapValueId = t.identifier(`${prop.name}MapValue`);
+      const conversions = getMapConversionInfo(prop, declaredMessageTypeNames);
+      const mapExpr = needsMapConversions(conversions)
+        ? buildImmutableMapWithConversionsExpression(checkedValueId as t.Expression, conversions)
+        : buildImmutableMapExpression(checkedValueId as t.Expression);
       statements.push(
         t.variableDeclaration('const', [
-          t.variableDeclarator(
-            mapValueId,
-            buildImmutableMapExpression(checkedValueId as t.Expression)
-          ),
+          t.variableDeclarator(mapValueId, mapExpr),
         ])
       );
       checkedValueId = mapValueId;
@@ -603,7 +649,7 @@ function buildErrorThrow(message: string): t.ThrowStatement {
   );
 }
 
-function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], targetProp: PropDescriptor & { privateName: t.PrivateName }): t.ClassMethod {
+function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], targetProp: PropDescriptor & { privateName: t.PrivateName }, declaredMessageTypeNames: Set<string>): t.ClassMethod {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
     t.cloneNode(targetProp.displayType || targetProp.inputTypeAnnotation)
@@ -612,7 +658,10 @@ function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & 
   let setterValueExpr: t.Expression = t.cloneNode(valueId);
 
   if (targetProp.isMap) {
-    setterValueExpr = buildImmutableMapExpression(setterValueExpr);
+    const conversions = getMapConversionInfo(targetProp, declaredMessageTypeNames);
+    setterValueExpr = needsMapConversions(conversions)
+      ? buildImmutableMapWithConversionsExpression(setterValueExpr, conversions)
+      : buildImmutableMapExpression(setterValueExpr);
   } else if (targetProp.isSet) {
     setterValueExpr = buildImmutableSetExpression(setterValueExpr);
   }

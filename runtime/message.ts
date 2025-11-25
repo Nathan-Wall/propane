@@ -37,7 +37,7 @@ export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
 }
-export type MapKey = DataPrimitive;
+export type MapKey = DataPrimitive | Date | ImmutableDate | URL | ImmutableUrl;
 
 export interface MessagePropDescriptor<T extends object> {
   name: keyof T;

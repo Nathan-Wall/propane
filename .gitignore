@@ -79,3 +79,5 @@ out/
 # Rollup
 .rollup.cache/
 
+# Custom
+CLAUDE.md

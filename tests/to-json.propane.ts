@@ -12,7 +12,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     super(ToJson_Nested.TYPE_TAG);
     this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : Object.freeze([]);
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
-    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
+    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
     if (!props) ToJson_Nested.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
@@ -44,7 +44,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     props.map = mapMapValue;
     const imapValue = entries["imap"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
-    const imapMapValue = imapValue === undefined || imapValue === null ? imapValue : imapValue instanceof ImmutableMap || Object.prototype.toString.call(imapValue) === "[object ImmutableMap]" ? imapValue : new ImmutableMap(imapValue);
+    const imapMapValue = imapValue === undefined || imapValue === null ? imapValue : new ImmutableMap(Array.from(imapValue).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)]));
     if (!((imapMapValue instanceof ImmutableMap || Object.prototype.toString.call(imapMapValue) === "[object ImmutableMap]" || imapMapValue instanceof Map || Object.prototype.toString.call(imapMapValue) === "[object Map]") && [...imapMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue instanceof Date || mapValue instanceof ImmutableDate || Object.prototype.toString.call(mapValue) === "[object Date]" || Object.prototype.toString.call(mapValue) === "[object ImmutableDate]")))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValue;
     return props as ToJson_Nested.Data;
@@ -268,7 +268,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     return new ToJson_Nested({
       array: this.#array,
       map: this.#map,
-      imap: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
+      imap: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)]))
     });
   }
   setImapEntry(key: string, value: ImmutableDate | Date): ToJson_Nested {

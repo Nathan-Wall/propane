@@ -76,15 +76,11 @@ export function assertSupportedMapKeyType(typePath: NodePath<t.TSType>): void {
   }
 
   if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be Date objects.'
-    );
+    return; // Date is allowed as a map key
   }
 
   if (typePath.isTSTypeReference() && isUrlReference(typePath.node)) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be URL objects.'
-    );
+    return; // URL is allowed as a map key
   }
 
   assertSupportedType(typePath, new Set()); // key types must still be valid primitives/identifiers; declared set unused here
