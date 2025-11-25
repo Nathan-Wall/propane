@@ -79,9 +79,8 @@ export function assertSupportedMapKeyType(
   }
 
   if (typePath.isTSArrayType()) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be arrays.'
-    );
+    assertSupportedType(typePath.get('elementType'), new Set());
+    return; // Arrays are allowed as map keys
   }
 
   if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {

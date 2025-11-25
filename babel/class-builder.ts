@@ -23,7 +23,12 @@ import {
   buildMessageNormalizationExpression,
 } from './normalizers';
 import type { MapConversionInfo } from './normalizers';
-import { getTypeName, isDateReference, isUrlReference } from './type-guards';
+import {
+  getTypeName,
+  isArrayTypeNode,
+  isDateReference,
+  isUrlReference,
+} from './type-guards';
 
 function getMapConversionInfo(
   prop: PropDescriptor,
@@ -32,15 +37,19 @@ function getMapConversionInfo(
   const conversions: MapConversionInfo = {};
 
   // Check key type
-  if (prop.mapKeyType && t.isTSTypeReference(prop.mapKeyType)) {
-    if (isDateReference(prop.mapKeyType)) {
-      conversions.keyIsDate = true;
-    } else if (isUrlReference(prop.mapKeyType)) {
-      conversions.keyIsUrl = true;
-    } else {
-      const keyTypeName = getTypeName(prop.mapKeyType);
-      if (keyTypeName && declaredMessageTypeNames.has(keyTypeName)) {
-        conversions.keyIsMessage = keyTypeName;
+  if (prop.mapKeyType) {
+    if (isArrayTypeNode(prop.mapKeyType)) {
+      conversions.keyIsArray = true;
+    } else if (t.isTSTypeReference(prop.mapKeyType)) {
+      if (isDateReference(prop.mapKeyType)) {
+        conversions.keyIsDate = true;
+      } else if (isUrlReference(prop.mapKeyType)) {
+        conversions.keyIsUrl = true;
+      } else {
+        const keyTypeName = getTypeName(prop.mapKeyType);
+        if (keyTypeName && declaredMessageTypeNames.has(keyTypeName)) {
+          conversions.keyIsMessage = keyTypeName;
+        }
       }
     }
   }
@@ -66,6 +75,7 @@ function needsMapConversions(conversions: MapConversionInfo): boolean {
   return Boolean(
     conversions.keyIsDate
     || conversions.keyIsUrl
+    || conversions.keyIsArray
     || conversions.keyIsMessage
     || conversions.valueIsDate
     || conversions.valueIsUrl

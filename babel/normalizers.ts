@@ -463,6 +463,7 @@ export function buildImmutableMapOfMessagesExpression(
 export interface MapConversionInfo {
   keyIsDate?: boolean;
   keyIsUrl?: boolean;
+  keyIsArray?: boolean;
   keyIsMessage?: string;
   valueIsDate?: boolean;
   valueIsUrl?: boolean;
@@ -520,6 +521,19 @@ export function buildImmutableMapWithConversionsExpression(
       t.cloneNode(keyId),
       t.newExpression(
         t.identifier('ImmutableUrl'),
+        [t.cloneNode(keyId)]
+      )
+    );
+  } else if (conversions.keyIsArray) {
+    keyConversion = t.conditionalExpression(
+      t.binaryExpression(
+        'instanceof',
+        t.cloneNode(keyId),
+        t.identifier('ImmutableArray')
+      ),
+      t.cloneNode(keyId),
+      t.newExpression(
+        t.identifier('ImmutableArray'),
         [t.cloneNode(keyId)]
       )
     );
@@ -587,6 +601,7 @@ export function buildImmutableMapWithConversionsExpression(
   const needsConversion =
     conversions.keyIsDate
     || conversions.keyIsUrl
+    || conversions.keyIsArray
     || conversions.keyIsMessage
     || conversions.valueIsDate
     || conversions.valueIsUrl
