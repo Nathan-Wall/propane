@@ -13,7 +13,8 @@
     "build:babel": "node scripts/build-babel.js",
     "propane:compile": "npm run build:babel && node scripts/propane-compiler.js",
     "runtime:build": "npm --prefix runtime run build",
-    "runtime:publish": "node scripts/publish-runtime.js"
+    "runtime:publish": "node scripts/publish-runtime.js",
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -33,13 +34,14 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@eslint/js": "^9.39.1",
+    "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^62.0.0",
     "globals": "^16.5.0",
-    "@types/node": "^22.10.0",
+    "husky": "^9.1.7",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4"
   }

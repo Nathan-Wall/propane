@@ -1,0 +1,24 @@
+# Pre-push hook to verify propane compilation doesn't change output files
+# This ensures the committed .propane.ts files are up-to-date with the compiler
+
+echo "Running propane compilation check..."
+
+# Run the propane compiler on tests/
+# Note: The compiler may exit non-zero due to intentional *-fail.propane test files,
+# so we use || true to prevent the -e flag from exiting the script
+npm run propane:compile -- tests/ >/dev/null 2>&1 || true
+
+# Check if any .propane.ts files have changed
+if ! git diff --quiet -- 'tests/*.propane.ts'; then
+    echo ""
+    echo "ERROR: Propane output files are out of date!"
+    echo ""
+    echo "The following files have uncommitted changes after running propane:compile:"
+    git diff --name-only -- 'tests/*.propane.ts'
+    echo ""
+    echo "Please run 'npm run propane:compile -- tests/' and commit the changes."
+    exit 1
+fi
+
+echo "Propane output files are up to date."
+exit 0
