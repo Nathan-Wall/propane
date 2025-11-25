@@ -313,10 +313,35 @@ function serializeTaggedMessage(message: Message<DataObject>): string {
   const descriptors = (
     message as unknown as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
   ).$getPropDescriptors();
-  const entries: ObjectEntry[] = descriptors.map((descriptor) => ({
-    key: String(descriptor.name),
-    value: descriptor.getValue(),
-  }));
+
+  const entries: ObjectEntry[] = [];
+  let expectedIndex = 1;
+
+  for (const descriptor of descriptors) {
+    const value = descriptor.getValue();
+    const tagMessages = (descriptor.unionMessageTypes?.length ?? 0) > 0;
+
+    if (descriptor.fieldNumber == null) {
+      entries.push({ key: String(descriptor.name), value, tagMessages });
+      continue;
+    }
+
+    if (value === undefined) {
+      continue;
+    }
+
+    const fieldNumber = descriptor.fieldNumber;
+    const shouldOmitKey = fieldNumber === expectedIndex;
+
+    entries.push({
+      key: shouldOmitKey ? null : String(fieldNumber),
+      value,
+      tagMessages,
+    });
+
+    expectedIndex = fieldNumber + 1;
+  }
+
   return `$${typeName}${serializeObjectLiteral(entries)}`;
 }
 

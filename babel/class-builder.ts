@@ -784,10 +784,25 @@ function buildTaggedMessageUnionHandler(
       t.stringLiteral(msgType)
     );
 
-    // new MessageType(value.$data)
+    // Convert parsed entries to props using $fromEntries, then construct
+    // const props = MessageType.prototype.$fromEntries(value.$data);
+    // new MessageType(props)
+    const propsId = t.identifier(`${propName}${msgType}Props`);
+    const fromEntriesCall = t.callExpression(
+      t.memberExpression(
+        t.memberExpression(t.identifier(msgType), t.identifier('prototype')),
+        t.identifier('$fromEntries')
+      ),
+      [t.memberExpression(t.cloneNode(sourceExpr), t.identifier('$data'))]
+    );
+
+    const propsDecl = t.variableDeclaration('const', [
+      t.variableDeclarator(propsId, fromEntriesCall),
+    ]);
+
     const constructorCall = t.newExpression(
       t.identifier(msgType),
-      [t.memberExpression(t.cloneNode(sourceExpr), t.identifier('$data'))]
+      [propsId]
     );
 
     const assignStmt = t.expressionStatement(
@@ -797,11 +812,11 @@ function buildTaggedMessageUnionHandler(
     if (innerIf) {
       innerIf = t.ifStatement(
         tagCheck,
-        t.blockStatement([assignStmt]),
+        t.blockStatement([propsDecl, assignStmt]),
         innerIf
       );
     } else {
-      innerIf = t.ifStatement(tagCheck, t.blockStatement([assignStmt]));
+      innerIf = t.ifStatement(tagCheck, t.blockStatement([propsDecl, assignStmt]));
     }
   }
 
