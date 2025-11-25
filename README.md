@@ -91,7 +91,7 @@ export type User = {
 };
 ```
 
-**Recommended.** You can also specify field numbers for each field.
+**Recommended:** You can also specify field numbers for each field.
 This can be helpful for large codebases where different pieces may be updated
 at different rates.
 Serialization and deserialization will match against field numbers instead of
