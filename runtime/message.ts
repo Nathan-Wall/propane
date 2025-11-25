@@ -108,6 +108,10 @@ export abstract class Message<T extends DataObject> {
   }
 
   equals(other: unknown): boolean {
+    if (this === other) {
+      return true;
+    }
+
     if (!other || typeof other !== 'object') {
       return false;
     }
@@ -120,15 +124,13 @@ export abstract class Message<T extends DataObject> {
       return false;
     }
 
-    if (typeof other.serialize === 'function') {
-      try {
-        return other.serialize() === this.serialize();
-      } catch {
-        return false;
-      }
+    // Fast path: if hash codes differ, objects are definitely not equal
+    if (this.hashCode() !== other.hashCode()) {
+      return false;
     }
 
-    return false;
+    // Hash codes match - need full comparison to confirm equality
+    return this.serialize() === other.serialize();
   }
 
   private cerealize(): T {
