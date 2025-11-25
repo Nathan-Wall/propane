@@ -2,13 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { transformSync } from '@babel/core';
-import propanePlugin from '../babel/propane-plugin.js';
+import propanePlugin from '../babel/plugin';
 import { spawnSync } from 'node:child_process';
 import { assert } from './assert.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '..');
+const projectRoot = process.cwd();
 const testsDir = path.join(projectRoot, 'tests');
 const builtTestsDir = path.join(projectRoot, 'build', 'tests');
 const failPattern = /(?:^|[.-])fail$/i;
@@ -23,14 +21,6 @@ function formatStatus(status: 'PASS' | 'FAIL'): string {
 }
 
 let hasFailure = false;
-
-// Build fixtures to tests/tmp before running tests
-const buildResult = spawnSync('node', [path.join(projectRoot, 'scripts', 'build-fixtures.js')], {
-  stdio: 'inherit',
-});
-if (buildResult.status !== 0) {
-  process.exit(buildResult.status ?? 1);
-}
 
 const propaneFiles = findPropaneFiles(testsDir);
 

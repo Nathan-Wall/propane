@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { transformSync } from '@babel/core';
-import propanePlugin from '../babel/propane-plugin.js';
+import propanePlugin from '../build/babel/plugin.js';
 
 const targets = process.argv.slice(2);
 

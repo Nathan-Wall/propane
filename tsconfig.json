@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2023",
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
@@ -16,6 +16,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "babel/*": [
+        "./babel/*"
+      ],
+      "../babel/*": [
+        "./babel/*"
       ]
     },
     "resolveJsonModule": true,

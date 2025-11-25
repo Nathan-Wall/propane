@@ -8,9 +8,10 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node --loader ./tests/ts-loader.mjs tests/run-tests.ts",
+    "test": "npm run build:babel && node scripts/build-fixtures.js && node build/tests/run-tests.js",
     "lint": "eslint .",
-    "propane:compile": "node scripts/propane-compiler.js",
+    "build:babel": "node scripts/build-babel.js",
+    "propane:compile": "npm run build:babel && node scripts/propane-compiler.js",
     "runtime:build": "npm --prefix runtime run build",
     "runtime:publish": "node scripts/publish-runtime.js"
   },

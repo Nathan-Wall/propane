@@ -59,11 +59,6 @@ declare module '@babel/core' {
   };
 }
 
-declare module '../babel/propane-plugin.js' {
-  const plugin: unknown;
-  export default plugin;
-}
-
 declare const process: {
   exit(code?: number): never;
 };

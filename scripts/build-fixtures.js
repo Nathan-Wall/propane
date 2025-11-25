@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import ts from 'typescript';
-import propanePlugin from '../babel/propane-plugin.js';
+import propanePlugin from '../build/babel/plugin.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,6 +15,7 @@ await cleanOutput();
 await buildAll();
 await copyTests();
 await copyCommon();
+await copyRuntime();
 
 async function buildAll() {
   const files = findPropaneFiles(testsDir);
@@ -85,8 +86,8 @@ function ensurePackageTypeModule(dir) {
 }
 
 function rewriteImports(code, outPath) {
-  // Replace import from '@propanejs/runtime' with relative path to runtime/index.ts
-  const runtimePath = path.relative(path.dirname(outPath), path.join(projectRoot, 'runtime', 'index.ts'));
+  // Replace import from '@propanejs/runtime' with relative path to runtime/index.js
+  const runtimePath = path.relative(path.dirname(outPath), path.join(projectRoot, 'build', 'runtime', 'index.js'));
   const normalized = runtimePath.startsWith('.') ? runtimePath : `./${runtimePath}`;
   let result = code.replaceAll('@propanejs/runtime', normalized.replaceAll('\\', '/'));
 
@@ -97,16 +98,16 @@ function rewriteImports(code, outPath) {
   result = result.replaceAll(/,?\s*MessagePropDescriptor/g, '');
   result = result.replace(/^import\s*\{\s*Brand\s*\}\s*from[^;]+;\n?/m, '');
 
-  // Append .ts to relative imports without an explicit extension (excluding the .propane.js ones we just set)
+  // Append .js to relative imports without an explicit extension (excluding the .propane.js ones we just set)
   result = result.replaceAll(/(from\s+['"])(\.{1,2}\/[^'".][^'"]*)(['"])/g, (match, p1, p2, p3) => {
     if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
       return match;
     }
-    return `${p1}${p2}.ts${p3}`;
+    return `${p1}${p2}.js${p3}`;
   });
 
   // Fix path for shared common/types in build/tests output
-  result = result.replaceAll(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.ts'");
+  result = result.replaceAll(/from ['"]\.\.\/common\/types\/brand\.ts['"]/g, "from '../../common/types/brand.js'");
   return result;
 }
 
@@ -114,27 +115,58 @@ async function copyTests() {
   const testFiles = findTestFiles(testsDir);
   for (const file of testFiles) {
     const rel = path.relative(testsDir, file);
-    const dest = path.join(outDir, rel);
+    const dest = path.join(outDir, rel.replace(/\.ts$/, '.js'));
     ensureDir(path.dirname(dest));
-    let content = fs.readFileSync(file, 'utf8');
-
-    // Strip tmp prefixes introduced earlier
-    content = content.replaceAll('./tmp/', './');
-    // Ensure we import compiled artifacts next to mirrored tests
-    content = content.replaceAll(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
-    content = content.replaceAll(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
-    // Fix runtime relative path when mirrored into build/tests (./build/tests/* -> ../../runtime)
-    content = content.replaceAll(/from ['"]\.\.\/runtime\//g, "from '../../runtime/");
-    // Fix assert path
-    content = content.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.ts'");
-
-    fs.writeFileSync(dest, content, 'utf8');
+    const source = fs.readFileSync(file, 'utf8');
+    const rewritten = rewriteTestImports(source);
+    const transpiled = ts.transpileModule(rewritten, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2020,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      },
+      fileName: file,
+    });
+    fs.writeFileSync(dest, transpiled.outputText, 'utf8');
   }
 
-  // copy loaders / runner
-  for (const helper of ['run-tests.ts', 'ts-loader.mjs', 'assert.ts', 'hash-helpers.ts']) {
-    fs.copyFileSync(path.join(testsDir, helper), path.join(outDir, helper));
+  // Transpile helper files
+  const helpers = ['run-tests.ts', 'assert.ts', 'hash-helpers.ts', 'test-harness.ts', 'propane-test-types.ts'];
+  for (const helper of helpers) {
+    const srcPath = path.join(testsDir, helper);
+    if (!fs.existsSync(srcPath)) continue;
+    const destPath = path.join(outDir, helper.replace(/\.ts$/, '.js'));
+    ensureDir(path.dirname(destPath));
+    const source = fs.readFileSync(srcPath, 'utf8');
+    const rewritten = rewriteTestImports(source);
+    const transpiled = ts.transpileModule(rewritten, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2020,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      },
+      fileName: srcPath,
+    });
+    fs.writeFileSync(destPath, transpiled.outputText, 'utf8');
   }
+}
+
+function rewriteTestImports(content) {
+  let result = content.replaceAll('./tmp/', './');
+  result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
+  result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
+  result = result.replaceAll(/from ['"]\.\.\/runtime\//g, "from '../runtime/");
+  result = result.replaceAll(/from ['"]\.\.\/\.\.\/common\//g, "from '../common/");
+  result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
+  result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
+  result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
+  result = result.replaceAll(/from ['"](\.\.\/babel\/[^'"]+)['"]/g, "from '$1.js'");
+  // generic .ts -> .js for relative imports
+  result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
+  result = result.replaceAll(/(import\(\s*['"])(\.\.?(?:\/[^'"]+))\.ts(['"]\s*\))/g, '$1$2.js$3');
+  return result;
 }
 
 async function copyCommon() {
@@ -156,9 +188,45 @@ async function copyCommon() {
 
   for (const [subdir, file] of filesToCopy) {
     const srcPath = path.join(commonSrc, subdir, file);
-    const destPath = path.join(commonDest, subdir, file);
+    const destPath = path.join(commonDest, subdir, file.replace(/\.ts$/, '.js'));
     ensureDir(path.dirname(destPath));
-    fs.copyFileSync(srcPath, destPath);
+    const source = fs.readFileSync(srcPath, 'utf8');
+    const transpiled = ts.transpileModule(source, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2020,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      },
+      fileName: srcPath,
+    });
+    const rewritten = transpiled.outputText.replaceAll(/\.ts(['"])/g, '.js$1');
+    fs.writeFileSync(destPath, rewritten, 'utf8');
+  }
+}
+
+async function copyRuntime() {
+  const runtimeSrc = path.join(projectRoot, 'runtime');
+  const runtimeDest = path.join(outDir, '..', 'runtime');
+  ensureDir(runtimeDest);
+  ensurePackageTypeModule(runtimeDest);
+
+  for (const file of ['index.ts', 'message.ts']) {
+    const srcPath = path.join(runtimeSrc, file);
+    if (!fs.existsSync(srcPath)) continue;
+    const destPath = path.join(runtimeDest, file.replace(/\.ts$/, '.js'));
+    const source = fs.readFileSync(srcPath, 'utf8');
+    const transpiled = ts.transpileModule(source, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2020,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      },
+      fileName: srcPath,
+    });
+    const rewritten = transpiled.outputText.replaceAll(/\.ts(['"])/g, '.js$1');
+    fs.writeFileSync(destPath, rewritten, 'utf8');
   }
 }
 
