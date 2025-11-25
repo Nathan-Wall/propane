@@ -1,0 +1,4 @@
+export type MapObjectKey = {
+  objectKeys: Map<{ id: string; version: number }, string>;
+  optionalObjectMap?: Map<{ name: string }, Date>;
+};

@@ -27,7 +27,7 @@ export function assertSupportedMapType(
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath!);
+  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames);
   assertSupportedType(valueTypePath!, declaredTypeNames);
 }
 
@@ -54,32 +54,55 @@ export function assertSupportedSetType(
 }
 
 export function assertSupportedMapKeyType(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  declaredTypeNames: Set<string>
 ): void {
   if (!typePath?.node) {
     throw typePath.buildCodeFrameError('Missing Map key type.');
   }
 
   if (typePath.isTSParenthesizedType()) {
-    assertSupportedMapKeyType(typePath.get('typeAnnotation'));
+    assertSupportedMapKeyType(typePath.get('typeAnnotation'), declaredTypeNames);
     return;
   }
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath);
+      assertSupportedMapKeyType(memberPath, declaredTypeNames);
     }
     return;
   }
 
   if (typePath.isTSTypeLiteral()) {
-    throw typePath.buildCodeFrameError(
-      'Propane map keys cannot be objects.'
-    );
+    // Inline objects are allowed as map keys - they will be converted to messages
+    for (const memberPath of typePath.get('members')) {
+      if (!memberPath.isTSPropertySignature()) {
+        throw memberPath.buildCodeFrameError(
+          'Propane map key object types can only contain property signatures.'
+        );
+      }
+      const keyPath = memberPath.get('key');
+      if (!keyPath.isIdentifier() || memberPath.node.computed) {
+        throw memberPath.buildCodeFrameError(
+          'Propane map key object properties must use simple identifier names.'
+        );
+      }
+      const nestedTypeAnnotation = memberPath.get('typeAnnotation');
+      if (!nestedTypeAnnotation?.node) {
+        throw memberPath.buildCodeFrameError(
+          'Propane map key object properties must include type annotations.'
+        );
+      }
+      assertSupportedType(
+        nestedTypeAnnotation.get('typeAnnotation'),
+        declaredTypeNames
+      );
+    }
+    return;
   }
 
   if (typePath.isTSArrayType()) {
-    assertSupportedType(typePath.get('elementType'), new Set());
+    assertSupportedType(typePath.get('elementType'), declaredTypeNames);
     return; // Arrays are allowed as map keys
   }
 
@@ -91,8 +114,8 @@ export function assertSupportedMapKeyType(
     return; // URL is allowed as a map key
   }
 
-  // key types must still be valid primitives/identifiers; declared set unused
-  assertSupportedType(typePath, new Set());
+  // key types must still be valid primitives/identifiers
+  assertSupportedType(typePath, declaredTypeNames);
 }
 
 export function assertSupportedTopLevelType(

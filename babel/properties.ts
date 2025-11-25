@@ -426,22 +426,47 @@ function handleImplicitTypes(
 
   if (isMapTypeNode(propTypePath.node)) {
     const mapArgs = getMapTypeArguments(propTypePath.node);
-    if (mapArgs && t.isTSTypeLiteral(mapArgs.valueType)) {
-      const newItemName = `${parentName}_${capitalize(propName)}_Value`;
-      const newTypeAlias = t.tsTypeAliasDeclaration(
-        t.identifier(newItemName),
-        null,
-        t.cloneNode(mapArgs.valueType)
-      );
-      generatedTypes.push(newTypeAlias);
-      declaredTypeNames.add(newItemName);
-      declaredMessageTypeNames.add(newItemName);
+    if (mapArgs) {
+      let keyType = mapArgs.keyType;
+      let valueType = mapArgs.valueType;
+      let needsReplacement = false;
 
-      const newRef = t.tsTypeReference(t.identifier(newItemName));
-      propTypePath.replaceWith(t.tsTypeReference(
-        (propTypePath.node as t.TSTypeReference).typeName,
-        t.tsTypeParameterInstantiation([t.cloneNode(mapArgs.keyType), newRef])
-      ));
+      // Handle inline object key type
+      if (t.isTSTypeLiteral(keyType)) {
+        const newKeyName = `${parentName}_${capitalize(propName)}_Key`;
+        const newKeyAlias = t.tsTypeAliasDeclaration(
+          t.identifier(newKeyName),
+          null,
+          t.cloneNode(keyType)
+        );
+        generatedTypes.push(newKeyAlias);
+        declaredTypeNames.add(newKeyName);
+        declaredMessageTypeNames.add(newKeyName);
+        keyType = t.tsTypeReference(t.identifier(newKeyName));
+        needsReplacement = true;
+      }
+
+      // Handle inline object value type
+      if (t.isTSTypeLiteral(valueType)) {
+        const newValueName = `${parentName}_${capitalize(propName)}_Value`;
+        const newValueAlias = t.tsTypeAliasDeclaration(
+          t.identifier(newValueName),
+          null,
+          t.cloneNode(valueType)
+        );
+        generatedTypes.push(newValueAlias);
+        declaredTypeNames.add(newValueName);
+        declaredMessageTypeNames.add(newValueName);
+        valueType = t.tsTypeReference(t.identifier(newValueName));
+        needsReplacement = true;
+      }
+
+      if (needsReplacement) {
+        propTypePath.replaceWith(t.tsTypeReference(
+          (propTypePath.node as t.TSTypeReference).typeName,
+          t.tsTypeParameterInstantiation([keyType, valueType])
+        ));
+      }
     }
   }
 }

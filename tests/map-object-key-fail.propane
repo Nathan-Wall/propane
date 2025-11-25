@@ -1,4 +1,0 @@
-export type MapObjectKeyFail = {
-  extras: Map<{ id: string }, string>;
-};
-
