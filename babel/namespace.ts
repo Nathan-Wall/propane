@@ -68,7 +68,7 @@ export function buildTypeNamespace(
 
   const moduleBlock = t.tsModuleBlock([exportedTypeDecl, exportedUnionDecl, ...aliasDecls]);
   const namespaceDecl = t.tsModuleDeclaration(namespaceId, moduleBlock);
-  namespaceDecl.declare = typeAlias.declare;
+  namespaceDecl.declare = typeAlias.declare ?? null;
   namespaceDecl.kind = 'namespace';
 
   if (exported) {

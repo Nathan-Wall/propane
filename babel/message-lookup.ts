@@ -1,15 +1,16 @@
 import * as t from '@babel/types';
+import type { NodePath } from '@babel/traverse';
 import { analyzePropaneModule, getFilename, getImportedName, resolveImportPath } from './imports';
 
-export type MessageReferenceResolver = (typePath: any) => string | null;
+export type MessageReferenceResolver = (typePath: NodePath<t.TSType>) => string | null;
 
 export function createMessageReferenceResolver(
   declaredMessageTypeNames: Set<string>
 ): MessageReferenceResolver {
   const messageModuleCache = new Map<string, Set<string>>();
 
-  return function getMessageReferenceName(typePath: any): string | null {
-    if (!typePath || !typePath.isTSTypeReference()) {
+  return function getMessageReferenceName(typePath: NodePath<t.TSType>): string | null {
+    if (!typePath?.isTSTypeReference()) {
       return null;
     }
 
@@ -32,8 +33,7 @@ export function createMessageReferenceResolver(
         binding.path.isImportSpecifier()
         || binding.path.isImportDefaultSpecifier()
       )
-      && binding.path.parentPath
-      && binding.path.parentPath.isImportDeclaration()
+      && binding.path.parentPath?.isImportDeclaration()
     ) {
       const importSource = binding.path.parentPath.node.source.value;
       const filename = getFilename(typePath);

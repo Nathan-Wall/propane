@@ -108,7 +108,7 @@ export function buildRuntimeTypeCheckExpression(typeNode: t.TSType | null, value
     ) {
       const elementParam = typeNode.typeParameters?.params?.[0];
       const syntheticArray = t.tsArrayType(
-        wrapImmutableType(elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword())!
+        wrapImmutableType(elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword())
       );
       return buildArrayTypeCheckExpression(syntheticArray, valueId);
     }

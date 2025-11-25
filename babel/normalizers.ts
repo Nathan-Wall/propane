@@ -1,7 +1,6 @@
 import * as t from '@babel/types';
 import {
   buildMapTagComparison,
-  buildObjectToStringCall,
   buildSetTagComparison,
 } from './runtime-checks';
 
@@ -336,14 +335,14 @@ export function buildImmutableMapOfMessagesExpression(valueExpr: t.Expression, m
   return t.conditionalExpression(nilCheck, t.cloneNode(valueExpr), newImmutable);
 }
 
-export type MapConversionInfo = {
+export interface MapConversionInfo {
   keyIsDate?: boolean;
   keyIsUrl?: boolean;
   keyIsMessage?: string;
   valueIsDate?: boolean;
   valueIsUrl?: boolean;
   valueIsMessage?: string;
-};
+}
 
 export function buildImmutableMapWithConversionsExpression(
   valueExpr: t.Expression,

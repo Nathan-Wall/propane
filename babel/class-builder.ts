@@ -3,9 +3,9 @@ import { capitalize } from './utils';
 import {
   buildInputAcceptingMutable,
   getDefaultValue,
-  PropDescriptor,
   wrapImmutableType,
 } from './properties';
+import type { PropDescriptor } from './properties';
 import {
   typeAllowsNull,
   buildRuntimeTypeCheckExpression,
@@ -16,14 +16,13 @@ import {
   buildImmutableArrayOfMessagesExpression,
   buildImmutableDateNormalizationExpression,
   buildImmutableMapExpression,
-  buildImmutableMapOfMessagesExpression,
   buildImmutableMapWithConversionsExpression,
   buildImmutableSetExpression,
   buildImmutableSetOfMessagesExpression,
   buildImmutableUrlNormalizationExpression,
   buildMessageNormalizationExpression,
-  MapConversionInfo,
 } from './normalizers';
+import type { MapConversionInfo } from './normalizers';
 import { getTypeName, isDateReference, isUrlReference } from './type-guards';
 
 function getMapConversionInfo(prop: PropDescriptor, declaredMessageTypeNames: Set<string>): MapConversionInfo {
@@ -86,9 +85,10 @@ export function buildClassFromProperties(
   );
 
   for (const prop of propDescriptors) {
-    let baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation)) as t.TSType;
+    const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
 
-    const needsOptionalUnion = prop.optional && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType);
+    const needsOptionalUnion = prop.optional
+      && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType);
     const fieldTypeAnnotation = needsOptionalUnion
       ? t.tsUnionType([baseType, t.tsUndefinedKeyword()])
       : baseType;
@@ -149,19 +149,15 @@ export function buildClassFromProperties(
     let valueExpr: t.Expression = t.cloneNode(propsAccess);
 
     if (prop.isArray) {
-      const elementTypeName = getTypeName(prop.arrayElementType as t.TSType);
+      const elementTypeName = getTypeName(prop.arrayElementType!);
       valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
         ? buildImmutableArrayOfMessagesExpression(propsAccess, elementTypeName)
         : buildImmutableArrayExpression(propsAccess);
     } else if (prop.isMap) {
       const conversions = getMapConversionInfo(prop, declaredMessageTypeNames);
-      if (needsMapConversions(conversions)) {
-        valueExpr = buildImmutableMapWithConversionsExpression(propsAccess, conversions);
-      } else {
-        valueExpr = buildImmutableMapExpression(propsAccess);
-      }
+      valueExpr = needsMapConversions(conversions) ? buildImmutableMapWithConversionsExpression(propsAccess, conversions) : buildImmutableMapExpression(propsAccess);
     } else if (prop.isSet) {
-      const elementTypeName = getTypeName(prop.setElementType as t.TSType);
+      const elementTypeName = getTypeName(prop.setElementType!);
       valueExpr = elementTypeName && declaredMessageTypeNames.has(elementTypeName)
         ? buildImmutableSetOfMessagesExpression(propsAccess, elementTypeName)
         : buildImmutableSetExpression(propsAccess);
@@ -652,7 +648,7 @@ function buildErrorThrow(message: string): t.ThrowStatement {
 function buildSetterMethod(typeName: string, propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[], targetProp: PropDescriptor & { privateName: t.PrivateName }, declaredMessageTypeNames: Set<string>): t.ClassMethod {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(targetProp.displayType || targetProp.inputTypeAnnotation)
+    t.cloneNode(targetProp.displayType ?? targetProp.inputTypeAnnotation)
   );
 
   let setterValueExpr: t.Expression = t.cloneNode(valueId);
@@ -1842,21 +1838,21 @@ function cloneMapKeyType(prop: PropDescriptor): t.TSType {
   if (prop.mapKeyInputType) {
     return t.cloneNode(prop.mapKeyInputType);
   }
-  return prop.mapKeyType ? wrapImmutableType(t.cloneNode(prop.mapKeyType)) as t.TSType : t.tsAnyKeyword();
+  return prop.mapKeyType ? wrapImmutableType(t.cloneNode(prop.mapKeyType)) : t.tsAnyKeyword();
 }
 
 function cloneMapValueType(prop: PropDescriptor): t.TSType {
   if (prop.mapValueInputType) {
     return t.cloneNode(prop.mapValueInputType);
   }
-  return prop.mapValueType ? wrapImmutableType(t.cloneNode(prop.mapValueType)) as t.TSType : t.tsAnyKeyword();
+  return prop.mapValueType ? wrapImmutableType(t.cloneNode(prop.mapValueType)) : t.tsAnyKeyword();
 }
 
 function cloneSetElementType(prop: PropDescriptor): t.TSType {
   if (prop.setElementInputType) {
     return t.cloneNode(prop.setElementInputType);
   }
-  return prop.setElementType ? wrapImmutableType(t.cloneNode(prop.setElementType)) as t.TSType : t.tsAnyKeyword();
+  return prop.setElementType ? wrapImmutableType(t.cloneNode(prop.setElementType)) : t.tsAnyKeyword();
 }
 
 function buildMapSetParams(prop: PropDescriptor): t.Identifier[] {
@@ -1891,7 +1887,7 @@ function buildMapMergeParams(prop: PropDescriptor): t.Identifier[] {
   entriesId.typeAnnotation = t.tsTypeAnnotation(
     t.tsUnionType([
       iterableType,
-      mapInputUnion as t.TSType,
+      mapInputUnion,
     ])
   );
   return [entriesId];
@@ -1950,7 +1946,7 @@ function buildSetDeleteAllParams(prop: PropDescriptor): t.Identifier[] {
   return [valuesId];
 }
 
-function buildSetFilterParams(_prop: PropDescriptor): t.Identifier[] {
+function buildSetFilterParams(unused_prop: PropDescriptor): t.Identifier[] {
   const predicateId = t.identifier('predicate');
   const valueId = t.identifier('value');
   predicateId.typeAnnotation = t.tsTypeAnnotation(

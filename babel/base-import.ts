@@ -1,22 +1,24 @@
 import * as t from '@babel/types';
+import type { NodePath } from '@babel/traverse';
+import type { PropaneState } from './plugin';
 
 export const MESSAGE_SOURCE = '@propanejs/runtime';
 
-export function ensureBaseImport(programPath: any, state: any) {
+export function ensureBaseImport(programPath: NodePath<t.Program>, state: PropaneState) {
   const program = programPath.node;
   const hasImportBinding = (name: string) =>
     program.body.some(
-      (stmt: any) =>
+      (stmt) =>
         t.isImportDeclaration(stmt)
         && stmt.specifiers.some(
-          (spec: any) =>
+          (spec) =>
             t.isImportSpecifier(spec) || t.isImportDefaultSpecifier(spec) || t.isImportNamespaceSpecifier(spec)
               ? spec.local.name === name
               : false
         )
     );
   const existingImport = program.body.find(
-    (stmt: any) =>
+    (stmt): stmt is t.ImportDeclaration =>
       t.isImportDeclaration(stmt)
       && stmt.source.value === MESSAGE_SOURCE
   );
@@ -46,8 +48,8 @@ export function ensureBaseImport(programPath: any, state: any) {
   if (existingImport) {
     const existingSpecifiers = new Set(
       existingImport.specifiers
-        .filter((spec: any) => t.isImportSpecifier(spec))
-        .map((spec: any) => spec.imported.name)
+        .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
+        .map((spec) => t.isIdentifier(spec.imported) ? spec.imported.name : spec.imported.value)
     );
     for (const name of requiredSpecifiers) {
       if (!existingSpecifiers.has(name)) {
@@ -67,7 +69,7 @@ export function ensureBaseImport(programPath: any, state: any) {
   );
 
   const insertionIndex = program.body.findIndex(
-    (stmt: any) => !t.isImportDeclaration(stmt)
+    (stmt) => !t.isImportDeclaration(stmt)
   );
 
   if (insertionIndex === -1) {

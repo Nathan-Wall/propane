@@ -23,6 +23,7 @@ declare module 'path' {
     join(...segments: string[]): string;
     relative(from: string, to: string): string;
     basename(path: string, ext?: string): string;
+    sep: string;
   }
 
   const path: PathModule;
@@ -61,4 +62,5 @@ declare module '@babel/core' {
 
 declare const process: {
   exit(code?: number): never;
+  cwd(): string;
 };

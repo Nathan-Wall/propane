@@ -14,7 +14,7 @@ import {
 } from './type-guards';
 import { capitalize } from './utils';
 
-export type PluginStateFlags = {
+export interface PluginStateFlags {
   usesImmutableMap: boolean;
   usesImmutableSet: boolean;
   usesImmutableArray: boolean;
@@ -22,9 +22,9 @@ export type PluginStateFlags = {
   usesImmutableUrl: boolean;
   usesImmutableArrayBuffer: boolean;
   usesEquals: boolean;
-};
+}
 
-export type PropDescriptor = {
+export interface PropDescriptor {
   name: string;
   fieldNumber: number | null;
   optional: boolean;
@@ -47,7 +47,7 @@ export type PropDescriptor = {
   setElementType: t.TSType | null;
   setElementInputType: t.TSType | null;
   displayType: t.TSType;
-};
+}
 
 export function normalizePropertyKey(memberPath: NodePath<t.TSPropertySignature>): { name: string; fieldNumber: number | null } {
   const keyPath = memberPath.get('key');
@@ -68,7 +68,8 @@ export function normalizePropertyKey(memberPath: NodePath<t.TSPropertySignature>
       );
     }
 
-    const [, numberPart, identifierPart] = match;
+    const [, numberPart, identifierPart] =
+      match as unknown as [string, string, string];
     const fieldNumber = Number(numberPart);
 
     if (!Number.isSafeInteger(fieldNumber)) {
@@ -112,12 +113,6 @@ export function extractProperties(
   const usedNames = new Set<string>();
 
   for (const memberPath of memberPaths) {
-    if (!memberPath.isTSPropertySignature()) {
-      throw memberPath.buildCodeFrameError(
-        'Propane object types can only contain property signatures.'
-      );
-    }
-
     if (memberPath.node.computed) {
       throw memberPath.buildCodeFrameError(
         'Propane properties cannot use computed keys.'
@@ -156,7 +151,7 @@ export function extractProperties(
       );
     }
 
-    const propTypePath = typeAnnotationPath.get('typeAnnotation') as NodePath<t.TSType>;
+    const propTypePath = typeAnnotationPath.get('typeAnnotation');
     if (!propTypePath?.node) {
       throw memberPath.buildCodeFrameError(
         'Propane properties must include a type annotation.'
@@ -481,7 +476,7 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
   }
 
   if (t.isTSUnionType(typeNode) && typeNode.types.length > 0) {
-    return getDefaultValueForType(typeNode.types[0]);
+    return getDefaultValueForType(typeNode.types[0]!);
   }
 
   if (t.isTSTypeReference(typeNode)) {
@@ -505,19 +500,21 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
   return t.identifier('undefined');
 }
 
+export function wrapImmutableType(node: t.TSType): t.TSType;
+export function wrapImmutableType(node: t.TSType | null): t.TSType | null;
 export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
   if (!node) {
     return node;
   }
 
   if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(wrapImmutableType(t.cloneNode(node.typeAnnotation))!);
+    return t.tsParenthesizedType(wrapImmutableType(t.cloneNode(node.typeAnnotation)));
   }
 
   if (t.isTSArrayType(node)) {
     return t.tsTypeReference(
       t.identifier('ImmutableArray'),
-      t.tsTypeParameterInstantiation([wrapImmutableType(t.cloneNode(node.elementType))!])
+      t.tsTypeParameterInstantiation([wrapImmutableType(t.cloneNode(node.elementType))])
     );
   }
 
@@ -538,8 +535,8 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
       const params = node.typeParameters?.params ?? [];
       const [key, value] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
-        wrapImmutableType(params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword())!,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
+        wrapImmutableType(params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword()),
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableMap'),
@@ -550,7 +547,7 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableSet'),
@@ -561,7 +558,7 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
-        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword())!,
+        wrapImmutableType(params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()),
       ];
       return t.tsTypeReference(
         t.identifier('ImmutableArray'),
@@ -573,17 +570,19 @@ export function wrapImmutableType(node: t.TSType | null): t.TSType | null {
   return node;
 }
 
+export function buildInputAcceptingMutable(node: t.TSType): t.TSType;
+export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | null;
 export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | null {
   if (!node) {
     return node;
   }
 
   if (t.isTSParenthesizedType(node)) {
-    return t.tsParenthesizedType(buildInputAcceptingMutable(t.cloneNode(node.typeAnnotation))!);
+    return t.tsParenthesizedType(buildInputAcceptingMutable(t.cloneNode(node.typeAnnotation)));
   }
 
   if (t.isTSArrayType(node)) {
-    const element = buildInputAcceptingMutable(t.cloneNode(node.elementType))!;
+    const element = buildInputAcceptingMutable(t.cloneNode(node.elementType));
     return t.tsUnionType([
       t.tsTypeReference(
         t.identifier('ImmutableArray'),
@@ -631,7 +630,7 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
-        : t.tsAnyKeyword())!;
+        : t.tsAnyKeyword());
       return t.tsUnionType([
         t.tsTypeReference(
           t.identifier('ImmutableArray'),
@@ -652,7 +651,7 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
     if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
       const elem = buildInputAcceptingMutable(node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
-        : t.tsAnyKeyword())!;
+        : t.tsAnyKeyword());
       return t.tsUnionType([
         t.tsTypeReference(
           t.identifier('ImmutableSet'),
@@ -677,8 +676,8 @@ export function buildInputAcceptingMutable(node: t.TSType | null): t.TSType | nu
       const valueParam = node.typeParameters?.params?.[1]
         ? t.cloneNode(node.typeParameters.params[1])
         : t.tsAnyKeyword();
-      const key = buildInputAcceptingMutable(keyParam)!;
-      const value = buildInputAcceptingMutable(valueParam)!;
+      const key = buildInputAcceptingMutable(keyParam);
+      const value = buildInputAcceptingMutable(valueParam);
       const tupleType = t.tsTupleType([key, value]);
       return t.tsUnionType([
         t.tsTypeReference(

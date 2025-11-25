@@ -126,7 +126,18 @@ export default defineConfig(
       // TODO: Temporarily disabled. Remove these lines, check affected code,
       // and assess whether to fix code or re-enable the rule.
       '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off'
+      '@typescript-eslint/no-unsafe-call': 'off',
+
+      // Allow || for boolean expressions (the rule is meant for null/undefined coalescing)
+      '@typescript-eslint/prefer-nullish-coalescing': [
+        'error',
+        {
+          ignorePrimitives: {
+            boolean: true,
+            string: true,
+          },
+        },
+      ],
     },
   },
 
@@ -153,6 +164,20 @@ export default defineConfig(
           },
         },
       ],
+    },
+  },
+
+  // Disable type-aware rules for babel/ directory due to TypeScript's inability
+  // to resolve types properly when moduleResolution: NodeNext is used with
+  // module: ESNext. This is a known limitation with complex Babel types.
+  {
+    name: 'overrides/babel-type-inference',
+    files: ['babel/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
     },
   },
 
@@ -184,6 +209,7 @@ export default defineConfig(
     rules: {
       // Generated code style constraints are relaxed.
       '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
       'unicorn/prefer-spread': 'off',
     },
   },

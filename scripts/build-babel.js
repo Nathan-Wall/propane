@@ -23,17 +23,17 @@ function addJsExtension(specifier) {
   return `${specifier}.js`;
 }
 
+const specifierReplacer = (_, start, spec, end) => `${start}${addJsExtension(spec)}${end}`;
+
 function rewriteSpecifiers(code) {
   const fromPattern = /(from\s+['"])(\.\.?\/[^'";]+)(['"])/g;
   const exportPattern = /(export\s+\*\s+from\s+['"])(\.\.?\/[^'";]+)(['"])/g;
   const dynamicImportPattern = /(import\(\s*['"])(\.\.?\/[^'";]+)(['"]\s*\))/g;
 
-  const replacer = (_, start, spec, end) => `${start}${addJsExtension(spec)}${end}`;
-
   return code
-    .replace(fromPattern, replacer)
-    .replace(exportPattern, replacer)
-    .replace(dynamicImportPattern, replacer);
+    .replaceAll(fromPattern, specifierReplacer)
+    .replaceAll(exportPattern, specifierReplacer)
+    .replaceAll(dynamicImportPattern, specifierReplacer);
 }
 
 async function buildFile(tsPath) {
@@ -58,7 +58,9 @@ async function main() {
   await Promise.all(tasks);
 }
 
-main().catch((err) => {
+try {
+  await main();
+} catch (err) {
   console.error(err);
   process.exitCode = 1;
-});
+}

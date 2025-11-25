@@ -1,21 +1,23 @@
 import * as t from '@babel/types';
-import { assertSupportedTopLevelType, assertSupportedType, registerTypeAlias } from './validation';
+import type { NodePath } from '@babel/traverse';
+import { assertSupportedTopLevelType, assertSupportedType } from './validation';
 import { extractProperties } from './properties';
 import { buildTypeNamespace } from './namespace';
 import { buildClassFromProperties } from './class-builder';
+import type { PropaneState } from './plugin';
 
 export const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
 
-type BuildDeclarationsOptions = {
+interface BuildDeclarationsOptions {
   exported: boolean;
-  state: any;
+  state: PropaneState;
   declaredTypeNames: Set<string>;
   declaredMessageTypeNames: Set<string>;
-  getMessageReferenceName: (typePath: any) => string | null;
-};
+  getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null;
+}
 
 export function buildDeclarations(
-  typeAliasPath: any,
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
   { exported, state, declaredTypeNames, declaredMessageTypeNames, getMessageReferenceName }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -34,10 +36,13 @@ export function buildDeclarations(
     return null;
   }
 
-  const generatedTypes: t.Statement[] = [];
+  const generatedTypes: t.TSTypeAliasDeclaration[] = [];
+  const memberPaths = typeLiteralPath.get('members').filter(
+    (m): m is NodePath<t.TSPropertySignature> => m.isTSPropertySignature()
+  );
   const properties = extractProperties(
-    typeLiteralPath.get('members'),
-    generatedTypes as any,
+    memberPaths,
+    generatedTypes,
     typeAlias.id.name,
     state,
     declaredTypeNames,
@@ -57,24 +62,30 @@ export function buildDeclarations(
   }
   declaredMessageTypeNames.add(typeAlias.id.name);
 
-  const generatedTypeNames = (generatedTypes as t.Node[] as t.TSTypeAliasDeclaration[])
+  const generatedTypeNames = generatedTypes
     .map((node) => (t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id) ? node.id.name : null))
-    .filter(Boolean) as string[];
+    .filter((name): name is string => name !== null);
 
   const typeNamespace = buildTypeNamespace(typeAlias, properties, exported, generatedTypeNames);
   const classDecl = buildClassFromProperties(typeAlias.id.name, properties, declaredMessageTypeNames);
 
   state.usesPropaneBase = true;
 
+  const generatedStatements: t.Statement[] = generatedTypes.map((alias) => {
+    const exportedAlias = t.exportNamedDeclaration(alias, []);
+    (exportedAlias as t.ExportNamedDeclaration & { exportKind?: string }).exportKind = 'type';
+    return exported ? exportedAlias : alias;
+  });
+
   if (exported) {
     const classExport = t.exportNamedDeclaration(classDecl, []);
-    return [...generatedTypes, classExport, typeNamespace];
+    return [...generatedStatements, classExport, typeNamespace];
   }
 
-  return [...generatedTypes, classDecl, typeNamespace];
+  return [...generatedStatements, classDecl, typeNamespace];
 }
 
-export function insertPrimitiveTypeAlias(typeAliasPath: any, exported: boolean) {
+export function insertPrimitiveTypeAlias(typeAliasPath: NodePath<t.TSTypeAliasDeclaration>, exported: boolean) {
   if (!t.isIdentifier(typeAliasPath.node.id)) {
     return;
   }
@@ -87,14 +98,14 @@ export function insertPrimitiveTypeAlias(typeAliasPath: any, exported: boolean) 
       : null,
     t.tsTypeReference(t.identifier(typeAliasPath.node.id.name))
   );
-  (alias as any)[GENERATED_ALIAS] = true;
+  (alias as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS] = true;
 
   const aliasDecl = exported
     ? t.exportNamedDeclaration(alias, [])
     : alias;
 
-  if (exported && aliasDecl) {
-    (aliasDecl as any).exportKind = 'type';
+  if (exported && t.isExportNamedDeclaration(aliasDecl)) {
+    (aliasDecl as t.ExportNamedDeclaration & { exportKind?: string }).exportKind = 'type';
   }
 
   const targetPath = exported ? typeAliasPath.parentPath : typeAliasPath;

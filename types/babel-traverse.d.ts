@@ -23,16 +23,18 @@ declare module '@babel/traverse' {
   export interface NodePath<T = t.Node> {
     node: T;
     parent: t.Node | null;
+    parentPath: NodePath | null;
     hub: Hub | null;
     scope: Scope;
 
-    get(key: 'typeAnnotation'): NodePath<t.TSTypeAnnotation | null>;
+    get(key: 'typeAnnotation'): NodePath<t.TSType>;
     get(key: 'typeParameters'): NodePath<t.TSTypeParameterInstantiation | null>;
     get(key: 'params'): NodePath<t.TSType>[];
     get(key: 'types'): NodePath<t.TSType>[];
-    get(key: 'members'): NodePath<t.TSPropertySignature>[];
+    get(key: 'members'): NodePath<t.TSTypeElement>[];
     get(key: 'elementType'): NodePath<t.TSType>;
     get(key: 'key'): NodePath<t.Identifier | t.StringLiteral>;
+    get(key: 'declaration'): NodePath<t.Node>;
     get(key: string): NodePath<t.Node> | NodePath<t.Node>[];
 
     isIdentifier(): this is NodePath<t.Identifier>;
@@ -54,8 +56,15 @@ declare module '@babel/traverse' {
     isImportSpecifier(): this is NodePath<t.ImportSpecifier>;
     isImportDefaultSpecifier(): this is NodePath<t.ImportDefaultSpecifier>;
     isImportNamespaceSpecifier(): this is NodePath<t.ImportNamespaceSpecifier>;
+    isImportDeclaration(): this is NodePath<t.ImportDeclaration>;
+    isExportNamedDeclaration(): this is NodePath<t.ExportNamedDeclaration>;
+    isProgram(): this is NodePath<t.Program>;
 
     buildCodeFrameError(message: string): Error;
+    replaceWith(replacement: t.Node): void;
+    replaceWithMultiple(nodes: t.Node[]): void;
+    insertAfter(nodes: t.Node | t.Node[]): void;
+    addComment(type: 'leading' | 'trailing' | 'inner', content: string, line?: boolean): void;
   }
 
   export interface TraverseOptions<T = t.Node> {

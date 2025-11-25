@@ -1,10 +1,12 @@
+import type * as t from '@babel/types';
+import type { NodePath } from '@babel/traverse';
 import { pathTransform } from './utils';
 import { registerTypeAlias } from './validation';
 import { ensureBaseImport } from './base-import';
 import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup';
 import { buildDeclarations, GENERATED_ALIAS } from './declarations';
 
-export type PropaneState = {
+export interface PropaneState {
   usesPropaneBase: boolean;
   usesImmutableMap: boolean;
   usesImmutableSet: boolean;
@@ -14,7 +16,7 @@ export type PropaneState = {
   usesImmutableUrl: boolean;
   usesImmutableArrayBuffer: boolean;
   file?: { opts?: { filename?: string | null } };
-};
+}
 
 export default function propanePlugin() {
   const declaredTypeNames = new Set<string>();
@@ -25,7 +27,7 @@ export default function propanePlugin() {
     name: 'propane-plugin',
     visitor: {
       Program: {
-        enter(path: any, state: PropaneState) {
+        enter(path: NodePath<t.Program>, state: PropaneState) {
           state.usesPropaneBase = false;
           state.usesImmutableMap = false;
           state.usesImmutableSet = false;
@@ -35,15 +37,15 @@ export default function propanePlugin() {
           state.usesImmutableUrl = false;
           state.usesImmutableArrayBuffer = false;
 
-          const fileOpts = (state.file && state.file.opts) || {};
-          const filename = fileOpts.filename || '';
+          const fileOpts = state.file?.opts ?? {};
+          const filename = fileOpts.filename ?? '';
           const relative = filename
             ? pathTransform(filename)
             : 'unknown';
           const commentText = `Generated from ${relative}`;
 
-          const existing = (path.node.leadingComments || []).some(
-            (comment: any) => comment.value.trim() === commentText
+          const existing = (path.node.leadingComments ?? []).some(
+            (comment) => comment.value.trim() === commentText
           );
 
           if (!existing) {
@@ -51,22 +53,22 @@ export default function propanePlugin() {
             path.addComment('leading', ' eslint-disable @typescript-eslint/no-namespace', false);
           }
         },
-        exit(path: any, state: PropaneState) {
+        exit(path: NodePath<t.Program>, state: PropaneState) {
           if (state.usesPropaneBase) {
             ensureBaseImport(path, state);
           }
         },
       },
-      ExportNamedDeclaration(path: any, state: PropaneState) {
-        if (!path.parentPath.isProgram()) {
+      ExportNamedDeclaration(path: NodePath<t.ExportNamedDeclaration>, state: PropaneState) {
+        if (!path.parentPath?.isProgram()) {
           return;
         }
         const declarationPath = path.get('declaration');
-        if (!declarationPath.isTSTypeAliasDeclaration()) {
+        if (Array.isArray(declarationPath) || !declarationPath.isTSTypeAliasDeclaration()) {
           return;
         }
 
-        if (declarationPath.node && declarationPath.node[GENERATED_ALIAS]) {
+        if (declarationPath.node && (declarationPath.node as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS]) {
           return;
         }
 
@@ -84,12 +86,12 @@ export default function propanePlugin() {
           path.replaceWithMultiple(replacement);
         }
       },
-      TSTypeAliasDeclaration(path: any, state: PropaneState) {
-        if (path.parentPath.isExportNamedDeclaration()) {
+      TSTypeAliasDeclaration(path: NodePath<t.TSTypeAliasDeclaration>, state: PropaneState) {
+        if (path.parentPath?.isExportNamedDeclaration()) {
           return;
         }
 
-        if (path.node && path.node[GENERATED_ALIAS]) {
+        if (path.node && (path.node as t.TSTypeAliasDeclaration & { [GENERATED_ALIAS]?: boolean })[GENERATED_ALIAS]) {
           return;
         }
 

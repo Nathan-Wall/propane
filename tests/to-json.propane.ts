@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
 import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "@propanejs/runtime";
-class ToJson_Nested extends Message<ToJson_Nested.Data> {
+export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static EMPTY: ToJson_Nested;
   #array: ImmutableArray<(number | undefined)>;
@@ -383,7 +383,7 @@ class ToJson_Nested extends Message<ToJson_Nested.Data> {
     });
   }
 }
-namespace ToJson_Nested {
+export namespace ToJson_Nested {
   export interface Data {
     array: (number | undefined)[] | Iterable<(number | undefined)>;
     map: Map<string, bigint> | Iterable<[string, bigint]>;

@@ -266,7 +266,7 @@ export function isPrimitiveLikeType(typePath: NodePath<t.TSType> | null | undefi
   }
 
   if (typePath.isTSParenthesizedType()) {
-    return isPrimitiveLikeType(typePath.get('typeAnnotation') as NodePath<t.TSType>);
+    return isPrimitiveLikeType(typePath.get('typeAnnotation'));
   }
 
   if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {

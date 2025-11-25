@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
 import { Message, MessagePropDescriptor, ImmutableArray } from "@propanejs/runtime";
-class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
+export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static EMPTY: ArrayMessage_Labels_Item;
   #name: string;
@@ -35,7 +35,7 @@ class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
     });
   }
 }
-namespace ArrayMessage_Labels_Item {
+export namespace ArrayMessage_Labels_Item {
   export interface Data {
     name: string;
   }

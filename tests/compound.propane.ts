@@ -3,7 +3,7 @@
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
-class Compound_Inline extends Message<Compound_Inline.Data> {
+export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static EMPTY: Compound_Inline;
   #value: string;
@@ -37,7 +37,7 @@ class Compound_Inline extends Message<Compound_Inline.Data> {
     });
   }
 }
-namespace Compound_Inline {
+export namespace Compound_Inline {
   export interface Data {
     value: string;
   }

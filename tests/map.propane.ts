@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.propane
 import { Message, MessagePropDescriptor, ImmutableMap, equals } from "@propanejs/runtime";
-class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
+export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static EMPTY: MapMessage_Metadata_Value;
   #value: string;
@@ -35,13 +35,13 @@ class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> 
     });
   }
 }
-namespace MapMessage_Metadata_Value {
+export namespace MapMessage_Metadata_Value {
   export interface Data {
     value: string;
   }
   export type Value = MapMessage_Metadata_Value | MapMessage_Metadata_Value.Data;
 }
-class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Data> {
+export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Data> {
   static TYPE_TAG = Symbol("MapMessage_Extras_Value");
   static EMPTY: MapMessage_Extras_Value;
   #note: string | null;
@@ -75,7 +75,7 @@ class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Data> {
     });
   }
 }
-namespace MapMessage_Extras_Value {
+export namespace MapMessage_Extras_Value {
   export interface Data {
     note: string | null;
   }
