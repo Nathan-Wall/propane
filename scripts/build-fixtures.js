@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import ts from 'typescript';
-import propanePlugin from '@propanejs/babel';
+import propanePlugin from '@propanejs/babel-messages';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -184,7 +184,7 @@ function rewriteTestImports(content) {
   result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
   result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
-  result = result.replaceAll(/from ['"](\.\.\/babel\/[^'"]+)['"]/g, "from '$1.js'");
+  result = result.replaceAll(/from ['"](\.\.\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
   
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');

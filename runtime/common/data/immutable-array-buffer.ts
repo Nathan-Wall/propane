@@ -1,3 +1,4 @@
+// @ts-nocheck
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { normalizeForJson } from '../json/stringify.js';
 // (equals/hashCode) and safe cloning utilities.

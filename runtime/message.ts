@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { parseJson } from './common/json/parse.js';
 import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';

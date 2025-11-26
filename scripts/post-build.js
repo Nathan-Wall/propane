@@ -8,15 +8,15 @@ const projectRoot = path.resolve(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'babel', 'cli', 'react'];
+const packages = ['runtime', 'babel/messages', 'cli', 'react'];
 
 // 1. Copy package.json to build/ and update main
-for (const pkgName of packages) {
-  const srcDir = path.join(projectRoot, pkgName);
-  const destDir = path.join(buildDir, pkgName);
+for (const pkgDir of packages) {
+  const srcDir = path.join(projectRoot, pkgDir);
+  const destDir = path.join(buildDir, pkgDir);
   
   if (!fs.existsSync(destDir)) {
-    console.warn(`Build directory for ${pkgName} not found.`);
+    console.warn(`Build directory for ${pkgDir} not found.`);
     continue;
   }
 
@@ -51,20 +51,26 @@ for (const pkgName of packages) {
 }
 
 // 2. Re-link node_modules to point to build/
-// This makes local development usage (e.g. running build/cli/index.js) work
-// because it finds dependencies in node_modules which now point to valid packages in build/
 const nodeModulesScope = path.join(projectRoot, 'node_modules', '@propanejs');
 if (fs.existsSync(nodeModulesScope)) {
-  for (const pkgName of packages) {
+  for (const pkgDir of packages) {
+    const srcDir = path.join(projectRoot, pkgDir);
+    const pkgJson = JSON.parse(fs.readFileSync(path.join(srcDir, 'package.json'), 'utf8'));
+    const pkgName = pkgJson.name.split('/')[1]; // e.g. babel-messages
+
     const linkPath = path.join(nodeModulesScope, pkgName);
-    const targetPath = path.join('..', '..', 'build', pkgName);
+    // Calculate relative path from link to build dir
+    // Link: node_modules/@propanejs/babel-messages
+    // Target: build/babel/messages
+    // Path: ../../../build/babel/messages
+    const targetPath = path.join('..', '..', 'build', pkgDir);
     
     try {
       if (fs.existsSync(linkPath)) {
         fs.unlinkSync(linkPath);
       }
       fs.symlinkSync(targetPath, linkPath, 'dir');
-      console.log(`Linked node_modules/@propanejs/${pkgName} -> build/${pkgName}`);
+      console.log(`Linked node_modules/@propanejs/${pkgName} -> build/${pkgDir}`);
     } catch (e) {
       console.error(`Failed to link ${pkgName}: ${e.message}`);
     }

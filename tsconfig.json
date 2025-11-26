@@ -17,11 +17,11 @@
     "strict": false,
     "exactOptionalPropertyTypes": false,
     "paths": {
-      "@propanejs/babel": ["babel/index.ts"],
+      "@propanejs/babel-messages": ["babel/messages/index.ts"],
       "@propanejs/runtime": ["runtime/index.ts"],
       "@propanejs/cli": ["cli/index.ts"],
       "@propanejs/react": ["react/index.ts"],
-      "@propanejs/babel/*": ["babel/*"],
+      "@propanejs/babel-messages/*": ["babel/messages/*"],
       "@propanejs/runtime/*": ["runtime/*"],
       "@propanejs/cli/*": ["cli/*"],
       "@propanejs/react/*": ["react/*"],

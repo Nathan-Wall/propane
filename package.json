@@ -4,16 +4,16 @@
   "type": "module",
   "workspaces": [
     "runtime",
-    "babel",
+    "babel/messages",
     "cli",
     "react",
     "examples/react-todo"
   ],
   "scripts": {
     "build": "tsc && node scripts/post-build.js",
-    "test": "npm run build -w @propanejs/babel && node scripts/build-fixtures.js && node build/tests/run-tests.js",
+    "test": "node scripts/build-fixtures.js && node build/tests/run-tests.js",
     "lint": "eslint .",
-    "propane:compile": "npm run build -w @propanejs/babel && node scripts/propane-compiler.js",
+    "propane:compile": "node scripts/propane-compiler.js",
     "prepublishOnly": "npm run build",
     "prepare": "husky",
     "publish": "npm run build && node scripts/publish-all.js"

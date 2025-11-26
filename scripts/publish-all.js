@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'babel', 'cli', 'react'];
+const packages = ['runtime', 'babel/messages', 'cli', 'react'];
 
 // Get args
 const args = process.argv.slice(2);
@@ -101,30 +101,34 @@ function updatePackageJson(pkgName, version) {
   }
 
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-  console.log(`Updated ${pkgName} package.json version to ${version}`);
-  return true;
+  console.log(`Updated ${pkg.name} package.json version to ${version}`);
+  return pkg.name;
 }
 
-async function publishPackage(pkgName) {
-  const pkgDistPath = path.join(distDir, pkgName);
+async function publishPackage(pkgDir) {
+  const pkgDistPath = path.join(distDir, pkgDir);
   
   if (!fs.existsSync(pkgDistPath)) {
-    console.error(`Error: Distribution directory not found for ${pkgName} at ${pkgDistPath}`);
+    console.error(`Error: Distribution directory not found for ${pkgDir} at ${pkgDistPath}`);
     return false;
   }
 
   const currentDir = process.cwd();
   process.chdir(pkgDistPath);
 
+  // Read name from package.json for logging
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const pkgName = pkg.name;
+
   try {
     const cmd = `npm publish --access public${dryRun ? ' --dry-run' : ''}`;
-    console.log(`\nPublishing @propanejs/${pkgName} from ${pkgDistPath}...`);
+    console.log(`\nPublishing ${pkgName} from ${pkgDistPath}...`);
     console.log(`> ${cmd}`);
     execSync(cmd, { stdio: 'inherit' });
-    console.log(`Successfully published @propanejs/${pkgName}.`);
+    console.log(`Successfully published ${pkgName}.`);
     return true;
   } catch (error) {
-    console.error(`Failed to publish @propanejs/${pkgName}: ${error.message}`);
+    console.error(`Failed to publish ${pkgName}: ${error.message}`);
     return false;
   } finally {
     process.chdir(currentDir); // Change back to original directory
@@ -135,19 +139,21 @@ async function publishPackage(pkgName) {
 console.log('Starting NPM publish for all packages...');
 
 let success = true;
-for (const pkgName of packages) {
+for (const pkgDir of packages) {
   // Update version in dist
-  if (!updatePackageJson(pkgName, version)) {
-    console.error(`Failed to update version for ${pkgName}`);
+  const realPkgName = updatePackageJson(pkgDir, version);
+  if (!realPkgName) {
+    console.error(`Failed to update version for ${pkgDir}`);
     process.exit(1);
   }
 
   // Publish runtime first, then babel, then cli (order matters for dependencies)
+  // We use directory names to check order/identity
   if (
-    (pkgName === 'runtime' && !await publishPackage(pkgName))
-    || (pkgName === 'babel' && !await publishPackage(pkgName))
-    || (pkgName === 'cli' && !await publishPackage(pkgName))
-    || (pkgName === 'react' && !await publishPackage(pkgName))
+    (pkgDir === 'runtime' && !await publishPackage(pkgDir))
+    || (pkgDir === 'babel/messages' && !await publishPackage(pkgDir))
+    || (pkgDir === 'cli' && !await publishPackage(pkgDir))
+    || (pkgDir === 'react' && !await publishPackage(pkgDir))
   ) {
     success = false;
   }

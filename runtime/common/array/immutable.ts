@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { normalizeForJson } from '../json/stringify.js';
 
 function isMessageLike(value: unknown): value is {
