@@ -1,6 +1,6 @@
 import { assert } from './assert.ts';
 import { SetMessage } from './set.propane.ts';
-import { ImmutableSet } from '../../common/set/immutable.ts';
+import { ImmutableSet } from '../../runtime/common/set/immutable.ts';
 
 export default function runSetTests() {
   const tags = new Set(['a', 'b']);

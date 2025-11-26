@@ -1,4 +1,4 @@
-import { normalizeForJson } from '../json/stringify.ts';
+import { normalizeForJson } from '../json/stringify.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;

@@ -1,7 +1,7 @@
 import { assert } from './assert.ts';
 import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableArray } from '../../common/array/immutable.ts';
-import { ImmutableSet } from '../../common/set/immutable.ts';
+import { ImmutableArray } from '../../runtime/common/array/immutable.ts';
+import { ImmutableSet } from '../../runtime/common/set/immutable.ts';
 import { ImmutableArraySet } from './immutable-array-set.propane.ts';
 
 export default function runImmutableArraySetTests() {

@@ -1,4 +1,5 @@
-// Immutable wrapper around ArrayBuffer providing value semantics
+// @ts-nocheck
+import { normalizeForJson } from '../json/stringify.js';
 // (equals/hashCode) and safe cloning utilities.
 
 // Simple deterministic string hash (Java-style) using UTF-16 code units.

@@ -1,6 +1,6 @@
 import { assert } from './assert.ts';
 import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableDate } from '../common/time/date.ts';
+import { ImmutableDate } from '../runtime/common/time/date.ts';
 
 export default function runImmutableDateTests() {
   const iso = '2020-01-02T03:04:05.000Z';

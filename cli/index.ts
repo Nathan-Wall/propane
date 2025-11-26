@@ -2,22 +2,19 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
+import propanePlugin from '@propanejs/babel';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load the babel plugin from the dist directory
-const pluginPath = path.resolve(__dirname, '..', 'dist', 'babel', 'plugin.js');
-const pluginModule = await import(pluginPath);
-const propanePlugin = pluginModule.default;
-
-const args = process.argv.slice(2);
+const args = (process as any).argv.slice(2);
 
 // Parse flags
 let watch = false;
-const targets = [];
+const targets: string[] = [];
 
 for (const arg of args) {
   switch (arg) {
@@ -32,7 +29,8 @@ for (const arg of args) {
       break;
     case '--version':
     case '-v': {
-      const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'package.json'), 'utf8'));
+      const pkgPath = path.resolve(__dirname, '..', 'package.json');
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
       console.log(`propanec v${pkg.version}`);
       process.exit(0);
     }
@@ -73,7 +71,7 @@ if (!targets.length) {
   process.exit(1);
 }
 
-function collectPropaneFiles(targetPath) {
+function collectPropaneFiles(targetPath: string): string[] {
   const resolved = path.resolve(targetPath);
 
   if (!fs.existsSync(resolved)) {
@@ -96,7 +94,7 @@ function collectPropaneFiles(targetPath) {
   return [];
 }
 
-function transpileFile(sourcePath) {
+function transpileFile(sourcePath: string) {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
 
   try {
@@ -106,12 +104,7 @@ function transpileFile(sourcePath) {
         sourceType: 'module',
         plugins: ['typescript'],
       },
-      generatorOpts: {
-        retainLines: false,
-        compact: false,
-      },
       plugins: [propanePlugin],
-      ast: false,
     });
 
     if (!result || typeof result.code !== 'string') {
@@ -129,7 +122,7 @@ function transpileFile(sourcePath) {
     );
 
     return true;
-  } catch (err) {
+  } catch (err: any) {
     const relSource = path.relative(process.cwd(), sourcePath);
     console.error(`✗ ${relSource}: ${err.message}`);
     return false;
@@ -162,7 +155,7 @@ const success = compileAll();
 if (watch) {
   console.log('\nWatching for changes...\n');
 
-  const directories = new Set();
+  const directories = new Set<string>();
   for (const dir of directories) {
     fs.watch(dir, { recursive: true }, (eventType, filename) => {
       if (filename && filename.endsWith('.propane')) {
@@ -176,4 +169,3 @@ if (watch) {
 } else if (!success) {
   process.exit(1);
 }
-

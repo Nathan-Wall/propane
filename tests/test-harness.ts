@@ -104,10 +104,10 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
     'runtime/message.ts'
   );
   const messageExports = evaluateModule(messageJs, {
-    '../common/map/immutable': immutableMapExports,
-    '../common/set/immutable': immutableSetExports,
-    '../common/json/parse': jsonParseExports,
-    '../common/json/stringify': jsonStringifyExports,
+    '../runtime/common/map/immutable': immutableMapExports,
+    '../runtime/common/set/immutable': immutableSetExports,
+    '../runtime/common/json/parse': jsonParseExports,
+    '../runtime/common/json/stringify': jsonStringifyExports,
   });
 
   const indexJs = transpileTs(
@@ -117,8 +117,8 @@ function buildRuntimeExports(projectRoot: string): PropaneExports {
 
   return evaluateModule(indexJs, {
     './message': messageExports,
-    '../common/map/immutable': immutableMapExports,
-    '../common/set/immutable': immutableSetExports,
+    '../runtime/common/map/immutable': immutableMapExports,
+    '../runtime/common/set/immutable': immutableSetExports,
   });
 }
 

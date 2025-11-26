@@ -1,7 +1,7 @@
 import { assert, isMapValue } from './assert.ts';
 import { computeExpectedHashCode } from './hash-helpers.ts';
 import { MapMessage } from './map.propane.ts';
-import { ImmutableMap } from '../common/map/immutable.ts';
+import { ImmutableMap } from '../runtime/common/map/immutable.ts';
 
 export default function runMapPropaneTests() {
 

@@ -1,10 +1,10 @@
 import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
-import { pathTransform } from './utils';
-import { registerTypeAlias } from './validation';
-import { ensureBaseImport } from './base-import';
-import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup';
-import { buildDeclarations, GENERATED_ALIAS } from './declarations';
+import { pathTransform } from './utils.js';
+import { registerTypeAlias } from './validation.js';
+import { ensureBaseImport } from './base-import.js';
+import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup.js';
+import { buildDeclarations, GENERATED_ALIAS } from './declarations.js';
 
 export interface PropaneState {
   usesPropaneBase: boolean;

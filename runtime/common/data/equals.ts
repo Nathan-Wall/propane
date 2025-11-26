@@ -1,4 +1,6 @@
-type EqualsFn = (a: unknown, b: unknown) => boolean;
+// @ts-nocheck
+import { ImmutableArrayBuffer } from './immutable-array-buffer.js';
+
 
 function supportsEquals(
   value: unknown

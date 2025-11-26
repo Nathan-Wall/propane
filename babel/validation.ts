@@ -13,7 +13,7 @@ import {
   isSetReference,
   isUrlReference,
   resolveQualifiedRoot,
-} from './type-guards';
+} from './type-guards.js';
 
 export function assertSupportedMapType(
   typePath: NodePath<t.TSTypeReference>,

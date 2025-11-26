@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/immutable-array-set.propane
-import { ImmutableArray } from '../common/array/immutable';
-import { ImmutableSet } from '../common/set/immutable';
+import { ImmutableArray } from '../runtime/common/array/immutable';
+import { ImmutableSet } from '../runtime/common/set/immutable';
 import { Message, MessagePropDescriptor } from "@propanejs/runtime";
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");

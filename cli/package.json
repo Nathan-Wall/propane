@@ -1,0 +1,17 @@
+{
+  "name": "@propanejs/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "propanec": "../dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@babel/core": "^7.26.0",
+    "@propanejs/babel": "*"
+  },
+  "license": "ISC"
+}

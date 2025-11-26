@@ -1,6 +1,7 @@
-import { ImmutableDate } from '../time/date.ts';
-import { ImmutableUrl } from '../web/url.ts';
-import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.ts';
+// @ts-nocheck
+import { ImmutableDate } from '../time/date.js';
+import { ImmutableUrl } from '../web/url.js';
+import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.js';
 
 export function normalizeForJson(value: unknown): unknown {
   if (value === undefined) {

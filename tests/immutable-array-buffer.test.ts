@@ -1,6 +1,6 @@
 import { assert } from './assert.ts';
 import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableArrayBuffer } from '../common/data/immutable-array-buffer.ts';
+import { ImmutableArrayBuffer } from '../runtime/common/data/immutable-array-buffer.ts';
 
 export default function runImmutableArrayBufferTests() {
   const bytes = [1, 2, 3, 4];

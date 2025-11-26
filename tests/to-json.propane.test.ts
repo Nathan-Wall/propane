@@ -1,5 +1,5 @@
 import { assert } from './assert.ts';
-import { ImmutableMap } from '../common/map/immutable.ts';
+import { ImmutableMap } from '../runtime/common/map/immutable.ts';
 import { ToJson } from './to-json.propane.ts';
 
 export default function runToJsonTests() {

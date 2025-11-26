@@ -15,8 +15,8 @@ import {
   isUrlReference,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getTypeName,
-} from './type-guards';
-import { capitalize } from './utils';
+} from './type-guards.js';
+import { capitalize } from './utils.js';
 
 export interface PluginStateFlags {
   usesImmutableMap: boolean;
@@ -856,8 +856,8 @@ function scanTypeForUsage(
       state.usesImmutableMap = true;
       state.usesEquals = true;
       const params = typePath.get('typeParameters');
-      if (params.isTSTypeParameterInstantiation()) {
-        for (const p of params.get('params')) { // Line 856
+      if (params && (params as any).isTSTypeParameterInstantiation()) {
+        for (const p of (params as any).get('params')) {
           scanTypeForUsage(p, state);
         }
       }
@@ -865,8 +865,8 @@ function scanTypeForUsage(
     if (isSetReference(typePath.node)) {
       state.usesImmutableSet = true;
       const params = typePath.get('typeParameters');
-      if (params.isTSTypeParameterInstantiation()) {
-        for (const p of params.get('params')) { // Line 863
+      if (params && (params as any).isTSTypeParameterInstantiation()) {
+        for (const p of (params as any).get('params')) {
           scanTypeForUsage(p, state);
         }
       }
@@ -891,8 +891,8 @@ function scanTypeForUsage(
      for (const member of typePath.get('members')) {
          if (member.isTSPropertySignature()) {
              const annotation = member.get('typeAnnotation');
-             if (annotation.isTSTypeAnnotation()) {
-                scanTypeForUsage(annotation.get('typeAnnotation'), state);
+             if (annotation && (annotation as any).isTSTypeAnnotation()) {
+                scanTypeForUsage((annotation as any).get('typeAnnotation'), state);
              }
          }
      }

@@ -12,8 +12,8 @@ import {
   isMapReference,
   isSetReference,
   isUrlReference,
-} from './type-guards';
-import { wrapImmutableType } from './properties';
+} from './type-guards.js';
+import { wrapImmutableType } from './properties.js';
 
 export function buildRuntimeTypeCheckExpression(
   typeNode: t.TSType | null,

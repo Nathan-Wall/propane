@@ -1,8 +1,8 @@
 import { assert } from './assert.ts';
 import { MapDateKey } from './map-date-key.propane.ts';
-import { ImmutableMap } from '../common/map/immutable.ts';
-import { ImmutableDate } from '../common/time/date.ts';
-import { ImmutableUrl } from '../common/web/url.ts';
+import { ImmutableMap } from '../runtime/common/map/immutable.ts';
+import { ImmutableDate } from '../runtime/common/time/date.ts';
+import { ImmutableUrl } from '../runtime/common/web/url.ts';
 
 export default function runMapDateKeyTests() {
   // Test Date as map key

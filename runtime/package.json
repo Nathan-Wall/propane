@@ -1,15 +1,12 @@
 {
   "name": "@propanejs/runtime",
-  "version": "0.1.0",
-  "description": "Runtime helpers for Propane generated classes",
-  "main": "runtime/index.js",
-  "types": "runtime/index.d.ts",
-  "files": [
-    "runtime/**/*",
-    "common/**/*"
-  ],
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "../dist/runtime/index.js",
+  "types": "../dist/runtime/index.d.ts",
   "scripts": {
-    "build": "node ../scripts/build-runtime.mjs"
+    "build": "tsc"
   },
-  "license": "MIT"
+  "license": "ISC"
 }

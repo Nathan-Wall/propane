@@ -13,16 +13,18 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
+    "outDir": "./build",
+    "rootDir": ".",
+    "declaration": true,
+    "strict": false,
+    "exactOptionalPropertyTypes": false,
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "babel/*": [
-        "./babel/*"
-      ],
-      "../babel/*": [
-        "./babel/*"
-      ]
+      "@propanejs/babel": ["babel/index.ts"],
+      "@propanejs/runtime": ["runtime/index.ts"],
+      "@propanejs/cli": ["cli/index.ts"],
+      "@propanejs/babel/*": ["babel/*"],
+      "@propanejs/runtime/*": ["runtime/*"],
+      "@propanejs/cli/*": ["cli/*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
@@ -34,6 +36,9 @@
     "**/*.propane"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "build",
+    "dist",
+    "tests"
   ]
 }

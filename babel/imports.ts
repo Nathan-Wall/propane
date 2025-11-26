@@ -87,6 +87,8 @@ export function getImportedName(
   return null;
 }
 
-export function getFilename(typePath: NodePath<t.Node>): string | null {
-  return typePath.hub?.file?.opts?.filename ?? null;
+export function getFilename(nodePath: NodePath<t.Node>): string | null {
+  const typePath = (nodePath as any).findParent((p: any) => p.isTSTypeAliasDeclaration());
+  if (!typePath) return null;
+  return (typePath.hub as any)?.file?.opts?.filename ?? null;
 }

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { transformSync } from '@babel/core';
-import propanePlugin from '../babel/plugin';
+import propanePlugin from '@propanejs/babel';
 import { assert } from './assert.ts';
 
 const projectRoot = process.cwd();

@@ -1,15 +1,15 @@
 import * as t from '@babel/types';
-import { capitalize } from './utils';
+import { capitalize } from './utils.js';
 import {
   buildInputAcceptingMutable,
   getDefaultValue,
   wrapImmutableType,
-} from './properties';
-import type { PropDescriptor, PluginStateFlags } from './properties';
+} from './properties.js';
+import type { PropDescriptor, PluginStateFlags } from './properties.js';
 import {
   typeAllowsNull,
   buildRuntimeTypeCheckExpression,
-} from './runtime-checks';
+} from './runtime-checks.js';
 import {
   buildImmutableArrayBufferNormalizationExpression,
   buildImmutableArrayExpression,
@@ -21,14 +21,14 @@ import {
   buildImmutableSetOfMessagesExpression,
   buildImmutableUrlNormalizationExpression,
   buildMessageNormalizationExpression,
-} from './normalizers';
-import type { MapConversionInfo } from './normalizers';
+} from './normalizers.js';
+import type { MapConversionInfo } from './normalizers.js';
 import {
   getTypeName,
   isArrayTypeNode,
   isDateReference,
   isUrlReference,
-} from './type-guards';
+} from './type-guards.js';
 
 function getMapConversionInfo(
   prop: PropDescriptor,

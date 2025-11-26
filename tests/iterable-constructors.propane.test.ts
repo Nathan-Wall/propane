@@ -1,7 +1,7 @@
 import { assert } from './assert.ts';
-import { ImmutableArray } from '../common/array/immutable.ts';
-import { ImmutableSet } from '../common/set/immutable.ts';
-import { ImmutableMap } from '../common/map/immutable.ts';
+import { ImmutableArray } from '../runtime/common/array/immutable.ts';
+import { ImmutableSet } from '../runtime/common/set/immutable.ts';
+import { ImmutableMap } from '../runtime/common/map/immutable.ts';
 
 export default function runIterableConstructorTests() {
   // Iterable with a misleading length property should still use Symbol.iterator

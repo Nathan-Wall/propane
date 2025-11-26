@@ -1,3 +1,3 @@
-import { Brand } from '../common/types/brand';
+import { Brand } from '../runtime/common/types/brand';
 
 export type Email = Brand<string, 'Email'>;

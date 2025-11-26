@@ -1,40 +1,25 @@
 {
-  "name": "propanejs",
-  "version": "1.1.0",
-  "description": "Materialized types for TypeScript",
+  "name": "propanejs-monorepo",
+  "private": true,
   "type": "module",
-  "main": "dist/runtime/index.js",
-  "types": "dist/runtime/index.d.ts",
-  "bin": {
-    "propanec": "bin/propanec.js"
-  },
-  "files": [
-    "bin",
-    "dist"
+  "workspaces": [
+    "runtime",
+    "babel",
+    "cli"
   ],
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
-    "build": "node scripts/build-dist.js",
-    "test": "npm run build:babel && node scripts/build-fixtures.js && node build/tests/run-tests.js",
+    "build": "tsc && node scripts/post-build.js",
+    "test": "npm run build -w @propanejs/babel && node scripts/build-fixtures.js && node build/tests/run-tests.js",
     "lint": "eslint .",
-    "build:babel": "node scripts/build-babel.js",
-    "propane:compile": "npm run build:babel && node scripts/propane-compiler.js",
-    "runtime:build": "npm --prefix runtime run build",
-    "runtime:publish": "node scripts/publish-runtime.js",
+    "propane:compile": "npm run build -w @propanejs/babel && node scripts/propane-compiler.js",
     "prepublishOnly": "npm run build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "publish": "npm run build && node scripts/publish-all.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Nathan-Wall/propane.git"
   },
-  "keywords": [
-    "propane",
-    "propane.js",
-    "propanejs"
-  ],
   "author": "Nathan Wall",
   "license": "ISC",
   "bugs": {
@@ -44,6 +29,8 @@
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@eslint/js": "^9.39.1",
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__traverse": "^7.20.5",
     "@types/node": "^22.10.0",
     "@typescript-eslint/eslint-plugin": "^8.46.4",
     "@typescript-eslint/parser": "^8.46.4",

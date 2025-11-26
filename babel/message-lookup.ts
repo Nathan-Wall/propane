@@ -5,7 +5,7 @@ import {
   getFilename,
   getImportedName,
   resolveImportPath,
-} from './imports';
+} from './imports.js';
 
 export type MessageReferenceResolver = (
   typePath: NodePath<t.TSType>

@@ -1,6 +1,6 @@
 import { assert } from './assert.ts';
 import { ArrayMessage } from './indexed-array.propane.ts';
-import { ImmutableArray } from '../../common/array/immutable.ts';
+import { ImmutableArray } from '../../runtime/common/array/immutable.ts';
 
 export default function runIndexedArrayTests() {
 

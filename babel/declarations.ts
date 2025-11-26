@@ -1,10 +1,10 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
-import { assertSupportedTopLevelType, assertSupportedType } from './validation';
-import { extractProperties } from './properties';
-import { buildTypeNamespace } from './namespace';
-import { buildClassFromProperties } from './class-builder';
-import type { PropaneState } from './plugin';
+import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
+import { extractProperties } from './properties.js';
+import { buildTypeNamespace } from './namespace.js';
+import { buildClassFromProperties } from './class-builder.js';
+import type { PropaneState } from './plugin.js';
 
 export const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
 

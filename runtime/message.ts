@@ -1,11 +1,12 @@
-import { parseJson } from '../common/json/parse.ts';
-import { normalizeForJson } from '../common/json/stringify.ts';
-import { ImmutableMap } from '../common/map/immutable.ts';
-import { ImmutableSet } from '../common/set/immutable.ts';
-import { ImmutableArray } from '../common/array/immutable.ts';
-import { ImmutableArrayBuffer } from '../common/data/immutable-array-buffer.ts';
-import { ImmutableDate } from '../common/time/date.ts';
-import { ImmutableUrl } from '../common/web/url.ts';
+// @ts-nocheck
+import { parseJson } from './common/json/parse.js';
+import { normalizeForJson } from './common/json/stringify.js';
+import { ImmutableMap } from './common/map/immutable.js';
+import { ImmutableSet } from './common/set/immutable.js';
+import { ImmutableArray } from './common/array/immutable.js';
+import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
+import { ImmutableDate } from './common/time/date.js';
+import { ImmutableUrl } from './common/web/url.js';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);

@@ -1,5 +1,5 @@
-import { ImmutableArray } from '../common/array/immutable';
-import { ImmutableSet } from '../common/set/immutable';
+import { ImmutableArray } from '../runtime/common/array/immutable';
+import { ImmutableSet } from '../runtime/common/set/immutable';
 
 export type ImmutableArraySet = {
   arr: ImmutableArray<number>;

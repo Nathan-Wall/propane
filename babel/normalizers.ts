@@ -2,7 +2,7 @@ import * as t from '@babel/types';
 import {
   buildMapTagComparison,
   buildSetTagComparison,
-} from './runtime-checks';
+} from './runtime-checks.js';
 
 export function buildImmutableMapExpression(
   valueExpr: t.Expression

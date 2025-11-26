@@ -1,5 +1,5 @@
 import * as t from '@babel/types';
-import type { PropDescriptor } from './properties';
+import type { PropDescriptor } from './properties.js';
 
 export function buildTypeNamespace(
   typeAlias: t.TSTypeAliasDeclaration,
