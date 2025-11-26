@@ -36,7 +36,7 @@ async function buildAll() {
       plugins: [propanePlugin],
     });
 
-    const rewritten = rewriteImports(code, outPath);
+    const rewritten = rewriteImports(code);
     const transpiled = ts.transpileModule(rewritten, {
       compilerOptions: {
         module: ts.ModuleKind.ESNext,
@@ -83,7 +83,7 @@ function ensurePackageTypeModule(dir) {
   fs.writeFileSync(pkgPath, JSON.stringify({ type: 'module' }, null, 2));
 }
 
-function rewriteImports(code, outPath) {
+function rewriteImports(code) {
   let result = code;
   // Rewrite relative .propane imports to point at built JS artifacts
   result = result.replaceAll(/\.propane(['"])/g, '.propane.js$1');

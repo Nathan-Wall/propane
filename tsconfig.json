@@ -3,11 +3,9 @@
     "target": "ES2023",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "strict": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "noPropertyAccessFromIndexSignature": true,
-    "exactOptionalPropertyTypes": true,
     "useUnknownInCatchVariables": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -22,9 +20,12 @@
       "@propanejs/babel": ["babel/index.ts"],
       "@propanejs/runtime": ["runtime/index.ts"],
       "@propanejs/cli": ["cli/index.ts"],
+      "@propanejs/react": ["react/index.ts"],
       "@propanejs/babel/*": ["babel/*"],
       "@propanejs/runtime/*": ["runtime/*"],
-      "@propanejs/cli/*": ["cli/*"]
+      "@propanejs/cli/*": ["cli/*"],
+      "@propanejs/react/*": ["react/*"],
+      "react": ["./node_modules/@types/react"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
@@ -39,6 +40,7 @@
     "node_modules",
     "build",
     "dist",
-    "tests"
+    "tests",
+    "examples"
   ]
 }

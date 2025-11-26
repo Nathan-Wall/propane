@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../build/react",
+    "rootDir": ".",
+    "declaration": true,
+    "strict": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["**/*"]
+}

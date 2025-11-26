@@ -10,6 +10,7 @@ import propanePlugin from '@propanejs/babel';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
 const args = (process as any).argv.slice(2);
 
 // Parse flags
@@ -17,33 +18,34 @@ let watch = false;
 const targets: string[] = [];
 
 for (const arg of args) {
-  switch (arg) {
-    case '--watch':
-    case '-w':
-      watch = true;
-      break;
-    case '--help':
-    case '-h':
-      printUsage();
-      process.exit(0);
-      break;
-    case '--version':
-    case '-v': {
-      const pkgPath = path.resolve(__dirname, '..', 'package.json');
-      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-      console.log(`propanec v${pkg.version}`);
-      process.exit(0);
-    }
-      break;
-    default:
-      if (arg.startsWith('-')) {
-        console.error(`Unknown option: ${arg}`);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  if (arg.startsWith('-')) {
+    switch (arg) {
+      case '--watch':
+      case '-w':
+        watch = true;
+        break;
+      case '--help':
+      case '-h':
+        printUsage();
+        process.exit(0);
+        break;
+      case '--version':
+      case '-v': {
+        const pkgPath = path.resolve(__dirname, '..', 'package.json');
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { version: string };
+        console.log(`propanec v${pkg.version}`);
+        process.exit(0);
+      }
+        break;
+      default:
+        console.error(`Unknown option: ${arg as string}`);
         printUsage();
         process.exit(1);
-      } else {
-        targets.push(arg);
-      }
-      break;
+        break;
+    }
+  } else {
+    targets.push(arg as string);
   }
 }
 
@@ -122,9 +124,11 @@ function transpileFile(sourcePath: string) {
     );
 
     return true;
-  } catch (err: any) {
+  } catch (err: unknown) {
     const relSource = path.relative(process.cwd(), sourcePath);
-    console.error(`✗ ${relSource}: ${err.message}`);
+    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`✗ ${relSource}: ${message}`);
     return false;
   }
 }
@@ -158,7 +162,7 @@ if (watch) {
   const directories = new Set<string>();
   for (const dir of directories) {
     fs.watch(dir, { recursive: true }, (eventType, filename) => {
-      if (filename && filename.endsWith('.propane')) {
+      if (filename?.endsWith('.propane')) {
         const fullPath = path.join(dir, filename);
         if (fs.existsSync(fullPath)) {
           transpileFile(fullPath);

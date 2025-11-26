@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'babel', 'cli'];
+const packages = ['runtime', 'babel', 'cli', 'react'];
 
 // Get args
 const args = process.argv.slice(2);
@@ -29,7 +29,10 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) {
 try {
   console.log('Checking previous version on NPM...');
   // Use runtime as the reference package
-  const currentVersion = execSync('npm view @propanejs/runtime version', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+  const currentVersion = execSync(
+    'npm view @propanejs/runtime version',
+    { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+  ).trim();
   console.log(`Current published version: ${currentVersion}`);
 
   const [cMajor, cMinor, cPatch] = currentVersion.split('.').map(Number);
@@ -37,19 +40,35 @@ try {
 
   let isValid = false;
   // Patch increment: 1.2.3 -> 1.2.4
-  if (nMajor === cMajor && nMinor === cMinor && nPatch === cPatch + 1) isValid = true;
-  // Minor increment: 1.2.3 -> 1.3.0
-  else if (nMajor === cMajor && nMinor === cMinor + 1 && nPatch === 0) isValid = true;
-  // Major increment: 1.2.3 -> 2.0.0
-  else if (nMajor === cMajor + 1 && nMinor === 0 && nPatch === 0) isValid = true;
+  if (nMajor === cMajor && nMinor === cMinor && nPatch === cPatch + 1) {
+    isValid = true;
+  } else if (
+    nMajor === cMajor
+    && nMinor === cMinor + 1
+    && nPatch === 0
+  ) {
+    // Minor increment: 1.2.3 -> 1.3.0
+    isValid = true;
+  } else if (nMajor === cMajor + 1 && nMinor === 0 && nPatch === 0) {
+    // Major increment: 1.2.3 -> 2.0.0
+    isValid = true;
+  }
 
   if (!isValid) {
-    console.error(`Error: Version ${version} is not a natural progression from ${currentVersion}.`);
-    console.error(`Expected one of: ${cMajor}.${cMinor}.${cPatch + 1}, ${cMajor}.${cMinor + 1}.0, or ${cMajor + 1}.0.0`);
+    console.error(
+      `Error: Version ${version} is not a natural progression from ${currentVersion}.`
+    );
+    console.error(
+      `Expected one of: ${cMajor}.${cMinor}.${cPatch + 1}, `
+      + `${cMajor}.${cMinor + 1}.0, or ${cMajor + 1}.0.0`
+    );
     process.exit(1);
   }
-} catch (e) {
-  console.warn('Could not fetch current version from NPM (or package not published). Skipping progression check.');
+} catch {
+  console.warn(
+    'Could not fetch current version from NPM (or package not published). '
+    + 'Skipping progression check.'
+  );
 }
 
 if (dryRun) {
@@ -112,39 +131,32 @@ async function publishPackage(pkgName) {
   }
 }
 
-async function publishAll() {
-  console.log('Starting NPM publish for all packages...');
-  
-  let success = true;
-  for (const pkgName of packages) {
-    // Update version in dist
-    if (!updatePackageJson(pkgName, version)) {
-      console.error(`Failed to update version for ${pkgName}`);
-      process.exit(1);
-    }
 
-    // Publish runtime first, then babel, then cli (order matters for dependencies)
-    if (pkgName === 'runtime') {
-      if (!await publishPackage(pkgName)) success = false;
-    }
-  }
-  for (const pkgName of packages) {
-    if (pkgName === 'babel') {
-      if (!await publishPackage(pkgName)) success = false;
-    }
-  }
-  for (const pkgName of packages) {
-    if (pkgName === 'cli') {
-      if (!await publishPackage(pkgName)) success = false;
-    }
-  }
+console.log('Starting NPM publish for all packages...');
 
-  if (success) {
-    console.log('\nAll packages published successfully!');
-  } else {
-    console.error('\nSome packages failed to publish.');
+let success = true;
+for (const pkgName of packages) {
+  // Update version in dist
+  if (!updatePackageJson(pkgName, version)) {
+    console.error(`Failed to update version for ${pkgName}`);
     process.exit(1);
+  }
+
+  // Publish runtime first, then babel, then cli (order matters for dependencies)
+  if (
+    (pkgName === 'runtime' && !await publishPackage(pkgName))
+    || (pkgName === 'babel' && !await publishPackage(pkgName))
+    || (pkgName === 'cli' && !await publishPackage(pkgName))
+    || (pkgName === 'react' && !await publishPackage(pkgName))
+  ) {
+    success = false;
   }
 }
 
-publishAll();
+if (success) {
+  console.log('\nAll packages published successfully!');
+} else {
+  console.error('\nSome packages failed to publish.');
+  process.exit(1);
+}
+

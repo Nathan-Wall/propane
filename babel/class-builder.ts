@@ -169,7 +169,7 @@ export function buildClassFromProperties(
     let valueExpr: t.Expression = t.cloneNode(propsAccess);
 
     if (prop.isArray) {
-      const elementTypeName = getTypeName(prop.arrayElementType!);
+      const elementTypeName = getTypeName(prop.arrayElementType);
       valueExpr =
         elementTypeName && declaredMessageTypeNames.has(elementTypeName)
           ? buildImmutableArrayOfMessagesExpression(
@@ -189,7 +189,7 @@ export function buildClassFromProperties(
         )
         : buildImmutableMapExpression(propsAccess);
     } else if (prop.isSet) {
-      const elementTypeName = getTypeName(prop.setElementType!);
+      const elementTypeName = getTypeName(prop.setElementType);
       valueExpr =
         elementTypeName && declaredMessageTypeNames.has(elementTypeName)
           ? buildImmutableSetOfMessagesExpression(
@@ -784,7 +784,7 @@ function buildTaggedMessageUnionHandler(
   let innerIf: t.IfStatement | null = null;
 
   for (let i = messageTypes.length - 1; i >= 0; i -= 1) {
-    const msgType = messageTypes[i]!;
+    const msgType = messageTypes[i];
     const tagCheck = t.binaryExpression(
       '===',
       t.memberExpression(sourceExpr, t.identifier('$tag')),
@@ -1069,7 +1069,7 @@ function buildArrayMutatorMethods(
 function buildArrayValuesRestParam(prop: PropDescriptor): t.RestElement {
   const valuesId = t.identifier('values');
   valuesId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(prop.arrayElementType!))
+    t.tsArrayType(t.cloneNode(prop.arrayElementType))
   );
   return t.restElement(valuesId);
 }
@@ -1077,7 +1077,7 @@ function buildArrayValuesRestParam(prop: PropDescriptor): t.RestElement {
 function buildFillParams(prop: PropDescriptor): t.Identifier[] {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType!)
+    t.cloneNode(prop.arrayElementType)
   );
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
@@ -1107,11 +1107,11 @@ function buildSortMethod(
   const compareId = t.identifier('compareFn');
   const firstParam = t.identifier('a');
   firstParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType!)
+    t.cloneNode(prop.arrayElementType)
   );
   const secondParam = t.identifier('b');
   secondParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType!)
+    t.cloneNode(prop.arrayElementType)
   );
   const compareType = t.tsFunctionType(
     null,
@@ -1150,7 +1150,7 @@ function buildSpliceMethod(
   deleteCountId.optional = true;
   const itemsId = t.identifier('items');
   itemsId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(prop.arrayElementType!))
+    t.tsArrayType(t.cloneNode(prop.arrayElementType))
   );
   const itemsParam = t.restElement(itemsId);
 
@@ -2271,7 +2271,7 @@ function buildSetMapParams(prop: PropDescriptor): t.Identifier[] {
     t.tsFunctionType(
       null,
       [t.identifier(valueId.name)],
-      t.tsTypeAnnotation(t.cloneNode(prop.setElementType!))
+      t.tsTypeAnnotation(t.cloneNode(prop.setElementType))
     )
   );
   return [mapperId];

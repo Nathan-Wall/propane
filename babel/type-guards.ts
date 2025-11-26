@@ -208,8 +208,8 @@ export function getMapTypeArguments(
   ) {
     const params = node.typeParameters?.params;
     if (params?.length === 2) {
-      const keyType = params[0]!;
-      const valueType = params[1]!;
+      const keyType = params[0];
+      const valueType = params[1];
       return { keyType, valueType };
     }
   }
@@ -239,7 +239,7 @@ export function getSetTypeArguments(
   ) {
     const params = node.typeParameters?.params;
     if (params?.length === 1) {
-      return params[0]!;
+      return params[0];
     }
   }
 
@@ -272,7 +272,7 @@ export function getArrayElementType(
   ) {
     const params = node.typeParameters?.params;
     if (params?.length === 1) {
-      return params[0]!;
+      return params[0];
     }
   }
 

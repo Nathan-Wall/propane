@@ -63,7 +63,7 @@ export function buildRuntimeTypeCheckExpression(
       .map((subType) =>
         buildRuntimeTypeCheckExpression(subType, valueId)
       )
-      .filter(Boolean) as t.Expression[];
+      .filter(Boolean);
 
     if (!checks.length) {
       return null;

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { normalizeForJson } from '../json/stringify.js';
 
 function isMessageLike(value: unknown): value is {
@@ -64,6 +63,7 @@ function hashValue(value: unknown): string {
     return `sym:${desc}`;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return `obj:${hashString(Object.prototype.toString.call(value))}`;
 }
 

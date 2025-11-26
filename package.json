@@ -5,7 +5,9 @@
   "workspaces": [
     "runtime",
     "babel",
-    "cli"
+    "cli",
+    "react",
+    "examples/react-todo"
   ],
   "scripts": {
     "build": "tsc && node scripts/post-build.js",
@@ -40,6 +42,8 @@
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.4"
+    "typescript-eslint": "^8.46.4",
+    "react": "^18.2.0",
+    "@types/react": "^18.2.0"
   }
 }

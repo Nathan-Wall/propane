@@ -8,7 +8,7 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const packages = ['runtime', 'babel', 'cli'];
 
-packages.forEach(pkgName => {
+for (const pkgName of packages) {
   console.log(`Preparing ${pkgName} for distribution...`);
   
   const srcDir = path.join(projectRoot, pkgName);
@@ -16,7 +16,7 @@ packages.forEach(pkgName => {
   
   if (!fs.existsSync(distDir)) {
     console.error(`Error: Dist directory not found for ${pkgName}. Did you run build?`);
-    return;
+    continue;
   }
 
   // Read source package.json
@@ -67,7 +67,7 @@ packages.forEach(pkgName => {
   );
 
   // Copy README and LICENSE if they exist
-  ['README.md', 'LICENSE'].forEach(file => {
+  for (const file of ['README.md', 'LICENSE']) {
     const srcFile = path.join(srcDir, file);
     if (fs.existsSync(srcFile)) {
       fs.copyFileSync(srcFile, path.join(distDir, file));
@@ -78,8 +78,8 @@ packages.forEach(pkgName => {
              fs.copyFileSync(rootFile, path.join(distDir, file));
         }
     }
-  });
-});
+  }
+}
 
 // Ensure node_modules/@propanejs/dist symlink exists for local resolution
 const nodeModulesScope = path.join(projectRoot, 'node_modules', '@propanejs');

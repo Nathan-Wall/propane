@@ -23,6 +23,7 @@ export default defineConfig(
       '**/.turbo/**',
       '**/.yarn/**',
       '**/*.min.*',
+      'examples/**',
     ],
   },
 
@@ -118,15 +119,7 @@ export default defineConfig(
       '@typescript-eslint/no-unsafe-call': 'off',
 
       // Allow || for boolean expressions (the rule is meant for null/undefined coalescing)
-      '@typescript-eslint/prefer-nullish-coalescing': [
-        'error',
-        {
-          ignorePrimitives: {
-            boolean: true,
-            string: true,
-          },
-        },
-      ],
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
     },
   },
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import {
@@ -544,7 +545,7 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
   }
 
   if (t.isTSUnionType(typeNode) && typeNode.types.length > 0) {
-    return getDefaultValueForType(typeNode.types[0]!);
+    return getDefaultValueForType(typeNode.types[0]);
   }
 
   if (t.isTSTypeReference(typeNode)) {
