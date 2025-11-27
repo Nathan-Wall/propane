@@ -270,6 +270,50 @@ export function buildClassFromProperties(
     return t.expressionStatement(assignment);
   });
 
+  const childListeners = propDescriptors
+    .filter((prop) => prop.isMessageType && prop.messageTypeName)
+    .map((prop) => {
+      const fieldAccess = t.memberExpression(
+        t.thisExpression(),
+        t.cloneNode(prop.privateName)
+      );
+
+      const addListenerCall = t.callExpression(
+        t.memberExpression(
+          fieldAccess,
+          t.identifier('ADD_UPDATE_LISTENER'),
+          true
+        ),
+        [
+          t.arrowFunctionExpression(
+            [t.identifier('newValue')],
+            t.blockStatement([
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    t.thisExpression(),
+                    t.identifier(`set${capitalize(prop.name)}`)
+                  ),
+                  [t.identifier('newValue')]
+                )
+              ),
+            ])
+          ),
+        ]
+      );
+
+      const listenerStatement = t.expressionStatement(addListenerCall);
+
+      if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
+        return t.ifStatement(
+          fieldAccess,
+          t.blockStatement([listenerStatement])
+        );
+      }
+
+      return listenerStatement;
+    });
+
   const memoizationCheck = t.ifStatement(
     t.logicalExpression(
       '&&',
@@ -317,6 +361,7 @@ export function buildClassFromProperties(
         ])
       ),
       ...constructorAssignments,
+      ...childListeners,
       memoizationSet,
     ])
   );
@@ -637,6 +682,7 @@ function buildFromEntriesMethod(
       );
       checkedValueId = abValueId;
     } else if (prop.isMessageType && prop.messageTypeName) {
+      state.usesListeners = true;
       const messageValueId = t.identifier(`${prop.name}MessageValue`);
       statements.push(
         t.variableDeclaration('const', [

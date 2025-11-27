@@ -3,7 +3,7 @@
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
-import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableDate, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static EMPTY: User;
@@ -28,6 +28,9 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
+    this.#height[ADD_UPDATE_LISTENER](newValue => {
+      this.setHeight(newValue);
+    });
     if (!props && !listeners) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {

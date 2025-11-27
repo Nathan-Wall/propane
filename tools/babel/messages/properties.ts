@@ -28,6 +28,7 @@ export interface PluginStateFlags {
   usesImmutableArrayBuffer: boolean;
   usesEquals: boolean;
   usesTaggedMessageData: boolean;
+  usesListeners: boolean;
 }
 
 export interface PropDescriptor {

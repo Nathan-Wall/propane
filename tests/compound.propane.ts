@@ -2,7 +2,7 @@
 // Generated from tests/compound.propane
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static EMPTY: Compound_Inline;
@@ -55,6 +55,15 @@ export class Compound extends Message<Compound.Data> {
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
+    this.#user[ADD_UPDATE_LISTENER](newValue => {
+      this.setUser(newValue);
+    });
+    this.#indexed[ADD_UPDATE_LISTENER](newValue => {
+      this.setIndexed(newValue);
+    });
+    this.#inline[ADD_UPDATE_LISTENER](newValue => {
+      this.setInline(newValue);
+    });
     if (!props && !listeners) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {

@@ -16,6 +16,7 @@ export interface PropaneState {
   usesImmutableUrl: boolean;
   usesImmutableArrayBuffer: boolean;
   usesTaggedMessageData: boolean;
+  usesListeners: boolean;
   file?: { opts?: { filename?: string | null } };
 }
 
@@ -39,6 +40,7 @@ export default function propanePlugin() {
           state.usesImmutableUrl = false;
           state.usesImmutableArrayBuffer = false;
           state.usesTaggedMessageData = false;
+          state.usesListeners = false;
 
           const fileOpts = state.file?.opts ?? {};
           const filename = fileOpts.filename ?? '';

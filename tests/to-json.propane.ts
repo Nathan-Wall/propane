@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static EMPTY: ToJson_Nested;
@@ -408,6 +408,9 @@ export class ToJson extends Message<ToJson.Data> {
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
+    this.#nested[ADD_UPDATE_LISTENER](newValue => {
+      this.setNested(newValue);
+    });
     if (!props && !listeners) ToJson.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {

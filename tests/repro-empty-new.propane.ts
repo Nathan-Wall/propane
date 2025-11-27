@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static EMPTY: UnionFirstNumber;
@@ -132,6 +132,9 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     if (!props && !listeners && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
     super(RequiredMessage.TYPE_TAG, "RequiredMessage", listeners);
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
+    this.#sub[ADD_UPDATE_LISTENER](newValue => {
+      this.setSub(newValue);
+    });
     if (!props && !listeners) RequiredMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
