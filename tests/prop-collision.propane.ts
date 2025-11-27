@@ -11,6 +11,9 @@ export class Foo extends Message<Foo.Data> {
     super(Foo.TYPE_TAG, "Foo", listeners);
     this.#name = props ? props.name : "";
     this.#_name = props ? props._name : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Foo.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Foo.Data>[] {
@@ -36,6 +39,7 @@ export class Foo extends Message<Foo.Data> {
     props._name = _nameValue;
     return props as Foo.Data;
   }
+  protected $enableChildListeners(): void {}
   get name(): string {
     return this.#name;
   }

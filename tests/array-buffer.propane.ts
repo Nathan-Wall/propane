@@ -15,6 +15,9 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
     this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : Object.freeze([]);
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ArrayBufferMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
@@ -59,6 +62,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     props.chunks = chunksArrayValue;
     return props as ArrayBufferMessage.Data;
   }
+  protected $enableChildListeners(): void {}
   get id(): number {
     return this.#id;
   }

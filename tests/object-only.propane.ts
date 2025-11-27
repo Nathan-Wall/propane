@@ -15,6 +15,9 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
     this.#active = props ? props.active : false;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ObjectOnly.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
@@ -56,6 +59,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
     props.active = activeValue;
     return props as ObjectOnly.Data;
   }
+  protected $enableChildListeners(): void {}
   get id(): number {
     return this.#id;
   }

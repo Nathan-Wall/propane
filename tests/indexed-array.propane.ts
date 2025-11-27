@@ -9,6 +9,9 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     if (!props && !listeners && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
     super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item", listeners);
     this.#name = props ? props.name : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ArrayMessage_Labels_Item.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
@@ -26,6 +29,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     props.name = nameValue;
     return props as ArrayMessage_Labels_Item.Data;
   }
+  protected $enableChildListeners(): void {}
   get name(): string {
     return this.#name;
   }
@@ -55,6 +59,9 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ArrayMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
@@ -100,6 +107,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     props.labels = labelsArrayValue;
     return props as ArrayMessage.Data;
   }
+  protected $enableChildListeners(): void {}
   get names(): ImmutableArray<string> {
     return this.#names;
   }

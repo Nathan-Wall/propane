@@ -11,6 +11,9 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!props && !listeners && Wrapper.EMPTY) return Wrapper.EMPTY;
     super(Wrapper.TYPE_TAG, "Wrapper", listeners);
     this.#payload = props ? props.payload : 0n;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -28,6 +31,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     props.payload = payloadValue;
     return props as Wrapper.Data;
   }
+  protected $enableChildListeners(): void {}
   get payload(): bigint | {
     id: bigint;
   } {

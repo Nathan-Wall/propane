@@ -102,12 +102,14 @@ export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
   protected readonly $listeners: Set<Listener<T>>;
+  #childUnsubscribes: (() => void)[] = [];
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
+  protected abstract $enableChildListeners(): void;
 
   protected constructor(
     typeTag: symbol,
@@ -122,12 +124,29 @@ export abstract class Message<T extends DataObject> {
   [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const l = listener as unknown as Listener<T>;
+    if (this.$listeners.size === 0) {
+      this.$enableChildListeners();
+    }
     this.$listeners.add(l);
     return {
       unsubscribe: () => {
         this.$listeners.delete(l);
+        if (this.$listeners.size === 0) {
+          this.$disableChildListeners();
+        }
       },
     };
+  }
+
+  protected $addChildUnsubscribe(fn: () => void): void {
+    this.#childUnsubscribes.push(fn);
+  }
+
+  protected $disableChildListeners(): void {
+    for (const unsubscribe of this.#childUnsubscribes) {
+      unsubscribe();
+    }
+    this.#childUnsubscribes = [];
   }
 
   protected $update(value: this): this {

@@ -11,6 +11,9 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
     if (!props && !listeners && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
     super(Compound_Inline.TYPE_TAG, "Compound_Inline", listeners);
     this.#value = props ? props.value : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Compound_Inline.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound_Inline.Data>[] {
@@ -28,6 +31,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
     props.value = valueValue;
     return props as Compound_Inline.Data;
   }
+  protected $enableChildListeners(): void {}
   get value(): string {
     return this.#value;
   }
@@ -55,15 +59,9 @@ export class Compound extends Message<Compound.Data> {
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
-    this.#user[ADD_UPDATE_LISTENER](newValue => {
-      this.setUser(newValue);
-    });
-    this.#indexed[ADD_UPDATE_LISTENER](newValue => {
-      this.setIndexed(newValue);
-    });
-    this.#inline[ADD_UPDATE_LISTENER](newValue => {
-      this.setInline(newValue);
-    });
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
@@ -96,6 +94,17 @@ export class Compound extends Message<Compound.Data> {
     const inlineMessageValue = inlineValue instanceof Compound_Inline ? inlineValue : new Compound_Inline(inlineValue);
     props.inline = inlineMessageValue;
     return props as Compound.Data;
+  }
+  protected $enableChildListeners(): void {
+    this.$addChildUnsubscribe(this.#user[ADD_UPDATE_LISTENER](newValue => {
+      this.setUser(newValue);
+    }).unsubscribe);
+    this.$addChildUnsubscribe(this.#indexed[ADD_UPDATE_LISTENER](newValue => {
+      this.setIndexed(newValue);
+    }).unsubscribe);
+    this.$addChildUnsubscribe(this.#inline[ADD_UPDATE_LISTENER](newValue => {
+      this.setInline(newValue);
+    }).unsubscribe);
   }
   get user(): User {
     return this.#user;

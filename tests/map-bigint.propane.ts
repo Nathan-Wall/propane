@@ -9,6 +9,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     if (!props && !listeners && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG, "MapBigintKey", listeners);
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) MapBigintKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -27,6 +30,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     props.values = valuesMapValue;
     return props as MapBigintKey.Data;
   }
+  protected $enableChildListeners(): void {}
   get values(): ImmutableMap<bigint, string> {
     return this.#values;
   }

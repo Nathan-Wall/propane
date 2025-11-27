@@ -11,6 +11,9 @@ export class Cat extends Message<Cat.Data> {
     super(Cat.TYPE_TAG, "Cat", listeners);
     this.#name = props ? props.name : "";
     this.#meows = props ? props.meows : false;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Cat.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Cat.Data>[] {
@@ -36,6 +39,7 @@ export class Cat extends Message<Cat.Data> {
     props.meows = meowsValue;
     return props as Cat.Data;
   }
+  protected $enableChildListeners(): void {}
   get name(): string {
     return this.#name;
   }
@@ -72,6 +76,9 @@ export class Dog extends Message<Dog.Data> {
     super(Dog.TYPE_TAG, "Dog", listeners);
     this.#name = props ? props.name : "";
     this.#barks = props ? props.barks : false;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Dog.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Dog.Data>[] {
@@ -97,6 +104,7 @@ export class Dog extends Message<Dog.Data> {
     props.barks = barksValue;
     return props as Dog.Data;
   }
+  protected $enableChildListeners(): void {}
   get name(): string {
     return this.#name;
   }
@@ -135,6 +143,9 @@ export class PetOwner extends Message<PetOwner.Data> {
     this.#ownerName = props ? props.ownerName : "";
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -188,6 +199,7 @@ export class PetOwner extends Message<PetOwner.Data> {
     props.optionalPet = optionalPetUnionValue;
     return props as PetOwner.Data;
   }
+  protected $enableChildListeners(): void {}
   get ownerName(): string {
     return this.#ownerName;
   }

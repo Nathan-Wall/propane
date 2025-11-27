@@ -11,6 +11,9 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     super(UnionStringBool.TYPE_TAG, "UnionStringBool", listeners);
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) UnionStringBool.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
@@ -36,6 +39,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     props.optional = optionalNormalized;
     return props as UnionStringBool.Data;
   }
+  protected $enableChildListeners(): void {}
   get value(): string | boolean {
     return this.#value;
   }

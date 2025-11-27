@@ -15,6 +15,9 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#note = props ? props.note : undefined;
     this.#name = props ? props.name : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) OptionalHole.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
@@ -56,6 +59,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     props.name = nameValue;
     return props as OptionalHole.Data;
   }
+  protected $enableChildListeners(): void {}
   get id(): number {
     return this.#id;
   }

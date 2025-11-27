@@ -11,6 +11,9 @@ export class SetMessage extends Message<SetMessage.Data> {
     super(SetMessage.TYPE_TAG, "SetMessage", listeners);
     this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new Set();
     this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) SetMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
@@ -38,6 +41,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     props.ids = idsSetValue;
     return props as SetMessage.Data;
   }
+  protected $enableChildListeners(): void {}
   get tags(): ImmutableSet<string> {
     return this.#tags;
   }

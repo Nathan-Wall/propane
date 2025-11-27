@@ -13,6 +13,9 @@ export class Distance extends Message<Distance.Data> {
     super(Distance.TYPE_TAG, "Distance", listeners);
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Distance.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
@@ -37,6 +40,7 @@ export class Distance extends Message<Distance.Data> {
     props.value = valueValue;
     return props as Distance.Data;
   }
+  protected $enableChildListeners(): void {}
   get unit(): DistanceUnit {
     return this.#unit;
   }

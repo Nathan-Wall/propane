@@ -13,6 +13,9 @@ export class Hole extends Message<Hole.Data> {
     this.#id = props ? props.id : 0;
     this.#value = props ? props.value : 0;
     this.#name = props ? props.name : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Hole.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Hole.Data>[] {
@@ -46,6 +49,7 @@ export class Hole extends Message<Hole.Data> {
     props.name = nameValue;
     return props as Hole.Data;
   }
+  protected $enableChildListeners(): void {}
   get id(): number {
     return this.#id;
   }

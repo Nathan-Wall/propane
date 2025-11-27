@@ -18,6 +18,9 @@ export class Unions extends Message<Unions.Data> {
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -51,6 +54,7 @@ export class Unions extends Message<Unions.Data> {
     props.metadata = metadataValue;
     return props as Unions.Data;
   }
+  protected $enableChildListeners(): void {}
   get username(): string | null {
     return this.#username;
   }

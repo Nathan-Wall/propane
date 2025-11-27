@@ -9,6 +9,9 @@ export class StringFirst extends Message<StringFirst.Data> {
     if (!props && !listeners && StringFirst.EMPTY) return StringFirst.EMPTY;
     super(StringFirst.TYPE_TAG, "StringFirst", listeners);
     this.#value = props ? props.value : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) StringFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
@@ -26,6 +29,7 @@ export class StringFirst extends Message<StringFirst.Data> {
     props.value = valueValue;
     return props as StringFirst.Data;
   }
+  protected $enableChildListeners(): void {}
   get value(): string | number {
     return this.#value;
   }
@@ -49,6 +53,9 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     if (!props && !listeners && NumberFirst.EMPTY) return NumberFirst.EMPTY;
     super(NumberFirst.TYPE_TAG, "NumberFirst", listeners);
     this.#value = props ? props.value : 0;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) NumberFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
@@ -66,6 +73,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     props.value = valueValue;
     return props as NumberFirst.Data;
   }
+  protected $enableChildListeners(): void {}
   get value(): number | string {
     return this.#value;
   }

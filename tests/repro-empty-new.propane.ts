@@ -9,6 +9,9 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     if (!props && !listeners && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
     super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber", listeners);
     this.#val = props ? props.val : 0;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) UnionFirstNumber.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
@@ -26,6 +29,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     props.val = valValue;
     return props as UnionFirstNumber.Data;
   }
+  protected $enableChildListeners(): void {}
   get val(): number | string {
     return this.#val;
   }
@@ -49,6 +53,9 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     if (!props && !listeners && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
     super(UnionFirstString.TYPE_TAG, "UnionFirstString", listeners);
     this.#val = props ? props.val : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) UnionFirstString.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
@@ -66,6 +73,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     props.val = valValue;
     return props as UnionFirstString.Data;
   }
+  protected $enableChildListeners(): void {}
   get val(): string | number {
     return this.#val;
   }
@@ -89,6 +97,9 @@ export class OptionalField extends Message<OptionalField.Data> {
     if (!props && !listeners && OptionalField.EMPTY) return OptionalField.EMPTY;
     super(OptionalField.TYPE_TAG, "OptionalField", listeners);
     this.#val = props ? props.val : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) OptionalField.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalField.Data>[] {
@@ -106,6 +117,7 @@ export class OptionalField extends Message<OptionalField.Data> {
     props.val = valNormalized;
     return props as OptionalField.Data;
   }
+  protected $enableChildListeners(): void {}
   get val(): string {
     return this.#val;
   }
@@ -132,9 +144,9 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     if (!props && !listeners && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
     super(RequiredMessage.TYPE_TAG, "RequiredMessage", listeners);
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
-    this.#sub[ADD_UPDATE_LISTENER](newValue => {
-      this.setSub(newValue);
-    });
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) RequiredMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
@@ -151,6 +163,11 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     const subMessageValue = subValue instanceof UnionFirstNumber ? subValue : new UnionFirstNumber(subValue);
     props.sub = subMessageValue;
     return props as RequiredMessage.Data;
+  }
+  protected $enableChildListeners(): void {
+    this.$addChildUnsubscribe(this.#sub[ADD_UPDATE_LISTENER](newValue => {
+      this.setSub(newValue);
+    }).unsubscribe);
   }
   get sub(): UnionFirstNumber {
     return this.#sub;

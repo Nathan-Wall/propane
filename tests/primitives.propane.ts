@@ -19,6 +19,9 @@ export class Primitives extends Message<Primitives.Data> {
     this.#size = props ? props.size : 0n;
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Primitives.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
@@ -76,6 +79,7 @@ export class Primitives extends Message<Primitives.Data> {
     props.missing = missingValue;
     return props as Primitives.Data;
   }
+  protected $enableChildListeners(): void {}
   get flag(): boolean {
     return this.#flag;
   }

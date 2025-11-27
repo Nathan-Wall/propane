@@ -13,6 +13,9 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : Object.freeze([]);
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ToJson_Nested.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
@@ -49,6 +52,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     props.imap = imapMapValue;
     return props as ToJson_Nested.Data;
   }
+  protected $enableChildListeners(): void {}
   get array(): ImmutableArray<(number | undefined)> {
     return this.#array;
   }
@@ -408,9 +412,9 @@ export class ToJson extends Message<ToJson.Data> {
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
-    this.#nested[ADD_UPDATE_LISTENER](newValue => {
-      this.setNested(newValue);
-    });
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ToJson.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
@@ -477,6 +481,11 @@ export class ToJson extends Message<ToJson.Data> {
     const nestedMessageValue = nestedValue instanceof ToJson_Nested ? nestedValue : new ToJson_Nested(nestedValue);
     props.nested = nestedMessageValue;
     return props as ToJson.Data;
+  }
+  protected $enableChildListeners(): void {
+    this.$addChildUnsubscribe(this.#nested[ADD_UPDATE_LISTENER](newValue => {
+      this.setNested(newValue);
+    }).unsubscribe);
   }
   get map(): ImmutableMap<string, number> {
     return this.#map;

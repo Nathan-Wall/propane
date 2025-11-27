@@ -23,6 +23,9 @@ export class Indexed extends Message<Indexed.Data> {
     this.#score = props ? props.score : 0;
     this.#alias = props ? props.alias : undefined;
     this.#status = props ? props.status : "";
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) Indexed.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Indexed.Data>[] {
@@ -95,6 +98,7 @@ export class Indexed extends Message<Indexed.Data> {
     props.status = statusValue;
     return props as Indexed.Data;
   }
+  protected $enableChildListeners(): void {}
   get id(): number {
     return this.#id;
   }

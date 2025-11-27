@@ -28,9 +28,9 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
-    this.#height[ADD_UPDATE_LISTENER](newValue => {
-      this.setHeight(newValue);
-    });
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -109,6 +109,11 @@ export class User extends Message<User.Data> {
     const heightMessageValue = heightValue instanceof Distance ? heightValue : new Distance(heightValue);
     props.height = heightMessageValue;
     return props as User.Data;
+  }
+  protected $enableChildListeners(): void {
+    this.$addChildUnsubscribe(this.#height[ADD_UPDATE_LISTENER](newValue => {
+      this.setHeight(newValue);
+    }).unsubscribe);
   }
   get id(): number {
     return this.#id;

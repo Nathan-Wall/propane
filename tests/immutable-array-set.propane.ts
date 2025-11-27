@@ -13,6 +13,9 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet", listeners);
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : Object.freeze([]);
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new Set();
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
     if (!props && !listeners) ImmutableArraySet.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
@@ -40,6 +43,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     props.set = setSetValue;
     return props as ImmutableArraySet.Data;
   }
+  protected $enableChildListeners(): void {}
   get arr(): ImmutableArray<number> {
     return this.#arr;
   }

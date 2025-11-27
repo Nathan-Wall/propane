@@ -270,49 +270,27 @@ export function buildClassFromProperties(
     return t.expressionStatement(assignment);
   });
 
-  const childListeners = propDescriptors
-    .filter((prop) => prop.isMessageType && prop.messageTypeName)
-    .map((prop) => {
-      const fieldAccess = t.memberExpression(
-        t.thisExpression(),
-        t.cloneNode(prop.privateName)
-      );
-
-      const addListenerCall = t.callExpression(
-        t.memberExpression(
-          fieldAccess,
-          t.identifier('ADD_UPDATE_LISTENER'),
-          true
-        ),
-        [
-          t.arrowFunctionExpression(
-            [t.identifier('newValue')],
-            t.blockStatement([
-              t.expressionStatement(
-                t.callExpression(
-                  t.memberExpression(
-                    t.thisExpression(),
-                    t.identifier(`set${capitalize(prop.name)}`)
-                  ),
-                  [t.identifier('newValue')]
-                )
-              ),
-            ])
+  const enableListenersCall = t.ifStatement(
+    t.binaryExpression(
+      '>',
+      t.memberExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$listeners')),
+        t.identifier('size')
+      ),
+      t.numericLiteral(0)
+    ),
+    t.blockStatement([
+      t.expressionStatement(
+        t.callExpression(
+          t.memberExpression(
+            t.thisExpression(),
+            t.identifier('$enableChildListeners')
           ),
-        ]
-      );
-
-      const listenerStatement = t.expressionStatement(addListenerCall);
-
-      if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
-        return t.ifStatement(
-          fieldAccess,
-          t.blockStatement([listenerStatement])
-        );
-      }
-
-      return listenerStatement;
-    });
+          []
+        )
+      ),
+    ])
+  );
 
   const memoizationCheck = t.ifStatement(
     t.logicalExpression(
@@ -361,7 +339,7 @@ export function buildClassFromProperties(
         ])
       ),
       ...constructorAssignments,
-      ...childListeners,
+      enableListenersCall,
       memoizationSet,
     ])
   );
@@ -394,6 +372,9 @@ export function buildClassFromProperties(
     state
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
+  const enableChildListenersMethod = buildEnableChildListenersMethod(
+    propDescriptors
+  );
 
   const setterMethods = propDescriptors.map((prop) =>
     buildSetterMethod(
@@ -425,6 +406,7 @@ export function buildClassFromProperties(
     constructor,
     descriptorMethod,
     fromEntriesMethod,
+    enableChildListenersMethod,
     ...getters,
     ...[
       ...setterMethods,
@@ -2461,4 +2443,79 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
     )
   );
   return [predicateId];
+}
+
+function buildEnableChildListenersMethod(
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+): t.ClassMethod {
+  const statements: t.Statement[] = [];
+
+  const messageProps = propDescriptors.filter(
+    (prop) => prop.isMessageType && prop.messageTypeName
+  );
+
+  for (const prop of messageProps) {
+    const fieldAccess = t.memberExpression(
+      t.thisExpression(),
+      t.cloneNode(prop.privateName)
+    );
+
+    const addListenerCall = t.callExpression(
+      t.memberExpression(
+        fieldAccess,
+        t.identifier('ADD_UPDATE_LISTENER'),
+        true
+      ),
+      [
+        t.arrowFunctionExpression(
+          [t.identifier('newValue')],
+          t.blockStatement([
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier(`set${capitalize(prop.name)}`)
+                ),
+                [t.identifier('newValue')]
+              )
+            ),
+          ])
+        ),
+      ]
+    );
+
+    const addChildUnsubscribeCall = t.callExpression(
+      t.memberExpression(
+        t.thisExpression(),
+        t.identifier('$addChildUnsubscribe')
+      ),
+      [
+        t.memberExpression(addListenerCall, t.identifier('unsubscribe')),
+      ]
+    );
+
+    const listenerStatement = t.expressionStatement(addChildUnsubscribeCall);
+
+    if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
+      statements.push(
+        t.ifStatement(
+          fieldAccess,
+          t.blockStatement([listenerStatement])
+        )
+      );
+    } else {
+      statements.push(listenerStatement);
+    }
+  }
+
+  const method = t.classMethod(
+    'method',
+    t.identifier('$enableChildListeners'),
+    [],
+    t.blockStatement(statements)
+  );
+  method.accessibility = 'protected';
+  method.returnType = t.tsTypeAnnotation(t.tsVoidKeyword());
+
+  return method;
 }
