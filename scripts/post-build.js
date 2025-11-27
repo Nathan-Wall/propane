@@ -8,7 +8,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'babel/messages', 'cli', 'react'];
+const packages = ['runtime', 'tools/babel/messages', 'cli', 'react'];
 
 // 1. Copy package.json to build/ and update main
 for (const pkgDir of packages) {
@@ -59,11 +59,7 @@ if (fs.existsSync(nodeModulesScope)) {
     const pkgName = pkgJson.name.split('/')[1]; // e.g. babel-messages
 
     const linkPath = path.join(nodeModulesScope, pkgName);
-    // Calculate relative path from link to build dir
-    // Link: node_modules/@propanejs/babel-messages
-    // Target: build/babel/messages
-    // Path: ../../../build/babel/messages
-    const targetPath = path.join('..', '..', 'build', pkgDir);
+    const targetPath = path.join('..', '..', '..', 'build', pkgDir);
     
     try {
       if (fs.existsSync(linkPath)) {

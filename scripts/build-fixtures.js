@@ -184,7 +184,7 @@ function rewriteTestImports(content) {
   result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
   result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
-  result = result.replaceAll(/from ['"](\.\.\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
+  result = result.replaceAll(/from ['"](\.\.\/tools\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
   
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');

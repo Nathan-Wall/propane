@@ -4,7 +4,7 @@
   "type": "module",
   "workspaces": [
     "runtime",
-    "babel/messages",
+    "tools/babel/messages",
     "cli",
     "react",
     "examples/react-todo"

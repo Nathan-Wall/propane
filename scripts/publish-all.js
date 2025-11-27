@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'babel/messages', 'cli', 'react'];
+const packages = ['runtime', 'tools/babel/messages', 'cli', 'react'];
 
 // Get args
 const args = process.argv.slice(2);
