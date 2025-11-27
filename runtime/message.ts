@@ -67,7 +67,7 @@ export function isTaggedMessageData(
   );
 }
 
-export const ADD_LISTENER = Symbol('ADD_LISTENER');
+export const ADD_UPDATE_LISTENER = Symbol('ADD_UPDATE_LISTENER');
 
 type Listener<T extends DataObject> = (val: Message<T>) => void;
 
@@ -119,7 +119,7 @@ export abstract class Message<T extends DataObject> {
     this.$listeners = listeners ?? new Set();
   }
 
-  [ADD_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
+  [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const l = listener as unknown as Listener<T>;
     this.$listeners.add(l);

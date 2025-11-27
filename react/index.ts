@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import type { Dispatch, SetStateAction, ComponentType } from 'react';
-import { equals, ADD_LISTENER } from '@propanejs/runtime';
+import { equals, ADD_UPDATE_LISTENER } from '@propanejs/runtime';
 
 export function usePropaneState<S>(
   initialState: S | (() => S)
@@ -11,10 +11,10 @@ export function usePropaneState<S>(
     if (
       state
       && typeof state === 'object'
-      && ADD_LISTENER in state
+      && ADD_UPDATE_LISTENER in state
     ) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-      const { unsubscribe } = (state as any)[ADD_LISTENER]((next: S) => {
+      const { unsubscribe } = (state as any)[ADD_UPDATE_LISTENER]((next: S) => {
         setState(next);
       });
       return unsubscribe;
