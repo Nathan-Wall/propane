@@ -146,7 +146,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   protected $update(value: this): this {
-    for (const listener of this.$listeners) {
+    for (const listener of [...this.$listeners]) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listener(value as unknown as ImmutableArray<T>);
     }
