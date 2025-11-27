@@ -8,14 +8,14 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   #primary: ImmutableUrl;
   #secondary: ImmutableUrl;
   #links: ImmutableArray<ImmutableUrl>;
-  constructor(props?: UrlMessage.Value) {
-    if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
-    super(UrlMessage.TYPE_TAG, "UrlMessage");
+  constructor(props?: UrlMessage.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && UrlMessage.EMPTY) return UrlMessage.EMPTY;
+    super(UrlMessage.TYPE_TAG, "UrlMessage", onUpdate);
     this.#id = props ? props.id : 0;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
     this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : Object.freeze([]);
-    if (!props) UrlMessage.EMPTY = this;
+    if (!props && !onUpdate) UrlMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
@@ -74,141 +74,141 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.copyWithin(target, start, end);
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   deleteSecondary(): UrlMessage {
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       links: this.#links
-    });
+    }, this.$onUpdate));
   }
   fillLinks(value: URL, start?: number, end?: number): UrlMessage {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.fill(value, start, end);
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   popLinks(): UrlMessage {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.pop();
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   pushLinks(...values): UrlMessage {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray, ...values];
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   reverseLinks(): UrlMessage {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.reverse();
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): UrlMessage {
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: value,
       primary: this.#primary,
       secondary: this.#secondary,
       links: this.#links
-    });
+    }, this.$onUpdate));
   }
   setLinks(value: URL[] | Iterable<URL>): UrlMessage {
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: value
-    });
+    }, this.$onUpdate));
   }
   setPrimary(value: ImmutableUrl | URL): UrlMessage {
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: value,
       secondary: this.#secondary,
       links: this.#links
-    });
+    }, this.$onUpdate));
   }
   setSecondary(value: ImmutableUrl | URL): UrlMessage {
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: value,
       links: this.#links
-    });
+    }, this.$onUpdate));
   }
   shiftLinks(): UrlMessage {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.shift();
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   sortLinks(compareFn?: (a: URL, b: URL) => number): UrlMessage {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.sort(compareFn);
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   spliceLinks(start: number, deleteCount?: number, ...items): UrlMessage {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
   unshiftLinks(...values): UrlMessage {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...values, ...linksArray];
-    return new UrlMessage({
+    return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace UrlMessage {

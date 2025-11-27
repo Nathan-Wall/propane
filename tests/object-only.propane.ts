@@ -8,14 +8,14 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   #name: string;
   #age: number;
   #active: boolean;
-  constructor(props?: ObjectOnly.Value) {
-    if (!props && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
-    super(ObjectOnly.TYPE_TAG, "ObjectOnly");
+  constructor(props?: ObjectOnly.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
+    super(ObjectOnly.TYPE_TAG, "ObjectOnly", onUpdate);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
     this.#active = props ? props.active : false;
-    if (!props) ObjectOnly.EMPTY = this;
+    if (!props && !onUpdate) ObjectOnly.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
@@ -70,36 +70,36 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
     return this.#active;
   }
   setActive(value: boolean): ObjectOnly {
-    return new ObjectOnly({
+    return this.$update(new ObjectOnly({
       id: this.#id,
       name: this.#name,
       age: this.#age,
       active: value
-    });
+    }, this.$onUpdate));
   }
   setAge(value: number): ObjectOnly {
-    return new ObjectOnly({
+    return this.$update(new ObjectOnly({
       id: this.#id,
       name: this.#name,
       age: value,
       active: this.#active
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): ObjectOnly {
-    return new ObjectOnly({
+    return this.$update(new ObjectOnly({
       id: value,
       name: this.#name,
       age: this.#age,
       active: this.#active
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): ObjectOnly {
-    return new ObjectOnly({
+    return this.$update(new ObjectOnly({
       id: this.#id,
       name: value,
       age: this.#age,
       active: this.#active
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace ObjectOnly {

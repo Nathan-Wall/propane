@@ -8,12 +8,12 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static EMPTY: ImmutableArraySet;
   #arr: ImmutableArray<number>;
   #set: ImmutableSet<string>;
-  constructor(props?: ImmutableArraySet.Value) {
-    if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
-    super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet");
+  constructor(props?: ImmutableArraySet.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
+    super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet", onUpdate);
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : Object.freeze([]);
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new Set();
-    if (!props) ImmutableArraySet.EMPTY = this;
+    if (!props && !onUpdate) ImmutableArraySet.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
@@ -55,10 +55,10 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       setSetNext.add(toAdd);
     }
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   addSet(value: string): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -66,10 +66,10 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetNext = new Set(setSetEntries);
     setSetNext.add(value);
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   clearSet(): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -77,19 +77,19 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetNext = new Set(setSetEntries);
     setSetNext.clear();
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   copyWithinArr(target: number, start: number, end?: number): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.copyWithin(target, start, end);
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   deleteAllSet(values: Iterable<string>): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -99,10 +99,10 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       setSetNext.delete(del);
     }
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   deleteSet(value: string): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -110,19 +110,19 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetNext = new Set(setSetEntries);
     setSetNext.delete(value);
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   fillArr(value: number, start?: number, end?: number): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.fill(value, start, end);
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   filterSet(predicate: (value) => boolean): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -137,10 +137,10 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       setSetNext.add(value);
     }
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   mapSet(mapper: (value) => string): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -156,87 +156,87 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       setSetNext.add(value);
     }
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
   popArr(): ImmutableArraySet {
     if ((this.arr ?? []).length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.pop();
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   pushArr(...values): ImmutableArraySet {
     if (values.length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray, ...values];
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   reverseArr(): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.reverse();
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   setArr(value: number[] | Iterable<number>): ImmutableArraySet {
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: value,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   setSet(value: Set<string> | Iterable<string>): ImmutableArraySet {
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value)
-    });
+    }, this.$onUpdate));
   }
   shiftArr(): ImmutableArraySet {
     if ((this.arr ?? []).length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.shift();
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   sortArr(compareFn?: (a: number, b: number) => number): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.sort(compareFn);
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   spliceArr(start: number, deleteCount?: number, ...items): ImmutableArraySet {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   unshiftArr(...values): ImmutableArraySet {
     if (values.length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...values, ...arrArray];
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: arrNext,
       set: this.#set
-    });
+    }, this.$onUpdate));
   }
   updateSet(updater: (current: ImmutableSet<string>) => Iterable<string>): ImmutableArraySet {
     const setSetSource = this.set ?? [];
@@ -248,10 +248,10 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       setSetNext.add(updatedItem);
     }
     if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
-    return new ImmutableArraySet({
+    return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace ImmutableArraySet {

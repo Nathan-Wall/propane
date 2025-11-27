@@ -7,11 +7,11 @@ export class Wrapper extends Message<Wrapper.Data> {
   #payload: bigint | {
     id: bigint;
   };
-  constructor(props?: Wrapper.Value) {
-    if (!props && Wrapper.EMPTY) return Wrapper.EMPTY;
-    super(Wrapper.TYPE_TAG, "Wrapper");
+  constructor(props?: Wrapper.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Wrapper.EMPTY) return Wrapper.EMPTY;
+    super(Wrapper.TYPE_TAG, "Wrapper", onUpdate);
     this.#payload = props ? props.payload : 0n;
-    if (!props) Wrapper.EMPTY = this;
+    if (!props && !onUpdate) Wrapper.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -37,9 +37,9 @@ export class Wrapper extends Message<Wrapper.Data> {
   setPayload(value: bigint | {
     id: bigint;
   }): Wrapper {
-    return new Wrapper({
+    return this.$update(new Wrapper({
       payload: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Wrapper {

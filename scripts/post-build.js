@@ -59,12 +59,26 @@ if (fs.existsSync(nodeModulesScope)) {
     const pkgName = pkgJson.name.split('/')[1]; // e.g. babel-messages
 
     const linkPath = path.join(nodeModulesScope, pkgName);
-    const targetPath = path.join('..', '..', '..', 'build', pkgDir);
+    // Link: node_modules/@propanejs/babel-messages
+    // Target: build/tools/babel/messages
+    // Path: ../../build/tools/babel/messages
+    // This assumes scope dir is one level deep in node_modules.
+    const targetPath = path.join('..', '..', 'build', pkgDir);
     
     try {
-      if (fs.existsSync(linkPath)) {
-        fs.unlinkSync(linkPath);
-      }
+      // Force remove existing link/file to ensure clean state
+      try {
+        if (fs.existsSync(linkPath) || fs.lstatSync(linkPath).isSymbolicLink()) {
+           // Try unlink first (for file/symlink)
+           try {
+             fs.unlinkSync(linkPath);
+           } catch {
+             // If unlink fails (e.g. directory), try rmSync
+             fs.rmSync(linkPath, { recursive: true, force: true });
+           }
+        }
+      } catch {}
+      
       fs.symlinkSync(targetPath, linkPath, 'dir');
       console.log(`Linked node_modules/@propanejs/${pkgName} -> build/${pkgDir}`);
     } catch (e) {

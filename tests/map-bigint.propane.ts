@@ -5,11 +5,11 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
   #values: ImmutableMap<bigint, string>;
-  constructor(props?: MapBigintKey.Value) {
-    if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
-    super(MapBigintKey.TYPE_TAG, "MapBigintKey");
+  constructor(props?: MapBigintKey.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
+    super(MapBigintKey.TYPE_TAG, "MapBigintKey", onUpdate);
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
-    if (!props) MapBigintKey.EMPTY = this;
+    if (!props && !onUpdate) MapBigintKey.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -38,9 +38,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.clear();
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   deleteValuesEntry(key: bigint): MapBigintKey {
     const valuesCurrent = this.values;
@@ -49,9 +49,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.delete(key);
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -61,9 +61,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
     }
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   mapValuesEntries(mapper: (value: string, key: bigint) => [bigint, string]): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -79,9 +79,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       valuesMapNext.set(newKey, newValue);
     }
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   mergeValuesEntries(entries: Iterable<[bigint, string]> | ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -91,14 +91,14 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       valuesMapNext.set(mergeKey, mergeValue);
     }
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   setValues(value: Map<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
-    });
+    }, this.$onUpdate));
   }
   setValuesEntry(key: bigint, value: string): MapBigintKey {
     const valuesCurrent = this.values;
@@ -110,9 +110,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     valuesMapNext.set(key, value);
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
   updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -122,9 +122,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const updatedValue = updater(currentValue);
     valuesMapNext.set(key, updatedValue);
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
-    return new MapBigintKey({
+    return this.$update(new MapBigintKey({
       values: valuesMapNext
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace MapBigintKey {

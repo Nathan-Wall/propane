@@ -10,16 +10,16 @@ export class Primitives extends Message<Primitives.Data> {
   #size: bigint;
   #empty: null;
   #missing: undefined;
-  constructor(props?: Primitives.Value) {
-    if (!props && Primitives.EMPTY) return Primitives.EMPTY;
-    super(Primitives.TYPE_TAG, "Primitives");
+  constructor(props?: Primitives.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Primitives.EMPTY) return Primitives.EMPTY;
+    super(Primitives.TYPE_TAG, "Primitives", onUpdate);
     this.#flag = props ? props.flag : false;
     this.#count = props ? props.count : 0;
     this.#label = props ? props.label : "";
     this.#size = props ? props.size : 0n;
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
-    if (!props) Primitives.EMPTY = this;
+    if (!props && !onUpdate) Primitives.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
@@ -96,64 +96,64 @@ export class Primitives extends Message<Primitives.Data> {
     return this.#missing;
   }
   setCount(value: number): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: this.#flag,
       count: value,
       label: this.#label,
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    });
+    }, this.$onUpdate));
   }
   setEmpty(value: null): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: this.#flag,
       count: this.#count,
       label: this.#label,
       size: this.#size,
       empty: value,
       missing: this.#missing
-    });
+    }, this.$onUpdate));
   }
   setFlag(value: boolean): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: value,
       count: this.#count,
       label: this.#label,
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    });
+    }, this.$onUpdate));
   }
   setLabel(value: string): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: this.#flag,
       count: this.#count,
       label: value,
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    });
+    }, this.$onUpdate));
   }
   setMissing(value: undefined): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: this.#flag,
       count: this.#count,
       label: this.#label,
       size: this.#size,
       empty: this.#empty,
       missing: value
-    });
+    }, this.$onUpdate));
   }
   setSize(value: bigint): Primitives {
-    return new Primitives({
+    return this.$update(new Primitives({
       flag: this.#flag,
       count: this.#count,
       label: this.#label,
       size: value,
       empty: this.#empty,
       missing: this.#missing
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Primitives {

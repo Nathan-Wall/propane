@@ -6,12 +6,12 @@ export class Cat extends Message<Cat.Data> {
   static EMPTY: Cat;
   #name: string;
   #meows: boolean;
-  constructor(props?: Cat.Value) {
-    if (!props && Cat.EMPTY) return Cat.EMPTY;
-    super(Cat.TYPE_TAG, "Cat");
+  constructor(props?: Cat.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Cat.EMPTY) return Cat.EMPTY;
+    super(Cat.TYPE_TAG, "Cat", onUpdate);
     this.#name = props ? props.name : "";
     this.#meows = props ? props.meows : false;
-    if (!props) Cat.EMPTY = this;
+    if (!props && !onUpdate) Cat.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Cat.Data>[] {
@@ -44,16 +44,16 @@ export class Cat extends Message<Cat.Data> {
     return this.#meows;
   }
   setMeows(value: boolean): Cat {
-    return new Cat({
+    return this.$update(new Cat({
       name: this.#name,
       meows: value
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): Cat {
-    return new Cat({
+    return this.$update(new Cat({
       name: value,
       meows: this.#meows
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Cat {
@@ -68,12 +68,12 @@ export class Dog extends Message<Dog.Data> {
   static EMPTY: Dog;
   #name: string;
   #barks: boolean;
-  constructor(props?: Dog.Value) {
-    if (!props && Dog.EMPTY) return Dog.EMPTY;
-    super(Dog.TYPE_TAG, "Dog");
+  constructor(props?: Dog.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Dog.EMPTY) return Dog.EMPTY;
+    super(Dog.TYPE_TAG, "Dog", onUpdate);
     this.#name = props ? props.name : "";
     this.#barks = props ? props.barks : false;
-    if (!props) Dog.EMPTY = this;
+    if (!props && !onUpdate) Dog.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Dog.Data>[] {
@@ -106,16 +106,16 @@ export class Dog extends Message<Dog.Data> {
     return this.#barks;
   }
   setBarks(value: boolean): Dog {
-    return new Dog({
+    return this.$update(new Dog({
       name: this.#name,
       barks: value
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): Dog {
-    return new Dog({
+    return this.$update(new Dog({
       name: value,
       barks: this.#barks
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Dog {
@@ -131,13 +131,13 @@ export class PetOwner extends Message<PetOwner.Data> {
   #ownerName: string;
   #pet: Cat | Dog;
   #optionalPet: Cat | Dog;
-  constructor(props?: PetOwner.Value) {
-    if (!props && PetOwner.EMPTY) return PetOwner.EMPTY;
-    super(PetOwner.TYPE_TAG, "PetOwner");
+  constructor(props?: PetOwner.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && PetOwner.EMPTY) return PetOwner.EMPTY;
+    super(PetOwner.TYPE_TAG, "PetOwner", onUpdate);
     this.#ownerName = props ? props.ownerName : "";
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
-    if (!props) PetOwner.EMPTY = this;
+    if (!props && !onUpdate) PetOwner.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -201,31 +201,31 @@ export class PetOwner extends Message<PetOwner.Data> {
     return this.#optionalPet;
   }
   deleteOptionalPet(): PetOwner {
-    return new PetOwner({
+    return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: this.#pet
-    });
+    }, this.$onUpdate));
   }
   setOptionalPet(value: Cat | Dog): PetOwner {
-    return new PetOwner({
+    return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: this.#pet,
       optionalPet: value
-    });
+    }, this.$onUpdate));
   }
   setOwnerName(value: string): PetOwner {
-    return new PetOwner({
+    return this.$update(new PetOwner({
       ownerName: value,
       pet: this.#pet,
       optionalPet: this.#optionalPet
-    });
+    }, this.$onUpdate));
   }
   setPet(value: Cat | Dog): PetOwner {
-    return new PetOwner({
+    return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: value,
       optionalPet: this.#optionalPet
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace PetOwner {

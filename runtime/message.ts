@@ -80,7 +80,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface MessageConstructor<T extends DataObject> {
-  new(props: T): Message<T>;
+  new(props: T, onUpdate?: (val: Message<T>) => void): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -97,6 +97,7 @@ const registry = new FinalizationRegistry<string>((key) => {
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
+  protected readonly $onUpdate?: (val: this) => void;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
@@ -104,9 +105,21 @@ export abstract class Message<T extends DataObject> {
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
 
-  protected constructor(typeTag: symbol, typeName: string) {
+  protected constructor(
+    typeTag: symbol,
+    typeName: string,
+    onUpdate?: (val: any) => void
+  ) {
     this.#typeTag = typeTag;
     this.#typeName = typeName;
+    this.$onUpdate = onUpdate;
+  }
+
+  protected $update(value: this): this {
+    if (this.$onUpdate) {
+      this.$onUpdate(value);
+    }
+    return value;
   }
 
   get $typeName(): string {

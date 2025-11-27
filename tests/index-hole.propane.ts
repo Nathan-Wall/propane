@@ -7,13 +7,13 @@ export class Hole extends Message<Hole.Data> {
   #id: number;
   #value: number;
   #name: string;
-  constructor(props?: Hole.Value) {
-    if (!props && Hole.EMPTY) return Hole.EMPTY;
-    super(Hole.TYPE_TAG, "Hole");
+  constructor(props?: Hole.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Hole.EMPTY) return Hole.EMPTY;
+    super(Hole.TYPE_TAG, "Hole", onUpdate);
     this.#id = props ? props.id : 0;
     this.#value = props ? props.value : 0;
     this.#name = props ? props.name : "";
-    if (!props) Hole.EMPTY = this;
+    if (!props && !onUpdate) Hole.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Hole.Data>[] {
@@ -57,25 +57,25 @@ export class Hole extends Message<Hole.Data> {
     return this.#name;
   }
   setId(value: number): Hole {
-    return new Hole({
+    return this.$update(new Hole({
       id: value,
       value: this.#value,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): Hole {
-    return new Hole({
+    return this.$update(new Hole({
       id: this.#id,
       value: this.#value,
       name: value
-    });
+    }, this.$onUpdate));
   }
   setValue(value: number): Hole {
-    return new Hole({
+    return this.$update(new Hole({
       id: this.#id,
       value: value,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Hole {

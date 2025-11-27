@@ -160,6 +160,20 @@ export function buildClassFromProperties(
   );
   constructorParam.optional = true;
 
+  const onUpdateParam = t.identifier('onUpdate');
+  onUpdateParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsFunctionType(
+      null,
+      [
+        Object.assign(t.identifier('val'), {
+          typeAnnotation: t.tsTypeAnnotation(t.tsThisType()),
+        }),
+      ],
+      t.tsTypeAnnotation(t.tsVoidKeyword())
+    )
+  );
+  onUpdateParam.optional = true;
+
   const constructorAssignments = propDescriptors.map((prop) => {
     const propsAccess = t.memberExpression(
       t.identifier('props'),
@@ -255,7 +269,11 @@ export function buildClassFromProperties(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
-      t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      t.logicalExpression(
+        '&&',
+        t.unaryExpression('!', t.identifier('onUpdate')),
+        t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      )
     ),
     t.returnStatement(
       t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
@@ -263,7 +281,11 @@ export function buildClassFromProperties(
   );
 
   const memoizationSet = t.ifStatement(
-    t.unaryExpression('!', t.identifier('props')),
+    t.logicalExpression(
+      '&&',
+      t.unaryExpression('!', t.identifier('props')),
+      t.unaryExpression('!', t.identifier('onUpdate'))
+    ),
     t.expressionStatement(
       t.assignmentExpression(
         '=',
@@ -284,7 +306,7 @@ export function buildClassFromProperties(
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
-    [constructorParam],
+    [constructorParam, onUpdateParam],
     t.blockStatement([
       memoizationCheck,
       t.expressionStatement(
@@ -294,6 +316,7 @@ export function buildClassFromProperties(
             t.identifier('TYPE_TAG')
           ),
           t.stringLiteral(typeName),
+          t.identifier('onUpdate'),
         ])
       ),
       ...constructorAssignments,
@@ -896,9 +919,22 @@ function buildSetterMethod(
     setterValueExpr
   );
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$onUpdate')
+  );
+
   const body = t.blockStatement([
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [propsObject])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            propsObject,
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ]);
 
@@ -927,9 +963,22 @@ function buildDeleteMethod(
     { omitTarget: true }
   );
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$onUpdate')
+  );
+
   const body = t.blockStatement([
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [propsObject])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            propsObject,
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ]);
 
@@ -1254,18 +1303,29 @@ function buildArrayMutationMethod(
     );
   }
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$onUpdate')
+  );
+
   const bodyStatements = [
     ...preludeStatements,
     ...statements,
     ...mutations,
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(
-          propDescriptors,
-          prop,
-          nextRef()
-        ),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(
+              propDescriptors,
+              prop,
+              nextRef()
+            ),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 
@@ -1842,15 +1902,26 @@ function buildMapMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$onUpdate')
+  );
+
   const bodyStatements = [
     ...prelude,
     ...statements,
     ...mutations,
     ...(skipNoopGuard ? [] : [buildNoopGuard(currentExpr, nextRef())]),
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(propDescriptors, prop, nextRef()),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(propDescriptors, prop, nextRef()),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 
@@ -1944,18 +2015,29 @@ function buildSetMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$onUpdate')
+  );
+
   const bodyStatements = [
     ...statements,
     ...mutations,
     buildNoopGuard(currentExpr, nextRef()),
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(
-          propDescriptors,
-          prop,
-          nextRef()
-        ),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(
+              propDescriptors,
+              prop,
+              nextRef()
+            ),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 

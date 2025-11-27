@@ -6,12 +6,12 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;
-  constructor(props?: UnionStringBool.Value) {
-    if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
-    super(UnionStringBool.TYPE_TAG, "UnionStringBool");
+  constructor(props?: UnionStringBool.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
+    super(UnionStringBool.TYPE_TAG, "UnionStringBool", onUpdate);
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
-    if (!props) UnionStringBool.EMPTY = this;
+    if (!props && !onUpdate) UnionStringBool.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
@@ -44,21 +44,21 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     return this.#optional;
   }
   deleteOptional(): UnionStringBool {
-    return new UnionStringBool({
+    return this.$update(new UnionStringBool({
       value: this.#value
-    });
+    }, this.$onUpdate));
   }
   setOptional(value: string | boolean): UnionStringBool {
-    return new UnionStringBool({
+    return this.$update(new UnionStringBool({
       value: this.#value,
       optional: value
-    });
+    }, this.$onUpdate));
   }
   setValue(value: string | boolean): UnionStringBool {
-    return new UnionStringBool({
+    return this.$update(new UnionStringBool({
       value: value,
       optional: this.#optional
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace UnionStringBool {

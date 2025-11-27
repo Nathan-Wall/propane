@@ -8,14 +8,14 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   #created: ImmutableDate;
   #note: string;
   #name: string;
-  constructor(props?: OptionalHole.Value) {
-    if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
-    super(OptionalHole.TYPE_TAG, "OptionalHole");
+  constructor(props?: OptionalHole.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && OptionalHole.EMPTY) return OptionalHole.EMPTY;
+    super(OptionalHole.TYPE_TAG, "OptionalHole", onUpdate);
     this.#id = props ? props.id : 0;
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#note = props ? props.note : undefined;
     this.#name = props ? props.name : "";
-    if (!props) OptionalHole.EMPTY = this;
+    if (!props && !onUpdate) OptionalHole.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
@@ -70,43 +70,43 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     return this.#name;
   }
   deleteNote(): OptionalHole {
-    return new OptionalHole({
+    return this.$update(new OptionalHole({
       id: this.#id,
       created: this.#created,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
   setCreated(value: ImmutableDate | Date): OptionalHole {
-    return new OptionalHole({
+    return this.$update(new OptionalHole({
       id: this.#id,
       created: value,
       note: this.#note,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): OptionalHole {
-    return new OptionalHole({
+    return this.$update(new OptionalHole({
       id: value,
       created: this.#created,
       note: this.#note,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): OptionalHole {
-    return new OptionalHole({
+    return this.$update(new OptionalHole({
       id: this.#id,
       created: this.#created,
       note: this.#note,
       name: value
-    });
+    }, this.$onUpdate));
   }
   setNote(value: string): OptionalHole {
-    return new OptionalHole({
+    return this.$update(new OptionalHole({
       id: this.#id,
       created: this.#created,
       note: value,
       name: this.#name
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace OptionalHole {

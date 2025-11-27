@@ -8,12 +8,12 @@ export class Distance extends Message<Distance.Data> {
   static EMPTY: Distance;
   #unit: DistanceUnit;
   #value: number;
-  constructor(props?: Distance.Value) {
-    if (!props && Distance.EMPTY) return Distance.EMPTY;
-    super(Distance.TYPE_TAG, "Distance");
+  constructor(props?: Distance.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Distance.EMPTY) return Distance.EMPTY;
+    super(Distance.TYPE_TAG, "Distance", onUpdate);
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;
-    if (!props) Distance.EMPTY = this;
+    if (!props && !onUpdate) Distance.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
@@ -45,16 +45,16 @@ export class Distance extends Message<Distance.Data> {
     return this.#value;
   }
   setUnit(value: DistanceUnit): Distance {
-    return new Distance({
+    return this.$update(new Distance({
       unit: value,
       value: this.#value
-    });
+    }, this.$onUpdate));
   }
   setValue(value: number): Distance {
-    return new Distance({
+    return this.$update(new Distance({
       unit: this.#unit,
       value: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Distance {

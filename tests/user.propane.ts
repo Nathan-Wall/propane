@@ -16,9 +16,9 @@ export class User extends Message<User.Data> {
   #active: boolean;
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
-  constructor(props?: User.Value) {
-    if (!props && User.EMPTY) return User.EMPTY;
-    super(User.TYPE_TAG, "User");
+  constructor(props?: User.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && User.EMPTY) return User.EMPTY;
+    super(User.TYPE_TAG, "User", onUpdate);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();
@@ -28,7 +28,7 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
-    if (!props) User.EMPTY = this;
+    if (!props && !onUpdate) User.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -136,7 +136,7 @@ export class User extends Message<User.Data> {
     return this.#height;
   }
   setActive(value: boolean): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -146,10 +146,10 @@ export class User extends Message<User.Data> {
       active: value,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setCreated(value: ImmutableDate | Date): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -159,10 +159,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setEmail(value: Email): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: value,
@@ -172,10 +172,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel'): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -185,10 +185,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: value,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setHeight(value: Distance.Value): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -198,10 +198,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: value instanceof Distance ? value : new Distance(value)
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): User {
-    return new User({
+    return this.$update(new User({
       id: value,
       name: this.#name,
       email: this.#email,
@@ -211,10 +211,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: value,
       email: this.#email,
@@ -224,10 +224,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setPasswordHash(value: Hash): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -237,10 +237,10 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
   setUpdated(value: ImmutableDate | Date): User {
-    return new User({
+    return this.$update(new User({
       id: this.#id,
       name: this.#name,
       email: this.#email,
@@ -250,7 +250,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace User {

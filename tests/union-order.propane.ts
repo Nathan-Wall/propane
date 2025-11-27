@@ -5,11 +5,11 @@ export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static EMPTY: StringFirst;
   #value: string | number;
-  constructor(props?: StringFirst.Value) {
-    if (!props && StringFirst.EMPTY) return StringFirst.EMPTY;
-    super(StringFirst.TYPE_TAG, "StringFirst");
+  constructor(props?: StringFirst.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && StringFirst.EMPTY) return StringFirst.EMPTY;
+    super(StringFirst.TYPE_TAG, "StringFirst", onUpdate);
     this.#value = props ? props.value : "";
-    if (!props) StringFirst.EMPTY = this;
+    if (!props && !onUpdate) StringFirst.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
@@ -31,9 +31,9 @@ export class StringFirst extends Message<StringFirst.Data> {
     return this.#value;
   }
   setValue(value: string | number): StringFirst {
-    return new StringFirst({
+    return this.$update(new StringFirst({
       value: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace StringFirst {
@@ -46,11 +46,11 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
   static EMPTY: NumberFirst;
   #value: number | string;
-  constructor(props?: NumberFirst.Value) {
-    if (!props && NumberFirst.EMPTY) return NumberFirst.EMPTY;
-    super(NumberFirst.TYPE_TAG, "NumberFirst");
+  constructor(props?: NumberFirst.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && NumberFirst.EMPTY) return NumberFirst.EMPTY;
+    super(NumberFirst.TYPE_TAG, "NumberFirst", onUpdate);
     this.#value = props ? props.value : 0;
-    if (!props) NumberFirst.EMPTY = this;
+    if (!props && !onUpdate) NumberFirst.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
@@ -72,9 +72,9 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     return this.#value;
   }
   setValue(value: number | string): NumberFirst {
-    return new NumberFirst({
+    return this.$update(new NumberFirst({
       value: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace NumberFirst {

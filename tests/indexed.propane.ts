@@ -12,9 +12,9 @@ export class Indexed extends Message<Indexed.Data> {
   #score: number | null;
   #alias: string | null;
   #status: string;
-  constructor(props?: Indexed.Value) {
-    if (!props && Indexed.EMPTY) return Indexed.EMPTY;
-    super(Indexed.TYPE_TAG, "Indexed");
+  constructor(props?: Indexed.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && Indexed.EMPTY) return Indexed.EMPTY;
+    super(Indexed.TYPE_TAG, "Indexed", onUpdate);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
@@ -23,7 +23,7 @@ export class Indexed extends Message<Indexed.Data> {
     this.#score = props ? props.score : 0;
     this.#alias = props ? props.alias : undefined;
     this.#status = props ? props.status : "";
-    if (!props) Indexed.EMPTY = this;
+    if (!props && !onUpdate) Indexed.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Indexed.Data>[] {
@@ -121,7 +121,7 @@ export class Indexed extends Message<Indexed.Data> {
     return this.#status;
   }
   deleteAlias(): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -129,10 +129,10 @@ export class Indexed extends Message<Indexed.Data> {
       nickname: this.#nickname,
       score: this.#score,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   deleteNickname(): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -140,10 +140,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setActive(value: boolean): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -152,10 +152,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setAge(value: number): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: value,
@@ -164,10 +164,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setAlias(value: string | null): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -176,10 +176,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: value,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: value,
       name: this.#name,
       age: this.#age,
@@ -188,10 +188,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setName(value: string): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: value,
       age: this.#age,
@@ -200,10 +200,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setNickname(value: string): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -212,10 +212,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setScore(value: number | null): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -224,10 +224,10 @@ export class Indexed extends Message<Indexed.Data> {
       score: value,
       alias: this.#alias,
       status: this.#status
-    });
+    }, this.$onUpdate));
   }
   setStatus(value: string): Indexed {
-    return new Indexed({
+    return this.$update(new Indexed({
       id: this.#id,
       name: this.#name,
       age: this.#age,
@@ -236,7 +236,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace Indexed {

@@ -8,14 +8,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   #data: ImmutableArrayBuffer;
   #extra: ImmutableArrayBuffer | undefined;
   #chunks: ImmutableArray<ImmutableArrayBuffer>;
-  constructor(props?: ArrayBufferMessage.Value) {
-    if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
-    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage");
+  constructor(props?: ArrayBufferMessage.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
+    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage", onUpdate);
     this.#id = props ? props.id : 0;
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
     this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : Object.freeze([]);
-    if (!props) ArrayBufferMessage.EMPTY = this;
+    if (!props && !onUpdate) ArrayBufferMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
@@ -76,141 +76,141 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.copyWithin(target, start, end);
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   deleteExtra(): ArrayBufferMessage {
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       chunks: this.#chunks
-    });
+    }, this.$onUpdate));
   }
   fillChunks(value: ArrayBuffer, start?: number, end?: number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.fill(value, start, end);
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   popChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.pop();
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   pushChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray, ...values];
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   reverseChunks(): ArrayBufferMessage {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.reverse();
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>): ArrayBufferMessage {
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: value
-    });
+    }, this.$onUpdate));
   }
   setData(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: value,
       extra: this.#extra,
       chunks: this.#chunks
-    });
+    }, this.$onUpdate));
   }
   setExtra(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: value,
       chunks: this.#chunks
-    });
+    }, this.$onUpdate));
   }
   setId(value: number): ArrayBufferMessage {
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: value,
       data: this.#data,
       extra: this.#extra,
       chunks: this.#chunks
-    });
+    }, this.$onUpdate));
   }
   shiftChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.shift();
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.sort(compareFn);
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   spliceChunks(start: number, deleteCount?: number, ...items): ArrayBufferMessage {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
   unshiftChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...values, ...chunksArray];
-    return new ArrayBufferMessage({
+    return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace ArrayBufferMessage {

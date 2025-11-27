@@ -87,7 +87,7 @@ export function getImportedName(
   return null;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 export function getFilename(nodePath: NodePath<t.Node>): string | null {
   const typePath = (nodePath as any).findParent(
     (p: any) => p.isTSTypeAliasDeclaration()

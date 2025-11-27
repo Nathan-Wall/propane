@@ -5,11 +5,11 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static EMPTY: ArrayMessage_Labels_Item;
   #name: string;
-  constructor(props?: ArrayMessage_Labels_Item.Value) {
-    if (!props && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
-    super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item");
+  constructor(props?: ArrayMessage_Labels_Item.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
+    super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item", onUpdate);
     this.#name = props ? props.name : "";
-    if (!props) ArrayMessage_Labels_Item.EMPTY = this;
+    if (!props && !onUpdate) ArrayMessage_Labels_Item.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
@@ -31,9 +31,9 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     return this.#name;
   }
   setName(value: string): ArrayMessage_Labels_Item {
-    return new ArrayMessage_Labels_Item({
+    return this.$update(new ArrayMessage_Labels_Item({
       name: value
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace ArrayMessage_Labels_Item {
@@ -49,14 +49,14 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   #scores: ImmutableArray<number>;
   #flags: ImmutableArray<boolean> | undefined;
   #labels: ImmutableArray<ArrayMessage_Labels_Item>;
-  constructor(props?: ArrayMessage.Value) {
-    if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
-    super(ArrayMessage.TYPE_TAG, "ArrayMessage");
+  constructor(props?: ArrayMessage.Value, onUpdate?: (val: this) => void) {
+    if (!props && !onUpdate && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
+    super(ArrayMessage.TYPE_TAG, "ArrayMessage", onUpdate);
     this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : Object.freeze([]);
     this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
-    if (!props) ArrayMessage.EMPTY = this;
+    if (!props && !onUpdate) ArrayMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
@@ -118,444 +118,444 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.copyWithin(target, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   copyWithinLabels(target: number, start: number, end?: number): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.copyWithin(target, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   copyWithinNames(target: number, start: number, end?: number): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.copyWithin(target, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   copyWithinScores(target: number, start: number, end?: number): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.copyWithin(target, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   deleteFlags(): ArrayMessage {
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   fillFlags(value: boolean, start?: number, end?: number): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.fill(value, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   fillLabels(value: ArrayMessage_Labels_Item, start?: number, end?: number): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.fill(value, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   fillNames(value: string, start?: number, end?: number): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.fill(value, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   fillScores(value: number, start?: number, end?: number): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.fill(value, start, end);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   popFlags(): ArrayMessage {
     if ((this.flags ?? []).length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.pop();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   popLabels(): ArrayMessage {
     if ((this.labels ?? []).length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.pop();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   popNames(): ArrayMessage {
     if ((this.names ?? []).length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.pop();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   popScores(): ArrayMessage {
     if ((this.scores ?? []).length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.pop();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   pushFlags(...values): ArrayMessage {
     if (values.length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray, ...values];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   pushLabels(...values): ArrayMessage {
     if (values.length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray, ...values];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   pushNames(...values): ArrayMessage {
     if (values.length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray, ...values];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   pushScores(...values): ArrayMessage {
     if (values.length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray, ...values];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   reverseFlags(): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.reverse();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   reverseLabels(): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.reverse();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   reverseNames(): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.reverse();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   reverseScores(): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.reverse();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   setFlags(value: boolean[] | Iterable<boolean>): ArrayMessage {
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: value,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   setLabels(value: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>): ArrayMessage {
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: value
-    });
+    }, this.$onUpdate));
   }
   setNames(value: string[] | Iterable<string>): ArrayMessage {
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: value,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   setScores(value: number[] | Iterable<number>): ArrayMessage {
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: value,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   shiftFlags(): ArrayMessage {
     if ((this.flags ?? []).length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.shift();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   shiftLabels(): ArrayMessage {
     if ((this.labels ?? []).length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.shift();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   shiftNames(): ArrayMessage {
     if ((this.names ?? []).length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.shift();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   shiftScores(): ArrayMessage {
     if ((this.scores ?? []).length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.shift();
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   sortFlags(compareFn?: (a: boolean, b: boolean) => number): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.sort(compareFn);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   sortLabels(compareFn?: (a: ArrayMessage_Labels_Item, b: ArrayMessage_Labels_Item) => number): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.sort(compareFn);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   sortNames(compareFn?: (a: string, b: string) => number): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.sort(compareFn);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   sortScores(compareFn?: (a: number, b: number) => number): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.sort(compareFn);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   spliceFlags(start: number, deleteCount?: number, ...items): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...flagsArray];
     flagsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   spliceLabels(start: number, deleteCount?: number, ...items): ArrayMessage {
     const labelsArray = this.#labels;
     const labelsNext = [...labelsArray];
     labelsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   spliceNames(start: number, deleteCount?: number, ...items): ArrayMessage {
     const namesArray = this.#names;
     const namesNext = [...namesArray];
     namesNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   spliceScores(start: number, deleteCount?: number, ...items): ArrayMessage {
     const scoresArray = this.#scores;
     const scoresNext = [...scoresArray];
     scoresNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   unshiftFlags(...values): ArrayMessage {
     if (values.length === 0) return this;
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
     const flagsNext = [...values, ...flagsArray];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   unshiftLabels(...values): ArrayMessage {
     if (values.length === 0) return this;
     const labelsArray = this.#labels;
     const labelsNext = [...values, ...labelsArray];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    });
+    }, this.$onUpdate));
   }
   unshiftNames(...values): ArrayMessage {
     if (values.length === 0) return this;
     const namesArray = this.#names;
     const namesNext = [...values, ...namesArray];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: namesNext,
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
   unshiftScores(...values): ArrayMessage {
     if (values.length === 0) return this;
     const scoresArray = this.#scores;
     const scoresNext = [...values, ...scoresArray];
-    return new ArrayMessage({
+    return this.$update(new ArrayMessage({
       names: this.#names,
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    });
+    }, this.$onUpdate));
   }
 }
 export namespace ArrayMessage {
