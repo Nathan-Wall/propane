@@ -1,0 +1,13 @@
+// A single cell can be empty (null), X, or O
+export type Cell = 'X' | 'O' | null;
+
+// A snapshot of the board at a point in time
+export type BoardState = {
+  '1:cells': Cell[];
+}
+
+// The complete game state with history for undo/time-travel
+export type GameState = {
+  '1:history': BoardState[];
+  '2:currentMove': number;
+}

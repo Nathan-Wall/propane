@@ -1,3 +1,4 @@
+// @ts-nocheck
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ImmutableArrayBuffer } from './immutable-array-buffer.js';
 

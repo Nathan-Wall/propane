@@ -1,10 +1,10 @@
 {
-  "name": "@propanejs/babel",
+  "name": "@propanejs/babel-messages",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "main": "../dist/babel/index.js",
-  "types": "../dist/babel/index.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "build": "tsc"
   },

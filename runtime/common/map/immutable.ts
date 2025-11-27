@@ -1,9 +1,13 @@
 import { normalizeForJson } from '../json/stringify.js';
+import { ADD_UPDATE_LISTENER } from '../../symbols.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
+  [ADD_UPDATE_LISTENER]?: (
+    listener: (val: unknown) => void
+  ) => { unsubscribe: () => void };
 } {
   return Boolean(
     value
@@ -161,10 +165,14 @@ function hashString(value: string): number {
   return hash;
 }
 
+type Listener<K, V> = (val: ImmutableMap<K, V>) => void;
+
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #buckets: Map<string, [K, V][]>;
   #size: number;
   #hash?: number;
+  protected readonly $listeners: Set<Listener<K, V>>;
+  #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   constructor(
@@ -172,44 +180,127 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       | Iterable<readonly [K, V]>
       | readonly (readonly [K, V])[]
       | ReadonlyMap<K, V>
+      | null,
+    listeners?: Set<Listener<K, V>>
   ) {
-    if (!entries) {
-      this.#buckets = new Map();
-      this.#size = 0;
-      return;
-    }
-
-    const source: Iterable<readonly [K, V]> =
-      entries instanceof Map || entries instanceof ImmutableMap
-        ? entries.entries()
-        // eslint-disable-next-line unicorn/new-for-builtins
-        : Symbol.iterator in Object(entries)
-          ? (entries as Iterable<readonly [K, V]>)
-          : (() => {
-            throw new TypeError(
-              'ImmutableMap constructor expects an iterable of entries.'
-            );
-          })();
-
+    this.$listeners = listeners ?? new Set();
     this.#buckets = new Map();
     this.#size = 0;
 
-    for (const [key, value] of source) {
-      const hash = hashKey(key);
-      const bucket = this.#buckets.get(hash);
-      if (!bucket) {
-        this.#buckets.set(hash, [[key, value]]);
-        this.#size += 1;
-        continue;
-      }
-      const match = bucket.findIndex(([k]) => equalKeys(k, key));
-      if (match === -1) {
-        bucket.push([key, value]);
-        this.#size += 1;
-      } else {
-        bucket[match] = [key, value];
+    if (entries) {
+      const source: Iterable<readonly [K, V]> =
+        entries instanceof Map
+        || entries instanceof ImmutableMap
+          ? entries.entries()
+          // eslint-disable-next-line unicorn/new-for-builtins
+          : Symbol.iterator in Object(entries)
+            ? (entries as Iterable<readonly [K, V]>)
+            : (() => {
+              throw new TypeError(
+                'ImmutableMap constructor expects an iterable of entries.'
+              );
+            })();
+
+      for (const [key, value] of source) {
+        this.#set(key, value);
       }
     }
+
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
+  }
+
+  [ADD_UPDATE_LISTENER](
+    listener: (val: this) => void
+  ): { unsubscribe: () => void } {
+    const l = listener as unknown as Listener<K, V>;
+    if (this.$listeners.size === 0) {
+      this.$enableChildListeners();
+    }
+    this.$listeners.add(l);
+    return {
+      unsubscribe: () => {
+        this.$listeners.delete(l);
+        if (this.$listeners.size === 0) {
+          this.$disableChildListeners();
+        }
+      },
+    };
+  }
+
+  protected $enableChildListeners(): void {
+    for (const bucket of this.#buckets.values()) {
+      for (const [key, value] of bucket) {
+        if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
+          const { unsubscribe } = value[ADD_UPDATE_LISTENER]((newValue: V) => {
+            this.set(key, newValue);
+          });
+          this.#childUnsubscribes.push(unsubscribe);
+        }
+      }
+    }
+  }
+
+  protected $disableChildListeners(): void {
+    for (const unsubscribe of this.#childUnsubscribes) {
+      unsubscribe();
+    }
+    this.#childUnsubscribes = [];
+  }
+
+  protected $update(value: this): this {
+    // eslint-disable-next-line unicorn/no-useless-spread
+    for (const listener of [...this.$listeners]) {
+      listener(value as unknown as ImmutableMap<K, V>);
+    }
+    return value;
+  }
+
+  #set(key: K, value: V): void {
+    const hash = hashKey(key);
+    const bucket = this.#buckets.get(hash);
+    if (!bucket) {
+      this.#buckets.set(hash, [[key, value]]);
+      this.#size += 1;
+      return;
+    }
+    const match = bucket.findIndex(([k]) => equalKeys(k, key));
+    if (match === -1) {
+      bucket.push([key, value]);
+      this.#size += 1;
+    } else {
+      bucket[match] = [key, value];
+    }
+  }
+
+  set(key: K, value: V): ImmutableMap<K, V> {
+    const hash = hashKey(key);
+    const bucket = this.#buckets.get(hash);
+    if (bucket) {
+      const entry = bucket.find(([k]) => equalKeys(k, key));
+      if (entry && equalValues(entry[1], value)) {
+        return this;
+      }
+    }
+    const next = new ImmutableMap(
+      [...this, [key, value]],
+      new Set(this.$listeners)
+    );
+    return this.$update(next as this);
+  }
+
+  delete(key: K): ImmutableMap<K, V> {
+    if (!this.has(key)) return this;
+    const newEntries = [...this].filter(([k]) => !equalKeys(k, key));
+    const next = new ImmutableMap(newEntries, new Set(this.$listeners));
+    return this.$update(next as this);
+  }
+
+  clear(): ImmutableMap<K, V> {
+    if (this.size === 0) return this;
+    const next = new ImmutableMap(null, new Set(this.$listeners));
+    return this.$update(next as this);
   }
 
   get size(): number {

@@ -1,9 +1,17 @@
 import { normalizeForJson } from '../json/stringify.js';
+import { ADD_UPDATE_LISTENER } from '../../symbols.js';
 
-function isMessageLike(value: unknown): value is {
+// Basic Listener type compatible with Message Listener
+type Listener<T> = (val: ImmutableArray<T>) => void;
+function isMessageLike(
+  value: unknown
+): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
+  [ADD_UPDATE_LISTENER]?: (
+    listener: (val: unknown) => void
+  ) => { unsubscribe: () => void };
 } {
   return Boolean(
     value
@@ -70,9 +78,15 @@ function hashValue(value: unknown): string {
 export class ImmutableArray<T> implements ReadonlyArray<T> {
   #items: T[];
   #hash?: number;
+  protected readonly $listeners: Set<Listener<T>>; 
+  #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableArray';
 
-  constructor(items?: Iterable<T> | ArrayLike<T>) {
+  constructor(
+    items?: Iterable<T> | ArrayLike<T>,
+    listeners?: Set<Listener<T>>
+  ) {
+    this.$listeners = listeners ?? new Set();
     if (!items) {
       this.#items = [];
       this.#defineIndexProps();
@@ -91,6 +105,55 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     this.#defineIndexProps();
     Object.freeze(this.#items);
     Object.freeze(this);
+
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
+  }
+
+  [ADD_UPDATE_LISTENER](
+    listener: (val: this) => void
+  ): { unsubscribe: () => void } {
+    const l = listener as unknown as Listener<T>;
+    if (this.$listeners.size === 0) {
+      this.$enableChildListeners();
+    }
+    this.$listeners.add(l);
+    return {
+      unsubscribe: () => {
+        this.$listeners.delete(l);
+        if (this.$listeners.size === 0) {
+          this.$disableChildListeners();
+        }
+      },
+    };
+  }
+
+  protected $enableChildListeners(): void {
+    for (let i = 0; i < this.#items.length; i++) {
+      const item = this.#items[i];
+      if (isMessageLike(item) && item[ADD_UPDATE_LISTENER]) {
+        const { unsubscribe } = item[ADD_UPDATE_LISTENER]((newItem) => {
+          this.set(i, newItem as T);
+        });
+        this.#childUnsubscribes.push(unsubscribe);
+      }
+    }
+  }
+
+  protected $disableChildListeners(): void {
+    for (const unsubscribe of this.#childUnsubscribes) {
+      unsubscribe();
+    }
+    this.#childUnsubscribes = [];
+  }
+
+  protected $update(value: this): this {
+    // eslint-disable-next-line unicorn/no-useless-spread
+    for (const listener of [...this.$listeners]) {
+      listener(value as unknown as ImmutableArray<T>);
+    }
+    return value;
   }
 
   get length(): number {
@@ -105,6 +168,19 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   get(index: number): T | undefined {
     return this.#items[index];
+  }
+
+  set(index: number, value: T): ImmutableArray<T> {
+    if (index < 0 || index >= this.#items.length) {
+      return this;
+    }
+    if (equalValues(this.#items[index], value)) {
+      return this;
+    }
+    const newItems = [...this.#items];
+    newItems[index] = value;
+    const next = new ImmutableArray(newItems, new Set(this.$listeners));
+    return this.$update(next as unknown as this);
   }
 
   entries(): IterableIterator<[number, T]> {
@@ -132,12 +208,14 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
   }
 
+  // @ts-expect-error Return type mismatch with ReadonlyArray
   map<U>(
     fn: (value: T, index: number, array: readonly T[]) => U
   ): ImmutableArray<U> {
     return new ImmutableArray(this.#items.map(fn));
   }
 
+  // @ts-expect-error Return type mismatch with ReadonlyArray
   filter(
     fn: (value: T, index: number, array: readonly T[]) => boolean
   ): ImmutableArray<T> {

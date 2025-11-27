@@ -49,8 +49,11 @@ export function ensureBaseImport(
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');
   }
-  if (state.usesTaggedMessageData && !hasImportBinding('isTaggedMessageData')) {
+  if (state.usesTaggedMessageData) {
     requiredSpecifiers.push('isTaggedMessageData');
+  }
+  if (state.usesListeners) {
+    requiredSpecifiers.push('ADD_UPDATE_LISTENER');
   }
 
   if (existingImport) {

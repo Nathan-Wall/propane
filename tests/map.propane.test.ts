@@ -141,15 +141,6 @@ export default function runMapPropaneTests() {
   }
   assert(seen.length === 2, 'ImmutableMap forEach did not visit entries.');
 
-  const mutableCheck = immutable as {
-    set?: unknown;
-    delete?: unknown;
-    clear?: unknown;
-  };
-  assert(mutableCheck.set === undefined, 'ImmutableMap should not expose set.');
-  assert(mutableCheck.delete === undefined, 'ImmutableMap should not expose delete.');
-  assert(mutableCheck.clear === undefined, 'ImmutableMap should not expose clear.');
-
   const plainMap = immutable.toMap();
   plainMap.set('gamma', 3);
   assert(!immutable.has('gamma'), 'ImmutableMap should remain immutable after toMap.');

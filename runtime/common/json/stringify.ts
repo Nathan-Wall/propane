@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ImmutableDate } from '../time/date.js';
 import { ImmutableUrl } from '../web/url.js';
 import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.js';

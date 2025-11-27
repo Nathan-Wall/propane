@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import {
@@ -28,6 +28,7 @@ export interface PluginStateFlags {
   usesImmutableArrayBuffer: boolean;
   usesEquals: boolean;
   usesTaggedMessageData: boolean;
+  usesListeners: boolean;
 }
 
 export interface PropDescriptor {

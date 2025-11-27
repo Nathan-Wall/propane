@@ -1,7 +1,7 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "../build/babel",
+    "outDir": "../../../build/babel/messages",
     "rootDir": ".",
     "declaration": true,
     "strict": false,

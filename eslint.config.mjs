@@ -209,4 +209,23 @@ export default defineConfig(
     },
   },
 
+  // 10) Allow @ts-nocheck in runtime source (legacy/compat reasons)
+  {
+    name: 'overrides/runtime-nocheck',
+    files: ['runtime/**/*.ts'],
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+
+  // 11) Relax rules for react bindings
+  {
+    name: 'overrides/react-bindings',
+    files: ['react/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
 );
+

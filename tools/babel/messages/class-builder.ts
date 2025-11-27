@@ -160,6 +160,25 @@ export function buildClassFromProperties(
   );
   constructorParam.optional = true;
 
+  const listenersParam = t.identifier('listeners');
+  listenersParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeReference(
+      t.identifier('Set'),
+      t.tsTypeParameterInstantiation([
+        t.tsFunctionType(
+          null,
+          [
+            Object.assign(t.identifier('val'), {
+              typeAnnotation: t.tsTypeAnnotation(t.tsThisType()),
+            }),
+          ],
+          t.tsTypeAnnotation(t.tsVoidKeyword())
+        ),
+      ])
+    )
+  );
+  listenersParam.optional = true;
+
   const constructorAssignments = propDescriptors.map((prop) => {
     const propsAccess = t.memberExpression(
       t.identifier('props'),
@@ -251,11 +270,37 @@ export function buildClassFromProperties(
     return t.expressionStatement(assignment);
   });
 
+  const enableListenersCall = t.ifStatement(
+    t.binaryExpression(
+      '>',
+      t.memberExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$listeners')),
+        t.identifier('size')
+      ),
+      t.numericLiteral(0)
+    ),
+    t.blockStatement([
+      t.expressionStatement(
+        t.callExpression(
+          t.memberExpression(
+            t.thisExpression(),
+            t.identifier('$enableChildListeners')
+          ),
+          []
+        )
+      ),
+    ])
+  );
+
   const memoizationCheck = t.ifStatement(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
-      t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      t.logicalExpression(
+        '&&',
+        t.unaryExpression('!', t.identifier('listeners')),
+        t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      )
     ),
     t.returnStatement(
       t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
@@ -263,7 +308,11 @@ export function buildClassFromProperties(
   );
 
   const memoizationSet = t.ifStatement(
-    t.unaryExpression('!', t.identifier('props')),
+    t.logicalExpression(
+      '&&',
+      t.unaryExpression('!', t.identifier('props')),
+      t.unaryExpression('!', t.identifier('listeners'))
+    ),
     t.expressionStatement(
       t.assignmentExpression(
         '=',
@@ -273,18 +322,10 @@ export function buildClassFromProperties(
     )
   );
 
-  // Return interned instance for automatic deduplication
-  const returnInterned = t.returnStatement(
-    t.callExpression(
-      t.memberExpression(t.thisExpression(), t.identifier('intern')),
-      []
-    )
-  );
-
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
-    [constructorParam],
+    [constructorParam, listenersParam],
     t.blockStatement([
       memoizationCheck,
       t.expressionStatement(
@@ -294,11 +335,12 @@ export function buildClassFromProperties(
             t.identifier('TYPE_TAG')
           ),
           t.stringLiteral(typeName),
+          t.identifier('listeners'),
         ])
       ),
       ...constructorAssignments,
+      enableListenersCall,
       memoizationSet,
-      returnInterned,
     ])
   );
 
@@ -330,6 +372,11 @@ export function buildClassFromProperties(
     state
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
+  const enableChildListenersMethod = buildEnableChildListenersMethod(
+    typeName,
+    propDescriptors,
+    state
+  );
 
   const setterMethods = propDescriptors.map((prop) =>
     buildSetterMethod(
@@ -355,13 +402,19 @@ export function buildClassFromProperties(
     propDescriptors
   );
 
-  const classBody = t.classBody([
+  const classBodyMembers = [
     ...staticFields,
     ...backingFields,
     constructor,
     descriptorMethod,
     fromEntriesMethod,
-    ...getters,
+  ];
+
+  if (enableChildListenersMethod) {
+    classBodyMembers.push(enableChildListenersMethod);
+  }
+
+  classBodyMembers.push(...getters,
     ...[
       ...setterMethods,
       ...deleteMethods,
@@ -374,8 +427,9 @@ export function buildClassFromProperties(
       if (nameA < nameB) return -1;
       if (nameA > nameB) return 1;
       return 0;
-    }),
-  ]);
+    }));
+
+  const classBody = t.classBody(classBodyMembers);
 
   const classDecl = t.classDeclaration(
     t.identifier(typeName),
@@ -618,6 +672,7 @@ function buildFromEntriesMethod(
       );
       checkedValueId = abValueId;
     } else if (prop.isMessageType && prop.messageTypeName) {
+      state.usesListeners = true;
       const messageValueId = t.identifier(`${prop.name}MessageValue`);
       statements.push(
         t.variableDeclaration('const', [
@@ -896,9 +951,22 @@ function buildSetterMethod(
     setterValueExpr
   );
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$listeners')
+  );
+
   const body = t.blockStatement([
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [propsObject])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            propsObject,
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ]);
 
@@ -927,9 +995,22 @@ function buildDeleteMethod(
     { omitTarget: true }
   );
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$listeners')
+  );
+
   const body = t.blockStatement([
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [propsObject])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            propsObject,
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ]);
 
@@ -1254,18 +1335,29 @@ function buildArrayMutationMethod(
     );
   }
 
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$listeners')
+  );
+
   const bodyStatements = [
     ...preludeStatements,
     ...statements,
     ...mutations,
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(
-          propDescriptors,
-          prop,
-          nextRef()
-        ),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(
+              propDescriptors,
+              prop,
+              nextRef()
+            ),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 
@@ -1842,15 +1934,26 @@ function buildMapMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$listeners')
+  );
+
   const bodyStatements = [
     ...prelude,
     ...statements,
     ...mutations,
     ...(skipNoopGuard ? [] : [buildNoopGuard(currentExpr, nextRef())]),
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(propDescriptors, prop, nextRef()),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(propDescriptors, prop, nextRef()),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 
@@ -1944,18 +2047,29 @@ function buildSetMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
+  const onUpdateAccess = t.memberExpression(
+    t.thisExpression(),
+    t.identifier('$listeners')
+  );
+
   const bodyStatements = [
     ...statements,
     ...mutations,
     buildNoopGuard(currentExpr, nextRef()),
     t.returnStatement(
-      t.newExpression(t.identifier(typeName), [
-        buildPropsObjectExpression(
-          propDescriptors,
-          prop,
-          nextRef()
-        ),
-      ])
+      t.callExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('$update')),
+        [
+          t.newExpression(t.identifier(typeName), [
+            buildPropsObjectExpression(
+              propDescriptors,
+              prop,
+              nextRef()
+            ),
+            onUpdateAccess,
+          ]),
+        ]
+      )
     ),
   ];
 
@@ -2337,4 +2451,94 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
     )
   );
   return [predicateId];
+}
+
+function buildEnableChildListenersMethod(
+  typeName: string,
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  state: PluginStateFlags
+): t.ClassMethod | null {
+  const statements: t.Statement[] = [];
+
+  const listenableProps = propDescriptors.filter(
+    (prop) =>
+      (prop.isMessageType && prop.messageTypeName)
+      || prop.isArray
+      || prop.isMap
+      || prop.isSet
+  );
+
+  if (listenableProps.length > 0) {
+    state.usesListeners = true;
+  }
+
+  for (const prop of listenableProps) {
+    const fieldAccess = t.memberExpression(
+      t.thisExpression(),
+      t.cloneNode(prop.privateName)
+    );
+
+    const addListenerCall = t.callExpression(
+      t.memberExpression(
+        fieldAccess,
+        t.identifier('ADD_UPDATE_LISTENER'),
+        true
+      ),
+      [
+        t.arrowFunctionExpression(
+          [t.identifier('newValue')],
+          t.blockStatement([
+            t.expressionStatement(
+              t.callExpression(
+                t.memberExpression(
+                  t.thisExpression(),
+                  t.identifier(`set${capitalize(prop.name)}`)
+                ),
+                [t.identifier('newValue')]
+              )
+            ),
+          ])
+        ),
+      ]
+    );
+
+    const addChildUnsubscribeCall = t.callExpression(
+      t.memberExpression(
+        t.thisExpression(),
+        t.identifier('$addChildUnsubscribe')
+      ),
+      [
+        t.memberExpression(addListenerCall, t.identifier('unsubscribe')),
+      ]
+    );
+
+    const listenerStatement = t.expressionStatement(addChildUnsubscribeCall);
+
+    if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
+      statements.push(
+        t.ifStatement(
+          fieldAccess,
+          t.blockStatement([listenerStatement])
+        )
+      );
+    }
+    else {
+      statements.push(listenerStatement);
+    }
+  }
+
+  if (statements.length === 0) {
+    return null;
+  }
+  
+  const method = t.classMethod(
+    'method',
+    t.identifier('$enableChildListeners'),
+    [],
+    t.blockStatement(statements)
+  );
+  method.accessibility = 'protected';
+  method.returnType = t.tsTypeAnnotation(t.tsVoidKeyword());
+
+  return method;
 }

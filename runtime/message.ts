@@ -6,6 +6,7 @@ import { ImmutableArray } from './common/array/immutable.js';
 import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import { ImmutableDate } from './common/time/date.js';
 import { ImmutableUrl } from './common/web/url.js';
+import { ADD_UPDATE_LISTENER } from './symbols.js';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -36,6 +37,9 @@ export type DataValue =
   | ImmutableUrl
   | ArrayBuffer
   | ImmutableArrayBuffer
+  | ImmutableMap<unknown, unknown>
+  | ImmutableSet<unknown>
+  | TaggedMessageData
   | DataObject
   | DataArray;
 export type DataArray = DataValue[];
@@ -51,7 +55,7 @@ export type MapKey =
 
 export interface TaggedMessageData {
   $tag: string;
-  $data: Record<string, unknown>;
+  $data: DataObject;
 }
 
 export function isTaggedMessageData(
@@ -66,6 +70,11 @@ export function isTaggedMessageData(
   );
 }
 
+// eslint-disable-next-line unicorn/prefer-export-from
+export { ADD_UPDATE_LISTENER };
+
+type Listener<T extends DataObject> = (val: Message<T>) => void;
+
 export interface MessagePropDescriptor<T extends object> {
   name: keyof T;
   fieldNumber: number | null;
@@ -79,7 +88,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface MessageConstructor<T extends DataObject> {
-  new(props: T): Message<T>;
+  new(props: T, listeners?: Set<Listener<T>>): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -96,16 +105,62 @@ const registry = new FinalizationRegistry<string>((key) => {
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
+  protected readonly $listeners: Set<Listener<T>>;
+  #childUnsubscribes: (() => void)[] = [];
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  protected $enableChildListeners(): void {}
 
-  protected constructor(typeTag: symbol, typeName: string) {
+  protected constructor(
+    typeTag: symbol,
+    typeName: string,
+    listeners?: Set<Listener<T>>
+  ) {
     this.#typeTag = typeTag;
     this.#typeName = typeName;
+    this.$listeners = listeners ?? new Set();
+  }
+
+  [ADD_UPDATE_LISTENER](
+    listener: (val: this) => void
+  ): { unsubscribe: () => void } {
+    const l = listener as unknown as Listener<T>;
+    if (this.$listeners.size === 0) {
+      this.$enableChildListeners();
+    }
+    this.$listeners.add(l);
+    return {
+      unsubscribe: () => {
+        this.$listeners.delete(l);
+        if (this.$listeners.size === 0) {
+          this.$disableChildListeners();
+        }
+      },
+    };
+  }
+
+  protected $addChildUnsubscribe(fn: () => void): void {
+    this.#childUnsubscribes.push(fn);
+  }
+
+  protected $disableChildListeners(): void {
+    for (const unsubscribe of this.#childUnsubscribes) {
+      unsubscribe();
+    }
+    this.#childUnsubscribes = [];
+  }
+
+  protected $update(value: this): this {
+    // eslint-disable-next-line unicorn/no-useless-spread
+    for (const listener of [...this.$listeners]) {
+      listener(value as unknown as Message<T>);
+    }
+    return value;
   }
 
   get $typeName(): string {
@@ -242,10 +297,10 @@ export abstract class Message<T extends DataObject> {
     const existing = internPool.get(key)?.deref();
 
     if (existing && existing.#typeTag === this.#typeTag) {
-      return existing as this;
+      return existing as unknown as this;
     }
 
-    internPool.set(key, new WeakRef(this));
+    internPool.set(key, new WeakRef(this as unknown as Message<DataObject>));
     registry.register(this, key);
     return this;
   }
@@ -323,9 +378,11 @@ function serializePrimitive(value: unknown): string {
   }
 
   if (value instanceof Message) {
-    const descriptors = (
-      value as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
-    ).$getPropDescriptors();
+    interface DescriptorGetter {
+      $getPropDescriptors(): MessagePropDescriptor<DataObject>[];
+    }
+    const descriptors = (value as unknown as DescriptorGetter)
+      .$getPropDescriptors();
     const entries = descriptors.map((d) => ({
       key: String(d.name),
       value: d.getValue(),
@@ -337,7 +394,7 @@ function serializePrimitive(value: unknown): string {
     if (isDateValue(value)) {
       return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
     }
-    return serializeObjectLiteral(value as Record<string, unknown>);
+    return serializeObjectLiteral(value as DataObject);
   }
 
   if (typeof value === 'string') {
@@ -367,9 +424,11 @@ function serializeSetLiteral(values: ReadonlySet<unknown>): string {
 
 function serializeTaggedMessage(message: Message<DataObject>): string {
   const typeName = message.$typeName;
-  const descriptors = (
-    message as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
-  ).$getPropDescriptors();
+  interface DescriptorGetter {
+    $getPropDescriptors(): MessagePropDescriptor<DataObject>[];
+  }
+  const descriptors = (message as unknown as DescriptorGetter)
+    .$getPropDescriptors();
 
   const entries: ObjectEntry[] = [];
   let expectedIndex = 1;
@@ -537,11 +596,15 @@ interface ObjectEntry {
 }
 
 function serializeObjectLiteral(
-  recordOrEntries: Record<string, unknown> | ObjectEntry[]
+  recordOrEntries: DataObject | ObjectEntry[]
 ): string {
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
-    : Object.entries(recordOrEntries).map(([key, value]) => ({ key, value }));
+    : Object.entries(recordOrEntries).map(([key, value]) => ({
+      key,
+      value,
+      tagMessages: undefined,
+    }));
 
   const serialized = entries.map(({ key, value, tagMessages }) => {
     const serializedValue = tagMessages && value instanceof Message
@@ -549,7 +612,7 @@ function serializeObjectLiteral(
       : serializePrimitive(value);
     return key == null
       ? serializedValue
-      : `${serializeObjectKey(key)}:${serializedValue}`;
+      : `${serializeObjectKey(key as string)}:${serializedValue}`;
   });
   return `{${serialized.join(',')}}`;
 }
@@ -694,7 +757,7 @@ function parseLiteralToken(token: string) {
   throw new Error(`Invalid literal token: ${trimmed}`);
 }
 
-function parseObjectLiteral(literal: string): Record<string, unknown> {
+function parseObjectLiteral(literal: string): DataObject {
   const trimmed = literal.trim();
 
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
@@ -710,7 +773,7 @@ function parseObjectLiteral(literal: string): Record<string, unknown> {
 
   let expectedIndex = 1;
 
-  return tokens.reduce<Record<string, unknown>>((entries, token) => {
+  return tokens.reduce<DataObject>((entries, token) => {
     if (!token) {
       return entries;
     }

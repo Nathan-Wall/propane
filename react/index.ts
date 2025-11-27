@@ -1,13 +1,35 @@
-import { useState, memo } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import type { Dispatch, SetStateAction, ComponentType } from 'react';
-import { equals } from '@propanejs/runtime';
+import { equals, ADD_UPDATE_LISTENER } from '@propanejs/runtime';
+
+interface PropaneListenable<T> {
+  [ADD_UPDATE_LISTENER](
+    listener: (val: T) => void
+  ): { unsubscribe: () => void };
+}
 
 export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
   const [state, setState] = useState(initialState);
 
-  const setPropaneState: Dispatch<SetStateAction<S>> = (value) => {
+  useEffect(() => {
+    if (
+      state
+      && typeof state === 'object'
+      && ADD_UPDATE_LISTENER in state
+    ) {
+      const listenableState = state as unknown as PropaneListenable<S>;
+      const { unsubscribe } = listenableState[ADD_UPDATE_LISTENER](
+        (next: S) => {
+          setState(next);
+        }
+      );
+      return unsubscribe;
+    }
+  }, [state]);
+
+  const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
     setState((prev) => {
       const next = typeof value === 'function'
         ? (value as (prev: S) => S)(prev)
@@ -17,12 +39,11 @@ export function usePropaneState<S>(
       }
       return next;
     });
-  };
+  }, []);
 
   return [state, setPropaneState];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function shallowEqual(objA: any, objB: any) {
   if (Object.is(objA, objB)) {
     return true;
