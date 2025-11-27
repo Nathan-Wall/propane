@@ -127,14 +127,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   protected $enableChildListeners(): void {
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
-      if (isMessageLike(item) && item[ADD_UPDATE_LISTENER]) {
-        const { unsubscribe } = item[ADD_UPDATE_LISTENER]((newItem) => {
-          // When child updates, create new array with updated item
-          const next = this.set(i, newItem as T);
-          // $update is called by set() internally if we implement it there?
-          // set() returns new ImmutableArray.
-          // We need to trigger OUR listeners with `next`.
-          this.$update(next);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (isMessageLike(item) && (item as any)[ADD_UPDATE_LISTENER]) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { unsubscribe } = (item as any)[ADD_UPDATE_LISTENER]((newItem: T) => {
+          this.set(i, newItem);
         });
         this.#childUnsubscribes.push(unsubscribe);
       }
@@ -179,7 +176,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const newItems = [...this.#items];
     newItems[index] = value;
-    const next = new ImmutableArray(newItems, this.$listeners);
+    const next = new ImmutableArray(newItems, new Set(this.$listeners));
     return this.$update(next);
   }
 

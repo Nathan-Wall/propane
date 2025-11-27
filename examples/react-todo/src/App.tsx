@@ -38,21 +38,23 @@ function App() {
     const text = input.value.trim();
     if (!text) return;
 
-    /*state.todos.update(u => u.push(new Todo({
+    // update
+    state.todos.push(new Todo({
       id: uuid(),
       text: text,
       completed: false,
-    })));*/
+    }));
 
     form.reset();
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    /*state.update(u => u.setFilter(e.target.value));
-    update(state, draft => draft.filter = e.target.value);
-    state.updateFilter(e.target.value);
+    // update
+    state.setFilter(e.target.value);
+    // update(() => state.setFilter(e.target.value));
+    // state.setFilter(e.target.value).commit();
     // Immer
-    setState(draft => draft.filter = e.target.value);*/
+    // setState(draft => draft.filter = e.target.value);
   };
 
   // Demonstration of equality check skipping render
@@ -94,7 +96,7 @@ function App() {
           <TodoItem
             key={todo.id}
             todo={todo}
-            onToggle={null /*todo.update(u => u.setCompleted(false))*/}
+            onToggle={/* update */todo.setCompleted(false)}
           />
         ))}
       </ul>

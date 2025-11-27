@@ -145,7 +145,7 @@ async function copyTests() {
   }
 
   // Transpile helper files
-  const helpers = ['run-tests.ts', 'assert.ts', 'hash-helpers.ts', 'test-harness.ts', 'propane-test-types.ts'];
+  const helpers = ['run-tests.ts', 'assert.ts', 'hash-helpers.ts', 'test-harness.ts', 'propane-test-types.ts', 'array-listeners.test.ts'];
   for (const helper of helpers) {
     const srcPath = path.join(testsDir, helper);
     if (!fs.existsSync(srcPath)) continue;
