@@ -7,6 +7,7 @@ import { ImmutableArray } from './common/array/immutable.js';
 import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import { ImmutableDate } from './common/time/date.js';
 import { ImmutableUrl } from './common/web/url.js';
+import { ADD_UPDATE_LISTENER } from './symbols.js';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -67,7 +68,7 @@ export function isTaggedMessageData(
   );
 }
 
-export const ADD_UPDATE_LISTENER = Symbol('ADD_UPDATE_LISTENER');
+export { ADD_UPDATE_LISTENER };
 
 type Listener<T extends DataObject> = (val: Message<T>) => void;
 

@@ -1,10 +1,16 @@
 // @ts-nocheck
 import { normalizeForJson } from '../json/stringify.js';
+import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import type { Message } from '../../message.js';
+
+// Basic Listener type compatible with Message Listener
+type Listener<T> = (val: ImmutableArray<T>) => void;
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
+  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => { unsubscribe: () => void };
 } {
   return Boolean(
     value
@@ -71,9 +77,12 @@ function hashValue(value: unknown): string {
 export class ImmutableArray<T> implements ReadonlyArray<T> {
   #items: T[];
   #hash?: number;
+  protected readonly $listeners: Set<Listener<T>>;
+  #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableArray';
 
-  constructor(items?: Iterable<T> | ArrayLike<T>) {
+  constructor(items?: Iterable<T> | ArrayLike<T>, listeners?: Set<Listener<T>>) {
+    this.$listeners = listeners ?? new Set();
     if (!items) {
       this.#items = [];
       this.#defineIndexProps();
@@ -92,6 +101,59 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     this.#defineIndexProps();
     Object.freeze(this.#items);
     Object.freeze(this);
+
+    if (this.$listeners.size > 0) {
+      this.$enableChildListeners();
+    }
+  }
+
+  [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const l = listener as unknown as Listener<T>;
+    if (this.$listeners.size === 0) {
+      this.$enableChildListeners();
+    }
+    this.$listeners.add(l);
+    return {
+      unsubscribe: () => {
+        this.$listeners.delete(l);
+        if (this.$listeners.size === 0) {
+          this.$disableChildListeners();
+        }
+      },
+    };
+  }
+
+  protected $enableChildListeners(): void {
+    for (let i = 0; i < this.#items.length; i++) {
+      const item = this.#items[i];
+      if (isMessageLike(item) && item[ADD_UPDATE_LISTENER]) {
+        const { unsubscribe } = item[ADD_UPDATE_LISTENER]((newItem) => {
+          // When child updates, create new array with updated item
+          const next = this.set(i, newItem as T);
+          // $update is called by set() internally if we implement it there?
+          // set() returns new ImmutableArray.
+          // We need to trigger OUR listeners with `next`.
+          this.$update(next);
+        });
+        this.#childUnsubscribes.push(unsubscribe);
+      }
+    }
+  }
+
+  protected $disableChildListeners(): void {
+    for (const unsubscribe of this.#childUnsubscribes) {
+      unsubscribe();
+    }
+    this.#childUnsubscribes = [];
+  }
+
+  protected $update(value: this): this {
+    for (const listener of this.$listeners) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      listener(value as unknown as ImmutableArray<T>);
+    }
+    return value;
   }
 
   get length(): number {
@@ -106,6 +168,19 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   get(index: number): T | undefined {
     return this.#items[index];
+  }
+
+  set(index: number, value: T): ImmutableArray<T> {
+    if (index < 0 || index >= this.#items.length) {
+      return this;
+    }
+    if (equalValues(this.#items[index], value)) {
+      return this;
+    }
+    const newItems = [...this.#items];
+    newItems[index] = value;
+    const next = new ImmutableArray(newItems, this.$listeners);
+    return this.$update(next);
   }
 
   entries(): IterableIterator<[number, T]> {
