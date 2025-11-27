@@ -14,7 +14,6 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? props.urlValues : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new Map();
     this.#optionalDateMap = props ? props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : undefined;
     if (!props && !listeners) MapDateKey.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapDateKey.Data>[] {
     return [{

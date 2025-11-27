@@ -10,7 +10,6 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber", listeners);
     this.#val = props ? props.val : 0;
     if (!props && !listeners) UnionFirstNumber.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
     return [{
@@ -51,7 +50,6 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     super(UnionFirstString.TYPE_TAG, "UnionFirstString", listeners);
     this.#val = props ? props.val : "";
     if (!props && !listeners) UnionFirstString.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
     return [{
@@ -92,7 +90,6 @@ export class OptionalField extends Message<OptionalField.Data> {
     super(OptionalField.TYPE_TAG, "OptionalField", listeners);
     this.#val = props ? props.val : undefined;
     if (!props && !listeners) OptionalField.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalField.Data>[] {
     return [{
@@ -136,7 +133,6 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     super(RequiredMessage.TYPE_TAG, "RequiredMessage", listeners);
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
     if (!props && !listeners) RequiredMessage.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
     return [{

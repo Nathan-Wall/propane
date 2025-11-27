@@ -14,7 +14,6 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
     if (!props && !listeners) ToJson_Nested.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
     return [{
@@ -410,7 +409,6 @@ export class ToJson extends Message<ToJson.Data> {
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
     if (!props && !listeners) ToJson.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
     return [{

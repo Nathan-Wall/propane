@@ -16,7 +16,6 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
     this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : Object.freeze([]);
     if (!props && !listeners) UrlMessage.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
     return [{

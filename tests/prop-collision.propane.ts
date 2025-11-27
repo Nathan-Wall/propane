@@ -12,7 +12,6 @@ export class Foo extends Message<Foo.Data> {
     this.#name = props ? props.name : "";
     this.#_name = props ? props._name : "";
     if (!props && !listeners) Foo.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Foo.Data>[] {
     return [{

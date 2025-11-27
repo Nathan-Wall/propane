@@ -14,7 +14,6 @@ export class Hole extends Message<Hole.Data> {
     this.#value = props ? props.value : 0;
     this.#name = props ? props.name : "";
     if (!props && !listeners) Hole.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Hole.Data>[] {
     return [{

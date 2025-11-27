@@ -12,7 +12,6 @@ export class Cat extends Message<Cat.Data> {
     this.#name = props ? props.name : "";
     this.#meows = props ? props.meows : false;
     if (!props && !listeners) Cat.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Cat.Data>[] {
     return [{
@@ -74,7 +73,6 @@ export class Dog extends Message<Dog.Data> {
     this.#name = props ? props.name : "";
     this.#barks = props ? props.barks : false;
     if (!props && !listeners) Dog.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Dog.Data>[] {
     return [{
@@ -138,7 +136,6 @@ export class PetOwner extends Message<PetOwner.Data> {
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
     if (!props && !listeners) PetOwner.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
     return [{

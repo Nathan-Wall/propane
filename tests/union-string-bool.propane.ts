@@ -12,7 +12,6 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
     if (!props && !listeners) UnionStringBool.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
     return [{

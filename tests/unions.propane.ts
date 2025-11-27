@@ -19,7 +19,6 @@ export class Unions extends Message<Unions.Data> {
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
     if (!props && !listeners) Unions.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
     return [{

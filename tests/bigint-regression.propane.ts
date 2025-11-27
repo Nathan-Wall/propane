@@ -12,7 +12,6 @@ export class Wrapper extends Message<Wrapper.Data> {
     super(Wrapper.TYPE_TAG, "Wrapper", listeners);
     this.#payload = props ? props.payload : 0n;
     if (!props && !listeners) Wrapper.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
     return [{

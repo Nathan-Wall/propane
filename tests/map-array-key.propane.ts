@@ -14,7 +14,6 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     this.#numberArrayMap = props ? props.numberArrayMap === undefined || props.numberArrayMap === null ? props.numberArrayMap : new ImmutableMap(Array.from(props.numberArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new Map();
     this.#optionalArrayMap = props ? props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (!props && !listeners) MapArrayKey.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapArrayKey.Data>[] {
     return [{

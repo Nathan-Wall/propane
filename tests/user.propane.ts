@@ -29,7 +29,6 @@ export class User extends Message<User.Data> {
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
     if (!props && !listeners) User.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
     return [{

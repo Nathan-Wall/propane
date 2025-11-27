@@ -300,14 +300,6 @@ export function buildClassFromProperties(
     )
   );
 
-  // Return interned instance for automatic deduplication
-  const returnInterned = t.returnStatement(
-    t.callExpression(
-      t.memberExpression(t.thisExpression(), t.identifier('intern')),
-      []
-    )
-  );
-
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
@@ -326,7 +318,6 @@ export function buildClassFromProperties(
       ),
       ...constructorAssignments,
       memoizationSet,
-      returnInterned,
     ])
   );
 

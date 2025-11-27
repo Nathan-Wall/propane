@@ -10,7 +10,6 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item", listeners);
     this.#name = props ? props.name : "";
     if (!props && !listeners) ArrayMessage_Labels_Item.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
     return [{
@@ -57,7 +56,6 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
     if (!props && !listeners) ArrayMessage.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
     return [{

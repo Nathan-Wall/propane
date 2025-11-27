@@ -14,7 +14,6 @@ export class Distance extends Message<Distance.Data> {
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;
     if (!props && !listeners) Distance.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
     return [{

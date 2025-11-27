@@ -20,7 +20,6 @@ export class Primitives extends Message<Primitives.Data> {
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
     if (!props && !listeners) Primitives.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
     return [{

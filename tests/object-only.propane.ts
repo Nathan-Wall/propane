@@ -16,7 +16,6 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
     this.#age = props ? props.age : 0;
     this.#active = props ? props.active : false;
     if (!props && !listeners) ObjectOnly.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
     return [{

@@ -10,7 +10,6 @@ export class StringFirst extends Message<StringFirst.Data> {
     super(StringFirst.TYPE_TAG, "StringFirst", listeners);
     this.#value = props ? props.value : "";
     if (!props && !listeners) StringFirst.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
     return [{
@@ -51,7 +50,6 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     super(NumberFirst.TYPE_TAG, "NumberFirst", listeners);
     this.#value = props ? props.value : 0;
     if (!props && !listeners) NumberFirst.EMPTY = this;
-    return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
     return [{
