@@ -27,6 +27,7 @@ class TestMessage extends Message<{ value: string }> {
     return { value: entries.value };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   protected $enableChildListeners() {}
 
   getValue() {
@@ -50,7 +51,7 @@ function testArrayDeepUpdate() {
   const item2 = new TestMessage({ value: 'two' });
   
   // Create array
-  let array = new ImmutableArray([item1, item2]);
+  const array = new ImmutableArray([item1, item2]);
   
   // Simulate React state update
   // We subscribe to the *current* array.

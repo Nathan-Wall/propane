@@ -1,10 +1,5 @@
-// @ts-nocheck
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
-import type { Message } from '../../message.js';
-
-// Basic Listener type
-type Listener<T> = (val: ImmutableSet<T>) => void;
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
@@ -74,6 +69,8 @@ function hashValue(value: unknown): string {
   return `obj:${hashString(Object.prototype.toString.call(value))}`;
 }
 
+type Listener<T> = (val: ImmutableSet<T>) => void;
+
 export class ImmutableSet<T> implements ReadonlySet<T> {
   #buckets: Map<string, T[]>;
   #size: number;
@@ -82,23 +79,25 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableSet';
 
-  constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[], listeners?: Set<Listener<T>>) {
+  constructor(
+    values?: Iterable<T> | ReadonlySet<T> | readonly T[],
+    listeners?: Set<Listener<T>>
+  ) {
     this.$listeners = listeners ?? new Set();
     this.#buckets = new Map();
     this.#size = 0;
 
     if (values) {
-      const source: Iterable<T> =
-        values instanceof Set || values instanceof ImmutableSet
-          ? values.values()
-          // eslint-disable-next-line unicorn/new-for-builtins
-          : Symbol.iterator in Object(values)
-            ? (values as Iterable<T>)
-            : (() => {
+                  const source: Iterable<T> =
+                    values instanceof Set
+                                  || values instanceof ImmutableSet
+                              ? values.values()
+                              : Symbol.iterator in Object(values)                  ? (values as Iterable<T>)
+                  : (() => {
               throw new TypeError(
                 'ImmutableSet constructor expects an iterable of values.'
               );
-              })();
+            })();
 
       for (const value of source) {
         const h = hashValue(value);
@@ -123,8 +122,11 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     Object.freeze(this);
   }
 
-  [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [ADD_UPDATE_LISTENER](
+
+        listener: (val: this) => void
+
+      ): { unsubscribe: () => void } {
     const l = listener as unknown as Listener<T>;
     if (this.$listeners.size === 0) {
       this.$enableChildListeners();
@@ -143,10 +145,8 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   protected $enableChildListeners(): void {
     for (const bucket of this.#buckets.values()) {
       for (const value of bucket) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (isMessageLike(value) && (value as any)[ADD_UPDATE_LISTENER]) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { unsubscribe } = (value as any)[ADD_UPDATE_LISTENER]((newValue: T) => {
+        if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
+          const { unsubscribe } = value[ADD_UPDATE_LISTENER]((newValue: T) => {
             // We must replace the item.
             const newValues: T[] = [];
             for (const v of this) {
@@ -154,8 +154,11 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
                 newValues.push(v);
             }
             newValues.push(newValue);
-            const nextInstance = new ImmutableSet(newValues, new Set(this.$listeners));
-            this.$update(nextInstance);
+            const nextInstance = new ImmutableSet(
+              newValues,
+              new Set(this.$listeners)
+            );
+            this.$update(nextInstance as this);
           });
           this.#childUnsubscribes.push(unsubscribe);
         }
@@ -172,7 +175,6 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
 
   protected $update(value: this): this {
     for (const listener of [...this.$listeners]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listener(value as unknown as ImmutableSet<T>);
     }
     return value;
@@ -180,8 +182,11 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
 
   add(value: T): ImmutableSet<T> {
     if (this.has(value)) return this;
-    const next = new ImmutableSet([...this, value], new Set(this.$listeners));
-    return this.$update(next);
+        const next = new ImmutableSet(
+          [...this, value],
+          new Set(this.$listeners)
+        );
+    return this.$update(next as this);
   }
 
   delete(value: T): ImmutableSet<T> {
@@ -190,14 +195,17 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     for (const v of this) {
         if (!equalValues(v, value)) newValues.push(v);
     }
-    const next = new ImmutableSet(newValues, new Set(this.$listeners));
-    return this.$update(next);
+        const next = new ImmutableSet(
+          newValues,
+          new Set(this.$listeners)
+        );
+    return this.$update(next as this);
   }
 
   clear(): ImmutableSet<T> {
     if (this.size === 0) return this;
     const next = new ImmutableSet([], new Set(this.$listeners));
-    return this.$update(next);
+    return this.$update(next as this);
   }
 
   get size(): number {
@@ -226,6 +234,7 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
 
   values(): IterableIterator<T> {
     const all: T[] = [];
+    // eslint-disable-next-line unicorn/no-useless-spread
     for (const bucket of this.#buckets.values()) {
       all.push(...bucket);
     }

@@ -28,6 +28,7 @@ class TestMessage extends Message<{ value: string }> {
     return { value: entries.value };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   protected $enableChildListeners() {}
 
   getValue() {
@@ -51,7 +52,7 @@ function testMapDeepUpdate() {
   const item1 = new TestMessage({ value: 'one' });
   const item2 = new TestMessage({ value: 'two' });
   
-  let map = new ImmutableMap([['k1', item1], ['k2', item2]]);
+  const map = new ImmutableMap([['k1', item1], ['k2', item2]]);
   let currentMap = map;
   
   const updateHandler = (newMap: ImmutableMap<string, TestMessage>) => {
@@ -85,7 +86,7 @@ function testSetDeepUpdate() {
   const item1 = new TestMessage({ value: 'one' });
   const item2 = new TestMessage({ value: 'two' });
   
-  let set = new ImmutableSet([item1, item2]);
+  const set = new ImmutableSet([item1, item2]);
   let currentSet = set;
   
   const updateHandler = (newSet: ImmutableSet<TestMessage>) => {

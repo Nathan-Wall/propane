@@ -68,7 +68,10 @@ if (fs.existsSync(nodeModulesScope)) {
     try {
       // Force remove existing link/file to ensure clean state
       try {
-        if (fs.existsSync(linkPath) || fs.lstatSync(linkPath).isSymbolicLink()) {
+        if (
+          fs.existsSync(linkPath)
+          || fs.lstatSync(linkPath).isSymbolicLink()
+        ) {
            // Try unlink first (for file/symlink)
            try {
              fs.unlinkSync(linkPath);
@@ -77,7 +80,9 @@ if (fs.existsSync(nodeModulesScope)) {
              fs.rmSync(linkPath, { recursive: true, force: true });
            }
         }
-      } catch {}
+      } catch {
+        // Ignore errors during cleanup
+      }
       
       fs.symlinkSync(targetPath, linkPath, 'dir');
       console.log(`Linked node_modules/@propanejs/${pkgName} -> build/${pkgDir}`);

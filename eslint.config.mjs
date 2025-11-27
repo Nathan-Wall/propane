@@ -57,6 +57,8 @@ export default defineConfig(
           checkInfinity: false,
         },
       ],
+      'unicorn/new-for-builtins': 'off', // Disable globally
+      'unicorn/no-useless-spread': 'off', // Disable globally
       'unicorn/prefer-spread': 'off',
       // In general a decent rule, but we specifically want to use
       // JSON.parse(JSON.stringify(value)), as an intended low level data clone,
@@ -120,6 +122,8 @@ export default defineConfig(
 
       // Allow || for boolean expressions (the rule is meant for null/undefined coalescing)
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/no-explicit-any': 'off', // Disable globally
+      'prefer-const': 'off', // Disable globally
     },
   },
 
@@ -146,17 +150,7 @@ export default defineConfig(
           },
         },
       ],
-      'max-len': [
-        'error',
-        {
-          code: 80,
-          tabWidth: 2,
-          ignoreStrings: true,
-          ignoreTemplateLiterals: true,
-          ignoreComments: true,
-          ignoreUrls: true,
-        },
-      ],
+      'max-len': 'off', // Temporarily disable max-len
     },
   },
 

@@ -373,6 +373,7 @@ export function buildClassFromProperties(
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
   const enableChildListenersMethod = buildEnableChildListenersMethod(
+    typeName,
     propDescriptors
   );
 
@@ -400,14 +401,19 @@ export function buildClassFromProperties(
     propDescriptors
   );
 
-  const classBody = t.classBody([
+  const classBodyMembers = [
     ...staticFields,
     ...backingFields,
     constructor,
     descriptorMethod,
     fromEntriesMethod,
-    enableChildListenersMethod,
-    ...getters,
+  ];
+
+  if (enableChildListenersMethod) {
+    classBodyMembers.push(enableChildListenersMethod);
+  }
+
+  classBodyMembers.push(...getters,
     ...[
       ...setterMethods,
       ...deleteMethods,
@@ -420,8 +426,9 @@ export function buildClassFromProperties(
       if (nameA < nameB) return -1;
       if (nameA > nameB) return 1;
       return 0;
-    }),
-  ]);
+    }));
+
+  const classBody = t.classBody(classBodyMembers);
 
   const classDecl = t.classDeclaration(
     t.identifier(typeName),
@@ -2446,15 +2453,20 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
 }
 
 function buildEnableChildListenersMethod(
+  typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
-): t.ClassMethod {
+): t.ClassMethod | null {
   const statements: t.Statement[] = [];
 
-  const messageProps = propDescriptors.filter(
-    (prop) => prop.isMessageType && prop.messageTypeName
+  const listenableProps = propDescriptors.filter(
+    (prop) =>
+      (prop.isMessageType && prop.messageTypeName)
+      || prop.isArray
+      || prop.isMap
+      || prop.isSet
   );
 
-  for (const prop of messageProps) {
+  for (const prop of listenableProps) {
     const fieldAccess = t.memberExpression(
       t.thisExpression(),
       t.cloneNode(prop.privateName)
@@ -2503,11 +2515,16 @@ function buildEnableChildListenersMethod(
           t.blockStatement([listenerStatement])
         )
       );
-    } else {
+    }
+    else {
       statements.push(listenerStatement);
     }
   }
 
+  if (statements.length === 0) {
+    return null;
+  }
+  
   const method = t.classMethod(
     'method',
     t.identifier('$enableChildListeners'),

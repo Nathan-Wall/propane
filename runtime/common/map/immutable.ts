@@ -1,13 +1,17 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
-import type { Message } from '../../message.js';
 
-type Listener<K, V> = (val: ImmutableMap<K, V>) => void;
-
+// eslint-disable-next-line max-len
 function isMessageLike(value: unknown): value is {
+
   equals: (other: unknown) => boolean;
+
   hashCode?: () => number;
+
   serialize?: () => string;
+
+  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => { unsubscribe: () => void };
+
 } {
   return Boolean(
     value
@@ -165,6 +169,8 @@ function hashString(value: string): number {
   return hash;
 }
 
+type Listener<K, V> = (val: ImmutableMap<K, V>) => void;
+
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #buckets: Map<string, [K, V][]>;
   #size: number;
@@ -186,11 +192,10 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     this.#size = 0;
 
     if (entries) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       const source: Iterable<readonly [K, V]> =
-        entries instanceof Map || entries instanceof ImmutableMap
+        entries instanceof Map
+        || entries instanceof ImmutableMap
           ? entries.entries()
-          // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(entries)
             ? (entries as Iterable<readonly [K, V]>)
             : (() => {
@@ -209,8 +214,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     }
   }
 
-  [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [ADD_UPDATE_LISTENER](
+
+        listener: (val: this) => void
+
+      ): { unsubscribe: () => void } {
     const l = listener as unknown as Listener<K, V>;
     if (this.$listeners.size === 0) {
       this.$enableChildListeners();
@@ -229,10 +237,8 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   protected $enableChildListeners(): void {
     for (const bucket of this.#buckets.values()) {
       for (const [key, value] of bucket) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        if (isMessageLike(value) && (value as any)[ADD_UPDATE_LISTENER]) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { unsubscribe } = (value as any)[ADD_UPDATE_LISTENER]((newValue: V) => {
+        if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
+          const { unsubscribe } = value[ADD_UPDATE_LISTENER]((newValue: V) => {
             this.set(key, newValue);
           });
           this.#childUnsubscribes.push(unsubscribe);
@@ -250,7 +256,6 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
 
   protected $update(value: this): this {
     for (const listener of [...this.$listeners]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listener(value as unknown as ImmutableMap<K, V>);
     }
     return value;
@@ -282,7 +287,10 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
         return this;
       }
     }
-    const next = new ImmutableMap([...this, [key, value]], new Set(this.$listeners));
+    const next = new ImmutableMap(
+      [...this, [key, value]],
+      new Set(this.$listeners)
+    );
     return this.$update(next as this);
   }
 

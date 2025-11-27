@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { parseJson } from './common/json/parse.js';
 import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
@@ -38,6 +37,9 @@ export type DataValue =
   | ImmutableUrl
   | ArrayBuffer
   | ImmutableArrayBuffer
+  | ImmutableMap<unknown, unknown>
+  | ImmutableSet<unknown>
+  | TaggedMessageData
   | DataObject
   | DataArray;
 export type DataArray = DataValue[];
@@ -53,7 +55,7 @@ export type MapKey =
 
 export interface TaggedMessageData {
   $tag: string;
-  $data: Record<string, unknown>;
+  $data: DataObject;
 }
 
 export function isTaggedMessageData(
@@ -68,6 +70,7 @@ export function isTaggedMessageData(
   );
 }
 
+// eslint-disable-next-line unicorn/prefer-export-from
 export { ADD_UPDATE_LISTENER };
 
 type Listener<T extends DataObject> = (val: Message<T>) => void;
@@ -110,7 +113,8 @@ export abstract class Message<T extends DataObject> {
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
-  protected abstract $enableChildListeners(): void;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  protected $enableChildListeners(): void {}
 
   protected constructor(
     typeTag: symbol,
@@ -122,8 +126,9 @@ export abstract class Message<T extends DataObject> {
     this.$listeners = listeners ?? new Set();
   }
 
-  [ADD_UPDATE_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [ADD_UPDATE_LISTENER](
+    listener: (val: this) => void
+  ): { unsubscribe: () => void } {
     const l = listener as unknown as Listener<T>;
     if (this.$listeners.size === 0) {
       this.$enableChildListeners();
@@ -152,7 +157,6 @@ export abstract class Message<T extends DataObject> {
 
   protected $update(value: this): this {
     for (const listener of [...this.$listeners]) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       listener(value as unknown as Message<T>);
     }
     return value;
@@ -292,10 +296,10 @@ export abstract class Message<T extends DataObject> {
     const existing = internPool.get(key)?.deref();
 
     if (existing && existing.#typeTag === this.#typeTag) {
-      return existing as this;
+      return existing as unknown as this;
     }
 
-    internPool.set(key, new WeakRef(this));
+    internPool.set(key, new WeakRef(this as unknown as Message<DataObject>));
     registry.register(this, key);
     return this;
   }
@@ -374,7 +378,7 @@ function serializePrimitive(value: unknown): string {
 
   if (value instanceof Message) {
     const descriptors = (
-      value as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
+      value as unknown as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
     ).$getPropDescriptors();
     const entries = descriptors.map((d) => ({
       key: String(d.name),
@@ -387,7 +391,7 @@ function serializePrimitive(value: unknown): string {
     if (isDateValue(value)) {
       return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
     }
-    return serializeObjectLiteral(value as Record<string, unknown>);
+    return serializeObjectLiteral(value as DataObject);
   }
 
   if (typeof value === 'string') {
@@ -418,7 +422,7 @@ function serializeSetLiteral(values: ReadonlySet<unknown>): string {
 function serializeTaggedMessage(message: Message<DataObject>): string {
   const typeName = message.$typeName;
   const descriptors = (
-    message as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
+    message as unknown as { $getPropDescriptors(): MessagePropDescriptor<DataObject>[] }
   ).$getPropDescriptors();
 
   const entries: ObjectEntry[] = [];
@@ -587,11 +591,15 @@ interface ObjectEntry {
 }
 
 function serializeObjectLiteral(
-  recordOrEntries: Record<string, unknown> | ObjectEntry[]
+  recordOrEntries: DataObject | ObjectEntry[]
 ): string {
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
-    : Object.entries(recordOrEntries).map(([key, value]) => ({ key, value }));
+    : Object.entries(recordOrEntries).map(([key, value]) => ({
+      key,
+      value,
+      tagMessages: undefined,
+    }));
 
   const serialized = entries.map(({ key, value, tagMessages }) => {
     const serializedValue = tagMessages && value instanceof Message
@@ -599,7 +607,7 @@ function serializeObjectLiteral(
       : serializePrimitive(value);
     return key == null
       ? serializedValue
-      : `${serializeObjectKey(key)}:${serializedValue}`;
+      : `${serializeObjectKey(key as string)}:${serializedValue}`;
   });
   return `{${serialized.join(',')}}`;
 }
@@ -744,7 +752,7 @@ function parseLiteralToken(token: string) {
   throw new Error(`Invalid literal token: ${trimmed}`);
 }
 
-function parseObjectLiteral(literal: string): Record<string, unknown> {
+function parseObjectLiteral(literal: string): DataObject {
   const trimmed = literal.trim();
 
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
@@ -760,7 +768,7 @@ function parseObjectLiteral(literal: string): Record<string, unknown> {
 
   let expectedIndex = 1;
 
-  return tokens.reduce<Record<string, unknown>>((entries, token) => {
+  return tokens.reduce<DataObject>((entries, token) => {
     if (!token) {
       return entries;
     }

@@ -10,15 +10,13 @@ import propanePlugin from '@propanejs/babel-messages';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-const args = (process as any).argv.slice(2);
+const args = (process as unknown as { argv: string[] }).argv.slice(2);
 
 // Parse flags
 let watch = false;
 const targets: string[] = [];
 
 for (const arg of args) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
   if (arg.startsWith('-')) {
     switch (arg) {
       case '--watch':
@@ -39,13 +37,13 @@ for (const arg of args) {
       }
         break;
       default:
-        console.error(`Unknown option: ${arg as string}`);
+        console.error(`Unknown option: ${arg}`);
         printUsage();
         process.exit(1);
         break;
     }
   } else {
-    targets.push(arg as string);
+    targets.push(arg);
   }
 }
 
