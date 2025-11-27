@@ -7,6 +7,7 @@ import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import { ImmutableDate } from './common/time/date.js';
 import { ImmutableUrl } from './common/web/url.js';
 import { ADD_UPDATE_LISTENER } from './symbols.js';
+import { isDetachable, detachValue } from './common/lock.js';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -165,6 +166,52 @@ export abstract class Message<T extends DataObject> {
 
   get $typeName(): string {
     return this.#typeName;
+  }
+
+  /**
+   * Create a copy of this message detached from the state tree.
+   * Recursively detaches all child properties.
+   *
+   * The returned message has no listeners - calling setters on it will return
+   * new instances but won't trigger React state updates. Use this to pass
+   * data to components or functions that shouldn't be able to update state.
+   *
+   * @example
+   * // Pass detached data to a child component
+   * <ChildComponent data={message.detach()} />
+   *
+   * @example
+   * // Prevent accidental state updates in a callback
+   * processData(message.detach());
+   */
+  detach(): this {
+    const descriptors = this.$getPropDescriptors();
+
+    if (this.$listeners.size === 0) {
+      // Still need to detach children even if this message has no listeners
+      let hasDetachableChildren = false;
+      for (const descriptor of descriptors) {
+        if (isDetachable(descriptor.getValue())) {
+          hasDetachableChildren = true;
+          break;
+        }
+      }
+      if (!hasDetachableChildren) {
+        return this;
+      }
+    }
+
+    const entries: Record<string, unknown> = {};
+    for (const descriptor of descriptors) {
+      entries[String(descriptor.name)] = detachValue(descriptor.getValue());
+    }
+
+    const Constructor = this.constructor as new (
+      props: T,
+      listeners?: Set<Listener<T>>
+    ) => this;
+
+    return new Constructor(this.$fromEntries(entries), undefined);
   }
 
   // Immutable.js compatibility: provide a stable hash based on canonical

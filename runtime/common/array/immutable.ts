@@ -1,5 +1,6 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import { isDetachable, detachValue } from '../lock.js';
 
 // Basic Listener type compatible with Message Listener
 type Listener<T> = (val: ImmutableArray<T>) => void;
@@ -154,6 +155,28 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       listener(value as unknown as ImmutableArray<T>);
     }
     return value;
+  }
+
+  /**
+   * Create a copy of this array detached from the state tree.
+   * Recursively detaches all child elements.
+   * Setters on the returned array won't trigger React state updates.
+   */
+  detach(): ImmutableArray<T> {
+    if (this.$listeners.size === 0) {
+      // Still need to detach children even if this array has no listeners
+      let hasDetachableChildren = false;
+      for (const item of this.#items) {
+        if (isDetachable(item)) {
+          hasDetachableChildren = true;
+          break;
+        }
+      }
+      if (!hasDetachableChildren) {
+        return this;
+      }
+    }
+    return new ImmutableArray(this.#items.map(detachValue));
   }
 
   get length(): number {

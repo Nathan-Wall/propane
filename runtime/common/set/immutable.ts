@@ -1,5 +1,6 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import { isDetachable, detachValue } from '../lock.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
@@ -180,6 +181,32 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
       listener(value as unknown as ImmutableSet<T>);
     }
     return value;
+  }
+
+  /**
+   * Create a copy of this set detached from the state tree.
+   * Recursively detaches all child values.
+   * Setters on the returned set won't trigger React state updates.
+   */
+  detach(): ImmutableSet<T> {
+    if (this.$listeners.size === 0) {
+      // Still need to detach children even if this set has no listeners
+      let hasDetachableChildren = false;
+      for (const v of this) {
+        if (isDetachable(v)) {
+          hasDetachableChildren = true;
+          break;
+        }
+      }
+      if (!hasDetachableChildren) {
+        return this;
+      }
+    }
+    const detachedValues: T[] = [];
+    for (const v of this) {
+      detachedValues.push(detachValue(v));
+    }
+    return new ImmutableSet(detachedValues);
   }
 
   add(value: T): ImmutableSet<T> {

@@ -1,5 +1,6 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import { isDetachable, detachValue } from '../lock.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
@@ -255,6 +256,32 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       listener(value as unknown as ImmutableMap<K, V>);
     }
     return value;
+  }
+
+  /**
+   * Create a copy of this map detached from the state tree.
+   * Recursively detaches all child keys and values.
+   * Setters on the returned map won't trigger React state updates.
+   */
+  detach(): ImmutableMap<K, V> {
+    if (this.$listeners.size === 0) {
+      // Still need to detach children even if this map has no listeners
+      let hasDetachableChildren = false;
+      for (const [k, v] of this) {
+        if (isDetachable(k) || isDetachable(v)) {
+          hasDetachableChildren = true;
+          break;
+        }
+      }
+      if (!hasDetachableChildren) {
+        return this;
+      }
+    }
+    const detachedEntries: [K, V][] = [];
+    for (const [k, v] of this) {
+      detachedEntries.push([detachValue(k), detachValue(v)]);
+    }
+    return new ImmutableMap(detachedEntries);
   }
 
   #set(key: K, value: V): void {
