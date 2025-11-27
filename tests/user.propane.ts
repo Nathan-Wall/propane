@@ -16,9 +16,9 @@ export class User extends Message<User.Data> {
   #active: boolean;
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
-  constructor(props?: User.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && User.EMPTY) return User.EMPTY;
-    super(User.TYPE_TAG, "User", onUpdate);
+  constructor(props?: User.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && User.EMPTY) return User.EMPTY;
+    super(User.TYPE_TAG, "User", listeners);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();
@@ -28,7 +28,7 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
-    if (!props && !onUpdate) User.EMPTY = this;
+    if (!props && !listeners) User.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -146,7 +146,7 @@ export class User extends Message<User.Data> {
       active: value,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setCreated(value: ImmutableDate | Date): User {
     return this.$update(new User({
@@ -159,7 +159,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setEmail(value: Email): User {
     return this.$update(new User({
@@ -172,7 +172,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel'): User {
     return this.$update(new User({
@@ -185,7 +185,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: value,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setHeight(value: Distance.Value): User {
     return this.$update(new User({
@@ -198,7 +198,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: value instanceof Distance ? value : new Distance(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setId(value: number): User {
     return this.$update(new User({
@@ -211,7 +211,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setName(value: string): User {
     return this.$update(new User({
@@ -224,7 +224,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setPasswordHash(value: Hash): User {
     return this.$update(new User({
@@ -237,7 +237,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setUpdated(value: ImmutableDate | Date): User {
     return this.$update(new User({
@@ -250,7 +250,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace User {

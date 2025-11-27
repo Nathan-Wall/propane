@@ -6,12 +6,12 @@ export class SetMessage extends Message<SetMessage.Data> {
   static EMPTY: SetMessage;
   #tags: ImmutableSet<string>;
   #ids: ImmutableSet<number> | undefined;
-  constructor(props?: SetMessage.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && SetMessage.EMPTY) return SetMessage.EMPTY;
-    super(SetMessage.TYPE_TAG, "SetMessage", onUpdate);
+  constructor(props?: SetMessage.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && SetMessage.EMPTY) return SetMessage.EMPTY;
+    super(SetMessage.TYPE_TAG, "SetMessage", listeners);
     this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new Set();
     this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
-    if (!props && !onUpdate) SetMessage.EMPTY = this;
+    if (!props && !listeners) SetMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
@@ -56,7 +56,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   addAllTags(values: Iterable<string>): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -69,7 +69,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   addIds(value: number): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -80,7 +80,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   addTags(value: string): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -91,7 +91,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearIds(): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -102,7 +102,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearTags(): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -113,7 +113,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteAllIds(values: Iterable<number>): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -126,7 +126,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteAllTags(values: Iterable<string>): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -139,12 +139,12 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteIds(): SetMessage {
     return this.$update(new SetMessage({
       tags: this.#tags
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteIds(value: number): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -155,7 +155,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteTags(value: string): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -166,7 +166,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterIds(predicate: (value) => boolean): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -184,7 +184,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterTags(predicate: (value) => boolean): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -202,7 +202,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapIds(mapper: (value) => number): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -221,7 +221,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapTags(mapper: (value) => string): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -240,19 +240,19 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setIds(value: Set<number> | Iterable<number>): SetMessage {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setTags(value: Set<string> | Iterable<string>): SetMessage {
     return this.$update(new SetMessage({
       tags: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value),
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateIds(updater: (current: ImmutableSet<number>) => Iterable<number>): SetMessage {
     const idsSetSource = this.ids ?? [];
@@ -267,7 +267,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: this.#tags,
       ids: idsSetNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateTags(updater: (current: ImmutableSet<string>) => Iterable<string>): SetMessage {
     const tagsSetSource = this.tags ?? [];
@@ -282,7 +282,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new SetMessage({
       tags: tagsSetNext,
       ids: this.#ids
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace SetMessage {

@@ -160,19 +160,24 @@ export function buildClassFromProperties(
   );
   constructorParam.optional = true;
 
-  const onUpdateParam = t.identifier('onUpdate');
-  onUpdateParam.typeAnnotation = t.tsTypeAnnotation(
-    t.tsFunctionType(
-      null,
-      [
-        Object.assign(t.identifier('val'), {
-          typeAnnotation: t.tsTypeAnnotation(t.tsThisType()),
-        }),
-      ],
-      t.tsTypeAnnotation(t.tsVoidKeyword())
+  const listenersParam = t.identifier('listeners');
+  listenersParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeReference(
+      t.identifier('Set'),
+      t.tsTypeParameterInstantiation([
+        t.tsFunctionType(
+          null,
+          [
+            Object.assign(t.identifier('val'), {
+              typeAnnotation: t.tsTypeAnnotation(t.tsThisType()),
+            }),
+          ],
+          t.tsTypeAnnotation(t.tsVoidKeyword())
+        ),
+      ])
     )
   );
-  onUpdateParam.optional = true;
+  listenersParam.optional = true;
 
   const constructorAssignments = propDescriptors.map((prop) => {
     const propsAccess = t.memberExpression(
@@ -271,7 +276,7 @@ export function buildClassFromProperties(
       t.unaryExpression('!', t.identifier('props')),
       t.logicalExpression(
         '&&',
-        t.unaryExpression('!', t.identifier('onUpdate')),
+        t.unaryExpression('!', t.identifier('listeners')),
         t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
       )
     ),
@@ -284,7 +289,7 @@ export function buildClassFromProperties(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
-      t.unaryExpression('!', t.identifier('onUpdate'))
+      t.unaryExpression('!', t.identifier('listeners'))
     ),
     t.expressionStatement(
       t.assignmentExpression(
@@ -306,7 +311,7 @@ export function buildClassFromProperties(
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
-    [constructorParam, onUpdateParam],
+    [constructorParam, listenersParam],
     t.blockStatement([
       memoizationCheck,
       t.expressionStatement(
@@ -316,7 +321,7 @@ export function buildClassFromProperties(
             t.identifier('TYPE_TAG')
           ),
           t.stringLiteral(typeName),
-          t.identifier('onUpdate'),
+          t.identifier('listeners'),
         ])
       ),
       ...constructorAssignments,
@@ -921,7 +926,7 @@ function buildSetterMethod(
 
   const onUpdateAccess = t.memberExpression(
     t.thisExpression(),
-    t.identifier('$onUpdate')
+    t.identifier('$listeners')
   );
 
   const body = t.blockStatement([
@@ -965,7 +970,7 @@ function buildDeleteMethod(
 
   const onUpdateAccess = t.memberExpression(
     t.thisExpression(),
-    t.identifier('$onUpdate')
+    t.identifier('$listeners')
   );
 
   const body = t.blockStatement([
@@ -1305,7 +1310,7 @@ function buildArrayMutationMethod(
 
   const onUpdateAccess = t.memberExpression(
     t.thisExpression(),
-    t.identifier('$onUpdate')
+    t.identifier('$listeners')
   );
 
   const bodyStatements = [
@@ -1904,7 +1909,7 @@ function buildMapMutationMethod(
   );
   const onUpdateAccess = t.memberExpression(
     t.thisExpression(),
-    t.identifier('$onUpdate')
+    t.identifier('$listeners')
   );
 
   const bodyStatements = [
@@ -2017,7 +2022,7 @@ function buildSetMutationMethod(
   );
   const onUpdateAccess = t.memberExpression(
     t.thisExpression(),
-    t.identifier('$onUpdate')
+    t.identifier('$listeners')
   );
 
   const bodyStatements = [

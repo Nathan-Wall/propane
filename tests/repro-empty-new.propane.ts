@@ -5,11 +5,11 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static EMPTY: UnionFirstNumber;
   #val: number | string;
-  constructor(props?: UnionFirstNumber.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
-    super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber", onUpdate);
+  constructor(props?: UnionFirstNumber.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
+    super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber", listeners);
     this.#val = props ? props.val : 0;
-    if (!props && !onUpdate) UnionFirstNumber.EMPTY = this;
+    if (!props && !listeners) UnionFirstNumber.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
@@ -33,7 +33,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   setVal(value: number | string): UnionFirstNumber {
     return this.$update(new UnionFirstNumber({
       val: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace UnionFirstNumber {
@@ -46,11 +46,11 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
   static EMPTY: UnionFirstString;
   #val: string | number;
-  constructor(props?: UnionFirstString.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
-    super(UnionFirstString.TYPE_TAG, "UnionFirstString", onUpdate);
+  constructor(props?: UnionFirstString.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
+    super(UnionFirstString.TYPE_TAG, "UnionFirstString", listeners);
     this.#val = props ? props.val : "";
-    if (!props && !onUpdate) UnionFirstString.EMPTY = this;
+    if (!props && !listeners) UnionFirstString.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
@@ -74,7 +74,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   setVal(value: string | number): UnionFirstString {
     return this.$update(new UnionFirstString({
       val: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace UnionFirstString {
@@ -87,11 +87,11 @@ export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
   static EMPTY: OptionalField;
   #val: string;
-  constructor(props?: OptionalField.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && OptionalField.EMPTY) return OptionalField.EMPTY;
-    super(OptionalField.TYPE_TAG, "OptionalField", onUpdate);
+  constructor(props?: OptionalField.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && OptionalField.EMPTY) return OptionalField.EMPTY;
+    super(OptionalField.TYPE_TAG, "OptionalField", listeners);
     this.#val = props ? props.val : undefined;
-    if (!props && !onUpdate) OptionalField.EMPTY = this;
+    if (!props && !listeners) OptionalField.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalField.Data>[] {
@@ -113,12 +113,12 @@ export class OptionalField extends Message<OptionalField.Data> {
     return this.#val;
   }
   deleteVal(): OptionalField {
-    return this.$update(new OptionalField({}, this.$onUpdate));
+    return this.$update(new OptionalField({}, this.$listeners));
   }
   setVal(value: string): OptionalField {
     return this.$update(new OptionalField({
       val: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace OptionalField {
@@ -131,11 +131,11 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
-  constructor(props?: RequiredMessage.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
-    super(RequiredMessage.TYPE_TAG, "RequiredMessage", onUpdate);
+  constructor(props?: RequiredMessage.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
+    super(RequiredMessage.TYPE_TAG, "RequiredMessage", listeners);
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
-    if (!props && !onUpdate) RequiredMessage.EMPTY = this;
+    if (!props && !listeners) RequiredMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
@@ -159,7 +159,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   setSub(value: UnionFirstNumber.Value): RequiredMessage {
     return this.$update(new RequiredMessage({
       sub: value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace RequiredMessage {

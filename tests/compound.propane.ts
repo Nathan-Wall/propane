@@ -7,11 +7,11 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static EMPTY: Compound_Inline;
   #value: string;
-  constructor(props?: Compound_Inline.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
-    super(Compound_Inline.TYPE_TAG, "Compound_Inline", onUpdate);
+  constructor(props?: Compound_Inline.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
+    super(Compound_Inline.TYPE_TAG, "Compound_Inline", listeners);
     this.#value = props ? props.value : "";
-    if (!props && !onUpdate) Compound_Inline.EMPTY = this;
+    if (!props && !listeners) Compound_Inline.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound_Inline.Data>[] {
@@ -35,7 +35,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   setValue(value: string): Compound_Inline {
     return this.$update(new Compound_Inline({
       value: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Compound_Inline {
@@ -50,13 +50,13 @@ export class Compound extends Message<Compound.Data> {
   #user: User;
   #indexed: Indexed;
   #inline: Compound_Inline;
-  constructor(props?: Compound.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Compound.EMPTY) return Compound.EMPTY;
-    super(Compound.TYPE_TAG, "Compound", onUpdate);
+  constructor(props?: Compound.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Compound.EMPTY) return Compound.EMPTY;
+    super(Compound.TYPE_TAG, "Compound", listeners);
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
-    if (!props && !onUpdate) Compound.EMPTY = this;
+    if (!props && !listeners) Compound.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
@@ -104,21 +104,21 @@ export class Compound extends Message<Compound.Data> {
       user: this.#user,
       indexed: value instanceof Indexed ? value : new Indexed(value),
       inline: this.#inline
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setInline(value: Compound_Inline.Value): Compound {
     return this.$update(new Compound({
       user: this.#user,
       indexed: this.#indexed,
       inline: value instanceof Compound_Inline ? value : new Compound_Inline(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setUser(value: User.Value): Compound {
     return this.$update(new Compound({
       user: value instanceof User ? value : new User(value),
       indexed: this.#indexed,
       inline: this.#inline
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Compound {

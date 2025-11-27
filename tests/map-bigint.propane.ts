@@ -5,11 +5,11 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
   #values: ImmutableMap<bigint, string>;
-  constructor(props?: MapBigintKey.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
-    super(MapBigintKey.TYPE_TAG, "MapBigintKey", onUpdate);
+  constructor(props?: MapBigintKey.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
+    super(MapBigintKey.TYPE_TAG, "MapBigintKey", listeners);
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
-    if (!props && !onUpdate) MapBigintKey.EMPTY = this;
+    if (!props && !listeners) MapBigintKey.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -40,7 +40,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     valuesMapNext.clear();
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteValuesEntry(key: bigint): MapBigintKey {
     const valuesCurrent = this.values;
@@ -51,7 +51,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     valuesMapNext.delete(key);
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -63,7 +63,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapValuesEntries(mapper: (value: string, key: bigint) => [bigint, string]): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -81,7 +81,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeValuesEntries(entries: Iterable<[bigint, string]> | ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -93,12 +93,12 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setValues(value: Map<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     return this.$update(new MapBigintKey({
       values: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setValuesEntry(key: bigint, value: string): MapBigintKey {
     const valuesCurrent = this.values;
@@ -112,7 +112,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     valuesMapNext.set(key, value);
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
     const valuesMapSource = this.#values;
@@ -124,7 +124,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace MapBigintKey {

@@ -12,13 +12,13 @@ export class Unions extends Message<Unions.Data> {
   } | {
     updated: Date;
   };
-  constructor(props?: Unions.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Unions.EMPTY) return Unions.EMPTY;
-    super(Unions.TYPE_TAG, "Unions", onUpdate);
+  constructor(props?: Unions.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Unions.EMPTY) return Unions.EMPTY;
+    super(Unions.TYPE_TAG, "Unions", listeners);
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
-    if (!props && !onUpdate) Unions.EMPTY = this;
+    if (!props && !listeners) Unions.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -70,7 +70,7 @@ export class Unions extends Message<Unions.Data> {
       username: this.#username,
       email: value,
       metadata: this.#metadata
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMetadata(value: {
     created: Date;
@@ -81,14 +81,14 @@ export class Unions extends Message<Unions.Data> {
       username: this.#username,
       email: this.#email,
       metadata: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setUsername(value: string | null): Unions {
     return this.$update(new Unions({
       username: value,
       email: this.#email,
       metadata: this.#metadata
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Unions {

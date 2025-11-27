@@ -10,16 +10,16 @@ export class Primitives extends Message<Primitives.Data> {
   #size: bigint;
   #empty: null;
   #missing: undefined;
-  constructor(props?: Primitives.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Primitives.EMPTY) return Primitives.EMPTY;
-    super(Primitives.TYPE_TAG, "Primitives", onUpdate);
+  constructor(props?: Primitives.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Primitives.EMPTY) return Primitives.EMPTY;
+    super(Primitives.TYPE_TAG, "Primitives", listeners);
     this.#flag = props ? props.flag : false;
     this.#count = props ? props.count : 0;
     this.#label = props ? props.label : "";
     this.#size = props ? props.size : 0n;
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
-    if (!props && !onUpdate) Primitives.EMPTY = this;
+    if (!props && !listeners) Primitives.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
@@ -103,7 +103,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setEmpty(value: null): Primitives {
     return this.$update(new Primitives({
@@ -113,7 +113,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: value,
       missing: this.#missing
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setFlag(value: boolean): Primitives {
     return this.$update(new Primitives({
@@ -123,7 +123,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setLabel(value: string): Primitives {
     return this.$update(new Primitives({
@@ -133,7 +133,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMissing(value: undefined): Primitives {
     return this.$update(new Primitives({
@@ -143,7 +143,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setSize(value: bigint): Primitives {
     return this.$update(new Primitives({
@@ -153,7 +153,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: value,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Primitives {

@@ -8,14 +8,14 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   #name: string;
   #age: number;
   #active: boolean;
-  constructor(props?: ObjectOnly.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
-    super(ObjectOnly.TYPE_TAG, "ObjectOnly", onUpdate);
+  constructor(props?: ObjectOnly.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
+    super(ObjectOnly.TYPE_TAG, "ObjectOnly", listeners);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
     this.#active = props ? props.active : false;
-    if (!props && !onUpdate) ObjectOnly.EMPTY = this;
+    if (!props && !listeners) ObjectOnly.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
@@ -75,7 +75,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: this.#age,
       active: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setAge(value: number): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -83,7 +83,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: value,
       active: this.#active
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setId(value: number): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -91,7 +91,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: this.#age,
       active: this.#active
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setName(value: string): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -99,7 +99,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: value,
       age: this.#age,
       active: this.#active
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace ObjectOnly {

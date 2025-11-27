@@ -12,9 +12,9 @@ export class Indexed extends Message<Indexed.Data> {
   #score: number | null;
   #alias: string | null;
   #status: string;
-  constructor(props?: Indexed.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Indexed.EMPTY) return Indexed.EMPTY;
-    super(Indexed.TYPE_TAG, "Indexed", onUpdate);
+  constructor(props?: Indexed.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Indexed.EMPTY) return Indexed.EMPTY;
+    super(Indexed.TYPE_TAG, "Indexed", listeners);
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
@@ -23,7 +23,7 @@ export class Indexed extends Message<Indexed.Data> {
     this.#score = props ? props.score : 0;
     this.#alias = props ? props.alias : undefined;
     this.#status = props ? props.status : "";
-    if (!props && !onUpdate) Indexed.EMPTY = this;
+    if (!props && !listeners) Indexed.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Indexed.Data>[] {
@@ -129,7 +129,7 @@ export class Indexed extends Message<Indexed.Data> {
       nickname: this.#nickname,
       score: this.#score,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteNickname(): Indexed {
     return this.$update(new Indexed({
@@ -140,7 +140,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setActive(value: boolean): Indexed {
     return this.$update(new Indexed({
@@ -152,7 +152,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setAge(value: number): Indexed {
     return this.$update(new Indexed({
@@ -164,7 +164,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setAlias(value: string | null): Indexed {
     return this.$update(new Indexed({
@@ -176,7 +176,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: value,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setId(value: number): Indexed {
     return this.$update(new Indexed({
@@ -188,7 +188,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setName(value: string): Indexed {
     return this.$update(new Indexed({
@@ -200,7 +200,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setNickname(value: string): Indexed {
     return this.$update(new Indexed({
@@ -212,7 +212,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setScore(value: number | null): Indexed {
     return this.$update(new Indexed({
@@ -224,7 +224,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: value,
       alias: this.#alias,
       status: this.#status
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setStatus(value: string): Indexed {
     return this.$update(new Indexed({
@@ -236,7 +236,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Indexed {

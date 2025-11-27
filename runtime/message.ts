@@ -67,6 +67,10 @@ export function isTaggedMessageData(
   );
 }
 
+export const ADD_LISTENER = Symbol('ADD_LISTENER');
+
+type Listener<T extends DataObject> = (val: Message<T>) => void;
+
 export interface MessagePropDescriptor<T extends object> {
   name: keyof T;
   fieldNumber: number | null;
@@ -80,7 +84,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface MessageConstructor<T extends DataObject> {
-  new(props: T, onUpdate?: (val: Message<T>) => void): Message<T>;
+  new(props: T, listeners?: Set<Listener<T>>): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -97,7 +101,7 @@ const registry = new FinalizationRegistry<string>((key) => {
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
-  protected readonly $onUpdate?: (val: this) => void;
+  protected readonly $listeners: Set<Listener<T>>;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
@@ -108,16 +112,28 @@ export abstract class Message<T extends DataObject> {
   protected constructor(
     typeTag: symbol,
     typeName: string,
-    onUpdate?: (val: any) => void
+    listeners?: Set<Listener<T>>
   ) {
     this.#typeTag = typeTag;
     this.#typeName = typeName;
-    this.$onUpdate = onUpdate;
+    this.$listeners = listeners ?? new Set();
+  }
+
+  [ADD_LISTENER](listener: (val: this) => void): { unsubscribe: () => void } {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const l = listener as unknown as Listener<T>;
+    this.$listeners.add(l);
+    return {
+      unsubscribe: () => {
+        this.$listeners.delete(l);
+      },
+    };
   }
 
   protected $update(value: this): this {
-    if (this.$onUpdate) {
-      this.$onUpdate(value);
+    for (const listener of this.$listeners) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      listener(value as unknown as Message<T>);
     }
     return value;
   }

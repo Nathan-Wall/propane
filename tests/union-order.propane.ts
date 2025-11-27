@@ -5,11 +5,11 @@ export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static EMPTY: StringFirst;
   #value: string | number;
-  constructor(props?: StringFirst.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && StringFirst.EMPTY) return StringFirst.EMPTY;
-    super(StringFirst.TYPE_TAG, "StringFirst", onUpdate);
+  constructor(props?: StringFirst.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && StringFirst.EMPTY) return StringFirst.EMPTY;
+    super(StringFirst.TYPE_TAG, "StringFirst", listeners);
     this.#value = props ? props.value : "";
-    if (!props && !onUpdate) StringFirst.EMPTY = this;
+    if (!props && !listeners) StringFirst.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
@@ -33,7 +33,7 @@ export class StringFirst extends Message<StringFirst.Data> {
   setValue(value: string | number): StringFirst {
     return this.$update(new StringFirst({
       value: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace StringFirst {
@@ -46,11 +46,11 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
   static EMPTY: NumberFirst;
   #value: number | string;
-  constructor(props?: NumberFirst.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && NumberFirst.EMPTY) return NumberFirst.EMPTY;
-    super(NumberFirst.TYPE_TAG, "NumberFirst", onUpdate);
+  constructor(props?: NumberFirst.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && NumberFirst.EMPTY) return NumberFirst.EMPTY;
+    super(NumberFirst.TYPE_TAG, "NumberFirst", listeners);
     this.#value = props ? props.value : 0;
-    if (!props && !onUpdate) NumberFirst.EMPTY = this;
+    if (!props && !listeners) NumberFirst.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
@@ -74,7 +74,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   setValue(value: number | string): NumberFirst {
     return this.$update(new NumberFirst({
       value: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace NumberFirst {

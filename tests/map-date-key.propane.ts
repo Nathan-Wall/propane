@@ -7,13 +7,13 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   #dateValues: ImmutableMap<ImmutableDate, number>;
   #urlValues: ImmutableMap<ImmutableUrl, string>;
   #optionalDateMap: ImmutableMap<ImmutableDate, boolean> | undefined;
-  constructor(props?: MapDateKey.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && MapDateKey.EMPTY) return MapDateKey.EMPTY;
-    super(MapDateKey.TYPE_TAG, "MapDateKey", onUpdate);
+  constructor(props?: MapDateKey.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && MapDateKey.EMPTY) return MapDateKey.EMPTY;
+    super(MapDateKey.TYPE_TAG, "MapDateKey", listeners);
     this.#dateValues = props ? props.dateValues === undefined || props.dateValues === null ? props.dateValues : new ImmutableMap(Array.from(props.dateValues).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : new Map();
     this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? props.urlValues : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new Map();
     this.#optionalDateMap = props ? props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : undefined;
-    if (!props && !onUpdate) MapDateKey.EMPTY = this;
+    if (!props && !listeners) MapDateKey.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapDateKey.Data>[] {
@@ -70,7 +70,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearOptionalDateMap(): MapDateKey {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -83,7 +83,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearUrlValues(): MapDateKey {
     const urlValuesCurrent = this.urlValues;
@@ -96,7 +96,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteDateValuesEntry(key: ImmutableDate | Date): MapDateKey {
     const dateValuesCurrent = this.dateValues;
@@ -109,13 +109,13 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteOptionalDateMap(): MapDateKey {
     return this.$update(new MapDateKey({
       dateValues: this.#dateValues,
       urlValues: this.#urlValues
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteOptionalDateMapEntry(key: ImmutableDate | Date): MapDateKey {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -128,7 +128,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteUrlValuesEntry(key: ImmutableUrl | URL): MapDateKey {
     const urlValuesCurrent = this.urlValues;
@@ -141,7 +141,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterDateValuesEntries(predicate: (value: number, key: ImmutableDate | Date) => boolean): MapDateKey {
     const dateValuesMapSource = this.#dateValues;
@@ -155,7 +155,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterOptionalDateMapEntries(predicate: (value: boolean, key: ImmutableDate | Date) => boolean): MapDateKey {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -169,7 +169,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterUrlValuesEntries(predicate: (value: string, key: ImmutableUrl | URL) => boolean): MapDateKey {
     const urlValuesMapSource = this.#urlValues;
@@ -183,7 +183,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapDateValuesEntries(mapper: (value: number, key: ImmutableDate | Date) => [ImmutableDate | Date, number]): MapDateKey {
     const dateValuesMapSource = this.#dateValues;
@@ -203,7 +203,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapOptionalDateMapEntries(mapper: (value: boolean, key: ImmutableDate | Date) => [ImmutableDate | Date, boolean]): MapDateKey {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -223,7 +223,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapUrlValuesEntries(mapper: (value: string, key: ImmutableUrl | URL) => [ImmutableUrl | URL, string]): MapDateKey {
     const urlValuesMapSource = this.#urlValues;
@@ -243,7 +243,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeDateValuesEntries(entries: Iterable<[ImmutableDate | Date, number]> | ImmutableMap<ImmutableDate | Date, number> | ReadonlyMap<ImmutableDate | Date, number> | Iterable<[ImmutableDate | Date, number]>): MapDateKey {
     const dateValuesMapSource = this.#dateValues;
@@ -257,7 +257,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeOptionalDateMapEntries(entries: Iterable<[ImmutableDate | Date, boolean]> | ImmutableMap<ImmutableDate | Date, boolean> | ReadonlyMap<ImmutableDate | Date, boolean> | Iterable<[ImmutableDate | Date, boolean]>): MapDateKey {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -271,7 +271,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeUrlValuesEntries(entries: Iterable<[ImmutableUrl | URL, string]> | ImmutableMap<ImmutableUrl | URL, string> | ReadonlyMap<ImmutableUrl | URL, string> | Iterable<[ImmutableUrl | URL, string]>): MapDateKey {
     const urlValuesMapSource = this.#urlValues;
@@ -285,14 +285,14 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setDateValues(value: Map<Date, number> | Iterable<[Date, number]>): MapDateKey {
     return this.$update(new MapDateKey({
       dateValues: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])),
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setDateValuesEntry(key: ImmutableDate | Date, value: number): MapDateKey {
     const dateValuesCurrent = this.dateValues;
@@ -308,14 +308,14 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setOptionalDateMap(value: Map<Date, boolean> | Iterable<[Date, boolean]>): MapDateKey {
     return this.$update(new MapDateKey({
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v]))
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setOptionalDateMapEntry(key: ImmutableDate | Date, value: boolean): MapDateKey {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -331,14 +331,14 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setUrlValues(value: Map<URL, string> | Iterable<[URL, string]>): MapDateKey {
     return this.$update(new MapDateKey({
       dateValues: this.#dateValues,
       urlValues: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])),
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setUrlValuesEntry(key: ImmutableUrl | URL, value: string): MapDateKey {
     const urlValuesCurrent = this.urlValues;
@@ -354,7 +354,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateDateValuesEntry(key: ImmutableDate | Date, updater: (currentValue: number | undefined) => number): MapDateKey {
     const dateValuesMapSource = this.#dateValues;
@@ -368,7 +368,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext,
       urlValues: this.#urlValues,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateOptionalDateMapEntry(key: ImmutableDate | Date, updater: (currentValue: boolean | undefined) => boolean): MapDateKey {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -382,7 +382,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: this.#urlValues,
       optionalDateMap: optionalDateMapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateUrlValuesEntry(key: ImmutableUrl | URL, updater: (currentValue: string | undefined) => string): MapDateKey {
     const urlValuesMapSource = this.#urlValues;
@@ -396,7 +396,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues,
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace MapDateKey {

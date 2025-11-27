@@ -8,14 +8,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   #data: ImmutableArrayBuffer;
   #extra: ImmutableArrayBuffer | undefined;
   #chunks: ImmutableArray<ImmutableArrayBuffer>;
-  constructor(props?: ArrayBufferMessage.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
-    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage", onUpdate);
+  constructor(props?: ArrayBufferMessage.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
+    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage", listeners);
     this.#id = props ? props.id : 0;
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
     this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : Object.freeze([]);
-    if (!props && !onUpdate) ArrayBufferMessage.EMPTY = this;
+    if (!props && !listeners) ArrayBufferMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
@@ -81,14 +81,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteExtra(): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       chunks: this.#chunks
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   fillChunks(value: ArrayBuffer, start?: number, end?: number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -99,7 +99,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   popChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
@@ -111,7 +111,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   pushChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
@@ -122,7 +122,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   reverseChunks(): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -133,7 +133,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -141,7 +141,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setData(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -149,7 +149,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: value,
       extra: this.#extra,
       chunks: this.#chunks
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setExtra(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -157,7 +157,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: value,
       chunks: this.#chunks
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setId(value: number): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -165,7 +165,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: this.#chunks
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   shiftChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
@@ -177,7 +177,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -188,7 +188,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   spliceChunks(start: number, deleteCount?: number, ...items): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -199,7 +199,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   unshiftChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
@@ -210,7 +210,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace ArrayBufferMessage {

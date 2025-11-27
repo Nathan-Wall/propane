@@ -7,13 +7,13 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   #array: ImmutableArray<(number | undefined)>;
   #map: ImmutableMap<string, bigint>;
   #imap: ImmutableMap<string, ImmutableDate>;
-  constructor(props?: ToJson_Nested.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
-    super(ToJson_Nested.TYPE_TAG, "ToJson_Nested", onUpdate);
+  constructor(props?: ToJson_Nested.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
+    super(ToJson_Nested.TYPE_TAG, "ToJson_Nested", listeners);
     this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : Object.freeze([]);
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
-    if (!props && !onUpdate) ToJson_Nested.EMPTY = this;
+    if (!props && !listeners) ToJson_Nested.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
@@ -70,7 +70,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearMap(): ToJson_Nested {
     const mapCurrent = this.map;
@@ -83,7 +83,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   copyWithinArray(target: number, start: number, end?: number): ToJson_Nested {
     const arrayArray = this.#array;
@@ -93,7 +93,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteImapEntry(key: string): ToJson_Nested {
     const imapCurrent = this.imap;
@@ -106,7 +106,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteMapEntry(key: string): ToJson_Nested {
     const mapCurrent = this.map;
@@ -119,7 +119,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   fillArray(value: (number | undefined), start?: number, end?: number): ToJson_Nested {
     const arrayArray = this.#array;
@@ -129,7 +129,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterImapEntries(predicate: (value: ImmutableDate | Date, key: string) => boolean): ToJson_Nested {
     const imapMapSource = this.#imap;
@@ -143,7 +143,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterMapEntries(predicate: (value: bigint, key: string) => boolean): ToJson_Nested {
     const mapMapSource = this.#map;
@@ -157,7 +157,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapImapEntries(mapper: (value: ImmutableDate | Date, key: string) => [string, ImmutableDate | Date]): ToJson_Nested {
     const imapMapSource = this.#imap;
@@ -177,7 +177,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapMapEntries(mapper: (value: bigint, key: string) => [string, bigint]): ToJson_Nested {
     const mapMapSource = this.#map;
@@ -197,7 +197,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeImapEntries(entries: Iterable<[string, ImmutableDate | Date]> | ImmutableMap<string, ImmutableDate | Date> | ReadonlyMap<string, ImmutableDate | Date> | Iterable<[string, ImmutableDate | Date]>): ToJson_Nested {
     const imapMapSource = this.#imap;
@@ -211,7 +211,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeMapEntries(entries: Iterable<[string, bigint]> | ImmutableMap<string, bigint> | ReadonlyMap<string, bigint> | Iterable<[string, bigint]>): ToJson_Nested {
     const mapMapSource = this.#map;
@@ -225,7 +225,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   popArray(): ToJson_Nested {
     if ((this.array ?? []).length === 0) return this;
@@ -236,7 +236,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   pushArray(...values): ToJson_Nested {
     if (values.length === 0) return this;
@@ -246,7 +246,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   reverseArray(): ToJson_Nested {
     const arrayArray = this.#array;
@@ -256,21 +256,21 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setArray(value: (number | undefined)[] | Iterable<(number | undefined)>): ToJson_Nested {
     return this.$update(new ToJson_Nested({
       array: value,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setImap(value: Map<string, Date> | Iterable<[string, Date]>): ToJson_Nested {
     return this.$update(new ToJson_Nested({
       array: this.#array,
       map: this.#map,
       imap: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)]))
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setImapEntry(key: string, value: ImmutableDate | Date): ToJson_Nested {
     const imapCurrent = this.imap;
@@ -286,14 +286,14 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMap(value: Map<string, bigint> | Iterable<[string, bigint]>): ToJson_Nested {
     return this.$update(new ToJson_Nested({
       array: this.#array,
       map: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMapEntry(key: string, value: bigint): ToJson_Nested {
     const mapCurrent = this.map;
@@ -309,7 +309,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   shiftArray(): ToJson_Nested {
     if ((this.array ?? []).length === 0) return this;
@@ -320,7 +320,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   sortArray(compareFn?: (a: (number | undefined), b: (number | undefined)) => number): ToJson_Nested {
     const arrayArray = this.#array;
@@ -330,7 +330,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   spliceArray(start: number, deleteCount?: number, ...items): ToJson_Nested {
     const arrayArray = this.#array;
@@ -340,7 +340,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   unshiftArray(...values): ToJson_Nested {
     if (values.length === 0) return this;
@@ -350,7 +350,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: arrayNext,
       map: this.#map,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateImapEntry(key: string, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date): ToJson_Nested {
     const imapMapSource = this.#imap;
@@ -364,7 +364,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: this.#map,
       imap: imapMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateMapEntry(key: string, updater: (currentValue: bigint | undefined) => bigint): ToJson_Nested {
     const mapMapSource = this.#map;
@@ -378,7 +378,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       array: this.#array,
       map: mapMapNext,
       imap: this.#imap
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace ToJson_Nested {
@@ -399,9 +399,9 @@ export class ToJson extends Message<ToJson.Data> {
   #optional: string;
   #nonFinite: number;
   #nested: ToJson_Nested;
-  constructor(props?: ToJson.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && ToJson.EMPTY) return ToJson.EMPTY;
-    super(ToJson.TYPE_TAG, "ToJson", onUpdate);
+  constructor(props?: ToJson.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && ToJson.EMPTY) return ToJson.EMPTY;
+    super(ToJson.TYPE_TAG, "ToJson", listeners);
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
     this.#big = props ? props.big : 0n;
@@ -409,7 +409,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
-    if (!props && !onUpdate) ToJson.EMPTY = this;
+    if (!props && !listeners) ToJson.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
@@ -513,7 +513,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearMap(): ToJson {
     const mapCurrent = this.map;
@@ -530,7 +530,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteImapEntry(key: string): ToJson {
     const imapCurrent = this.imap;
@@ -547,7 +547,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteMapEntry(key: string): ToJson {
     const mapCurrent = this.map;
@@ -564,7 +564,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteOptional(): ToJson {
     return this.$update(new ToJson({
@@ -574,7 +574,7 @@ export class ToJson extends Message<ToJson.Data> {
       date: this.#date,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterImapEntries(predicate: (value: number, key: string) => boolean): ToJson {
     const imapMapSource = this.#imap;
@@ -592,7 +592,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterMapEntries(predicate: (value: number, key: string) => boolean): ToJson {
     const mapMapSource = this.#map;
@@ -610,7 +610,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapImapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
     const imapMapSource = this.#imap;
@@ -634,7 +634,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapMapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
     const mapMapSource = this.#map;
@@ -658,7 +658,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeImapEntries(entries: Iterable<[string, number]> | ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
     const imapMapSource = this.#imap;
@@ -676,7 +676,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeMapEntries(entries: Iterable<[string, number]> | ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
     const mapMapSource = this.#map;
@@ -694,7 +694,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setBig(value: bigint): ToJson {
     return this.$update(new ToJson({
@@ -705,7 +705,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setDate(value: ImmutableDate | Date): ToJson {
     return this.$update(new ToJson({
@@ -716,7 +716,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setImap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
     return this.$update(new ToJson({
@@ -727,7 +727,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setImapEntry(key: string, value: number): ToJson {
     const imapCurrent = this.imap;
@@ -747,7 +747,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
     return this.$update(new ToJson({
@@ -758,7 +758,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMapEntry(key: string, value: number): ToJson {
     const mapCurrent = this.map;
@@ -778,7 +778,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setNested(value: ToJson_Nested.Value): ToJson {
     return this.$update(new ToJson({
@@ -789,7 +789,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: value instanceof ToJson_Nested ? value : new ToJson_Nested(value)
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setNonFinite(value: number): ToJson {
     return this.$update(new ToJson({
@@ -800,7 +800,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: value,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setOptional(value: string): ToJson {
     return this.$update(new ToJson({
@@ -811,7 +811,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: value,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateImapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
     const imapMapSource = this.#imap;
@@ -829,7 +829,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
     const mapMapSource = this.#map;
@@ -847,7 +847,7 @@ export class ToJson extends Message<ToJson.Data> {
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace ToJson {

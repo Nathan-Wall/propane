@@ -6,12 +6,12 @@ export class Foo extends Message<Foo.Data> {
   static EMPTY: Foo;
   #name: string;
   #_name: string;
-  constructor(props?: Foo.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Foo.EMPTY) return Foo.EMPTY;
-    super(Foo.TYPE_TAG, "Foo", onUpdate);
+  constructor(props?: Foo.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Foo.EMPTY) return Foo.EMPTY;
+    super(Foo.TYPE_TAG, "Foo", listeners);
     this.#name = props ? props.name : "";
     this.#_name = props ? props._name : "";
-    if (!props && !onUpdate) Foo.EMPTY = this;
+    if (!props && !listeners) Foo.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Foo.Data>[] {
@@ -47,13 +47,13 @@ export class Foo extends Message<Foo.Data> {
     return this.$update(new Foo({
       name: value,
       _name: this.#_name
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   set_name(value: string): Foo {
     return this.$update(new Foo({
       name: this.#name,
       _name: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Foo {

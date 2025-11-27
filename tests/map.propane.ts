@@ -5,11 +5,11 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static EMPTY: MapMessage_Metadata_Value;
   #value: string;
-  constructor(props?: MapMessage_Metadata_Value.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
-    super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value", onUpdate);
+  constructor(props?: MapMessage_Metadata_Value.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
+    super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value", listeners);
     this.#value = props ? props.value : "";
-    if (!props && !onUpdate) MapMessage_Metadata_Value.EMPTY = this;
+    if (!props && !listeners) MapMessage_Metadata_Value.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Metadata_Value.Data>[] {
@@ -33,7 +33,7 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   setValue(value: string): MapMessage_Metadata_Value {
     return this.$update(new MapMessage_Metadata_Value({
       value: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace MapMessage_Metadata_Value {
@@ -46,11 +46,11 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   static TYPE_TAG = Symbol("MapMessage_Extras_Value");
   static EMPTY: MapMessage_Extras_Value;
   #note: string | null;
-  constructor(props?: MapMessage_Extras_Value.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
-    super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value", onUpdate);
+  constructor(props?: MapMessage_Extras_Value.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
+    super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value", listeners);
     this.#note = props ? props.note : "";
-    if (!props && !onUpdate) MapMessage_Extras_Value.EMPTY = this;
+    if (!props && !listeners) MapMessage_Extras_Value.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Extras_Value.Data>[] {
@@ -74,7 +74,7 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   setNote(value: string | null): MapMessage_Extras_Value {
     return this.$update(new MapMessage_Extras_Value({
       note: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace MapMessage_Extras_Value {
@@ -89,13 +89,13 @@ export class MapMessage extends Message<MapMessage.Data> {
   #labels: ImmutableMap<string | number, number>;
   #metadata: ImmutableMap<string, MapMessage_Metadata_Value> | undefined;
   #extras: ImmutableMap<string, MapMessage_Extras_Value>;
-  constructor(props?: MapMessage.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && MapMessage.EMPTY) return MapMessage.EMPTY;
-    super(MapMessage.TYPE_TAG, "MapMessage", onUpdate);
+  constructor(props?: MapMessage.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && MapMessage.EMPTY) return MapMessage.EMPTY;
+    super(MapMessage.TYPE_TAG, "MapMessage", listeners);
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new Map();
     this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])) : undefined;
     this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new Map();
-    if (!props && !onUpdate) MapMessage.EMPTY = this;
+    if (!props && !listeners) MapMessage.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage.Data>[] {
@@ -152,7 +152,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearLabels(): MapMessage {
     const labelsCurrent = this.labels;
@@ -165,7 +165,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   clearMetadata(): MapMessage {
     const metadataCurrent = this.metadata;
@@ -178,7 +178,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteExtrasEntry(key: string): MapMessage {
     const extrasCurrent = this.extras;
@@ -191,7 +191,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteLabelsEntry(key: string | number): MapMessage {
     const labelsCurrent = this.labels;
@@ -204,13 +204,13 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteMetadata(): MapMessage {
     return this.$update(new MapMessage({
       labels: this.#labels,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   deleteMetadataEntry(key: string): MapMessage {
     const metadataCurrent = this.metadata;
@@ -223,7 +223,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterExtrasEntries(predicate: (value: MapMessage_Extras_Value, key: string) => boolean): MapMessage {
     const extrasMapSource = this.#extras;
@@ -237,7 +237,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterLabelsEntries(predicate: (value: number, key: string | number) => boolean): MapMessage {
     const labelsMapSource = this.#labels;
@@ -251,7 +251,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   filterMetadataEntries(predicate: (value: MapMessage_Metadata_Value, key: string) => boolean): MapMessage {
     const metadataMapSource = this.#metadata;
@@ -265,7 +265,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapExtrasEntries(mapper: (value: MapMessage_Extras_Value, key: string) => [string, MapMessage_Extras_Value]): MapMessage {
     const extrasMapSource = this.#extras;
@@ -285,7 +285,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapLabelsEntries(mapper: (value: number, key: string | number) => [string | number, number]): MapMessage {
     const labelsMapSource = this.#labels;
@@ -305,7 +305,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mapMetadataEntries(mapper: (value: MapMessage_Metadata_Value, key: string) => [string, MapMessage_Metadata_Value]): MapMessage {
     const metadataMapSource = this.#metadata;
@@ -325,7 +325,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeExtrasEntries(entries: Iterable<[string, MapMessage_Extras_Value]> | ImmutableMap<string, MapMessage_Extras_Value> | ReadonlyMap<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>): MapMessage {
     const extrasMapSource = this.#extras;
@@ -339,7 +339,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeLabelsEntries(entries: Iterable<[string | number, number]> | ImmutableMap<string | number, number> | ReadonlyMap<string | number, number> | Iterable<[string | number, number]>): MapMessage {
     const labelsMapSource = this.#labels;
@@ -353,7 +353,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   mergeMetadataEntries(entries: Iterable<[string, MapMessage_Metadata_Value]> | ImmutableMap<string, MapMessage_Metadata_Value> | ReadonlyMap<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>): MapMessage {
     const metadataMapSource = this.#metadata;
@@ -367,14 +367,14 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setExtras(value: Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>): MapMessage {
     return this.$update(new MapMessage({
       labels: this.#labels,
       metadata: this.#metadata,
       extras: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)]))
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setExtrasEntry(key: string, value: MapMessage_Extras_Value): MapMessage {
     const extrasCurrent = this.extras;
@@ -390,14 +390,14 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setLabels(value: Map<string | number, number> | Iterable<[string | number, number]>): MapMessage {
     return this.$update(new MapMessage({
       labels: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setLabelsEntry(key: string | number, value: number): MapMessage {
     const labelsCurrent = this.labels;
@@ -413,14 +413,14 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMetadata(value: Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>): MapMessage {
     return this.$update(new MapMessage({
       labels: this.#labels,
       metadata: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])),
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   setMetadataEntry(key: string, value: MapMessage_Metadata_Value): MapMessage {
     const metadataCurrent = this.metadata;
@@ -436,7 +436,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateExtrasEntry(key: string, updater: (currentValue: MapMessage_Extras_Value | undefined) => MapMessage_Extras_Value): MapMessage {
     const extrasMapSource = this.#extras;
@@ -450,7 +450,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: this.#metadata,
       extras: extrasMapNext
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateLabelsEntry(key: string | number, updater: (currentValue: number | undefined) => number): MapMessage {
     const labelsMapSource = this.#labels;
@@ -464,7 +464,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext,
       metadata: this.#metadata,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
   updateMetadataEntry(key: string, updater: (currentValue: MapMessage_Metadata_Value | undefined) => MapMessage_Metadata_Value): MapMessage {
     const metadataMapSource = this.#metadata;
@@ -478,7 +478,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels,
       metadata: metadataMapNext,
       extras: this.#extras
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace MapMessage {

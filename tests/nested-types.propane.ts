@@ -7,11 +7,11 @@ export class Wrapper extends Message<Wrapper.Data> {
   #payload: Date | {
     d: Date;
   };
-  constructor(props?: Wrapper.Value, onUpdate?: (val: this) => void) {
-    if (!props && !onUpdate && Wrapper.EMPTY) return Wrapper.EMPTY;
-    super(Wrapper.TYPE_TAG, "Wrapper", onUpdate);
+  constructor(props?: Wrapper.Value, listeners?: Set<(val: this) => void>) {
+    if (!props && !listeners && Wrapper.EMPTY) return Wrapper.EMPTY;
+    super(Wrapper.TYPE_TAG, "Wrapper", listeners);
     this.#payload = props ? props.payload : new ImmutableDate(0);
-    if (!props && !onUpdate) Wrapper.EMPTY = this;
+    if (!props && !listeners) Wrapper.EMPTY = this;
     return this.intern();
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -39,7 +39,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }): Wrapper {
     return this.$update(new Wrapper({
       payload: value
-    }, this.$onUpdate));
+    }, this.$listeners));
   }
 }
 export namespace Wrapper {
