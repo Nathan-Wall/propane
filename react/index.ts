@@ -8,6 +8,95 @@ interface PropaneListenable<T> {
   ): { unsubscribe: () => void };
 }
 
+// Tracks whether we're inside an update() callback
+let updateDepth = 0;
+let pendingStateUpdate: (() => void) | null = null;
+
+function beginUpdate(): void {
+  updateDepth++;
+  if (updateDepth === 1) {
+    pendingStateUpdate = null;
+  }
+}
+
+function endUpdate(): void {
+  updateDepth--;
+  if (updateDepth === 0 && pendingStateUpdate) {
+    const stateUpdate = pendingStateUpdate;
+    pendingStateUpdate = null;
+    stateUpdate();
+  }
+}
+
+function scheduleStateUpdate(updateFn: () => void): void {
+  if (updateDepth > 0) {
+    // Inside update(): record the state change (last one wins)
+    pendingStateUpdate = updateFn;
+  }
+  // Outside update(): ignore - React state only changes within update()
+}
+
+/**
+ * Enable React state updates for Propane setter calls.
+ *
+ * Propane setters only trigger React re-renders when called inside an
+ * update() callback. Setters called outside update() still return new
+ * Propane instances but won't update React state.
+ *
+ * When multiple setters are called, only the final state is applied to React
+ * (avoiding unnecessary intermediate renders).
+ *
+ * Supports both sync and async callbacks.
+ *
+ * @example
+ * // Sync: updates React state after callback completes
+ * update(() => {
+ *   game.setCurrentMove(0);
+ *   game.setHistory([initialBoard]);
+ * });
+ *
+ * @example
+ * // Async: updates React state after promise resolves
+ * await update(async () => {
+ *   const data = await fetchData();
+ *   state.setData(data);
+ * });
+ *
+ * @example
+ * // Outside update(): no React re-render
+ * game.setCurrentMove(0); // Returns new instance, but React state unchanged
+ */
+export function update<T>(callback: () => T): T {
+  beginUpdate();
+
+  let isAsync = false;
+
+  try {
+    const result = callback();
+
+    if (result instanceof Promise) {
+      isAsync = true;
+      return result.then(
+        (value: Awaited<T>) => {
+          endUpdate();
+          return value;
+        },
+        (error: unknown) => {
+          updateDepth--;
+          pendingStateUpdate = null;
+          throw error;
+        }
+      ) as T;
+    }
+
+    return result;
+  } finally {
+    if (!isAsync) {
+      endUpdate();
+    }
+  }
+}
+
 export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
@@ -22,7 +111,7 @@ export function usePropaneState<S>(
       const listenableState = state as unknown as PropaneListenable<S>;
       const { unsubscribe } = listenableState[ADD_UPDATE_LISTENER](
         (next: S) => {
-          setState(next);
+          scheduleStateUpdate(() => setState(next));
         }
       );
       return unsubscribe;
@@ -44,7 +133,7 @@ export function usePropaneState<S>(
   return [state, setPropaneState];
 }
 
-function shallowEqual(objA: any, objB: any) {
+function shallowEqual(objA: unknown, objB: unknown) {
   if (Object.is(objA, objB)) {
     return true;
   }
@@ -58,18 +147,19 @@ function shallowEqual(objA: any, objB: any) {
     return false;
   }
 
-  const keysA = Object.keys(objA as object);
-  const keysB = Object.keys(objB as object);
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
 
   if (keysA.length !== keysB.length) {
     return false;
   }
 
+  const recordA = objA as Record<string, unknown>;
+  const recordB = objB as Record<string, unknown>;
   for (const key of keysA) {
     if (
       !Object.prototype.hasOwnProperty.call(objB, key)
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      || !equals(objA[key], objB[key])
+      || !equals(recordA[key], recordB[key])
     ) {
       return false;
     }

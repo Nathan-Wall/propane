@@ -8,7 +8,10 @@ import { Message } from '../runtime/message.ts';
 class TestMessage extends Message<{ value: string }> {
   #value: string;
 
-  constructor(props: { value: string }, listeners?: any) {
+  constructor(
+    props: { value: string },
+    listeners?: Set<(val: TestMessage) => void>
+  ) {
     super(Symbol('TestMessage'), 'TestMessage', listeners);
     this.#value = props.value;
     if (this.$listeners.size > 0) {
@@ -24,8 +27,8 @@ class TestMessage extends Message<{ value: string }> {
     }];
   }
 
-  protected $fromEntries(entries: any) {
-    return { value: entries.value };
+  protected $fromEntries(entries: Record<string, unknown>) {
+    return { value: entries.value as string };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

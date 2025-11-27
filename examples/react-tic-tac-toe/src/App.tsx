@@ -1,4 +1,4 @@
-import { usePropaneState } from '@propanejs/react';
+import { usePropaneState, update } from '@propanejs/react';
 import { GameState, BoardState, Cell } from './types.propane.ts';
 
 // Calculate winner from cells array
@@ -114,22 +114,18 @@ function App() {
     const newCells = currentBoard.cells.set(index, xIsNext ? 'X' : 'O');
     const newBoard = new BoardState({ cells: newCells });
 
-    // Update game state - this triggers re-render via deep listeners
-    game
-      .setHistory(newHistory.push(newBoard))
-      .setCurrentMove(game.currentMove + 1);
+    // update() enables React state changes from Propane setters
+    update(() => game.setHistory(newHistory.push(newBoard)).setCurrentMove(game.currentMove + 1));
   };
 
   // Jump to a specific move in history
   const jumpTo = (move: number) => {
-    game.setCurrentMove(move);
+    update(() => game.setCurrentMove(move));
   };
 
   // Reset the game
   const resetGame = () => {
-    game
-      .setHistory([createEmptyBoard()])
-      .setCurrentMove(0);
+    update(() => game.setHistory([createEmptyBoard()]).setCurrentMove(0));
   };
 
   // Render move history buttons
