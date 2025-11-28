@@ -232,6 +232,236 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     return new ImmutableArray(this.#items.filter(fn));
   }
 
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  concat(...items: (T | ConcatArray<T>)[]): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.concat(...items));
+  }
+
+  // @ts-expect-error Signature differs from ReadonlyArray (no type predicate)
+  every(
+    predicate: (value: T, index: number, array: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): boolean {
+    return this.#items.every(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  some(
+    predicate: (value: T, index: number, array: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): boolean {
+    return this.#items.some(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  find(
+    predicate: (value: T, index: number, obj: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): T | undefined {
+    return this.#items.find(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  findIndex(
+    predicate: (value: T, index: number, obj: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): number {
+    return this.#items.findIndex(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  findLast(
+    predicate: (value: T, index: number, obj: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): T | undefined {
+    return this.#items.findLast(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  findLastIndex(
+    predicate: (value: T, index: number, obj: readonly T[]) => boolean,
+    thisArg?: unknown
+  ): number {
+    return this.#items.findLastIndex(
+      (v, i) => predicate.call(thisArg, v, i, this.#items)
+    );
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  flat<D extends number = 1>(depth?: D): ImmutableArray<FlatArray<T[], D>> {
+    return new ImmutableArray(this.#items.flat(depth));
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  flatMap<U>(
+    callback: (value: T, index: number, array: T[]) => U | readonly U[],
+    thisArg?: unknown
+  ): ImmutableArray<U> {
+    return new ImmutableArray(
+      this.#items.flatMap(
+         
+        (v, i) => callback.call(thisArg, v, i, this.#items) as U | readonly U[]
+      )
+    );
+  }
+
+  includes(searchElement: T, fromIndex?: number): boolean {
+    return this.#items.includes(searchElement, fromIndex);
+  }
+
+  indexOf(searchElement: T, fromIndex?: number): number {
+    return this.#items.indexOf(searchElement, fromIndex);
+  }
+
+  lastIndexOf(searchElement: T, fromIndex?: number): number {
+    return this.#items.lastIndexOf(
+      searchElement,
+      fromIndex ?? this.#items.length - 1
+    );
+  }
+
+  join(separator?: string): string {
+    return this.#items.join(separator);
+  }
+
+  reduce(
+    callbackfn: (
+      previousValue: T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => T
+  ): T;
+  reduce(
+    callbackfn: (
+      previousValue: T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => T,
+    initialValue: T
+  ): T;
+  reduce<U>(
+    callbackfn: (
+      previousValue: U,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => U,
+    initialValue: U
+  ): U;
+  reduce<U>(
+    callbackfn: (
+      previousValue: U | T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => U | T,
+    initialValue?: U | T
+  ): U | T {
+    if (arguments.length >= 2) {
+      return this.#items.reduce(
+        (prev, curr, i) => callbackfn(prev, curr, i, this.#items),
+        initialValue
+      );
+    }
+     
+    return this.#items.reduce(
+      (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as unknown as T
+    ) as unknown as U | T;
+  }
+
+  reduceRight(
+    callbackfn: (
+      previousValue: T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => T
+  ): T;
+  reduceRight(
+    callbackfn: (
+      previousValue: T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => T,
+    initialValue: T
+  ): T;
+  reduceRight<U>(
+    callbackfn: (
+      previousValue: U,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => U,
+    initialValue: U
+  ): U;
+  reduceRight<U>(
+    callbackfn: (
+      previousValue: U | T,
+      currentValue: T,
+      currentIndex: number,
+      array: readonly T[]
+    ) => U | T,
+    initialValue?: U | T
+  ): U | T {
+    if (arguments.length >= 2) {
+      return this.#items.reduceRight(
+        (prev, curr, i) => callbackfn(prev, curr, i, this.#items),
+        initialValue
+      );
+    }
+     
+    return this.#items.reduceRight(
+      (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as unknown as T
+    ) as unknown as U | T;
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  slice(start?: number, end?: number): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.slice(start, end));
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  toReversed(): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.toReversed());
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  toSorted(compareFn?: (a: T, b: T) => number): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.toSorted(compareFn));
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  toSpliced(
+    start: number,
+    deleteCount?: number,
+    ...items: T[]
+  ): ImmutableArray<T> {
+    return new ImmutableArray(
+      this.#items.toSpliced(start, deleteCount ?? 0, ...items)
+    );
+  }
+
+  // @ts-expect-error Return type mismatch with ReadonlyArray
+  with(index: number, value: T): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.with(index, value));
+  }
+
+  toString(): string {
+    return this.#items.toString();
+  }
+
+  toLocaleString(): string {
+    return this.#items.toLocaleString();
+  }
+
   equals(other: readonly T[] | null | undefined): boolean {
     if (!other) return false;
     const otherItems = Array.isArray(other)
