@@ -309,14 +309,14 @@ const likePost = (postId: number) => {
 
 #### Immer
 
-Mutable syntax via proxy - cleaner but requires `produce` wrapper:
+Mutable syntax via proxy - but updates must go through root state:
 
 ```typescript
 import { useImmer } from 'use-immer';
 
 const [state, setState] = useImmer<State>(initialState);
 
-// Update deeply nested field
+// Update deeply nested field - must use setState callback
 const toggleTheme = () => {
   setState(draft => {
     const theme = draft.user.profile.settings.theme;
@@ -324,7 +324,7 @@ const toggleTheme = () => {
   });
 };
 
-// Update item in nested array
+// Update item in nested array - must go through setState
 const likePost = (postId: number) => {
   setState(draft => {
     const post = draft.user.posts.find(p => p.id === postId);
@@ -335,25 +335,150 @@ const likePost = (postId: number) => {
 
 #### Propane
 
-Fluent setters with automatic change propagation:
+Update any object directly - changes propagate up automatically:
 
 ```typescript
 import { usePropaneState, update } from '@propanejs/react';
 
 const [state] = usePropaneState<State>(initialState);
 
-// Update deeply nested field - changes propagate automatically
+// Update deeply nested field - just call the setter
 const toggleTheme = () => {
   const current = state.user.profile.settings.theme;
   update(() => state.user.profile.settings.setTheme(current === 'light' ? 'dark' : 'light'));
 };
 
-// Update item in nested array
+// Update item in nested array - update the item directly
 const likePost = (postId: number) => {
   const post = state.user.posts.find(p => p.id === postId);
   if (post) update(() => post.setLikes(post.likes + 1));
 };
 ```
+
+#### Working Deep in the Tree
+
+The key advantage of Propane over Immer becomes clear when you're already working
+with nested objects. With Immer, you must always go back through `setState` and
+navigate from the root. With Propane, you can update whatever object you have in
+scope:
+
+```typescript
+// Immer: Even with the post in hand, must navigate from root
+function PostEditor({ postId }: { postId: number }) {
+  const [state, setState] = useImmer<State>(initialState);
+  const post = state.user.posts.find(p => p.id === postId);
+
+  const handleLike = () => {
+    // Can't use `post` directly - must go through setState and find it again
+    setState(draft => {
+      const p = draft.user.posts.find(p => p.id === postId);
+      if (p) p.likes++;
+    });
+  };
+}
+
+// Propane: Update the object you already have
+function PostEditor({ postId }: { postId: number }) {
+  const [state] = usePropaneState<State>(initialState);
+  const post = state.user.posts.find(p => p.id === postId);
+
+  const handleLike = () => {
+    // Update post directly - changes propagate to root automatically
+    if (post) update(() => post.setLikes(post.likes + 1));
+  };
+}
+```
+
+This makes Propane especially ergonomic when:
+- Iterating over collections and updating individual items
+- Passing nested objects to child components that need to modify them
+- Working with deeply nested state in event handlers
+
+#### Passing State to Child Components
+
+With Immer, child components can't modify state directly - they must receive
+callbacks from the parent that knows how to navigate to the right location:
+
+```typescript
+// Immer: Parent must provide callbacks for every possible mutation
+function App() {
+  const [state, setState] = useImmer<State>(initialState);
+
+  // Parent must define every mutation the child might need
+  const handleUpdatePost = (postId: number, updates: Partial<Post>) => {
+    setState(draft => {
+      const post = draft.user.posts.find(p => p.id === postId);
+      if (post) Object.assign(post, updates);
+    });
+  };
+
+  const handleDeletePost = (postId: number) => {
+    setState(draft => {
+      const index = draft.user.posts.findIndex(p => p.id === postId);
+      if (index !== -1) draft.user.posts.splice(index, 1);
+    });
+  };
+
+  return (
+    <>
+      {state.user.posts.map(post => (
+        <PostCard
+          key={post.id}
+          post={post}
+          onUpdate={(updates) => handleUpdatePost(post.id, updates)}
+          onDelete={() => handleDeletePost(post.id)}
+          onLike={() => handleUpdatePost(post.id, { likes: post.likes + 1 })}
+        />
+      ))}
+    </>
+  );
+}
+
+// Child receives data + callbacks
+function PostCard({ post, onUpdate, onDelete, onLike }) {
+  return (
+    <div>
+      <h2>{post.title}</h2>
+      <button onClick={onLike}>Like ({post.likes})</button>
+      <button onClick={onDelete}>Delete</button>
+    </div>
+  );
+}
+```
+
+```typescript
+// Propane: Just pass the object - child can update it directly
+function App() {
+  const [state] = usePropaneState<State>(initialState);
+
+  return (
+    <>
+      {state.user.posts.map(post => (
+        <PostCard key={post.id} post={post} />
+      ))}
+    </>
+  );
+}
+
+// Child receives the object and updates it directly
+function PostCard({ post }: { post: Post }) {
+  return (
+    <div>
+      <h2>{post.title}</h2>
+      <button onClick={() => update(() => post.setLikes(post.likes + 1))}>
+        Like ({post.likes})
+      </button>
+      <button onClick={() => update(() => post.delete())}>
+        Delete
+      </button>
+    </div>
+  );
+}
+```
+
+The Propane version has less boilerplate, fewer props to pass, and the child
+component is self-contained - it can modify what it receives without the parent
+needing to anticipate every possible mutation.
 
 #### Key Differences
 
@@ -361,10 +486,10 @@ const likePost = (postId: number) => {
 |--------|--------------|-------|---------|
 | Syntax | Spread at every level | Mutable-style writes | Fluent setters |
 | Boilerplate | High | Low | Low |
+| Update scope | Root only | Root only | Any nested object |
 | Type safety | Manual | Good | Full |
 | Structural equality | Manual | Reference only | Built-in `equals()` |
 | Serialization | Manual | Manual | Built-in |
-| Change propagation | Manual | Automatic | Automatic |
 
 ### Installation
 
