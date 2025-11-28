@@ -592,16 +592,80 @@ const TodoItem = memoPropane(({ todo }: { todo: Todo }) => {
 
 ### Detaching State
 
-Use `detach()` when passing Propane data to contexts where you don't want
-updates to propagate back to React state:
+Propane's automatic update propagation is powerful, but sometimes you want to
+pass data without allowing modifications to affect React state. Use `detach()`
+to create a copy with all listeners removed:
 
 ```typescript
-// Pass detached copy to prevent accidental state updates
-<ChildComponent data={state.detach()} />
+// Child can read but not update React state
+<ReadOnlyView data={state.detach()} />
 
-// Useful when sending data to external systems
+// Safe to pass to external systems
 sendToAnalytics(state.detach());
+saveToLocalStorage(state.detach());
 ```
+
+#### When to Use `detach()`
+
+**Passing to read-only components:**
+
+When a child component should display data but not modify it, pass a detached
+copy. This prevents accidental state updates and makes the data flow explicit:
+
+```typescript
+function App() {
+  const [state] = usePropaneState<AppState>(initialState);
+
+  return (
+    <div>
+      {/* This component can modify state */}
+      <Editor document={state.document} />
+
+      {/* This component can only read - detached copy */}
+      <Preview document={state.document.detach()} />
+    </div>
+  );
+}
+```
+
+**Sending to external systems:**
+
+When passing data to analytics, logging, or storage systems, detach first to
+ensure those systems can't accidentally trigger React updates:
+
+```typescript
+const handleSave = () => {
+  // Detach before sending to external API
+  api.saveDocument(state.document.detach());
+};
+
+const handleExport = () => {
+  // Detach before serializing for download
+  const json = JSON.stringify(state.detach());
+  downloadFile(json, 'backup.json');
+};
+```
+
+**Extracting data for local computation:**
+
+When you need to process data without affecting state:
+
+```typescript
+const handleAnalyze = () => {
+  // Work with a detached copy for expensive computation
+  const data = state.detach();
+  const results = expensiveAnalysis(data);
+  console.log(results);
+};
+```
+
+#### How `detach()` Works
+
+- Returns a new instance with all listeners removed
+- Recursively detaches all nested messages, arrays, maps, and sets
+- The detached copy is structurally equal to the original (`original.equals(detached)` is true)
+- Setters on detached objects return new instances but don't trigger React updates
+- Results are cached for efficiency - calling `detach()` twice returns the same object
 
 ### Complete Example
 
