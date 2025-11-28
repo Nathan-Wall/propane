@@ -40,7 +40,7 @@ export default function runImmutableArraySetTests() {
   // Hashing should treat surrogate pairs as two code units (legacy charCodeAt behavior)
   const emoji = 'test😀';
   const expectedStringHash = computeExpectedHashCode(`str:${emoji}`);
-  const expectedArrayHash = (31 * 1 + expectedStringHash) | 0; // 1 is the initial array hash seed
+  const expectedArrayHash = 31 * 1 + expectedStringHash | 0; // 1 is the initial array hash seed
   assert(
     new ImmutableArray([emoji]).hashCode() === expectedArrayHash,
     'ImmutableArray hashCode should hash surrogate pairs by UTF-16 code unit.'

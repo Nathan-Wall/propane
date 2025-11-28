@@ -941,7 +941,7 @@ function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
     // eslint-disable-next-line unicorn/prefer-code-point
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+    hash = hash * 31 + value.charCodeAt(i) | 0;
   }
   return hash;
 }

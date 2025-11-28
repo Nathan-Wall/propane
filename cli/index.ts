@@ -112,7 +112,8 @@ function transpileFile(sourcePath: string) {
     }
 
     const outputPath = sourcePath.replace(/\.propane$/, '.propane.ts');
-    fs.writeFileSync(outputPath, result.code, 'utf8');
+    const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
+    fs.writeFileSync(outputPath, code, 'utf8');
 
     const relSource = path.relative(process.cwd(), sourcePath);
     const relOutput = path.relative(process.cwd(), outputPath);

@@ -6,6 +6,7 @@ import tseslint from 'typescript-eslint';
 import globals from 'globals';
 import prettier from 'eslint-config-prettier/flat';
 import unicorn from 'eslint-plugin-unicorn';
+import stylistic from '@stylistic/eslint-plugin';
 
 export default defineConfig(
   // 1) Global ignores (replacement for .eslintignore)
@@ -136,8 +137,12 @@ export default defineConfig(
   // 7) Project formatting overrides (after Prettier to re-enable rules it disables)
   {
     name: 'overrides/formatting',
+    plugins: {
+      '@stylistic': stylistic,
+    },
     rules: {
       'eol-last': ['error', 'always'],
+      '@stylistic/no-extra-parens': ['error', 'all', {}],
       'operator-linebreak': [
         'error',
         'before',
@@ -207,6 +212,8 @@ export default defineConfig(
       'unicorn/prefer-spread': 'off',
       'max-len': 'off',
       'unicorn/no-negated-condition': 'off',
+      // Babel generator adds parens around spread expressions for safety
+      '@stylistic/no-extra-parens': 'off',
     },
   },
 

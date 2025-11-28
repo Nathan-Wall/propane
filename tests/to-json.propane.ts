@@ -134,7 +134,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }, this.$listeners));
   }
-  fillArray(value: (number | undefined), start?: number, end?: number): ToJson_Nested {
+  fillArray(value: number | undefined, start?: number, end?: number): ToJson_Nested {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.fill(value, start, end);
@@ -335,7 +335,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }, this.$listeners));
   }
-  sortArray(compareFn?: (a: (number | undefined), b: (number | undefined)) => number): ToJson_Nested {
+  sortArray(compareFn?: (a: number | undefined, b: number | undefined) => number): ToJson_Nested {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.sort(compareFn);

@@ -159,7 +159,7 @@ function hashString(value: string): number {
   let hash = 0;
   for (let i = 0; i < value.length; i += 1) {
     // eslint-disable-next-line unicorn/prefer-code-point
-    hash = (hash * 31 + value.charCodeAt(i)) | 0;
+    hash = hash * 31 + value.charCodeAt(i) | 0;
   }
   return hash;
 }
@@ -416,7 +416,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     entryHashes.sort((a, b) => a - b);
     let hash = 0;
     for (const h of entryHashes) {
-      hash = (hash + h) | 0;
+      hash = hash + h | 0;
     }
     this.#hash = hash;
     return hash;

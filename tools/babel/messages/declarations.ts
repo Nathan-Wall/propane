@@ -69,11 +69,11 @@ export function buildDeclarations(
   declaredMessageTypeNames.add(typeAlias.id.name);
 
   const generatedTypeNames = generatedTypes
-    .map((node) => (
+    .map((node) => 
       t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id)
         ? node.id.name
         : null
-    ))
+    )
     .filter((name): name is string => name !== null);
 
   const typeNamespace = buildTypeNamespace(

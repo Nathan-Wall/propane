@@ -30,6 +30,21 @@ import {
   isUrlReference,
 } from './type-guards.js';
 
+/**
+ * Unwrap parenthesized types to avoid unnecessary parens in generated code.
+ * Parentheses are needed in source for disambiguation (e.g., `(A | B)[]`)
+ * but not needed in contexts like function parameter types.
+ */
+function unwrapParenthesizedType(node: t.TSType | null): t.TSType | null {
+  if (!node) {
+    return null;
+  }
+  if (t.isTSParenthesizedType(node)) {
+    return unwrapParenthesizedType(node.typeAnnotation);
+  }
+  return node;
+}
+
 function getMapConversionInfo(
   prop: PropDescriptor,
   declaredMessageTypeNames: Set<string>
@@ -1149,16 +1164,18 @@ function buildArrayMutatorMethods(
 
 function buildArrayValuesRestParam(prop: PropDescriptor): t.RestElement {
   const valuesId = t.identifier('values');
+  const elementType = unwrapParenthesizedType(prop.arrayElementType);
   valuesId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(prop.arrayElementType))
+    t.tsArrayType(t.cloneNode(elementType))
   );
   return t.restElement(valuesId);
 }
 
 function buildFillParams(prop: PropDescriptor): t.Identifier[] {
   const valueId = t.identifier('value');
+  const elementType = unwrapParenthesizedType(prop.arrayElementType);
   valueId.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType)
+    t.cloneNode(elementType)
   );
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
@@ -1186,13 +1203,14 @@ function buildSortMethod(
   prop: PropDescriptor & { privateName: t.PrivateName }
 ): t.ClassMethod {
   const compareId = t.identifier('compareFn');
+  const elementType = unwrapParenthesizedType(prop.arrayElementType);
   const firstParam = t.identifier('a');
   firstParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType)
+    t.cloneNode(elementType)
   );
   const secondParam = t.identifier('b');
   secondParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(prop.arrayElementType)
+    t.cloneNode(elementType)
   );
   const compareType = t.tsFunctionType(
     null,
@@ -1229,9 +1247,10 @@ function buildSpliceMethod(
   const deleteCountId = t.identifier('deleteCount');
   deleteCountId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
   deleteCountId.optional = true;
+  const elementType = unwrapParenthesizedType(prop.arrayElementType);
   const itemsId = t.identifier('items');
   itemsId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(prop.arrayElementType))
+    t.tsArrayType(t.cloneNode(elementType))
   );
   const itemsParam = t.restElement(itemsId);
 
@@ -1943,7 +1962,7 @@ function buildMapMutationMethod(
     ...prelude,
     ...statements,
     ...mutations,
-    ...(skipNoopGuard ? [] : [buildNoopGuard(currentExpr, nextRef())]),
+    ...skipNoopGuard ? [] : [buildNoopGuard(currentExpr, nextRef())],
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
@@ -2462,7 +2481,7 @@ function buildEnableChildListenersMethod(
 
   const listenableProps = propDescriptors.filter(
     (prop) =>
-      (prop.isMessageType && prop.messageTypeName)
+      prop.isMessageType && prop.messageTypeName
       || prop.isArray
       || prop.isMap
       || prop.isSet

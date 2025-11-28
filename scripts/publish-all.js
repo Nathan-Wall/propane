@@ -150,10 +150,10 @@ for (const pkgDir of packages) {
   // Publish runtime first, then babel, then cli (order matters for dependencies)
   // We use directory names to check order/identity
   if (
-    (pkgDir === 'runtime' && !await publishPackage(pkgDir))
-    || (pkgDir === 'babel/messages' && !await publishPackage(pkgDir))
-    || (pkgDir === 'cli' && !await publishPackage(pkgDir))
-    || (pkgDir === 'react' && !await publishPackage(pkgDir))
+    pkgDir === 'runtime' && !await publishPackage(pkgDir)
+    || pkgDir === 'babel/messages' && !await publishPackage(pkgDir)
+    || pkgDir === 'cli' && !await publishPackage(pkgDir)
+    || pkgDir === 'react' && !await publishPackage(pkgDir)
   ) {
     success = false;
   }
