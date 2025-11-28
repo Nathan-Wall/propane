@@ -245,6 +245,165 @@ export type Cache = {
 };
 ```
 
+## React Integration
+
+Propane provides first-class React support via `@propanejs/react`.
+
+### Installation
+
+```bash
+npm i @propanejs/react
+```
+
+### Basic Usage
+
+Use `usePropaneState` to manage Propane messages as React state:
+
+```typescript
+import { usePropaneState, update } from '@propanejs/react';
+import { AppState } from './types.propane.ts';
+
+function App() {
+  const [state] = usePropaneState<AppState>(
+    new AppState({
+      count: 0,
+      items: [],
+    })
+  );
+
+  const increment = () => {
+    update(() => state.setCount(state.count + 1));
+  };
+
+  return <button onClick={increment}>{state.count}</button>;
+}
+```
+
+### The `update()` Function
+
+Propane setters only trigger React re-renders when called inside `update()`:
+
+```typescript
+// Triggers React re-render
+update(() => state.setName('Alice'));
+
+// Multiple setters are batched into a single render
+update(() => {
+  state.setName('Alice');
+  state.setEmail('alice@example.com');
+});
+
+// Chained setters work too
+update(() => state.setName('Alice').setEmail('alice@example.com'));
+
+// Outside update(): returns new instance but NO re-render
+state.setName('Bob'); // React state unchanged
+```
+
+Async callbacks are also supported:
+
+```typescript
+await update(async () => {
+  const data = await fetchData();
+  state.setData(data);
+});
+```
+
+### Deep Updates
+
+Changes to nested objects automatically propagate through the state tree.
+When you modify a nested message or collection, parent components re-render:
+
+```typescript
+// types.propane
+export type GameState = {
+  '1:history': BoardState[];
+  '2:currentMove': number;
+};
+
+export type BoardState = {
+  '1:cells': Cell[];
+};
+```
+
+```typescript
+// Updating nested array triggers re-render
+update(() => {
+  const newCells = currentBoard.cells.set(index, 'X');
+  const newBoard = new BoardState({ cells: newCells });
+  game.setHistory(game.history.push(newBoard));
+});
+```
+
+### Memoization with `memoPropane`
+
+Use `memoPropane` instead of `React.memo` for components receiving Propane props.
+It uses structural equality via `equals()` to prevent unnecessary re-renders:
+
+```typescript
+import { memoPropane } from '@propanejs/react';
+
+const TodoItem = memoPropane(({ todo }: { todo: Todo }) => {
+  return <li>{todo.text}</li>;
+});
+```
+
+### Detaching State
+
+Use `detach()` when passing Propane data to contexts where you don't want
+updates to propagate back to React state:
+
+```typescript
+// Pass detached copy to prevent accidental state updates
+<ChildComponent data={state.detach()} />
+
+// Useful when sending data to external systems
+sendToAnalytics(state.detach());
+```
+
+### Complete Example
+
+```typescript
+import { usePropaneState, update, memoPropane } from '@propanejs/react';
+import { GameState, BoardState } from './types.propane.ts';
+
+const Square = memoPropane(({ value, onClick }: SquareProps) => (
+  <button onClick={onClick}>{value}</button>
+));
+
+function Game() {
+  const [game] = usePropaneState<GameState>(
+    new GameState({
+      history: [new BoardState({ cells: Array(9).fill(null) })],
+      currentMove: 0,
+    })
+  );
+
+  const currentBoard = game.history.get(game.currentMove)!;
+
+  const handlePlay = (index: number) => {
+    const newCells = currentBoard.cells.set(index, 'X');
+    const newBoard = new BoardState({ cells: newCells });
+    const newHistory = game.history.push(newBoard);
+
+    update(() => {
+      game.setHistory(newHistory).setCurrentMove(game.currentMove + 1);
+    });
+  };
+
+  const jumpTo = (move: number) => {
+    update(() => game.setCurrentMove(move));
+  };
+
+  return (
+    <div>
+      <Board cells={currentBoard.cells} onPlay={handlePlay} />
+      <History moves={game.history} current={game.currentMove} onJump={jumpTo} />
+    </div>
+  );
+}
+```
+
 ## License
 
 MIT
