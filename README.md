@@ -56,7 +56,14 @@ console.log(updated.equals(restored));  // true
 ### Installation
 
 ```bash
-npm i --save-dev propanejs
+# Runtime dependencies
+npm i @propanejs/runtime
+
+# Development dependencies (CLI)
+npm i -D @propanejs/cli
+
+# Optional: React integration
+npm i @propanejs/react
 ```
 
 ### Compile Propane Files
@@ -571,9 +578,12 @@ export type BoardState = {
 ```typescript
 // Updating nested array triggers re-render
 update(() => {
-  const newCells = currentBoard.cells.set(index, 'X');
-  const newBoard = new BoardState({ cells: newCells });
-  game.setHistory(game.history.push(newBoard));
+  // Modifying a deeply nested array works directly
+  // currentBoard.cells is an ImmutableArray
+  currentBoard.cells.set(index, 'X');
+
+  // Pushing to an array also works directly
+  game.history.push(newBoard);
 });
 ```
 
@@ -690,10 +700,10 @@ function Game() {
   const handlePlay = (index: number) => {
     const newCells = currentBoard.cells.set(index, 'X');
     const newBoard = new BoardState({ cells: newCells });
-    const newHistory = game.history.push(newBoard);
-
+    
     update(() => {
-      game.setHistory(newHistory).setCurrentMove(game.currentMove + 1);
+      game.history.push(newBoard);
+      game.setCurrentMove(game.currentMove + 1);
     });
   };
 
