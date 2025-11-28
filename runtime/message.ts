@@ -1,4 +1,3 @@
-import { parseJson } from './common/json/parse.js';
 import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
@@ -331,7 +330,7 @@ export abstract class Message<T extends DataObject> {
   ): Message<T> {
     const payload = parseCerealString(message);
     const proto = this.prototype;
-    const props = proto.$fromEntries(payload);
+    const props = proto.$fromEntries(payload as Record<string, unknown>);
     return new this(props);
   }
 
@@ -362,22 +361,343 @@ export function parseCerealString(value: string) {
   if (!value.startsWith(':')) {
     throw new Error('Invalid Propane message. Expected ":" prefix.');
   }
+  return new CerealParser(value, 1).parse();
+}
 
-  const payload = value.slice(1);
+class CerealParser {
+  private cursor: number;
+  private readonly source: string;
+  private readonly length: number;
 
-  const trimmed = payload.trim();
-
-  if (trimmed.startsWith('{')) {
-    return parseObjectLiteral(payload);
+  constructor(source: string, start = 0) {
+    this.source = source;
+    this.cursor = start;
+    this.length = source.length;
   }
 
-  const parsed = parseJson(payload);
-
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Invalid Propane message payload.');
+  parse(): unknown {
+    this.skipWhitespace();
+    if (this.cursor >= this.length) {
+      throw new Error('Unexpected end of input.');
+    }
+    const value = this.parseValue();
+    this.skipWhitespace();
+    if (this.cursor < this.length) {
+      throw new Error('Unexpected characters after end of message.');
+    }
+    return value;
   }
 
-  return parsed;
+  private parseValue(): unknown {
+    this.skipWhitespace();
+    if (this.cursor >= this.length) {
+      throw new Error('Unexpected end of input.');
+    }
+
+    const char = this.source[this.cursor];
+
+    switch (char) {
+      case '{':
+        return this.parseObject();
+      case '[':
+        return this.parseArray();
+      case '"':
+        return this.parseString();
+      case 'M':
+        if (this.peek(1) === '[') {
+          return this.parseMap();
+        }
+        return this.parseBareString();
+      case 'S':
+        if (this.peek(1) === '[') {
+          return this.parseSet();
+        }
+        return this.parseBareString();
+      case '$':
+        return this.parseTaggedMessage();
+      case 'D':
+        if (this.peek(1) === '"') {
+          return this.parseDate();
+        }
+        return this.parseBareString();
+      case 'U':
+        if (this.peek(1) === '"') {
+          return this.parseUrl();
+        }
+        return this.parseBareString();
+      case 'B':
+        if (this.peek(1) === '"') {
+          return this.parseArrayBuffer();
+        }
+        return this.parseBareString();
+      default:
+        // Number, Boolean, Null, Undefined, or Bare String
+        return this.parsePrimitiveOrBareString();
+    }
+  }
+
+  private parseObject(): DataObject {
+    this.expect('{');
+    const result: DataObject = {};
+    let expectedIndex = 1;
+
+    while (this.cursor < this.length) {
+      this.skipWhitespace();
+      if (this.match('}')) {
+        break;
+      }
+
+      // Parse potential key or value
+      const start = this.cursor;
+      const token = this.parseValue();
+      
+      this.skipWhitespace();
+      if (this.match(':')) {
+        // It was a key. Verify it's a valid key type (String or Number).
+        if (typeof token !== 'string' && typeof token !== 'number') {
+          throw new Error(`Invalid object key: ${String(token)}`);
+        }
+        const key = String(token);
+        const value = this.parseValue();
+        result[key] = value as DataValue;
+
+        // Update expectedIndex if numeric
+        const numKey = Number(key);
+        if (Number.isInteger(numKey) && numKey >= 1) {
+          expectedIndex = numKey + 1;
+        }
+      } else {
+        // Implicit key
+        const key = String(expectedIndex);
+        result[key] = token as DataValue;
+        expectedIndex++;
+      }
+
+      this.skipWhitespace();
+      if (this.match('}')) {
+        break;
+      }
+      this.expect(',');
+    }
+
+    return result;
+  }
+
+  private parseArray(): DataArray {
+    this.expect('[');
+    const result: DataArray = [];
+
+    while (this.cursor < this.length) {
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+
+      result.push(this.parseValue() as DataValue);
+
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+      this.expect(',');
+    }
+
+    return result;
+  }
+
+  private parseMap(): ImmutableMap<unknown, unknown> {
+    this.expect('M');
+    this.expect('[');
+    // Map entries are arrays [key, value]
+    const entries: [unknown, unknown][] = [];
+
+    while (this.cursor < this.length) {
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+
+      const entry = this.parseValue();
+      if (!Array.isArray(entry) || entry.length !== 2) {
+        throw new Error('Invalid map entry. Expected [key, value].');
+      }
+      entries.push(entry as [unknown, unknown]);
+
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+      this.expect(',');
+    }
+
+    return new ImmutableMap(entries);
+  }
+
+  private parseSet(): ImmutableSet<unknown> {
+    this.expect('S');
+    this.expect('[');
+    const values: unknown[] = [];
+
+    while (this.cursor < this.length) {
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+
+      values.push(this.parseValue());
+
+      this.skipWhitespace();
+      if (this.match(']')) {
+        break;
+      }
+      this.expect(',');
+    }
+
+    return new ImmutableSet(values);
+  }
+
+  private parseTaggedMessage(): TaggedMessageData {
+    this.expect('$');
+    // Tag name is a bare string until '{'
+    const start = this.cursor;
+    while (this.cursor < this.length && this.source[this.cursor] !== '{') {
+      this.cursor++;
+    }
+    const typeName = this.source.slice(start, this.cursor).trim();
+    if (!typeName) {
+      throw new Error('Invalid tagged message: missing type name.');
+    }
+    const data = this.parseObject();
+    return { $tag: typeName, $data: data };
+  }
+
+  private parseDate(): Date {
+    this.expect('D');
+    const iso = this.parseString();
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) {
+      throw new TypeError(`Invalid date value: ${iso}`);
+    }
+    return date;
+  }
+
+  private parseUrl(): URL {
+    this.expect('U');
+    const href = this.parseString();
+    try {
+      return new URL(href);
+    } catch {
+      throw new TypeError(`Invalid URL value: ${href}`);
+    }
+  }
+
+  private parseArrayBuffer(): ArrayBuffer {
+    this.expect('B');
+    const base64 = this.parseString();
+    return base64ToArrayBuffer(base64);
+  }
+
+  private parseString(): string {
+    const start = this.cursor;
+    this.expect('"');
+    while (this.cursor < this.length) {
+      const char = this.source[this.cursor];
+      if (char === '\\') {
+        this.cursor += 2; // Skip escaped char
+        continue;
+      }
+      if (char === '"') {
+        this.cursor++; // Consume closing quote
+        const jsonString = this.source.slice(start, this.cursor);
+        return JSON.parse(jsonString);
+      }
+      this.cursor++;
+    }
+    throw new Error('Unterminated string literal.');
+  }
+
+  private parseBareString(): string {
+    const start = this.cursor;
+    while (this.cursor < this.length) {
+      const char = this.source[this.cursor];
+      // Stop at delimiters
+      if (
+        char === ':'
+        || char === ','
+        || char === '}'
+        || char === ']'
+      ) {
+        break;
+      }
+      this.cursor++;
+    }
+    return this.source.slice(start, this.cursor).trim();
+  }
+
+  private parsePrimitiveOrBareString(): unknown {
+    const start = this.cursor;
+    // Read until delimiter
+    while (this.cursor < this.length) {
+      const char = this.source[this.cursor];
+      if (
+        char === ':'
+        || char === ','
+        || char === '}'
+        || char === ']'
+      ) {
+        break;
+      }
+      this.cursor++;
+    }
+    const token = this.source.slice(start, this.cursor).trim();
+
+    if (token === 'true') return true;
+    if (token === 'false') return false;
+    if (token === 'null') return null;
+    if (token === 'undefined') return undefined;
+
+    // Check for BigInt
+    if (token.endsWith('n') && /^-?\d+n$/.test(token)) {
+      return BigInt(token.slice(0, -1));
+    }
+
+    // Check for Number
+    const num = Number(token);
+    if (!Number.isNaN(num) && NUMERIC_STRING_RE.test(token)) {
+      return num;
+    }
+
+    // Bare string
+    if (!canUseBareString(token)) {
+      throw new Error(`Invalid literal token: ${token}`);
+    }
+
+    return token;
+  }
+
+  private skipWhitespace() {
+    while (this.cursor < this.length && this.source[this.cursor] <= ' ') {
+      this.cursor++;
+    }
+  }
+
+  private peek(offset = 0): string {
+    return this.source[this.cursor + offset];
+  }
+
+  private match(char: string): boolean {
+    if (this.source[this.cursor] === char) {
+      this.cursor++;
+      return true;
+    }
+    return false;
+  }
+
+  private expect(char: string) {
+    if (!this.match(char)) {
+      throw new Error(`Expected '${char}' at position ${this.cursor}`);
+    }
+  }
 }
 
 function canUseBareString(value: string) {
@@ -388,6 +708,15 @@ function canUseBareString(value: string) {
   );
 }
 
+// Simple deterministic string hash (Java-style)
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    // eslint-disable-next-line unicorn/prefer-code-point
+    hash = hash * 31 + value.charCodeAt(i) | 0;
+  }
+  return hash;
+}
 
 function jsonStringifyDate(value: Date | ImmutableDate): string {
   if (value instanceof Date) {
@@ -587,17 +916,6 @@ function serializeArrayBufferLiteral(buffer: ArrayBuffer): string {
   return `${ARRAY_BUFFER_PREFIX}${JSON.stringify(arrayBufferToBase64(buffer))}`;
 }
 
-function parseArrayBufferLiteral(token: string): ArrayBuffer {
-  const jsonPortion = token.slice(ARRAY_BUFFER_PREFIX.length);
-  const parsed = parseJson(jsonPortion);
-
-  if (typeof parsed !== 'string') {
-    throw new TypeError(`Invalid ArrayBuffer literal token: ${token}`);
-  }
-
-  return base64ToArrayBuffer(parsed);
-}
-
 function unwrapArrayBuffer(
   value: ArrayBuffer | ImmutableArrayBuffer
 ): ArrayBuffer {
@@ -606,38 +924,8 @@ function unwrapArrayBuffer(
     : value;
 }
 
-function parseTaggedMessage(token: string): TaggedMessageData {
-  // Format: $TypeName{...}
-  // Find the opening brace to separate type name from data
-  const braceIndex = token.indexOf('{');
-  if (braceIndex === -1) {
-    throw new TypeError(`Invalid tagged message token: ${token}`);
-  }
-
-  const typeName = token.slice(1, braceIndex); // Skip the '$' prefix
-  const dataStr = token.slice(braceIndex);
-  const data = parseObjectLiteral(dataStr);
-
-  return { $tag: typeName, $data: data };
-}
-
 function serializeUrlLiteral(url: URL): string {
   return `${URL_PREFIX}${jsonStringifyUrl(url)}`;
-}
-
-function parseUrlLiteral(token: string): URL {
-  const jsonPortion = token.slice(URL_PREFIX.length);
-  const parsed = parseJson(jsonPortion);
-
-  if (typeof parsed !== 'string') {
-    throw new TypeError(`Invalid URL literal token: ${token}`);
-  }
-
-  try {
-    return new URL(parsed);
-  } catch {
-    throw new TypeError(`Invalid URL value: ${parsed}`);
-  }
 }
 
 interface ObjectEntry {
@@ -674,303 +962,6 @@ function serializeObjectKey(key: string): string {
     return key;
   }
   return JSON.stringify(key);
-}
-
-function parseArrayLiteral(literal: string): DataArray {
-  const trimmed = literal.trim();
-
-  if (!trimmed.startsWith('[') || !trimmed.endsWith(']')) {
-    throw new Error('Invalid array literal.');
-  }
-
-  if (trimmed === '[]') {
-    return [];
-  }
-
-  const content = trimmed.slice(1, -1);
-  const tokens = splitTopLevel(content);
-  return tokens.map((token) => parseLiteralToken(token));
-}
-
-function splitTopLevel(content: string): string[] {
-  const tokens: string[] = [];
-  let depth = 0;
-  let inString = false;
-  let escaping = false;
-  let start = 0;
-
-  const push = (end: number) => {
-    tokens.push(content.slice(start, end).trim());
-    start = end + 1;
-  };
-
-  // We care about exact code-unit positions here, not Unicode code points.
-  for (let i = 0; i < content.length; i += 1) {
-    const char = content[i];
-    if (inString) {
-      if (escaping) {
-        escaping = false;
-      } else if (char === '\\') {
-        escaping = true;
-      } else if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (char === '[' || char === '{') {
-      depth += 1;
-      continue;
-    }
-
-    if (char === ']' || char === '}') {
-      depth -= 1;
-      continue;
-    }
-
-    if (char === ',' && depth === 0) {
-      push(i);
-    }
-  }
-
-  tokens.push(content.slice(start).trim());
-  return tokens.filter((token) => token.length > 0 || token === '');
-}
-
-function parseLiteralToken(token: string) {
-  const trimmed = token.trim();
-
-  if (trimmed.startsWith('M[')) {
-    const parsedArray = parseArrayLiteral(trimmed.slice(1));
-    // TODO: Add asserts where there's a cast here.
-    const entries = parsedArray.map((entry) => entry as [MapKey, DataValue]);
-    return new ImmutableMap(entries);
-  }
-
-  if (trimmed.startsWith('S[')) {
-    const parsedArray = parseArrayLiteral(trimmed.slice(1));
-    return new ImmutableSet(parsedArray);
-  }
-
-  if (!trimmed || trimmed === 'undefined') {
-    return undefined;
-  }
-
-  if (trimmed === 'null') {
-    return null;
-  }
-
-  if (trimmed === 'true') {
-    return true;
-  }
-
-  if (trimmed === 'false') {
-    return false;
-  }
-
-  if (trimmed.startsWith(`${URL_PREFIX}"`)) {
-    return parseUrlLiteral(trimmed);
-  }
-
-  if (trimmed.startsWith(`${ARRAY_BUFFER_PREFIX}"`)) {
-    return parseArrayBufferLiteral(trimmed);
-  }
-
-  const num = Number(trimmed);
-  if (!Number.isNaN(num)) {
-    return num;
-  }
-
-  if (trimmed.startsWith('[')) {
-    return parseArrayLiteral(trimmed);
-  }
-
-  if (trimmed.startsWith('$')) {
-    return parseTaggedMessage(trimmed);
-  }
-
-  if (trimmed.startsWith('{')) {
-    return parseObjectLiteral(trimmed);
-  }
-
-  if (trimmed.startsWith('"') || trimmed.startsWith(`${DATE_PREFIX}"`)) {
-    return parseStringOrDate(trimmed);
-  }
-
-  if (SIMPLE_STRING_RE.test(trimmed)) {
-    return trimmed;
-  }
-
-  throw new Error(`Invalid literal token: ${trimmed}`);
-}
-
-function parseObjectLiteral(literal: string): DataObject {
-  const trimmed = literal.trim();
-
-  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
-    throw new Error('Invalid object literal.');
-  }
-
-  if (trimmed === '{}') {
-    return {};
-  }
-
-  const content = trimmed.slice(1, -1);
-  const tokens = splitTopLevel(content);
-
-  let expectedIndex = 1;
-
-  return tokens.reduce<DataObject>((entries, token) => {
-    if (!token) {
-      return entries;
-    }
-
-    const split = splitKeyValue(token);
-
-    if (!split) {
-      const key = String(expectedIndex);
-      const value = parseLiteralToken(token);
-      entries[key] = value;
-      expectedIndex += 1;
-      return entries;
-    }
-
-    const [keyToken, valueToken] = split;
-    const key = parseObjectKey(keyToken);
-    const value = parseLiteralToken(valueToken);
-    entries[key] = value;
-
-    const numericKey = parseNumericIndex(key);
-    if (numericKey != null) {
-      expectedIndex = numericKey + 1;
-    }
-    return entries;
-  }, {});
-}
-
-function splitKeyValue(entry: string): [string, string] | null {
-  let depth = 0;
-  let inString = false;
-  let escaping = false;
-
-  for (let i = 0; i < entry.length; i += 1) {
-    const char = entry[i];
-
-    if (inString) {
-      if (escaping) {
-        escaping = false;
-      } else if (char === '\\') {
-        escaping = true;
-      } else if (char === '"') {
-        inString = false;
-      }
-      continue;
-    }
-
-    if (char === '"') {
-      inString = true;
-      continue;
-    }
-
-    if (char === '{' || char === '[') {
-      depth += 1;
-      continue;
-    }
-
-    if (char === '}' || char === ']') {
-      depth -= 1;
-      continue;
-    }
-
-    if (char === ':' && depth === 0) {
-      const key = entry.slice(0, i).trim();
-      const value = entry.slice(i + 1).trim();
-
-      if (!key || !value) {
-        throw new Error(`Invalid object entry: ${entry}`);
-      }
-
-      return [key, value];
-    }
-  }
-
-  return null;
-}
-
-function parseObjectKey(token: string): string {
-  const trimmed = token.trim();
-
-  if (!trimmed) {
-    throw new Error('Invalid object key.');
-  }
-
-  if (trimmed.startsWith('"')) {
-    const parsed = parseJson(trimmed);
-
-    if (typeof parsed !== 'string') {
-      throw new TypeError(`Invalid object key literal: ${token}`);
-    }
-
-    return parsed;
-  }
-
-  if (canUseBareString(trimmed) || NUMERIC_STRING_RE.test(trimmed)) {
-    return trimmed;
-  }
-
-  throw new Error(`Invalid object key literal: ${token}`);
-}
-
-function parseNumericIndex(key: string): number | null {
-  const num = Number(key);
-
-  if (!Number.isInteger(num) || num < 1) {
-    return null;
-  }
-
-  return num;
-}
-
-// Simple deterministic string hash (Java-style)
-function hashString(value: string): number {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    // eslint-disable-next-line unicorn/prefer-code-point
-    hash = hash * 31 + value.charCodeAt(i) | 0;
-  }
-  return hash;
-}
-
-function parseStringOrDate(token: string): string | Date {
-  if (token.startsWith(`${DATE_PREFIX}"`)) {
-    const jsonPortion = token.slice(DATE_PREFIX.length);
-    const parsed = parseJson(jsonPortion);
-
-    if (typeof parsed !== 'string') {
-      throw new TypeError(`Invalid date literal token: ${token}`);
-    }
-
-    const date = new Date(parsed);
-
-    if (Number.isNaN(date.getTime())) {
-      throw new TypeError(`Invalid date value: ${parsed}`);
-    }
-
-    return date;
-  }
-
-  const parsedString = parseJson(token);
-
-  if (typeof parsedString !== 'string') {
-    throw new TypeError(`Invalid string literal token: ${token}`);
-  }
-
-  return parsedString;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
