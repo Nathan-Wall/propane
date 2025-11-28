@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useCallback, memo } from 'react';
 import type { Dispatch, SetStateAction, ComponentType } from 'react';
 import { equals, ADD_UPDATE_LISTENER } from '@propanejs/runtime';
 
 interface PropaneListenable<T> {
-  [ADD_UPDATE_LISTENER](
-    listener: (val: T) => void
-  ): { unsubscribe: () => void };
+  [ADD_UPDATE_LISTENER](listener: (val: T) => void): T;
 }
 
 // Tracks whether we're inside an update() callback
@@ -100,23 +98,25 @@ export function update<T>(callback: () => T): T {
 export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<S>(() => {
+    const initial = typeof initialState === 'function'
+      ? (initialState as () => S)()
+      : initialState;
 
-  useEffect(() => {
+    // Subscribe immediately if it's a listenable
     if (
-      state
-      && typeof state === 'object'
-      && ADD_UPDATE_LISTENER in state
+      initial
+      && typeof initial === 'object'
+      && ADD_UPDATE_LISTENER in initial
     ) {
-      const listenableState = state as unknown as PropaneListenable<S>;
-      const { unsubscribe } = listenableState[ADD_UPDATE_LISTENER](
-        (next: S) => {
-          scheduleStateUpdate(() => setState(next));
-        }
-      );
-      return unsubscribe;
+      const listenable = initial as unknown as PropaneListenable<S>;
+      return listenable[ADD_UPDATE_LISTENER]((next: S) => {
+        scheduleStateUpdate(() => setState(next));
+      });
     }
-  }, [state]);
+
+    return initial;
+  });
 
   const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
     setState((prev) => {
@@ -125,6 +125,17 @@ export function usePropaneState<S>(
         : value;
       if (equals(prev, next)) {
         return prev;
+      }
+      // Subscribe to the new value if it's a listenable
+      if (
+        next
+        && typeof next === 'object'
+        && ADD_UPDATE_LISTENER in next
+      ) {
+        const listenable = next as unknown as PropaneListenable<S>;
+        return listenable[ADD_UPDATE_LISTENER]((updated: S) => {
+          scheduleStateUpdate(() => setState(updated));
+        });
       }
       return next;
     });

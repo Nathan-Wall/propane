@@ -7,7 +7,7 @@ import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import { ImmutableDate } from './common/time/date.js';
 import { ImmutableUrl } from './common/web/url.js';
 import { ADD_UPDATE_LISTENER } from './symbols.js';
-import { isDetachable, detachValue } from './common/lock.js';
+import { needsDetach, detachValue } from './common/detach.js';
 
 const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
@@ -107,10 +107,10 @@ export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
   protected readonly $listeners: Set<Listener<T>>;
-  #childUnsubscribes: (() => void)[] = [];
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
+  #detachedCache?: Message<T>;
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>): T;
@@ -128,32 +128,23 @@ export abstract class Message<T extends DataObject> {
   }
 
   [ADD_UPDATE_LISTENER](
-    listener: (val: this) => void
-  ): { unsubscribe: () => void } {
+    listener: (val: Message<T>) => void
+  ): Message<T> {
     const l = listener as unknown as Listener<T>;
-    if (this.$listeners.size === 0) {
-      this.$enableChildListeners();
-    }
-    this.$listeners.add(l);
-    return {
-      unsubscribe: () => {
-        this.$listeners.delete(l);
-        if (this.$listeners.size === 0) {
-          this.$disableChildListeners();
-        }
-      },
-    };
-  }
+    const newListeners = new Set(this.$listeners);
+    newListeners.add(l);
 
-  protected $addChildUnsubscribe(fn: () => void): void {
-    this.#childUnsubscribes.push(fn);
-  }
-
-  protected $disableChildListeners(): void {
-    for (const unsubscribe of this.#childUnsubscribes) {
-      unsubscribe();
+    const descriptors = this.$getPropDescriptors();
+    const entries: Record<string, unknown> = {};
+    for (const descriptor of descriptors) {
+      entries[String(descriptor.name)] = descriptor.getValue();
     }
-    this.#childUnsubscribes = [];
+
+    const Constructor = this.constructor as MessageConstructor<T>;
+    return new Constructor(
+      this.$fromEntries(entries),
+      newListeners
+    );
   }
 
   protected $update(value: this): this {
@@ -176,6 +167,9 @@ export abstract class Message<T extends DataObject> {
    * new instances but won't trigger React state updates. Use this to pass
    * data to components or functions that shouldn't be able to update state.
    *
+   * Results are cached and reused as long as the cached message has no
+   * listeners added to it.
+   *
    * @example
    * // Pass detached data to a child component
    * <ChildComponent data={message.detach()} />
@@ -185,22 +179,27 @@ export abstract class Message<T extends DataObject> {
    * processData(message.detach());
    */
   detach(): this {
-    const descriptors = this.$getPropDescriptors();
-
+    // Return this if no listeners on this message or any children
     if (this.$listeners.size === 0) {
-      // Still need to detach children even if this message has no listeners
-      let hasDetachableChildren = false;
+      const descriptors = this.$getPropDescriptors();
+      let childNeedsDetach = false;
       for (const descriptor of descriptors) {
-        if (isDetachable(descriptor.getValue())) {
-          hasDetachableChildren = true;
+        if (needsDetach(descriptor.getValue())) {
+          childNeedsDetach = true;
           break;
         }
       }
-      if (!hasDetachableChildren) {
+      if (!childNeedsDetach) {
         return this;
       }
     }
 
+    // Reuse cached detached message if it has no listeners
+    if (this.#detachedCache && this.#detachedCache.$listeners.size === 0) {
+      return this.#detachedCache as this;
+    }
+
+    const descriptors = this.$getPropDescriptors();
     const entries: Record<string, unknown> = {};
     for (const descriptor of descriptors) {
       entries[String(descriptor.name)] = detachValue(descriptor.getValue());
@@ -211,7 +210,9 @@ export abstract class Message<T extends DataObject> {
       listeners?: Set<Listener<T>>
     ) => this;
 
-    return new Constructor(this.$fromEntries(entries), undefined);
+    const detached = new Constructor(this.$fromEntries(entries), undefined);
+    this.#detachedCache = detached;
+    return detached;
   }
 
   // Immutable.js compatibility: provide a stable hash based on canonical
@@ -340,16 +341,19 @@ export abstract class Message<T extends DataObject> {
    * Otherwise, interns this message and returns it.
    */
   private intern(): this {
-    const key = this.serialize();
+    // Messages with listeners should be detached before interning
+    const toIntern = this.$listeners.size > 0 ? this.detach() : this;
+
+    const key = toIntern.serialize();
     const existing = internPool.get(key)?.deref();
 
-    if (existing && existing.#typeTag === this.#typeTag) {
+    if (existing && existing.#typeTag === toIntern.#typeTag) {
       return existing as unknown as this;
     }
 
-    internPool.set(key, new WeakRef(this as unknown as Message<DataObject>));
-    registry.register(this, key);
-    return this;
+    internPool.set(key, new WeakRef(toIntern as unknown as Message<DataObject>));
+    registry.register(toIntern, key);
+    return toIntern;
   }
 }
 

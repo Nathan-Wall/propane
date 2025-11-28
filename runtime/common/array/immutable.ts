@@ -1,6 +1,6 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
-import { isDetachable, detachValue } from '../lock.js';
+import { needsDetach, detachValue } from '../detach.js';
 
 // Basic Listener type compatible with Message Listener
 type Listener<T> = (val: ImmutableArray<T>) => void;
@@ -10,9 +10,7 @@ function isMessageLike(
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
-  [ADD_UPDATE_LISTENER]?: (
-    listener: (val: unknown) => void
-  ) => { unsubscribe: () => void };
+  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => unknown;
 } {
   return Boolean(
     value
@@ -79,8 +77,7 @@ function hashValue(value: unknown): string {
 export class ImmutableArray<T> implements ReadonlyArray<T> {
   #items: T[];
   #hash?: number;
-  protected readonly $listeners: Set<Listener<T>>; 
-  #childUnsubscribes: (() => void)[] = [];
+  protected readonly $listeners: Set<Listener<T>>;
   readonly [Symbol.toStringTag] = 'ImmutableArray';
 
   constructor(
@@ -103,50 +100,40 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
         (_, i) => arrayLike[i]
       );
     }
-    this.#defineIndexProps();
-    Object.freeze(this.#items);
-    Object.freeze(this);
 
+    // Subscribe to children before freezing, replacing items with listener-enabled versions
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }
+
+    this.#defineIndexProps();
+    Object.freeze(this.#items);
+    Object.freeze(this);
   }
 
   [ADD_UPDATE_LISTENER](
-    listener: (val: this) => void
-  ): { unsubscribe: () => void } {
+    listener: (val: ImmutableArray<T>) => void
+  ): ImmutableArray<T> {
     const l = listener as unknown as Listener<T>;
-    if (this.$listeners.size === 0) {
-      this.$enableChildListeners();
-    }
-    this.$listeners.add(l);
-    return {
-      unsubscribe: () => {
-        this.$listeners.delete(l);
-        if (this.$listeners.size === 0) {
-          this.$disableChildListeners();
-        }
-      },
-    };
+    const newListeners = new Set(this.$listeners);
+    newListeners.add(l);
+
+    return new ImmutableArray(
+      this.toArray(),
+      newListeners
+    );
   }
 
   protected $enableChildListeners(): void {
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
       if (isMessageLike(item) && item[ADD_UPDATE_LISTENER]) {
-        const { unsubscribe } = item[ADD_UPDATE_LISTENER]((newItem) => {
+        const listened = item[ADD_UPDATE_LISTENER]((newItem) => {
           this.set(i, newItem as T);
         });
-        this.#childUnsubscribes.push(unsubscribe);
+        this.#items[i] = listened as T;
       }
     }
-  }
-
-  protected $disableChildListeners(): void {
-    for (const unsubscribe of this.#childUnsubscribes) {
-      unsubscribe();
-    }
-    this.#childUnsubscribes = [];
   }
 
   protected $update(value: this): this {
@@ -164,15 +151,15 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    */
   detach(): ImmutableArray<T> {
     if (this.$listeners.size === 0) {
-      // Still need to detach children even if this array has no listeners
-      let hasDetachableChildren = false;
+      // Still need to detach children if they have listeners
+      let childNeedsDetach = false;
       for (const item of this.#items) {
-        if (isDetachable(item)) {
-          hasDetachableChildren = true;
+        if (needsDetach(item)) {
+          childNeedsDetach = true;
           break;
         }
       }
-      if (!hasDetachableChildren) {
+      if (!childNeedsDetach) {
         return this;
       }
     }

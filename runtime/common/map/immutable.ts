@@ -1,14 +1,12 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
-import { isDetachable, detachValue } from '../lock.js';
+import { needsDetach, detachValue } from '../detach.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
-  [ADD_UPDATE_LISTENER]?: (
-    listener: (val: unknown) => void
-  ) => { unsubscribe: () => void };
+  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => unknown;
 } {
   return Boolean(
     value
@@ -173,7 +171,6 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #size: number;
   #hash?: number;
   protected readonly $listeners: Set<Listener<K, V>>;
-  #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   constructor(
@@ -213,41 +210,30 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   }
 
   [ADD_UPDATE_LISTENER](
-    listener: (val: this) => void
-  ): { unsubscribe: () => void } {
+    listener: (val: ImmutableMap<K, V>) => void
+  ): ImmutableMap<K, V> {
     const l = listener as unknown as Listener<K, V>;
-    if (this.$listeners.size === 0) {
-      this.$enableChildListeners();
-    }
-    this.$listeners.add(l);
-    return {
-      unsubscribe: () => {
-        this.$listeners.delete(l);
-        if (this.$listeners.size === 0) {
-          this.$disableChildListeners();
-        }
-      },
-    };
+    const newListeners = new Set(this.$listeners);
+    newListeners.add(l);
+
+    return new ImmutableMap(
+      [...this],
+      newListeners
+    );
   }
 
   protected $enableChildListeners(): void {
     for (const bucket of this.#buckets.values()) {
-      for (const [key, value] of bucket) {
+      for (let i = 0; i < bucket.length; i++) {
+        const [key, value] = bucket[i];
         if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
-          const { unsubscribe } = value[ADD_UPDATE_LISTENER]((newValue: V) => {
-            this.set(key, newValue);
+          const listened = value[ADD_UPDATE_LISTENER]((updatedValue: V) => {
+            this.set(key, updatedValue);
           });
-          this.#childUnsubscribes.push(unsubscribe);
+          bucket[i] = [key, listened as V];
         }
       }
     }
-  }
-
-  protected $disableChildListeners(): void {
-    for (const unsubscribe of this.#childUnsubscribes) {
-      unsubscribe();
-    }
-    this.#childUnsubscribes = [];
   }
 
   protected $update(value: this): this {
@@ -265,15 +251,15 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    */
   detach(): ImmutableMap<K, V> {
     if (this.$listeners.size === 0) {
-      // Still need to detach children even if this map has no listeners
-      let hasDetachableChildren = false;
+      // Still need to detach children if they have listeners
+      let childNeedsDetach = false;
       for (const [k, v] of this) {
-        if (isDetachable(k) || isDetachable(v)) {
-          hasDetachableChildren = true;
+        if (needsDetach(k) || needsDetach(v)) {
+          childNeedsDetach = true;
           break;
         }
       }
-      if (!hasDetachableChildren) {
+      if (!childNeedsDetach) {
         return this;
       }
     }

@@ -1,14 +1,12 @@
 import { normalizeForJson } from '../json/stringify.js';
 import { ADD_UPDATE_LISTENER } from '../../symbols.js';
-import { isDetachable, detachValue } from '../lock.js';
+import { needsDetach, detachValue } from '../detach.js';
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
-  [ADD_UPDATE_LISTENER]?: (
-    listener: (val: unknown) => void
-  ) => { unsubscribe: () => void };
+  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => unknown;
 } {
   return Boolean(
     value
@@ -79,7 +77,6 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   #size: number;
   #hash?: number;
   protected readonly $listeners: Set<Listener<T>>;
-  #childUnsubscribes: (() => void)[] = [];
   readonly [Symbol.toStringTag] = 'ImmutableSet';
 
   constructor(
@@ -127,52 +124,41 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   }
 
   [ADD_UPDATE_LISTENER](
-    listener: (val: this) => void
-  ): { unsubscribe: () => void } {
+    listener: (val: ImmutableSet<T>) => void
+  ): ImmutableSet<T> {
     const l = listener as unknown as Listener<T>;
-    if (this.$listeners.size === 0) {
-      this.$enableChildListeners();
-    }
-    this.$listeners.add(l);
-    return {
-      unsubscribe: () => {
-        this.$listeners.delete(l);
-        if (this.$listeners.size === 0) {
-          this.$disableChildListeners();
-        }
-      },
-    };
+    const newListeners = new Set(this.$listeners);
+    newListeners.add(l);
+
+    return new ImmutableSet(
+      [...this],
+      newListeners
+    );
   }
 
   protected $enableChildListeners(): void {
     for (const bucket of this.#buckets.values()) {
-      for (const value of bucket) {
+      for (let i = 0; i < bucket.length; i++) {
+        const value = bucket[i];
         if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
-          const { unsubscribe } = value[ADD_UPDATE_LISTENER]((newValue: T) => {
+          const listened = value[ADD_UPDATE_LISTENER]((updatedValue: T) => {
             // We must replace the item.
             const newValues: T[] = [];
             for (const v of this) {
-                if (equalValues(v, value)) continue;
-                newValues.push(v);
+              if (equalValues(v, listened)) continue;
+              newValues.push(v);
             }
-            newValues.push(newValue);
+            newValues.push(updatedValue);
             const nextInstance = new ImmutableSet(
               newValues,
               new Set(this.$listeners)
             );
             this.$update(nextInstance as this);
           });
-          this.#childUnsubscribes.push(unsubscribe);
+          bucket[i] = listened as T;
         }
       }
     }
-  }
-
-  protected $disableChildListeners(): void {
-    for (const unsubscribe of this.#childUnsubscribes) {
-      unsubscribe();
-    }
-    this.#childUnsubscribes = [];
   }
 
   protected $update(value: this): this {
@@ -190,15 +176,15 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
    */
   detach(): ImmutableSet<T> {
     if (this.$listeners.size === 0) {
-      // Still need to detach children even if this set has no listeners
-      let hasDetachableChildren = false;
+      // Still need to detach children if they have listeners
+      let childNeedsDetach = false;
       for (const v of this) {
-        if (isDetachable(v)) {
-          hasDetachableChildren = true;
+        if (needsDetach(v)) {
+          childNeedsDetach = true;
           break;
         }
       }
-      if (!hasDetachableChildren) {
+      if (!childNeedsDetach) {
         return this;
       }
     }
