@@ -1,10 +1,9 @@
-import React, { useCallback } from 'react';
-import { usePropaneState } from '@propanejs/react';
+import { usePropaneState, update } from '@propanejs/react';
 import { Todo, AppState } from './types.propane.ts';
-import { ImmutableArray } from '@propanejs/runtime';
+
+const uuid = () => crypto.randomUUID();
 
 const TodoItem = ({ todo, onToggle }: { todo: Todo; onToggle: (id: string) => void }) => {
-  console.log(`Rendering TodoItem: ${todo.text}`);
   return (
     <li
       style={{
@@ -19,8 +18,6 @@ const TodoItem = ({ todo, onToggle }: { todo: Todo; onToggle: (id: string) => vo
 };
 
 function App() {
-  // Initialize state with a Propane message
-  // usePropaneState will use equals() to determine if a re-render is needed
   const [state] = usePropaneState<AppState>(
     new AppState({
       todos: [
@@ -38,38 +35,33 @@ function App() {
     const text = input.value.trim();
     if (!text) return;
 
-    // update
-    state.todos.push(new Todo({
-      id: uuid(),
-      text: text,
-      completed: false,
-    }));
+    update(() => {
+      state.todos.push(new Todo({
+        id: uuid(),
+        text,
+        completed: false,
+      }));
+    });
 
     form.reset();
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // update
-    state.setFilter(e.target.value);
-    // update(() => state.setFilter(e.target.value));
-    // state.setFilter(e.target.value).commit();
-    // Immer
-    // setState(draft => draft.filter = e.target.value);
+  const handleToggle = (id: string) => {
+    const todo = state.todos.find(t => t.id === id);
+    if (todo) {
+      update(() => todo.setCompleted(!todo.completed));
+    }
   };
 
-  // Demonstration of equality check skipping render
-  const handleNoOp = () => {
-    console.log("Triggering no-op update");
-    //state.update(u => AppState.deserialize(u.serialize()));
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    update(() => state.setFilter(e.target.value as AppState['filter']));
   };
 
   const filteredTodos = state.todos.filter(todo => {
-      if (state.filter === 'active') return !todo.completed;
-      if (state.filter === 'completed') return todo.completed;
-      return true;
+    if (state.filter === 'active') return !todo.completed;
+    if (state.filter === 'completed') return todo.completed;
+    return true;
   });
-
-  console.log("Rendering App");
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
@@ -81,29 +73,29 @@ function App() {
       </form>
 
       <div style={{ marginBottom: '1rem' }}>
-          Filter:
-          <select value={state.filter} onChange={handleFilterChange}>
-              <option value="all">All</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-          </select>
+        Filter:
+        <select value={state.filter} onChange={handleFilterChange}>
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="completed">Completed</option>
+        </select>
       </div>
-
-      <button onClick={handleNoOp}>Test No-Op Update (Check Console)</button>
 
       <ul>
         {filteredTodos.map((todo) => (
           <TodoItem
             key={todo.id}
             todo={todo}
-            onToggle={/* update */todo.setCompleted(false)}
+            onToggle={handleToggle}
           />
         ))}
       </ul>
+
+      <p style={{ marginTop: '1rem', color: '#666', fontSize: '0.9rem' }}>
+        {state.todos.filter(t => !t.completed).length} items left
+      </p>
     </div>
   );
 }
-
-const uuid = () = crypto.randomUUID();
 
 export default App;
