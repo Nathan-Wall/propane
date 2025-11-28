@@ -158,7 +158,20 @@ const success = compileAll();
 if (watch) {
   console.log('\nWatching for changes...\n');
 
+  // Collect directories to watch from targets
   const directories = new Set<string>();
+  for (const target of targets) {
+    const resolved = path.resolve(target);
+    if (fs.existsSync(resolved)) {
+      const stats = fs.statSync(resolved);
+      if (stats.isDirectory()) {
+        directories.add(resolved);
+      } else if (stats.isFile()) {
+        directories.add(path.dirname(resolved));
+      }
+    }
+  }
+
   for (const dir of directories) {
     fs.watch(dir, { recursive: true }, (eventType, filename) => {
       if (filename?.endsWith('.propane')) {
