@@ -470,7 +470,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   copyWithin(target: number, start: number, end?: number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.copyWithin(target, start, end);
-    return new ImmutableArray(copy);
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    return this.$update(next as unknown as this);
   }
 
   /**
@@ -479,7 +480,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   fill(value: T, start?: number, end?: number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.fill(value, start, end);
-    return new ImmutableArray(copy);
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    return this.$update(next as unknown as this);
   }
 
   /**
@@ -492,7 +494,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const copy = [...this.#items];
     const popped = copy.pop();
-    return [popped, new ImmutableArray(copy)];
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    this.$update(next as unknown as this);
+    return [popped, next];
   }
 
   /**
@@ -502,14 +506,22 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     if (items.length === 0) {
       return this;
     }
-    return new ImmutableArray([...this.#items, ...items]);
+    const next = new ImmutableArray(
+      [...this.#items, ...items],
+      new Set(this.$listeners)
+    );
+    return this.$update(next as unknown as this);
   }
 
   /**
    * Returns a new ImmutableArray with elements in reversed order.
    */
   reverse(): ImmutableArray<T> {
-    return new ImmutableArray(this.#items.toReversed());
+    const next = new ImmutableArray(
+      this.#items.toReversed(),
+      new Set(this.$listeners)
+    );
+    return this.$update(next as unknown as this);
   }
 
   /**
@@ -522,7 +534,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const copy = [...this.#items];
     const shifted = copy.shift();
-    return [shifted, new ImmutableArray(copy)];
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    this.$update(next as unknown as this);
+    return [shifted, next];
   }
 
   /**
@@ -531,7 +545,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   sort(compareFn?: (a: T, b: T) => number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.sort(compareFn);
-    return new ImmutableArray(copy);
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    return this.$update(next as unknown as this);
   }
 
   /**
@@ -545,7 +560,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   ): [T[], ImmutableArray<T>] {
     const copy = [...this.#items];
     const removed = copy.splice(start, deleteCount ?? 0, ...items);
-    return [removed, new ImmutableArray(copy)];
+    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    this.$update(next as unknown as this);
+    return [removed, next];
   }
 
   /**
@@ -555,7 +572,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     if (items.length === 0) {
       return this;
     }
-    return new ImmutableArray([...items, ...this.#items]);
+    const next = new ImmutableArray(
+      [...items, ...this.#items],
+      new Set(this.$listeners)
+    );
+    return this.$update(next as unknown as this);
   }
 
   equals(other: readonly T[] | null | undefined): boolean {
