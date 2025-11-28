@@ -249,6 +249,123 @@ export type Cache = {
 
 Propane provides first-class React support via `@propanejs/react`.
 
+### Comparison: React vs Immer vs Propane
+
+Here's how updating nested state compares across different approaches:
+
+**State shape:**
+```typescript
+type State = {
+  user: {
+    profile: {
+      name: string;
+      settings: {
+        theme: 'light' | 'dark';
+        notifications: boolean;
+      };
+    };
+    posts: { id: number; title: string; likes: number }[];
+  };
+};
+```
+
+#### Native React
+
+Manual spreading at every level - verbose and error-prone:
+
+```typescript
+const [state, setState] = useState<State>(initialState);
+
+// Update deeply nested field
+const toggleTheme = () => {
+  setState(prev => ({
+    ...prev,
+    user: {
+      ...prev.user,
+      profile: {
+        ...prev.user.profile,
+        settings: {
+          ...prev.user.profile.settings,
+          theme: prev.user.profile.settings.theme === 'light' ? 'dark' : 'light',
+        },
+      },
+    },
+  }));
+};
+
+// Update item in nested array
+const likePost = (postId: number) => {
+  setState(prev => ({
+    ...prev,
+    user: {
+      ...prev.user,
+      posts: prev.user.posts.map(post =>
+        post.id === postId ? { ...post, likes: post.likes + 1 } : post
+      ),
+    },
+  }));
+};
+```
+
+#### Immer
+
+Mutable syntax via proxy - cleaner but requires `produce` wrapper:
+
+```typescript
+import { useImmer } from 'use-immer';
+
+const [state, setState] = useImmer<State>(initialState);
+
+// Update deeply nested field
+const toggleTheme = () => {
+  setState(draft => {
+    const theme = draft.user.profile.settings.theme;
+    draft.user.profile.settings.theme = theme === 'light' ? 'dark' : 'light';
+  });
+};
+
+// Update item in nested array
+const likePost = (postId: number) => {
+  setState(draft => {
+    const post = draft.user.posts.find(p => p.id === postId);
+    if (post) post.likes++;
+  });
+};
+```
+
+#### Propane
+
+Fluent setters with automatic change propagation:
+
+```typescript
+import { usePropaneState, update } from '@propanejs/react';
+
+const [state] = usePropaneState<State>(initialState);
+
+// Update deeply nested field - changes propagate automatically
+const toggleTheme = () => {
+  const current = state.user.profile.settings.theme;
+  update(() => state.user.profile.settings.setTheme(current === 'light' ? 'dark' : 'light'));
+};
+
+// Update item in nested array
+const likePost = (postId: number) => {
+  const post = state.user.posts.find(p => p.id === postId);
+  if (post) update(() => post.setLikes(post.likes + 1));
+};
+```
+
+#### Key Differences
+
+| Aspect | Native React | Immer | Propane |
+|--------|--------------|-------|---------|
+| Syntax | Spread at every level | Mutable-style writes | Fluent setters |
+| Boilerplate | High | Low | Low |
+| Type safety | Manual | Good | Full |
+| Structural equality | Manual | Reference only | Built-in `equals()` |
+| Serialization | Manual | Manual | Built-in |
+| Change propagation | Manual | Automatic | Automatic |
+
 ### Installation
 
 ```bash
