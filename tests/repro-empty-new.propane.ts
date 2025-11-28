@@ -162,9 +162,9 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     return props as RequiredMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#sub[ADD_UPDATE_LISTENER](newValue => {
+    this.#sub = this.#sub[ADD_UPDATE_LISTENER](newValue => {
       this.setSub(newValue);
-    }).unsubscribe);
+    });
   }
   get sub(): UnionFirstNumber {
     return this.#sub;

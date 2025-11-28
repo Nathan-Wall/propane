@@ -42,13 +42,13 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     return props as MapMapKey.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#nested[ADD_UPDATE_LISTENER](newValue => {
+    this.#nested = this.#nested[ADD_UPDATE_LISTENER](newValue => {
       this.setNested(newValue);
-    }).unsubscribe);
+    });
     if (this.#optional) {
-      this.$addChildUnsubscribe(this.#optional[ADD_UPDATE_LISTENER](newValue => {
+      this.#optional = this.#optional[ADD_UPDATE_LISTENER](newValue => {
         this.setOptional(newValue);
-      }).unsubscribe);
+      });
     }
   }
   get nested(): ImmutableMap<ImmutableMap<string, number>, string> {

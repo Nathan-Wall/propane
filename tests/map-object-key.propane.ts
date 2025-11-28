@@ -149,13 +149,13 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return props as MapObjectKey.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#objectKeys[ADD_UPDATE_LISTENER](newValue => {
+    this.#objectKeys = this.#objectKeys[ADD_UPDATE_LISTENER](newValue => {
       this.setObjectKeys(newValue);
-    }).unsubscribe);
+    });
     if (this.#optionalObjectMap) {
-      this.$addChildUnsubscribe(this.#optionalObjectMap[ADD_UPDATE_LISTENER](newValue => {
+      this.#optionalObjectMap = this.#optionalObjectMap[ADD_UPDATE_LISTENER](newValue => {
         this.setOptionalObjectMap(newValue);
-      }).unsubscribe);
+      });
     }
   }
   get objectKeys(): ImmutableMap<MapObjectKey_ObjectKeys_Key, string> {

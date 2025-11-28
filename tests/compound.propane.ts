@@ -95,15 +95,15 @@ export class Compound extends Message<Compound.Data> {
     return props as Compound.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#user[ADD_UPDATE_LISTENER](newValue => {
+    this.#user = this.#user[ADD_UPDATE_LISTENER](newValue => {
       this.setUser(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#indexed[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#indexed = this.#indexed[ADD_UPDATE_LISTENER](newValue => {
       this.setIndexed(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#inline[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#inline = this.#inline[ADD_UPDATE_LISTENER](newValue => {
       this.setInline(newValue);
-    }).unsubscribe);
+    });
   }
   get user(): User {
     return this.#user;

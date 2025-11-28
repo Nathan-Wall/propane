@@ -36,9 +36,9 @@ export class BoardState extends Message<BoardState.Data> {
     return props as BoardState.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#cells[ADD_UPDATE_LISTENER](newValue => {
+    this.#cells = this.#cells[ADD_UPDATE_LISTENER](newValue => {
       this.setCells(newValue);
-    }).unsubscribe);
+    });
   }
   get cells(): ImmutableArray<Cell> {
     return this.#cells;
@@ -169,9 +169,9 @@ export class GameState extends Message<GameState.Data> {
     return props as GameState.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#history[ADD_UPDATE_LISTENER](newValue => {
+    this.#history = this.#history[ADD_UPDATE_LISTENER](newValue => {
       this.setHistory(newValue);
-    }).unsubscribe);
+    });
   }
   get history(): ImmutableArray<BoardState> {
     return this.#history;

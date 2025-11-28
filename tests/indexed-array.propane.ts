@@ -107,20 +107,20 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     return props as ArrayMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#names[ADD_UPDATE_LISTENER](newValue => {
+    this.#names = this.#names[ADD_UPDATE_LISTENER](newValue => {
       this.setNames(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#scores[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#scores = this.#scores[ADD_UPDATE_LISTENER](newValue => {
       this.setScores(newValue);
-    }).unsubscribe);
+    });
     if (this.#flags) {
-      this.$addChildUnsubscribe(this.#flags[ADD_UPDATE_LISTENER](newValue => {
+      this.#flags = this.#flags[ADD_UPDATE_LISTENER](newValue => {
         this.setFlags(newValue);
-      }).unsubscribe);
+      });
     }
-    this.$addChildUnsubscribe(this.#labels[ADD_UPDATE_LISTENER](newValue => {
+    this.#labels = this.#labels[ADD_UPDATE_LISTENER](newValue => {
       this.setLabels(newValue);
-    }).unsubscribe);
+    });
   }
   get names(): ImmutableArray<string> {
     return this.#names;

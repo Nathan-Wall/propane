@@ -61,9 +61,9 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     return props as UrlMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#links[ADD_UPDATE_LISTENER](newValue => {
+    this.#links = this.#links[ADD_UPDATE_LISTENER](newValue => {
       this.setLinks(newValue);
-    }).unsubscribe);
+    });
   }
   get id(): number {
     return this.#id;

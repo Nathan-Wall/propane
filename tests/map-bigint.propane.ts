@@ -31,9 +31,9 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     return props as MapBigintKey.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#values[ADD_UPDATE_LISTENER](newValue => {
+    this.#values = this.#values[ADD_UPDATE_LISTENER](newValue => {
       this.setValues(newValue);
-    }).unsubscribe);
+    });
   }
   get values(): ImmutableMap<bigint, string> {
     return this.#values;

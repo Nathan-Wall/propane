@@ -2497,9 +2497,12 @@ function buildEnableChildListenersMethod(
       t.cloneNode(prop.privateName)
     );
 
+    // this.#field = this.#field[ADD_UPDATE_LISTENER]((newValue) => {
+    //   this.setField(newValue);
+    // });
     const addListenerCall = t.callExpression(
       t.memberExpression(
-        fieldAccess,
+        t.cloneNode(fieldAccess),
         t.identifier('ADD_UPDATE_LISTENER'),
         true
       ),
@@ -2521,28 +2524,23 @@ function buildEnableChildListenersMethod(
       ]
     );
 
-    const addChildUnsubscribeCall = t.callExpression(
-      t.memberExpression(
-        t.thisExpression(),
-        t.identifier('$addChildUnsubscribe')
-      ),
-      [
-        t.memberExpression(addListenerCall, t.identifier('unsubscribe')),
-      ]
+    const assignmentStatement = t.expressionStatement(
+      t.assignmentExpression(
+        '=',
+        t.cloneNode(fieldAccess),
+        addListenerCall
+      )
     );
-
-    const listenerStatement = t.expressionStatement(addChildUnsubscribeCall);
 
     if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
       statements.push(
         t.ifStatement(
           fieldAccess,
-          t.blockStatement([listenerStatement])
+          t.blockStatement([assignmentStatement])
         )
       );
-    }
-    else {
-      statements.push(listenerStatement);
+    } else {
+      statements.push(assignmentStatement);
     }
   }
 

@@ -111,9 +111,9 @@ export class User extends Message<User.Data> {
     return props as User.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#height[ADD_UPDATE_LISTENER](newValue => {
+    this.#height = this.#height[ADD_UPDATE_LISTENER](newValue => {
       this.setHeight(newValue);
-    }).unsubscribe);
+    });
   }
   get id(): number {
     return this.#id;

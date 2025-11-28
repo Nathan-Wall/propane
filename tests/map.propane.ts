@@ -139,17 +139,17 @@ export class MapMessage extends Message<MapMessage.Data> {
     return props as MapMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#labels[ADD_UPDATE_LISTENER](newValue => {
+    this.#labels = this.#labels[ADD_UPDATE_LISTENER](newValue => {
       this.setLabels(newValue);
-    }).unsubscribe);
+    });
     if (this.#metadata) {
-      this.$addChildUnsubscribe(this.#metadata[ADD_UPDATE_LISTENER](newValue => {
+      this.#metadata = this.#metadata[ADD_UPDATE_LISTENER](newValue => {
         this.setMetadata(newValue);
-      }).unsubscribe);
+      });
     }
-    this.$addChildUnsubscribe(this.#extras[ADD_UPDATE_LISTENER](newValue => {
+    this.#extras = this.#extras[ADD_UPDATE_LISTENER](newValue => {
       this.setExtras(newValue);
-    }).unsubscribe);
+    });
   }
   get labels(): ImmutableMap<string | number, number> {
     return this.#labels;

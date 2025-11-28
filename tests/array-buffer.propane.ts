@@ -63,9 +63,9 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     return props as ArrayBufferMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#chunks[ADD_UPDATE_LISTENER](newValue => {
+    this.#chunks = this.#chunks[ADD_UPDATE_LISTENER](newValue => {
       this.setChunks(newValue);
-    }).unsubscribe);
+    });
   }
   get id(): number {
     return this.#id;

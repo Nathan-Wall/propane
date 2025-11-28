@@ -16,7 +16,21 @@ const dryRun = args.includes('--dry-run');
 const version = args.find(arg => /^\d+\.\d+\.\d+/.test(arg));
 
 if (!version) {
-  console.error('Error: Please provide a version number argument (e.g., node scripts/publish-all.js 1.0.0)');
+  let currentVersion = null;
+  try {
+    currentVersion = execSync(
+      'npm view @propanejs/runtime version',
+      { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
+    ).trim();
+  } catch {
+    // Package not published yet
+  }
+
+  console.error('Error: Please provide a version number argument.');
+  if (currentVersion) {
+    console.error(`Current published version: ${currentVersion}`);
+  }
+  console.error('Example: npm run publish 1.0.0');
   process.exit(1);
 }
 

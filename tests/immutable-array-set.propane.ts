@@ -44,12 +44,12 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return props as ImmutableArraySet.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#arr[ADD_UPDATE_LISTENER](newValue => {
+    this.#arr = this.#arr[ADD_UPDATE_LISTENER](newValue => {
       this.setArr(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#set[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#set = this.#set[ADD_UPDATE_LISTENER](newValue => {
       this.setSet(newValue);
-    }).unsubscribe);
+    });
   }
   get arr(): ImmutableArray<number> {
     return this.#arr;

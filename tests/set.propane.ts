@@ -42,13 +42,13 @@ export class SetMessage extends Message<SetMessage.Data> {
     return props as SetMessage.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#tags[ADD_UPDATE_LISTENER](newValue => {
+    this.#tags = this.#tags[ADD_UPDATE_LISTENER](newValue => {
       this.setTags(newValue);
-    }).unsubscribe);
+    });
     if (this.#ids) {
-      this.$addChildUnsubscribe(this.#ids[ADD_UPDATE_LISTENER](newValue => {
+      this.#ids = this.#ids[ADD_UPDATE_LISTENER](newValue => {
         this.setIds(newValue);
-      }).unsubscribe);
+      });
     }
   }
   get tags(): ImmutableSet<string> {

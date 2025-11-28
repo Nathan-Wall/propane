@@ -53,15 +53,15 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     return props as ToJson_Nested.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#array[ADD_UPDATE_LISTENER](newValue => {
+    this.#array = this.#array[ADD_UPDATE_LISTENER](newValue => {
       this.setArray(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#map[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#map = this.#map[ADD_UPDATE_LISTENER](newValue => {
       this.setMap(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#imap[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#imap = this.#imap[ADD_UPDATE_LISTENER](newValue => {
       this.setImap(newValue);
-    }).unsubscribe);
+    });
   }
   get array(): ImmutableArray<(number | undefined)> {
     return this.#array;
@@ -493,15 +493,15 @@ export class ToJson extends Message<ToJson.Data> {
     return props as ToJson.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#map[ADD_UPDATE_LISTENER](newValue => {
+    this.#map = this.#map[ADD_UPDATE_LISTENER](newValue => {
       this.setMap(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#imap[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#imap = this.#imap[ADD_UPDATE_LISTENER](newValue => {
       this.setImap(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#nested[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#nested = this.#nested[ADD_UPDATE_LISTENER](newValue => {
       this.setNested(newValue);
-    }).unsubscribe);
+    });
   }
   get map(): ImmutableMap<string, number> {
     return this.#map;

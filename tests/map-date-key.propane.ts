@@ -53,16 +53,16 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     return props as MapDateKey.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#dateValues[ADD_UPDATE_LISTENER](newValue => {
+    this.#dateValues = this.#dateValues[ADD_UPDATE_LISTENER](newValue => {
       this.setDateValues(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#urlValues[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#urlValues = this.#urlValues[ADD_UPDATE_LISTENER](newValue => {
       this.setUrlValues(newValue);
-    }).unsubscribe);
+    });
     if (this.#optionalDateMap) {
-      this.$addChildUnsubscribe(this.#optionalDateMap[ADD_UPDATE_LISTENER](newValue => {
+      this.#optionalDateMap = this.#optionalDateMap[ADD_UPDATE_LISTENER](newValue => {
         this.setOptionalDateMap(newValue);
-      }).unsubscribe);
+      });
     }
   }
   get dateValues(): ImmutableMap<ImmutableDate, number> {

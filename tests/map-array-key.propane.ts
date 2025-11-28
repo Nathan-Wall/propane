@@ -53,16 +53,16 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     return props as MapArrayKey.Data;
   }
   protected $enableChildListeners(): void {
-    this.$addChildUnsubscribe(this.#arrayValues[ADD_UPDATE_LISTENER](newValue => {
+    this.#arrayValues = this.#arrayValues[ADD_UPDATE_LISTENER](newValue => {
       this.setArrayValues(newValue);
-    }).unsubscribe);
-    this.$addChildUnsubscribe(this.#numberArrayMap[ADD_UPDATE_LISTENER](newValue => {
+    });
+    this.#numberArrayMap = this.#numberArrayMap[ADD_UPDATE_LISTENER](newValue => {
       this.setNumberArrayMap(newValue);
-    }).unsubscribe);
+    });
     if (this.#optionalArrayMap) {
-      this.$addChildUnsubscribe(this.#optionalArrayMap[ADD_UPDATE_LISTENER](newValue => {
+      this.#optionalArrayMap = this.#optionalArrayMap[ADD_UPDATE_LISTENER](newValue => {
         this.setOptionalArrayMap(newValue);
-      }).unsubscribe);
+      });
     }
   }
   get arrayValues(): ImmutableMap<ImmutableArray<string>, number> {
