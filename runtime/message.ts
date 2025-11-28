@@ -351,7 +351,8 @@ export abstract class Message<T extends DataObject> {
       return existing as unknown as this;
     }
 
-    internPool.set(key, new WeakRef(toIntern as unknown as Message<DataObject>));
+    const ref = new WeakRef(toIntern as unknown as Message<DataObject>);
+    internPool.set(key, ref);
     registry.register(toIntern, key);
     return toIntern;
   }

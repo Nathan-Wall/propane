@@ -137,6 +137,7 @@ export default defineConfig(
   {
     name: 'overrides/formatting',
     rules: {
+      'eol-last': ['error', 'always'],
       'operator-linebreak': [
         'error',
         'before',
