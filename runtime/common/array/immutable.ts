@@ -173,7 +173,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   [n: number]: T;
 
   at(index: number): T | undefined {
-    return this.#items[index];
+    return this.#items.at(index);
   }
 
   get(index: number): T | undefined {
@@ -460,6 +460,102 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   toLocaleString(): string {
     return this.#items.toLocaleString();
+  }
+
+  // Mutating methods - return new ImmutableArray instead of mutating
+
+  /**
+   * Returns a new ImmutableArray with a portion copied to another location.
+   */
+  copyWithin(target: number, start: number, end?: number): ImmutableArray<T> {
+    const copy = [...this.#items];
+    copy.copyWithin(target, start, end);
+    return new ImmutableArray(copy);
+  }
+
+  /**
+   * Returns a new ImmutableArray with all elements filled with a static value.
+   */
+  fill(value: T, start?: number, end?: number): ImmutableArray<T> {
+    const copy = [...this.#items];
+    copy.fill(value, start, end);
+    return new ImmutableArray(copy);
+  }
+
+  /**
+   * Returns a tuple of [poppedElement, newArray] where newArray has the last
+   * element removed. Returns [undefined, this] if array is empty.
+   */
+  pop(): [T | undefined, ImmutableArray<T>] {
+    if (this.#items.length === 0) {
+      return [undefined, this];
+    }
+    const copy = [...this.#items];
+    const popped = copy.pop();
+    return [popped, new ImmutableArray(copy)];
+  }
+
+  /**
+   * Returns a new ImmutableArray with elements added to the end.
+   */
+  push(...items: T[]): ImmutableArray<T> {
+    if (items.length === 0) {
+      return this;
+    }
+    return new ImmutableArray([...this.#items, ...items]);
+  }
+
+  /**
+   * Returns a new ImmutableArray with elements in reversed order.
+   */
+  reverse(): ImmutableArray<T> {
+    return new ImmutableArray(this.#items.toReversed());
+  }
+
+  /**
+   * Returns a tuple of [shiftedElement, newArray] where newArray has the first
+   * element removed. Returns [undefined, this] if array is empty.
+   */
+  shift(): [T | undefined, ImmutableArray<T>] {
+    if (this.#items.length === 0) {
+      return [undefined, this];
+    }
+    const copy = [...this.#items];
+    const shifted = copy.shift();
+    return [shifted, new ImmutableArray(copy)];
+  }
+
+  /**
+   * Returns a new ImmutableArray with elements sorted.
+   */
+  sort(compareFn?: (a: T, b: T) => number): ImmutableArray<T> {
+    const copy = [...this.#items];
+    copy.sort(compareFn);
+    return new ImmutableArray(copy);
+  }
+
+  /**
+   * Returns a tuple of [removedElements, newArray] where elements have been
+   * removed and/or inserted at the specified position.
+   */
+  splice(
+    start: number,
+    deleteCount?: number,
+    ...items: T[]
+  ): [T[], ImmutableArray<T>] {
+    const copy = [...this.#items];
+    const removed = copy.splice(start, deleteCount ?? 0, ...items);
+    return [removed, new ImmutableArray(copy)];
+  }
+
+  /**
+   * Returns a new ImmutableArray with elements added to the beginning.
+   */
+  unshift(...items: T[]): ImmutableArray<T> {
+    if (items.length === 0) {
+      return this;
+    }
+    return new ImmutableArray([...items, ...this.#items]);
   }
 
   equals(other: readonly T[] | null | undefined): boolean {
