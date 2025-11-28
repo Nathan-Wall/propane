@@ -144,8 +144,8 @@ async function copyTests() {
     fs.writeFileSync(dest, transpiled.outputText, 'utf8');
   }
 
-  // Transpile helper files
-  const helpers = ['run-tests.ts', 'assert.ts', 'hash-helpers.ts', 'test-harness.ts', 'propane-test-types.ts', 'array-listeners.test.ts', 'collection-listeners.test.ts', 'immutable-array.test.ts', 'immutable-array-buffer.test.ts', 'immutable-date.test.ts'];
+  // Transpile helper files (non-test utilities)
+  const helpers = ['run-tests.ts', 'assert.ts', 'hash-helpers.ts', 'test-harness.ts', 'propane-test-types.ts'];
   for (const helper of helpers) {
     const srcPath = path.join(testsDir, helper);
     if (!fs.existsSync(srcPath)) continue;
@@ -200,7 +200,7 @@ function findTestFiles(dir) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...findTestFiles(full));
-    } else if (entry.isFile() && /\.propane\.test\.(t|j)s$/.test(entry.name)) {
+    } else if (entry.isFile() && /\.test\.(t|j)s$/.test(entry.name)) {
       files.push(full);
     }
   }
