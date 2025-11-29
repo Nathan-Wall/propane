@@ -1,4 +1,4 @@
-import type { Message, DataObject } from '@propanejs/runtime';
+import type { Message } from '@propanejs/runtime';
 
 /**
  * Marker interface for RPC requests.

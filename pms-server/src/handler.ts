@@ -1,5 +1,4 @@
-import type { Message, DataObject } from '@propanejs/runtime';
-import type { RpcRequest, MessageClass } from './types.js';
+import type { MessageClass } from '@propanejs/pms-core';
 
 /**
  * Context passed to every handler.

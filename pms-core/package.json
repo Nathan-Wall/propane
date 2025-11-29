@@ -1,0 +1,12 @@
+{
+  "name": "@propanejs/pms-core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "../build/pms-core/src/index.js",
+  "types": "../build/pms-core/src/index.d.ts",
+  "license": "ISC",
+  "dependencies": {
+    "@propanejs/runtime": "*"
+  }
+}

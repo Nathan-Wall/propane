@@ -8,7 +8,10 @@ const projectRoot = path.resolve(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'tools/babel/messages', 'cli', 'react'];
+const packages = ['runtime', 'pms-core', 'pms-server', 'pms-client', 'tools/babel/messages', 'cli', 'react'];
+
+// Packages with src/ subdirectory have different output structure
+const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client']);
 
 // 1. Copy package.json to build/ and update main
 for (const pkgDir of packages) {
@@ -23,8 +26,13 @@ for (const pkgDir of packages) {
   const pkgJson = JSON.parse(fs.readFileSync(path.join(srcDir, 'package.json'), 'utf8'));
   
   // Point to the built file in the same directory
-  pkgJson.main = 'index.js';
-  pkgJson.types = 'index.d.ts';
+  if (packagesWithSrc.has(pkgDir)) {
+    pkgJson.main = 'src/index.js';
+    pkgJson.types = 'src/index.d.ts';
+  } else {
+    pkgJson.main = 'index.js';
+    pkgJson.types = 'index.d.ts';
+  }
   if (pkgJson.bin) {
     if (typeof pkgJson.bin === 'string') {
       pkgJson.bin = 'index.js';

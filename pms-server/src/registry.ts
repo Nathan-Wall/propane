@@ -3,9 +3,8 @@ import {
   parseCerealString,
   isTaggedMessageData,
 } from '@propanejs/runtime';
-import type { MessageClass, RpcRequest } from './types.js';
+import { type MessageClass, type RpcRequest, HandlerError } from '@propanejs/pms-core';
 import type { Handler, HandlerDescriptor, HandlerContext } from './handler.js';
-import { HandlerError } from './errors.js';
 
 /**
  * Registry for message handlers.

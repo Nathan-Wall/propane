@@ -1,9 +1,12 @@
-// Types
+// Re-export core types for convenience
 export type {
   RpcRequest,
   ResponseOf,
   MessageClass,
-} from './types.js';
+  ProtocolErrorCode,
+  ProtocolError,
+} from '@propanejs/pms-core';
+export { HandlerError, ERROR_STATUS_MAP } from '@propanejs/pms-core';
 
 // Handler types
 export type {
@@ -11,10 +14,6 @@ export type {
   HandlerContext,
   HandlerDescriptor,
 } from './handler.js';
-
-// Errors
-export { HandlerError, ERROR_STATUS_MAP } from './errors.js';
-export type { ProtocolErrorCode, ProtocolError } from './errors.js';
 
 // Transport
 export type {
@@ -29,10 +28,6 @@ export type { HttpTransportOptions } from './transport/http-transport.js';
 // Server
 export { PMServer } from './server.js';
 export type { PMServerOptions } from './server.js';
-
-// Client
-export { PMSClient, PMSProtocolError } from './client.js';
-export type { PMSClientOptions } from './client.js';
 
 // Registry (for advanced use cases)
 export { HandlerRegistry } from './registry.js';

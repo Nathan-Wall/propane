@@ -3,7 +3,8 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PMServer, PMSClient, HandlerError, HttpTransport } from '../src/index.js';
+import { PMServer, HandlerError, HttpTransport } from '@propanejs/pms-server';
+import { PMSClient } from '@propanejs/pms-client';
 import {
   EchoRequest,
   EchoResponse,

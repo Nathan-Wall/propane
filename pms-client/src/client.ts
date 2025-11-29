@@ -3,7 +3,7 @@ import {
   parseCerealString,
   isTaggedMessageData,
 } from '@propanejs/runtime';
-import type { MessageClass, RpcRequest } from './types.js';
+import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
 
 export interface PMSClientOptions {
   /** Base URL of the PMS server */

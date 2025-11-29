@@ -5,7 +5,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Message, type MessagePropDescriptor } from '@propanejs/runtime';
-import type { RpcRequest } from '../src/types.js';
+import type { RpcRequest } from '@propanejs/pms-core';
 
 // --- EchoRequest / EchoResponse ---
 
