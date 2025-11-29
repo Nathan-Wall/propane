@@ -40,6 +40,28 @@ You can also watch for changes:
 
 ```bash
 npx propanec src/models --watch
+
+## Configuration File (`propane.config.json`)
+
+For projects with more complex compilation needs, or to avoid long command-line arguments, you can use a `propane.config.json` file in your project's root directory. This file allows you to define default values for `propanec` options.
+
+**Example `propane.config.json`:**
+```json
+{
+  "include": ["src/models", "shared/types"],
+  "outputDir": "dist/generated",
+  "watch": false
+}
+```
+
+When `propanec` is run without arguments, it will automatically look for `propane.config.json` and use the settings defined there. Command-line arguments always take precedence over values in the configuration file.
+
+### Configuration Options:
+
+*   **`include`**: An array of file paths or directories to compile. Similar to providing positional arguments to `propanec`. (e.g., `["src/models"]`)
+*   **`outputDir`**: A string specifying the root directory where generated `.propane.ts` files should be placed. The original directory structure of the source files will be preserved within this output directory. (e.g., `"dist/generated"`)
+*   **`watch`**: A boolean. If `true`, `propanec` will run in watch mode, regenerating files when changes are detected. Equivalent to `--watch` CLI flag.
+
 ```
 
 **Use the generated class**:

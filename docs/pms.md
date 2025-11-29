@@ -184,6 +184,33 @@ npx pmscc -d src/api -o src/client.ts -w
 npx pmscc -d src/messages -o src/generated/api-client.ts -W
 ```
 
+### Configuration File (`propane.config.json`)
+
+The `pmscc` compiler can also be configured using a `propane.config.json` file in your project's root directory. `pmscc` will look for its settings under the `pms` key within this file.
+
+**Example `propane.config.json` (for `pmscc`):**
+```json
+{
+  "pms": {
+    "inputDir": "src/messages",
+    "output": "src/generated/pms-client.ts",
+    "className": "PmsApiClient",
+    "websocket": true,
+    "watch": false
+  }
+}
+```
+
+When `pmscc` is run without arguments, it will automatically load these settings. Command-line arguments always take precedence over values in the configuration file.
+
+### Configuration Options (under the `pms` key):
+
+*   **`inputDir`**: A string specifying a directory to search for `.propane` files. Equivalent to `-d, --dir`.
+*   **`output`**: A string specifying the output file path for the generated client. Equivalent to `-o, --output`.
+*   **`className`**: A string for the generated client class name. Equivalent to `-n, --name`.
+*   **`websocket`**: A boolean. If `true`, generates a WebSocket client. Equivalent to `-w, --websocket`.
+*   **`watch`**: A boolean. If `true`, runs `pmscc` in watch mode. Equivalent to `-W, --watch`.
+
 ### Generated Output
 
 Given these message definitions:

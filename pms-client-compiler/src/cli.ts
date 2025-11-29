@@ -2,7 +2,7 @@
 
 import { parseArgs } from 'node:util';
 import { resolve, join, dirname } from 'node:path';
-import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import chokidar from 'chokidar';
 import { parseFiles } from './parser.js';
 import { generateClient } from './generator.js';
@@ -14,6 +14,32 @@ interface CliOptions {
   className?: string;
   websocket: boolean;
   watch: boolean;
+}
+
+interface PmsConfig {
+  inputDir?: string;
+  output?: string;
+  className?: string;
+  websocket?: boolean;
+  watch?: boolean;
+}
+
+interface PropaneConfig {
+  pms?: PmsConfig;
+}
+
+function loadConfig(): PmsConfig | null {
+  const configPath = resolve(process.cwd(), 'propane.config.json');
+  if (existsSync(configPath)) {
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      const config = JSON.parse(content) as PropaneConfig;
+      return config.pms || null;
+    } catch (e) {
+      console.warn(`Warning: Failed to parse propane.config.json: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return null;
 }
 
 function printUsage(): void {
@@ -29,6 +55,16 @@ Options:
   -w, --websocket       Generate WebSocket client instead of HTTP
   -W, --watch           Watch for changes and regenerate
   -h, --help            Show this help message
+
+Configuration:
+  Reads propane.config.json (pms section):
+  {
+    "pms": {
+      "inputDir": "src/messages",
+      "output": "src/client.ts",
+      "websocket": false
+    }
+  }
 
 Examples:
   # Compile to api-client.ts -> generates class ApiClient
@@ -85,16 +121,21 @@ function parseCliArgs(): CliOptions | null {
       process.exit(0);
     }
 
-    if (!values.output) {
-      console.error('Error: Output file path is required (-o, --output)');
+    const config = loadConfig();
+
+    const output = values.output ? resolve(values.output) : (config?.output ? resolve(config.output) : undefined);
+
+    if (!output) {
+      console.error('Error: Output file path is required (-o, --output) or in propane.config.json');
       printUsage();
       return null;
     }
 
     let files: string[] = positionals.map((f) => resolve(f));
+    const dir = values.dir || config?.inputDir;
 
-    if (values.dir) {
-      const dirPath = resolve(values.dir);
+    if (dir) {
+      const dirPath = resolve(dir);
       if (!existsSync(dirPath)) {
         console.error(`Error: Directory not found: ${dirPath}`);
         return null;
@@ -110,11 +151,11 @@ function parseCliArgs(): CliOptions | null {
 
     return {
       files,
-      dir: values.dir,
-      output: resolve(values.output),
-      className: values.name,
-      websocket: values.websocket ?? false,
-      watch: values.watch ?? false,
+      dir,
+      output,
+      className: values.name || config?.className,
+      websocket: values.websocket || config?.websocket || false,
+      watch: values.watch || config?.watch || false,
     };
   } catch (error) {
     if (error instanceof Error) {

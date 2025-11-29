@@ -16,6 +16,26 @@ const args = (process as unknown as { argv: string[] }).argv.slice(2);
 // Parse flags
 let watch = false;
 const targets: string[] = [];
+let outputDir: string | undefined;
+
+interface PropaneConfig {
+  include?: string[];
+  watch?: boolean;
+  outputDir?: string;
+}
+
+function loadConfig(): PropaneConfig {
+  const configPath = path.resolve(process.cwd(), 'propane.config.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      const content = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(content) as PropaneConfig;
+    } catch (err: unknown) {
+      console.error(`Warning: Failed to parse propane.config.json: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return {};
+}
 
 for (const arg of args) {
   if (arg.startsWith('-')) {
@@ -48,6 +68,19 @@ for (const arg of args) {
   }
 }
 
+// Load and merge config
+const config = loadConfig();
+
+if (config.include && targets.length === 0) {
+  targets.push(...config.include);
+}
+if (config.watch && !args.includes('--watch') && !args.includes('-w')) {
+  watch = true;
+}
+if (config.outputDir) {
+  outputDir = config.outputDir;
+}
+
 function printUsage() {
   console.log(`
 Usage: propanec [options] <file-or-directory> [more paths...]
@@ -58,6 +91,16 @@ Options:
   -w, --watch    Watch for changes and recompile
   -h, --help     Show this help message
   -v, --version  Show version number
+
+Configuration:
+  Reads propane.config.json from current directory if present.
+  
+  {
+    "include": ["src"],
+    "exclude": [],
+    "outputDir": "dist",
+    "watch": false
+  }
 
 Examples:
   propanec src/models
@@ -112,7 +155,19 @@ function transpileFile(sourcePath: string) {
       throw new Error(`Babel transform returned no code`);
     }
 
-    const outputPath = sourcePath.replace(/\.propane$/, '.propane.ts');
+    let outputPath: string;
+    if (outputDir) {
+      const relativePath = path.relative(process.cwd(), sourcePath);
+      outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.propane$/, '.propane.ts');
+
+      const dir = path.dirname(outputPath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    } else {
+      outputPath = sourcePath.replace(/\.propane$/, '.propane.ts');
+    }
+
     const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
     fs.writeFileSync(outputPath, code, 'utf8');
 
@@ -180,7 +235,14 @@ if (watch) {
     .on('unlink', (filePath) => {
       // Optional: Delete the generated .propane.ts file if the original .propane file is deleted
       if (filePath.endsWith('.propane')) {
-        const outputPath = filePath.replace(/\.propane$/, '.propane.ts');
+        let outputPath: string;
+        if (outputDir) {
+          const relativePath = path.relative(process.cwd(), filePath);
+          outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.propane$/, '.propane.ts');
+        } else {
+          outputPath = filePath.replace(/\.propane$/, '.propane.ts');
+        }
+
         if (fs.existsSync(outputPath)) {
           fs.unlinkSync(outputPath);
           const relOutput = path.relative(process.cwd(), outputPath);
