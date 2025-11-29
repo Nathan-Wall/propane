@@ -110,13 +110,13 @@ import {
 const client = new PmsClient({ baseUrl: 'http://localhost:8080' });
 
 // Type-safe calls - response type is inferred
-const user = await client.call(
+const user = await client.request(
   new GetUserRequest({ id: 123 }),
   GetUserResponse
 );
 console.log(user.name); // Typed as string
 
-const created = await client.call(
+const created = await client.request(
   new CreateUserRequest({ name: 'Alice', email: 'alice@example.com' }),
   CreateUserResponse
 );
@@ -153,7 +153,7 @@ Catch `PmsProtocolError` to handle server errors:
 import { PmsClient, PmsProtocolError } from '@propanejs/pms-client';
 
 try {
-  const user = await client.call(new GetUserRequest({ id: -1 }), GetUserResponse);
+  const user = await client.request(new GetUserRequest({ id: -1 }), GetUserResponse);
 } catch (error) {
   if (error instanceof PmsProtocolError) {
     console.error(`Error ${error.code}: ${error.message}`);
@@ -209,6 +209,45 @@ await server.listen({
   host: '0.0.0.0',      // Default: '0.0.0.0'
 });
 ```
+
+### CORS
+
+Enable CORS for browser clients:
+
+```typescript
+import { HttpTransport } from '@propanejs/pms-server';
+
+// Simple: allow all origins
+const transport = new HttpTransport({
+  port: 8080,
+  cors: true,
+});
+
+// Custom: specific origins and options
+const transport = new HttpTransport({
+  port: 8080,
+  cors: {
+    origin: ['https://example.com', 'https://app.example.com'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['X-Request-Id'],
+    maxAge: 86400,
+  },
+});
+
+await server.listen({ transport });
+```
+
+CORS options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `origin` | `string \| string[]` | `'*'` | Allowed origins |
+| `methods` | `string[]` | `['POST', 'OPTIONS']` | Allowed methods |
+| `allowedHeaders` | `string[]` | `['Content-Type']` | Allowed request headers |
+| `exposedHeaders` | `string[]` | - | Headers exposed to client |
+| `credentials` | `boolean` | `false` | Allow credentials |
+| `maxAge` | `number` | `86400` | Preflight cache duration (seconds) |
 
 ### Client Options
 
@@ -302,13 +341,13 @@ const client = new PmwsClient({ url: 'ws://localhost:8080' });
 await client.connect();
 
 // Make calls (same API as PmsClient)
-const user = await client.call(
+const user = await client.request(
   new GetUserRequest({ id: 123 }),
   GetUserResponse
 );
 
 // Connection is reused for subsequent calls
-const user2 = await client.call(
+const user2 = await client.request(
   new GetUserRequest({ id: 456 }),
   GetUserResponse
 );
@@ -357,7 +396,7 @@ WebSocket-specific errors use `PmwsConnectionError`:
 import { PmwsClient, PmwsProtocolError, PmwsConnectionError } from '@propanejs/pms-client';
 
 try {
-  await client.call(request, ResponseClass);
+  await client.request(request, ResponseClass);
 } catch (error) {
   if (error instanceof PmwsProtocolError) {
     // Server returned an error (same as PmsProtocolError)

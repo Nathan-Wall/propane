@@ -64,7 +64,7 @@ async function runTests(): Promise<void> {
     const client = new PmwsClient({ url: `ws://localhost:${port}` });
     await client.connect();
 
-    const response = await client.call(
+    const response = await client.request(
       new EchoRequest({ message: 'Hello, PMWS!' }) as any,
       EchoResponse as any
     ) as EchoResponse;
@@ -91,19 +91,19 @@ async function runTests(): Promise<void> {
     await client.connect();
 
     // Make multiple calls on same connection
-    const response1 = await client.call(
+    const response1 = await client.request(
       new AddRequest({ a: 1, b: 2 }) as any,
       AddResponse as any
     ) as AddResponse;
     assert(response1.sum === 3, `Expected sum 3, got: ${response1.sum}`);
 
-    const response2 = await client.call(
+    const response2 = await client.request(
       new AddRequest({ a: 10, b: 20 }) as any,
       AddResponse as any
     ) as AddResponse;
     assert(response2.sum === 30, `Expected sum 30, got: ${response2.sum}`);
 
-    const response3 = await client.call(
+    const response3 = await client.request(
       new AddRequest({ a: 100, b: 200 }) as any,
       AddResponse as any
     ) as AddResponse;
@@ -131,9 +131,9 @@ async function runTests(): Promise<void> {
 
     // Fire off multiple requests concurrently
     const [r1, r2, r3] = await Promise.all([
-      client.call(new AddRequest({ a: 1, b: 1 }) as any, AddResponse as any),
-      client.call(new AddRequest({ a: 2, b: 2 }) as any, AddResponse as any),
-      client.call(new AddRequest({ a: 3, b: 3 }) as any, AddResponse as any),
+      client.request(new AddRequest({ a: 1, b: 1 }) as any, AddResponse as any),
+      client.request(new AddRequest({ a: 2, b: 2 }) as any, AddResponse as any),
+      client.request(new AddRequest({ a: 3, b: 3 }) as any, AddResponse as any),
     ]) as AddResponse[];
 
     assert(r1.sum === 2, `Expected sum 2, got: ${r1.sum}`);
@@ -159,7 +159,7 @@ async function runTests(): Promise<void> {
     await client.connect();
 
     try {
-      await client.call(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
+      await client.request(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
       assert(false, 'Should have thrown an error');
     } catch (error) {
       assert(
@@ -186,7 +186,7 @@ async function runTests(): Promise<void> {
     // Don't call connect() - it should auto-connect on call()
     const client = new PmwsClient({ url: `ws://localhost:${port}` });
 
-    const response = await client.call(
+    const response = await client.request(
       new EchoRequest({ message: 'auto' }) as any,
       EchoResponse as any
     ) as EchoResponse;

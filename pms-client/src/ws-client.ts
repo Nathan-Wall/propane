@@ -225,7 +225,7 @@ export class PmwsClient {
   }
 
   /**
-   * Make an RPC call to the server.
+   * Make an RPC request to the server.
    *
    * @param request - The request message
    * @param responseClass - The message class for the expected response
@@ -234,7 +234,7 @@ export class PmwsClient {
    * @throws PmwsConnectionError if the connection fails
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async call<TResponse extends Message<any>>(
+  async request<TResponse extends Message<any>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     request: Message<any> & RpcRequest<TResponse>,
     responseClass: MessageClass<TResponse>

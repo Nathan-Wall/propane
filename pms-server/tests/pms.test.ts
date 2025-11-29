@@ -62,7 +62,7 @@ async function runTests(): Promise<void> {
     const port = transport.port!;
 
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
-    const response = await client.call(
+    const response = await client.request(
       new EchoRequest({ message: 'Hello, PMS!' }) as any,
       EchoResponse as any
     ) as EchoResponse;
@@ -85,7 +85,7 @@ async function runTests(): Promise<void> {
     const port = transport.port!;
 
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
-    const response = await client.call(
+    const response = await client.request(
       new AddRequest({ a: 17, b: 25 }) as any,
       AddResponse as any
     ) as AddResponse;
@@ -112,13 +112,13 @@ async function runTests(): Promise<void> {
 
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
 
-    const echoResponse = await client.call(
+    const echoResponse = await client.request(
       new EchoRequest({ message: 'test' }) as any,
       EchoResponse as any
     ) as EchoResponse;
     assert(echoResponse.echo === 'test', 'Echo should work');
 
-    const addResponse = await client.call(
+    const addResponse = await client.request(
       new AddRequest({ a: 1, b: 2 }) as any,
       AddResponse as any
     ) as AddResponse;
@@ -141,7 +141,7 @@ async function runTests(): Promise<void> {
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
 
     try {
-      await client.call(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
+      await client.request(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
       assert(false, 'Should have thrown an error');
     } catch (error) {
       assert(
@@ -168,7 +168,7 @@ async function runTests(): Promise<void> {
     const port = transport.port!;
 
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
-    await client.call(new EchoRequest({ message: 'context test' }) as any, EchoResponse as any);
+    await client.request(new EchoRequest({ message: 'context test' }) as any, EchoResponse as any);
 
     assert(receivedContext !== null, 'Context should be received');
     assert(typeof receivedContext!.requestId === 'string', 'requestId should be a string');
