@@ -1,0 +1,30 @@
+{
+  "name": "@propanejs/pms-client-compiler",
+  "version": "0.0.0",
+  "description": "Compiler for generating typed PMS clients from .propane files",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "pmscc": "src/cli.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "src"
+  ],
+  "keywords": [
+    "propane",
+    "pms",
+    "rpc",
+    "codegen",
+    "typescript"
+  ],
+  "dependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@propanejs/pms-client": "*",
+    "@propanejs/pms-core": "*"
+  }
+}

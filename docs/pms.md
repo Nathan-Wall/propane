@@ -10,6 +10,7 @@ compile-time type safety between requests and responses.
 - **Automatic Routing** - Handlers are dispatched based on message type
 - **Efficient Serialization** - Uses Propane's built-in serialization
 - **Multiple Transports** - HTTP and WebSocket support
+- **Client Code Generation** - Generate typed client methods from .propane files
 - **Minimal Dependencies** - Server uses raw Node.js (no Express/Fastify)
 
 ## Installation
@@ -20,6 +21,9 @@ npm i @propanejs/pms-server
 
 # Client
 npm i @propanejs/pms-client
+
+# Client Code Generator (optional)
+npm i -D @propanejs/pms-client-compiler
 ```
 
 ## Defining Messages
@@ -146,6 +150,92 @@ const created = await client.request(
 );
 console.log(created.user.id); // Typed as number
 ```
+
+## Generated Clients
+
+Instead of manually calling `client.request()` with request and response types,
+you can generate a typed client with methods for each RPC endpoint.
+
+### Using the Compiler
+
+Install the compiler as a dev dependency:
+
+```bash
+npm i -D @propanejs/pms-client-compiler
+```
+
+Generate a client from your `.propane` files:
+
+```bash
+# From specific files
+npx pmscc -o src/generated/api-client.ts src/messages/*.propane
+
+# From a directory (recursive)
+npx pmscc -d src/messages -o src/generated/api-client.ts
+
+# With custom class name
+npx pmscc -d src/api -o src/client.ts -n ApiClient
+
+# Generate WebSocket client
+npx pmscc -d src/api -o src/client.ts -w
+```
+
+### Generated Output
+
+Given these message definitions:
+
+```typescript
+// messages.propane
+export type GetUserRequest = {
+  '1:id': number;
+} & RpcRequest<GetUserResponse>;
+
+export type GetUserResponse = {
+  '1:id': number;
+  '2:name': string;
+};
+```
+
+The compiler generates:
+
+```typescript
+// generated/api-client.ts
+import { PmsClient } from '@propanejs/pms-client';
+import { GetUserRequest, GetUserResponse } from '../messages.propane.js';
+
+export class GeneratedPmsClient {
+  constructor(private readonly client: PmsClient) {}
+
+  async getUser(request: GetUserRequest): Promise<GetUserResponse> {
+    return this.client.request(request, GetUserResponse);
+  }
+}
+```
+
+### Using the Generated Client
+
+```typescript
+import { PmsClient } from '@propanejs/pms-client';
+import { GeneratedPmsClient } from './generated/api-client.js';
+import { GetUserRequest } from './messages.propane.js';
+
+const pmsClient = new PmsClient({ baseUrl: 'http://localhost:8080' });
+const api = new GeneratedPmsClient(pmsClient);
+
+// Clean, typed method calls
+const user = await api.getUser(new GetUserRequest({ id: 123 }));
+console.log(user.name);
+```
+
+### CLI Options
+
+| Option | Description |
+|--------|-------------|
+| `-o, --output <path>` | Output file path (required) |
+| `-d, --dir <path>` | Directory to search for .propane files |
+| `-n, --name <name>` | Generated class name (default: GeneratedPmsClient) |
+| `-w, --websocket` | Generate WebSocket client (PmwsClient) instead of HTTP |
+| `-h, --help` | Show help |
 
 ## Error Handling
 

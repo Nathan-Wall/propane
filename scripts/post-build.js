@@ -8,10 +8,10 @@ const projectRoot = path.resolve(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'pms-core', 'pms-server', 'pms-client', 'tools/babel/messages', 'cli', 'react'];
+const packages = ['runtime', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'tools/babel/messages', 'cli', 'react'];
 
 // Packages with src/ subdirectory have different output structure
-const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client']);
+const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client', 'pms-client-compiler']);
 
 // 1. Copy package.json to build/ and update main
 for (const pkgDir of packages) {
@@ -35,10 +35,16 @@ for (const pkgDir of packages) {
   }
   if (pkgJson.bin) {
     if (typeof pkgJson.bin === 'string') {
-      pkgJson.bin = 'index.js';
+      pkgJson.bin = packagesWithSrc.has(pkgDir) ? 'src/cli.js' : 'index.js';
     } else {
       for (const k in pkgJson.bin) {
-        pkgJson.bin[k] = 'index.js';
+        const originalPath = pkgJson.bin[k];
+        // Map src/cli.ts -> src/cli.js for packages with src/
+        if (packagesWithSrc.has(pkgDir) && originalPath.startsWith('src/')) {
+          pkgJson.bin[k] = originalPath.replace(/\.ts$/, '.js');
+        } else {
+          pkgJson.bin[k] = 'index.js';
+        }
       }
     }
   }
