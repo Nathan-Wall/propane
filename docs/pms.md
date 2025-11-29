@@ -35,7 +35,7 @@ Define request/response pairs in `.propane` files. Requests implement
 // messages.propane
 import { RpcRequest } from '@propanejs/pms-core';
 
-export type GetUserRequest = {
+export type GetUser = {
   '1:id': number;
 } & RpcRequest<GetUserResponse>;
 
@@ -45,7 +45,7 @@ export type GetUserResponse = {
   '3:email': string;
 };
 
-export type CreateUserRequest = {
+export type CreateUser = {
   '1:name': string;
   '2:email': string;
 } & RpcRequest<CreateUserResponse>;
@@ -62,9 +62,9 @@ Create a server and register handlers for each request type:
 ```typescript
 import { PmsServer, HandlerError } from '@propanejs/pms-server';
 import {
-  GetUserRequest,
+  GetUser,
   GetUserResponse,
-  CreateUserRequest,
+  CreateUser,
   CreateUserResponse,
 } from './messages.propane.js';
 
@@ -72,7 +72,7 @@ const server = new PmsServer();
 
 // Register handlers - response type is inferred from request
 server
-  .handle(GetUserRequest, async (req) => {
+  .handle(GetUser, async (req) => {
     const user = await db.findUser(req.id);
     if (!user) {
       throw new HandlerError('NOT_FOUND', 'User not found');
@@ -83,7 +83,7 @@ server
       email: user.email,
     });
   })
-  .handle(CreateUserRequest, async (req) => {
+  .handle(CreateUser, async (req) => {
     const user = await db.createUser({ name: req.name, email: req.email });
     return new CreateUserResponse({
       user: new GetUserResponse(user),
@@ -104,7 +104,7 @@ Handlers can return custom HTTP headers (e.g., for cookies) by returning an
 object with `response` and `headers`:
 
 ```typescript
-server.handle(LoginRequest, async (req) => {
+server.handle(Login, async (req) => {
   const session = await createSession(req.username, req.password);
 
   // Return response with Set-Cookie header
@@ -117,7 +117,7 @@ server.handle(LoginRequest, async (req) => {
 });
 
 // Simple responses (no headers) still work
-server.handle(GetUserRequest, async (req) => {
+server.handle(GetUser, async (req) => {
   return new GetUserResponse({ id: req.id, name: 'Alice' });
 });
 ```
@@ -129,9 +129,9 @@ The client provides type-safe RPC calls:
 ```typescript
 import { PmsClient } from '@propanejs/pms-client';
 import {
-  GetUserRequest,
+  GetUser,
   GetUserResponse,
-  CreateUserRequest,
+  CreateUser,
   CreateUserResponse,
 } from './messages.propane.js';
 
@@ -139,13 +139,13 @@ const client = new PmsClient({ baseUrl: 'http://localhost:8080' });
 
 // Type-safe calls - response type is inferred
 const user = await client.request(
-  new GetUserRequest({ id: 123 }),
+  new GetUser({ id: 123 }),
   GetUserResponse
 );
 console.log(user.name); // Typed as string
 
 const created = await client.request(
-  new CreateUserRequest({ name: 'Alice', email: 'alice@example.com' }),
+  new CreateUser({ name: 'Alice', email: 'alice@example.com' }),
   CreateUserResponse
 );
 console.log(created.user.id); // Typed as number
@@ -189,7 +189,7 @@ Given these message definitions:
 
 ```typescript
 // messages.propane
-export type GetUserRequest = {
+export type GetUser = {
   '1:id': number;
 } & RpcRequest<GetUserResponse>;
 
@@ -205,13 +205,17 @@ The compiler generates a client class with a `getUser` method.
 
 ```typescript
 import { ApiClient } from './generated/api-client.js';
-import { GetUserRequest } from './messages.propane.js';
+import { GetUser } from './messages.propane.js';
 
+// Pass PmsClient options directly to the generated client
 const api = new ApiClient({ baseUrl: 'http://localhost:8080' });
 
-// Clean, typed method calls
-const user = await api.getUser(new GetUserRequest({ id: 123 }));
+// Pass data directly - message is constructed automatically
+const user = await api.getUser({ id: 123 });
 console.log(user.name);
+
+// Or pass a message instance
+const user2 = await api.getUser(new GetUser({ id: 456 }));
 ```
 
 ### CLI Options
@@ -252,7 +256,7 @@ Throw `HandlerError` to return structured errors to clients:
 ```typescript
 import { HandlerError } from '@propanejs/pms-server';
 
-server.handle(GetUserRequest, async (req) => {
+server.handle(GetUser, async (req) => {
   if (req.id <= 0) {
     throw new HandlerError('INVALID_ID', 'ID must be positive', `Got: ${req.id}`);
   }
@@ -273,7 +277,7 @@ Catch `PmsProtocolError` to handle server errors:
 import { PmsClient, PmsProtocolError } from '@propanejs/pms-client';
 
 try {
-  const user = await client.request(new GetUserRequest({ id: -1 }), GetUserResponse);
+  const user = await client.request(new GetUser({ id: -1 }), GetUserResponse);
 } catch (error) {
   if (error instanceof PmsProtocolError) {
     console.error(`Error ${error.code}: ${error.message}`);
@@ -301,13 +305,13 @@ The server returns these error codes for infrastructure failures:
 Handlers receive a context object with request metadata:
 
 ```typescript
-server.handle(GetUserRequest, async (req, context) => {
+server.handle(GetUser, async (req, context) => {
   console.log(`Request ${context.requestId} received at ${context.receivedAt}`);
 
   // Log for debugging
   logger.info({
     requestId: context.requestId,
-    type: 'GetUserRequest',
+    type: 'GetUser',
     userId: req.id,
   });
 
@@ -325,7 +329,7 @@ Context properties:
 Access cookies via the `headers` property:
 
 ```typescript
-server.handle(GetUserRequest, async (req, context) => {
+server.handle(GetUser, async (req, context) => {
   // Get the raw Cookie header
   const cookieHeader = context.headers['cookie'];
 
@@ -518,9 +522,9 @@ Handlers can be chained fluently:
 
 ```typescript
 const server = new PmsServer()
-  .handle(GetUserRequest, handleGetUser)
-  .handle(CreateUserRequest, handleCreateUser)
-  .handle(DeleteUserRequest, handleDeleteUser);
+  .handle(GetUser, handleGetUser)
+  .handle(CreateUser, handleCreateUser)
+  .handle(DeleteUser, handleDeleteUser);
 
 await server.listen({ port: 8080 });
 ```
@@ -530,8 +534,8 @@ await server.listen({ port: 8080 });
 Registering two handlers for the same message type throws an error:
 
 ```typescript
-server.handle(GetUserRequest, handler1);
-server.handle(GetUserRequest, handler2); // Error: Handler already registered for type: GetUserRequest
+server.handle(GetUser, handler1);
+server.handle(GetUser, handler2); // Error: Handler already registered for type: GetUser
 ```
 
 ---
@@ -555,7 +559,7 @@ import { PmsServer, WsTransport } from '@propanejs/pms-server';
 const server = new PmsServer();
 
 // Register handlers (same as HTTP)
-server.handle(GetUserRequest, async (req) => {
+server.handle(GetUser, async (req) => {
   const user = await db.findUser(req.id);
   return new GetUserResponse(user);
 });
@@ -581,13 +585,13 @@ await client.connect();
 
 // Make calls (same API as PmsClient)
 const user = await client.request(
-  new GetUserRequest({ id: 123 }),
+  new GetUser({ id: 123 }),
   GetUserResponse
 );
 
 // Connection is reused for subsequent calls
 const user2 = await client.request(
-  new GetUserRequest({ id: 456 }),
+  new GetUser({ id: 456 }),
   GetUserResponse
 );
 

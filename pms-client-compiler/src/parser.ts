@@ -6,7 +6,7 @@ import { basename, dirname, relative } from 'node:path';
  * Represents an RPC endpoint extracted from a .propane file.
  */
 export interface RpcEndpoint {
-  /** The request type name (e.g., "GetUserRequest") */
+  /** The request type name (e.g., "GetUser") */
   requestType: string;
   /** The response type name (e.g., "GetUserResponse") */
   responseType: string;
@@ -29,7 +29,7 @@ export interface ParseResult {
  *
  * Looks for type aliases that intersect with RpcRequest<TResponse>:
  * ```
- * export type GetUserRequest = {
+ * export type GetUser = {
  *   '1:id': number;
  * } & RpcRequest<GetUserResponse>;
  * ```

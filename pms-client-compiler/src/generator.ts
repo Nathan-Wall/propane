@@ -32,18 +32,12 @@ function fileNameToClassName(outputPath: string): string {
 
 /**
  * Generate method name from request type name.
- * GetUserRequest -> getUser
- * CreateUserRequest -> createUser
+ * GetUser -> getUser
+ * UpdateRequest -> updateRequest
  */
 function toMethodName(requestType: string): string {
-  // Remove "Request" suffix if present
-  let name = requestType;
-  if (name.endsWith('Request')) {
-    name = name.slice(0, -7);
-  }
-
   // Convert to camelCase (first letter lowercase)
-  return name.charAt(0).toLowerCase() + name.slice(1);
+  return requestType.charAt(0).toLowerCase() + requestType.slice(1);
 }
 
 /**
@@ -89,9 +83,10 @@ export function generateClient(
   const { endpoints } = parseResult;
   const className = options.className ?? fileNameToClassName(options.outputPath);
   const clientType = options.websocket ? 'PmwsClient' : 'PmsClient';
+  const optionsType = options.websocket ? 'PmwsClientOptions' : 'PmsClientOptions';
   const clientImport = options.websocket
-    ? "import { PmwsClient } from '@propanejs/pms-client';"
-    : "import { PmsClient } from '@propanejs/pms-client';";
+    ? "import { PmwsClient, type PmwsClientOptions } from '@propanejs/pms-client';"
+    : "import { PmsClient, type PmsClientOptions } from '@propanejs/pms-client';";
 
   // Group endpoints by source file for imports
   const byFile = groupBySourceFile(endpoints);
@@ -117,12 +112,15 @@ export function generateClient(
 
   for (const endpoint of endpoints) {
     const methodName = toMethodName(endpoint.requestType);
+    const reqType = endpoint.requestType;
     methods.push(`
   /**
-   * Call ${endpoint.requestType} and receive ${endpoint.responseType}.
+   * Call ${reqType} and receive ${endpoint.responseType}.
+   * @param request - ${reqType} instance or data to construct one
    */
-  async ${methodName}(request: ${endpoint.requestType}): Promise<${endpoint.responseType}> {
-    return this.client.request(request, ${endpoint.responseType});
+  async ${methodName}(request: ${reqType}.Value): Promise<${endpoint.responseType}> {
+    const message = request instanceof ${reqType} ? request : new ${reqType}(request);
+    return this.client.request(message, ${endpoint.responseType});
   }`);
   }
 
@@ -136,7 +134,11 @@ ${imports.join('\n')}
  * Generated PMS client with typed methods for each RPC endpoint.
  */
 export class ${className} {
-  constructor(private readonly client: ${clientType}) {}
+  private readonly client: ${clientType};
+
+  constructor(options: ${optionsType}) {
+    this.client = new ${clientType}(options);
+  }
 ${methods.join('\n')}
 }
 `;
