@@ -1,9 +1,10 @@
 import { parseFile, parseFiles } from '../src/parser.js';
 import { generateClient } from '../src/generator.js';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { execSync } from 'node:child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -12,46 +13,8 @@ const __dirname = dirname(__filename);
 const tempDir = resolve(tmpdir(), 'pms-compiler-test-' + Date.now());
 mkdirSync(tempDir, { recursive: true });
 
-// Write test fixture
-const messagesFile = resolve(tempDir, 'messages.propane');
-writeFileSync(messagesFile, `
-import { RpcRequest } from '@propanejs/pms-core';
-
-export type GetUserRequest = {
-  '1:id': number;
-} & RpcRequest<GetUserResponse>;
-
-export type GetUserResponse = {
-  '1:id': number;
-  '2:name': string;
-  '3:email': string;
-};
-
-export type CreateUserRequest = {
-  '1:name': string;
-  '2:email': string;
-} & RpcRequest<CreateUserResponse>;
-
-export type CreateUserResponse = {
-  '1:user': GetUserResponse;
-};
-
-// This type does NOT extend RpcRequest - should be ignored
-export type NonRpcType = {
-  '1:value': string;
-};
-`);
-
-// Cleanup function (called at end of tests)
-function cleanup() {
-  try {
-    rmSync(tempDir, { recursive: true, force: true });
-  } catch {
-    // Ignore cleanup errors
-  }
-}
-
-console.log('Running PMS Compiler tests...\n');
+// Test utilities
+console.log('Running PMS Client Compiler tests...\n');
 
 let passed = 0;
 let failed = 0;
@@ -76,10 +39,66 @@ function assertEqual<T>(actual: T, expected: T, message?: string) {
   }
 }
 
-// Test: parseFile extracts RPC endpoints
-test('parseFile extracts RPC endpoints', () => {
-  const endpoints = parseFile(messagesFile);
+function assertIncludes(haystack: string, needle: string, message?: string) {
+  if (!haystack.includes(needle)) {
+    throw new Error(`${message ?? 'String not found'}: expected to find "${needle}"`);
+  }
+}
 
+function assertNotIncludes(haystack: string, needle: string, message?: string) {
+  if (haystack.includes(needle)) {
+    throw new Error(`${message ?? 'Unexpected string found'}: did not expect "${needle}"`);
+  }
+}
+
+// Cleanup function
+function cleanup() {
+  try {
+    rmSync(tempDir, { recursive: true, force: true });
+  } catch {
+    // Ignore cleanup errors
+  }
+}
+
+// Helper to create test files
+function createTestFile(name: string, content: string): string {
+  const filePath = resolve(tempDir, name);
+  const dir = dirname(filePath);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(filePath, content);
+  return filePath;
+}
+
+// ============================================================================
+// PARSER TESTS
+// ============================================================================
+
+console.log('--- Parser Tests ---\n');
+
+// Standard RPC types fixture
+const standardFile = createTestFile('standard.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+
+export type GetUserRequest = {
+  '1:id': number;
+} & RpcRequest<GetUserResponse>;
+
+export type GetUserResponse = {
+  '1:id': number;
+  '2:name': string;
+};
+
+export type CreateUserRequest = {
+  '1:name': string;
+} & RpcRequest<CreateUserResponse>;
+
+export type CreateUserResponse = {
+  '1:user': GetUserResponse;
+};
+`);
+
+test('parseFile extracts RPC endpoints', () => {
+  const endpoints = parseFile(standardFile);
   assertEqual(endpoints.length, 2, 'Should find 2 RPC endpoints');
 
   const getUser = endpoints.find((e) => e.requestType === 'GetUserRequest');
@@ -90,111 +109,490 @@ test('parseFile extracts RPC endpoints', () => {
 
   assertEqual(getUser.responseType, 'GetUserResponse');
   assertEqual(createUser.responseType, 'CreateUserResponse');
+  assertEqual(getUser.sourceFile, standardFile);
 });
 
-// Test: parseFile ignores non-RPC types
 test('parseFile ignores non-RPC types', () => {
-  const endpoints = parseFile(messagesFile);
-  const nonRpc = endpoints.find((e) => e.requestType === 'NonRpcType');
-  assertEqual(nonRpc, undefined, 'NonRpcType should not be included');
+  const file = createTestFile('non-rpc.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+
+export type RegularType = {
+  '1:value': string;
+};
+
+export type AnotherType = {
+  '1:id': number;
+  '2:name': string;
+};
+
+export type ActualRequest = {
+  '1:id': number;
+} & RpcRequest<ActualResponse>;
+
+export type ActualResponse = {
+  '1:result': string;
+};
+`);
+
+  const endpoints = parseFile(file);
+  assertEqual(endpoints.length, 1, 'Should only find 1 RPC endpoint');
+  assertEqual(endpoints[0].requestType, 'ActualRequest');
 });
 
-// Test: parseFiles aggregates results
+test('parseFile handles empty file', () => {
+  const file = createTestFile('empty.propane', '');
+  const endpoints = parseFile(file);
+  assertEqual(endpoints.length, 0, 'Empty file should have no endpoints');
+});
+
+test('parseFile handles file with no RPC types', () => {
+  const file = createTestFile('no-rpc.propane', `
+export type User = {
+  '1:id': number;
+  '2:name': string;
+};
+
+export type Config = {
+  '1:debug': boolean;
+};
+`);
+
+  const endpoints = parseFile(file);
+  assertEqual(endpoints.length, 0, 'File with no RPC types should have no endpoints');
+});
+
+test('parseFile handles types without Request suffix', () => {
+  const file = createTestFile('no-suffix.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+
+export type FetchUser = {
+  '1:id': number;
+} & RpcRequest<UserData>;
+
+export type UserData = {
+  '1:name': string;
+};
+`);
+
+  const endpoints = parseFile(file);
+  assertEqual(endpoints.length, 1);
+  assertEqual(endpoints[0].requestType, 'FetchUser');
+  assertEqual(endpoints[0].responseType, 'UserData');
+});
+
+test('parseFile handles multiple RPC types in one file', () => {
+  const file = createTestFile('many-rpcs.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+
+export type Req1 = { '1:a': number } & RpcRequest<Res1>;
+export type Res1 = { '1:b': number };
+
+export type Req2 = { '1:c': string } & RpcRequest<Res2>;
+export type Res2 = { '1:d': string };
+
+export type Req3 = { '1:e': boolean } & RpcRequest<Res3>;
+export type Res3 = { '1:f': boolean };
+
+export type Req4 = { '1:g': number } & RpcRequest<Res4>;
+export type Res4 = { '1:h': number };
+
+export type Req5 = { '1:i': string } & RpcRequest<Res5>;
+export type Res5 = { '1:j': string };
+`);
+
+  const endpoints = parseFile(file);
+  assertEqual(endpoints.length, 5, 'Should find all 5 RPC endpoints');
+});
+
 test('parseFiles aggregates results from multiple files', () => {
-  const result = parseFiles([messagesFile]);
+  const file1 = createTestFile('multi/file1.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type ReqA = { '1:a': number } & RpcRequest<ResA>;
+export type ResA = { '1:b': number };
+`);
 
-  assertEqual(result.endpoints.length, 2);
-  assertEqual(result.fileEndpoints.size, 1);
-  assertEqual(result.fileEndpoints.get(messagesFile)?.length, 2);
+  const file2 = createTestFile('multi/file2.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type ReqB = { '1:c': string } & RpcRequest<ResB>;
+export type ResB = { '1:d': string };
+`);
+
+  const result = parseFiles([file1, file2]);
+
+  assertEqual(result.endpoints.length, 2, 'Should find endpoints from both files');
+  assertEqual(result.fileEndpoints.size, 2, 'Should have entries for both files');
+  assertEqual(result.fileEndpoints.get(file1)?.length, 1);
+  assertEqual(result.fileEndpoints.get(file2)?.length, 1);
 });
 
-// Test: generateClient produces valid code structure
-test('generateClient produces valid code', () => {
-  const result = parseFiles([messagesFile]);
+test('parseFiles handles empty file list', () => {
+  const result = parseFiles([]);
+  assertEqual(result.endpoints.length, 0);
+  assertEqual(result.fileEndpoints.size, 0);
+});
+
+// ============================================================================
+// GENERATOR TESTS
+// ============================================================================
+
+console.log('\n--- Generator Tests ---\n');
+
+test('generateClient produces valid class structure', () => {
+  const result = parseFiles([standardFile]);
   const code = generateClient(result, {
     outputPath: '/output/client.ts',
     className: 'TestClient',
   });
 
-  // Check imports
-  if (!code.includes("import { PmsClient } from '@propanejs/pms-client'")) {
-    throw new Error('Missing PmsClient import');
-  }
-
-  // Check class declaration
-  if (!code.includes('export class TestClient')) {
-    throw new Error('Missing class declaration');
-  }
-
-  // Check method generation
-  if (!code.includes('async getUser(request: GetUserRequest): Promise<GetUserResponse>')) {
-    throw new Error('Missing getUser method');
-  }
-  if (!code.includes('async createUser(request: CreateUserRequest): Promise<CreateUserResponse>')) {
-    throw new Error('Missing createUser method');
-  }
-
-  // Check method body
-  if (!code.includes('return this.client.request(request, GetUserResponse)')) {
-    throw new Error('Missing request call in getUser');
-  }
+  assertIncludes(code, "import { PmsClient } from '@propanejs/pms-client'");
+  assertIncludes(code, 'export class TestClient');
+  assertIncludes(code, 'constructor(private readonly client: PmsClient)');
 });
 
-// Test: generateClient with websocket option
-test('generateClient with websocket option', () => {
-  const result = parseFiles([messagesFile]);
+test('generateClient generates correct method signatures', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+    className: 'Api',
+  });
+
+  assertIncludes(code, 'async getUser(request: GetUserRequest): Promise<GetUserResponse>');
+  assertIncludes(code, 'async createUser(request: CreateUserRequest): Promise<CreateUserResponse>');
+});
+
+test('generateClient generates correct method bodies', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+  });
+
+  assertIncludes(code, 'return this.client.request(request, GetUserResponse)');
+  assertIncludes(code, 'return this.client.request(request, CreateUserResponse)');
+});
+
+test('generateClient with websocket option uses PmwsClient', () => {
+  const result = parseFiles([standardFile]);
   const code = generateClient(result, {
     outputPath: '/output/client.ts',
     websocket: true,
   });
 
-  if (!code.includes("import { PmwsClient } from '@propanejs/pms-client'")) {
-    throw new Error('Missing PmwsClient import for websocket mode');
-  }
-
-  if (!code.includes('constructor(private readonly client: PmwsClient)')) {
-    throw new Error('Missing PmwsClient in constructor');
-  }
+  assertIncludes(code, "import { PmwsClient } from '@propanejs/pms-client'");
+  assertIncludes(code, 'constructor(private readonly client: PmwsClient)');
+  assertNotIncludes(code, 'PmsClient');
 });
 
-// Test: method names are properly generated
-test('method names strip Request suffix and camelCase', () => {
-  const result = parseFiles([messagesFile]);
+test('generateClient method names strip Request suffix', () => {
+  const result = parseFiles([standardFile]);
   const code = generateClient(result, {
     outputPath: '/output/client.ts',
   });
 
-  // GetUserRequest -> getUser (not getUserRequest)
-  if (!code.includes('async getUser(')) {
-    throw new Error('Method name should be getUser');
-  }
-  if (code.includes('async getUserRequest(')) {
-    throw new Error('Method name should not include Request suffix');
-  }
+  assertIncludes(code, 'async getUser(');
+  assertIncludes(code, 'async createUser(');
+  assertNotIncludes(code, 'async getUserRequest(');
+  assertNotIncludes(code, 'async createUserRequest(');
 });
 
-// Test: default class name derived from file name
-test('default class name derived from output file name', () => {
-  const result = parseFiles([messagesFile]);
+test('generateClient method names handle types without Request suffix', () => {
+  const file = createTestFile('no-suffix-gen.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type FetchUser = { '1:id': number } & RpcRequest<UserData>;
+export type UserData = { '1:name': string };
+`);
 
-  // api-client.ts -> ApiClient
-  const code1 = generateClient(result, { outputPath: '/output/api-client.ts' });
-  if (!code1.includes('export class ApiClient')) {
-    throw new Error('Expected class name ApiClient from api-client.ts');
-  }
+  const result = parseFiles([file]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+  });
 
-  // user_service.ts -> UserService
-  const code2 = generateClient(result, { outputPath: '/output/user_service.ts' });
-  if (!code2.includes('export class UserService')) {
-    throw new Error('Expected class name UserService from user_service.ts');
-  }
-
-  // MyClient.ts -> MyClient
-  const code3 = generateClient(result, { outputPath: '/output/MyClient.ts' });
-  if (!code3.includes('export class MyClient')) {
-    throw new Error('Expected class name MyClient from MyClient.ts');
-  }
+  // FetchUser doesn't end in Request, so method is fetchUser
+  assertIncludes(code, 'async fetchUser(');
 });
+
+test('generateClient default class name from hyphenated file', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/api-client.ts',
+  });
+
+  assertIncludes(code, 'export class ApiClient');
+});
+
+test('generateClient default class name from underscored file', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/user_service.ts',
+  });
+
+  assertIncludes(code, 'export class UserService');
+});
+
+test('generateClient default class name from dotted file', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/my.api.client.ts',
+  });
+
+  assertIncludes(code, 'export class MyApiClient');
+});
+
+test('generateClient default class name from PascalCase file', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/MyClient.ts',
+  });
+
+  assertIncludes(code, 'export class MyClient');
+});
+
+test('generateClient default class name from .js file', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/api-client.js',
+  });
+
+  assertIncludes(code, 'export class ApiClient');
+});
+
+test('generateClient explicit className overrides file name', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/api-client.ts',
+    className: 'CustomName',
+  });
+
+  assertIncludes(code, 'export class CustomName');
+  assertNotIncludes(code, 'export class ApiClient');
+});
+
+test('generateClient imports types from source files', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: resolve(tempDir, 'output/client.ts'),
+  });
+
+  // Should import from the relative path to standard.propane
+  assertIncludes(code, 'GetUserRequest');
+  assertIncludes(code, 'GetUserResponse');
+  assertIncludes(code, 'CreateUserRequest');
+  assertIncludes(code, 'CreateUserResponse');
+  assertIncludes(code, '.propane.js');
+});
+
+test('generateClient groups imports by source file', () => {
+  const file1 = createTestFile('imports/users.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type GetUserReq = { '1:id': number } & RpcRequest<GetUserRes>;
+export type GetUserRes = { '1:name': string };
+`);
+
+  const file2 = createTestFile('imports/orders.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type GetOrderReq = { '1:id': number } & RpcRequest<GetOrderRes>;
+export type GetOrderRes = { '1:total': number };
+`);
+
+  const result = parseFiles([file1, file2]);
+  const code = generateClient(result, {
+    outputPath: resolve(tempDir, 'imports/client.ts'),
+  });
+
+  // Should have two separate import statements
+  assertIncludes(code, "from './users.propane.js'");
+  assertIncludes(code, "from './orders.propane.js'");
+});
+
+test('generateClient includes JSDoc comments', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+  });
+
+  assertIncludes(code, '* Call GetUserRequest and receive GetUserResponse');
+  assertIncludes(code, '* Generated PMS client with typed methods');
+});
+
+test('generateClient includes header comment', () => {
+  const result = parseFiles([standardFile]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+  });
+
+  assertIncludes(code, '// Generated by @propanejs/pms-client-compiler');
+  assertIncludes(code, '// Do not edit manually');
+});
+
+test('generateClient handles empty endpoints gracefully', () => {
+  const result = parseFiles([]);
+  const code = generateClient(result, {
+    outputPath: '/output/client.ts',
+    className: 'EmptyClient',
+  });
+
+  assertIncludes(code, 'export class EmptyClient');
+  assertIncludes(code, 'constructor(private readonly client: PmsClient)');
+});
+
+// ============================================================================
+// CLI TESTS
+// ============================================================================
+
+console.log('\n--- CLI Tests ---\n');
+
+const cliPath = resolve(__dirname, '../src/cli.js');
+
+function runCli(args: string): { stdout: string; stderr: string; exitCode: number } {
+  try {
+    const stdout = execSync(`node ${cliPath} ${args}`, {
+      encoding: 'utf-8',
+      cwd: tempDir,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    return { stdout, stderr: '', exitCode: 0 };
+  } catch (error: unknown) {
+    const execError = error as { stdout?: string; stderr?: string; status?: number };
+    return {
+      stdout: execError.stdout ?? '',
+      stderr: execError.stderr ?? '',
+      exitCode: execError.status ?? 1,
+    };
+  }
+}
+
+test('CLI shows help with --help', () => {
+  const { stdout, exitCode } = runCli('--help');
+  assertEqual(exitCode, 0);
+  assertIncludes(stdout, 'Usage: pmscc');
+  assertIncludes(stdout, '--output');
+  assertIncludes(stdout, '--dir');
+  assertIncludes(stdout, '--name');
+  assertIncludes(stdout, '--websocket');
+});
+
+test('CLI shows help with -h', () => {
+  const { stdout, exitCode } = runCli('-h');
+  assertEqual(exitCode, 0);
+  assertIncludes(stdout, 'Usage: pmscc');
+});
+
+test('CLI requires output option', () => {
+  const { stderr, exitCode } = runCli(`${standardFile}`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'Output file path is required');
+});
+
+test('CLI requires input files', () => {
+  const outputFile = resolve(tempDir, 'cli-output/no-input.ts');
+  const { stderr, exitCode } = runCli(`-o ${outputFile}`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'No .propane files specified');
+});
+
+test('CLI compiles single file', () => {
+  const outputFile = resolve(tempDir, 'cli-output/single.ts');
+  const { stdout, exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
+  assertEqual(exitCode, 0);
+  assertIncludes(stdout, 'Found 2 RPC endpoint(s)');
+  assertIncludes(stdout, 'Generated:');
+});
+
+test('CLI uses custom class name with -n', () => {
+  const outputFile = resolve(tempDir, 'cli-output/custom-name.ts');
+  const { exitCode } = runCli(`-o ${outputFile} -n MyCustomClient ${standardFile}`);
+  assertEqual(exitCode, 0);
+
+  const code = readFileSync(outputFile, 'utf-8');
+  assertIncludes(code, 'export class MyCustomClient');
+});
+
+test('CLI generates websocket client with -w', () => {
+  const outputFile = resolve(tempDir, 'cli-output/ws-client.ts');
+  const { exitCode } = runCli(`-o ${outputFile} -w ${standardFile}`);
+  assertEqual(exitCode, 0);
+
+  const code = readFileSync(outputFile, 'utf-8');
+  assertIncludes(code, 'PmwsClient');
+});
+
+test('CLI scans directory with -d', () => {
+  // Create a subdirectory with propane files
+  const subDir = resolve(tempDir, 'cli-dir-scan');
+  mkdirSync(subDir, { recursive: true });
+
+  createTestFile('cli-dir-scan/a.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type ReqA = { '1:x': number } & RpcRequest<ResA>;
+export type ResA = { '1:y': number };
+`);
+
+  createTestFile('cli-dir-scan/b.propane', `
+import { RpcRequest } from '@propanejs/pms-core';
+export type ReqB = { '1:x': string } & RpcRequest<ResB>;
+export type ResB = { '1:y': string };
+`);
+
+  const outputFile = resolve(tempDir, 'cli-output/from-dir.ts');
+  const { stdout, exitCode } = runCli(`-d ${subDir} -o ${outputFile}`);
+  assertEqual(exitCode, 0);
+  assertIncludes(stdout, 'Found 2 RPC endpoint(s)');
+});
+
+test('CLI handles directory with no propane files', () => {
+  const emptyDir = resolve(tempDir, 'cli-empty-dir');
+  mkdirSync(emptyDir, { recursive: true });
+
+  const outputFile = resolve(tempDir, 'cli-output/from-empty.ts');
+  const { stderr, exitCode } = runCli(`-d ${emptyDir} -o ${outputFile}`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'No .propane files specified');
+});
+
+test('CLI handles non-existent directory', () => {
+  const outputFile = resolve(tempDir, 'cli-output/nonexistent.ts');
+  const { stderr, exitCode } = runCli(`-d /nonexistent/path -o ${outputFile}`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'not found');
+});
+
+test('CLI handles non-existent file', () => {
+  const outputFile = resolve(tempDir, 'cli-output/nonexistent.ts');
+  const { stderr, exitCode } = runCli(`-o ${outputFile} /nonexistent/file.propane`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'not found');
+});
+
+test('CLI handles file with no RPC types', () => {
+  const noRpcFile = createTestFile('cli-no-rpc.propane', `
+export type NotAnRpc = { '1:value': string };
+`);
+
+  const outputFile = resolve(tempDir, 'cli-output/no-rpc.ts');
+  const { stderr, exitCode } = runCli(`-o ${outputFile} ${noRpcFile}`);
+  assertEqual(exitCode, 1);
+  assertIncludes(stderr, 'No RPC endpoints found');
+});
+
+test('CLI creates output directory if needed', () => {
+  const outputFile = resolve(tempDir, 'cli-output/deep/nested/dir/client.ts');
+  const { exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
+  assertEqual(exitCode, 0);
+
+  if (!existsSync(outputFile)) throw new Error('Output file was not created');
+});
+
+test('CLI derives class name from output file by default', () => {
+  const outputFile = resolve(tempDir, 'cli-output/my-api-client.ts');
+  const { exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
+  assertEqual(exitCode, 0);
+
+  const code = readFileSync(outputFile, 'utf-8');
+  assertIncludes(code, 'export class MyApiClient');
+});
+
+// ============================================================================
+// SUMMARY
+// ============================================================================
 
 console.log(`\n${passed} passed, ${failed} failed`);
 
