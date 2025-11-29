@@ -199,31 +199,15 @@ export type GetUserResponse = {
 };
 ```
 
-The compiler generates:
-
-```typescript
-// generated/api-client.ts
-import { PmsClient } from '@propanejs/pms-client';
-import { GetUserRequest, GetUserResponse } from '../messages.propane.js';
-
-export class GeneratedPmsClient {
-  constructor(private readonly client: PmsClient) {}
-
-  async getUser(request: GetUserRequest): Promise<GetUserResponse> {
-    return this.client.request(request, GetUserResponse);
-  }
-}
-```
+The compiler generates a client class with a `getUser` method.
 
 ### Using the Generated Client
 
 ```typescript
-import { PmsClient } from '@propanejs/pms-client';
-import { GeneratedPmsClient } from './generated/api-client.js';
+import { ApiClient } from './generated/api-client.js';
 import { GetUserRequest } from './messages.propane.js';
 
-const pmsClient = new PmsClient({ baseUrl: 'http://localhost:8080' });
-const api = new GeneratedPmsClient(pmsClient);
+const api = new ApiClient({ baseUrl: 'http://localhost:8080' });
 
 // Clean, typed method calls
 const user = await api.getUser(new GetUserRequest({ id: 123 }));
