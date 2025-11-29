@@ -1,14 +1,18 @@
 import { WebSocketServer, type WebSocket } from 'ws';
-import { createServer, type Server as HttpServer } from 'node:http';
+import { createServer as createHttpServer, type Server as HttpServer } from 'node:http';
+import { createServer as createHttpsServer, type Server as HttpsServer } from 'node:https';
 import type {
   Transport,
   TransportHandler,
   TransportRequest,
 } from './transport.js';
+import type { TlsOptions } from './http-transport.js';
 
 export interface WsTransportOptions {
   port?: number;
   host?: string;
+  /** TLS configuration for WSS (WebSocket Secure). If provided, server uses WSS. */
+  tls?: TlsOptions;
 }
 
 /**
@@ -22,7 +26,7 @@ export interface WsTransportOptions {
  * in the async WebSocket environment.
  */
 export class WsTransport implements Transport {
-  private httpServer: HttpServer | null = null;
+  private httpServer: HttpServer | HttpsServer | null = null;
   private wss: WebSocketServer | null = null;
   private readonly options: WsTransportOptions;
   private readonly clients = new Set<WebSocket>();
@@ -33,7 +37,18 @@ export class WsTransport implements Transport {
 
   async start(handler: TransportHandler): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.httpServer = createServer();
+      // Create HTTP or HTTPS server based on TLS configuration
+      if (this.options.tls) {
+        this.httpServer = createHttpsServer({
+          key: this.options.tls.key,
+          cert: this.options.tls.cert,
+          ca: this.options.tls.ca,
+          requestCert: this.options.tls.requestCert,
+          rejectUnauthorized: this.options.tls.rejectUnauthorized,
+        });
+      } else {
+        this.httpServer = createHttpServer();
+      }
 
       this.wss = new WebSocketServer({ server: this.httpServer });
 
@@ -120,5 +135,10 @@ export class WsTransport implements Transport {
    */
   get clientCount(): number {
     return this.clients.size;
+  }
+
+  /** Whether the server is using WSS (WebSocket Secure) */
+  get secure(): boolean {
+    return !!this.options.tls;
   }
 }

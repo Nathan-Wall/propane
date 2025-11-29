@@ -345,6 +345,53 @@ CSRF options:
 | `requireHeader` | `boolean` | `true` | Require `X-PMS-Request` header |
 | `headerName` | `string` | `'X-PMS-Request'` | Name of required header |
 
+### TLS/HTTPS
+
+Enable HTTPS by providing TLS options:
+
+```typescript
+import { readFileSync } from 'node:fs';
+import { HttpTransport } from '@propanejs/pms-server';
+
+const transport = new HttpTransport({
+  port: 8443,
+  tls: {
+    key: readFileSync('/path/to/private-key.pem'),
+    cert: readFileSync('/path/to/certificate.pem'),
+  },
+});
+
+await server.listen({ transport });
+
+// Check if server is using HTTPS
+console.log(`Secure: ${transport.secure}`); // true
+```
+
+TLS options:
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `key` | `string \| Buffer` | PEM-encoded private key (required) |
+| `cert` | `string \| Buffer` | PEM-encoded certificate (required) |
+| `ca` | `string \| Buffer \| Array` | CA certificate(s) for client verification |
+| `requestCert` | `boolean` | Request client certificate (default: false) |
+| `rejectUnauthorized` | `boolean` | Reject unauthorized client certs |
+
+For mutual TLS (mTLS), enable client certificate verification:
+
+```typescript
+const transport = new HttpTransport({
+  port: 8443,
+  tls: {
+    key: readFileSync('/path/to/server-key.pem'),
+    cert: readFileSync('/path/to/server-cert.pem'),
+    ca: readFileSync('/path/to/ca-cert.pem'),
+    requestCert: true,
+    rejectUnauthorized: true,
+  },
+});
+```
+
 ### Client Options
 
 ```typescript
@@ -528,6 +575,37 @@ await server.listen({ transport });
 // Check number of connected clients
 console.log(`Connected clients: ${transport.clientCount}`);
 ```
+
+## WSS (WebSocket Secure)
+
+Enable encrypted WebSocket connections by providing TLS options:
+
+```typescript
+import { readFileSync } from 'node:fs';
+import { PmsServer, WsTransport } from '@propanejs/pms-server';
+
+const transport = new WsTransport({
+  port: 8443,
+  tls: {
+    key: readFileSync('/path/to/private-key.pem'),
+    cert: readFileSync('/path/to/certificate.pem'),
+  },
+});
+
+await server.listen({ transport });
+
+// Check if server is using WSS
+console.log(`Secure: ${transport.secure}`); // true
+```
+
+Clients connect using `wss://` instead of `ws://`:
+
+```typescript
+const client = new PmwsClient({ url: 'wss://localhost:8443' });
+```
+
+The TLS options are the same as for HTTP - see the [TLS/HTTPS](#tlshttps) section
+for the full list of options including mutual TLS (mTLS) configuration.
 
 ## Choosing HTTP vs WebSocket
 

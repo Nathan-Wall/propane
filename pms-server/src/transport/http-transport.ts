@@ -1,9 +1,10 @@
 import {
-  createServer,
+  createServer as createHttpServer,
   type IncomingMessage,
   type ServerResponse,
   type Server,
 } from 'node:http';
+import { createServer as createHttpsServer } from 'node:https';
 import type {
   Transport,
   TransportHandler,
@@ -45,6 +46,19 @@ export interface CsrfOptions {
   headerName?: string;
 }
 
+export interface TlsOptions {
+  /** PEM-encoded private key */
+  key: string | Buffer;
+  /** PEM-encoded certificate */
+  cert: string | Buffer;
+  /** Optional PEM-encoded CA certificate(s) for client verification */
+  ca?: string | Buffer | Array<string | Buffer>;
+  /** Request client certificate. Default: false */
+  requestCert?: boolean;
+  /** Reject unauthorized client certificates. Default: true when requestCert is true */
+  rejectUnauthorized?: boolean;
+}
+
 export interface HttpTransportOptions {
   port?: number;
   host?: string;
@@ -52,6 +66,8 @@ export interface HttpTransportOptions {
   cors?: boolean | CorsOptions;
   /** CSRF protection. Set to true for defaults, or provide options. Default: true */
   csrf?: boolean | CsrfOptions;
+  /** TLS configuration for HTTPS. If provided, server uses HTTPS. */
+  tls?: TlsOptions;
 }
 
 interface NormalizedCsrfConfig {
@@ -220,75 +236,89 @@ export class HttpTransport implements Transport {
 
   async start(handler: TransportHandler): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.server = createServer(
-        async (req: IncomingMessage, res: ServerResponse) => {
-          const requestOrigin = req.headers.origin;
+      const requestHandler = async (req: IncomingMessage, res: ServerResponse) => {
+        const requestOrigin = req.headers.origin;
 
-          // Handle CORS preflight
-          if (req.method === 'OPTIONS' && this.corsConfig) {
-            const preflightHeaders = this.getPreflightHeaders(requestOrigin);
-            res.writeHead(204, preflightHeaders);
-            res.end();
-            return;
-          }
+        // Handle CORS preflight
+        if (req.method === 'OPTIONS' && this.corsConfig) {
+          const preflightHeaders = this.getPreflightHeaders(requestOrigin);
+          res.writeHead(204, preflightHeaders);
+          res.end();
+          return;
+        }
 
-          // Only accept POST requests
-          if (req.method !== 'POST') {
-            res.writeHead(405, {
-              'Content-Type': 'text/plain',
-              ...this.getCorsHeaders(requestOrigin),
-            });
-            res.end('Method Not Allowed');
-            return;
-          }
+        // Only accept POST requests
+        if (req.method !== 'POST') {
+          res.writeHead(405, {
+            'Content-Type': 'text/plain',
+            ...this.getCorsHeaders(requestOrigin),
+          });
+          res.end('Method Not Allowed');
+          return;
+        }
 
-          // Validate CSRF protection
-          const csrfError = this.validateCsrf(req);
-          if (csrfError) {
-            res.writeHead(403, {
-              'Content-Type': 'text/plain',
-              ...this.getCorsHeaders(requestOrigin),
-            });
-            res.end(`Forbidden: ${csrfError}`);
-            return;
-          }
+        // Validate CSRF protection
+        const csrfError = this.validateCsrf(req);
+        if (csrfError) {
+          res.writeHead(403, {
+            'Content-Type': 'text/plain',
+            ...this.getCorsHeaders(requestOrigin),
+          });
+          res.end(`Forbidden: ${csrfError}`);
+          return;
+        }
 
-          // Read the request body
-          const chunks: Buffer[] = [];
-          for await (const chunk of req) {
-            chunks.push(chunk as Buffer);
-          }
-          const body = Buffer.concat(chunks).toString('utf8');
+        // Read the request body
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) {
+          chunks.push(chunk as Buffer);
+        }
+        const body = Buffer.concat(chunks).toString('utf8');
 
-          // Build headers object
-          const headers: Record<string, string> = {};
-          for (const [key, value] of Object.entries(req.headers)) {
-            if (typeof value === 'string') {
-              headers[key] = value;
-            } else if (Array.isArray(value)) {
-              headers[key] = value.join(', ');
-            }
-          }
-
-          const transportRequest: TransportRequest = { body, headers };
-
-          try {
-            const response: TransportResponse = await handler(transportRequest);
-            res.writeHead(response.status, {
-              'Content-Type': 'application/x-propane-cereal',
-              ...this.getCorsHeaders(requestOrigin),
-              ...response.headers,
-            });
-            res.end(response.body);
-          } catch {
-            res.writeHead(500, {
-              'Content-Type': 'text/plain',
-              ...this.getCorsHeaders(requestOrigin),
-            });
-            res.end('Internal Server Error');
+        // Build headers object
+        const headers: Record<string, string> = {};
+        for (const [key, value] of Object.entries(req.headers)) {
+          if (typeof value === 'string') {
+            headers[key] = value;
+          } else if (Array.isArray(value)) {
+            headers[key] = value.join(', ');
           }
         }
-      );
+
+        const transportRequest: TransportRequest = { body, headers };
+
+        try {
+          const response: TransportResponse = await handler(transportRequest);
+          res.writeHead(response.status, {
+            'Content-Type': 'application/x-propane-cereal',
+            ...this.getCorsHeaders(requestOrigin),
+            ...response.headers,
+          });
+          res.end(response.body);
+        } catch {
+          res.writeHead(500, {
+            'Content-Type': 'text/plain',
+            ...this.getCorsHeaders(requestOrigin),
+          });
+          res.end('Internal Server Error');
+        }
+      };
+
+      // Create HTTP or HTTPS server based on TLS configuration
+      if (this.options.tls) {
+        this.server = createHttpsServer(
+          {
+            key: this.options.tls.key,
+            cert: this.options.tls.cert,
+            ca: this.options.tls.ca,
+            requestCert: this.options.tls.requestCert,
+            rejectUnauthorized: this.options.tls.rejectUnauthorized,
+          },
+          requestHandler
+        );
+      } else {
+        this.server = createHttpServer(requestHandler);
+      }
 
       const port = this.options.port ?? 3000;
       const host = this.options.host ?? '0.0.0.0';
@@ -317,5 +347,10 @@ export class HttpTransport implements Transport {
       return address.port;
     }
     return undefined;
+  }
+
+  /** Whether the server is using HTTPS */
+  get secure(): boolean {
+    return !!this.options.tls;
   }
 }

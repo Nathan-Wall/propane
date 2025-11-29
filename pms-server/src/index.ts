@@ -26,7 +26,7 @@ export type {
   TransportResponse,
 } from './transport/transport.js';
 export { HttpTransport } from './transport/http-transport.js';
-export type { HttpTransportOptions, CorsOptions, CsrfOptions } from './transport/http-transport.js';
+export type { HttpTransportOptions, CorsOptions, CsrfOptions, TlsOptions } from './transport/http-transport.js';
 export { WsTransport } from './transport/ws-transport.js';
 export type { WsTransportOptions } from './transport/ws-transport.js';
 
