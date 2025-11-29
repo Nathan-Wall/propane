@@ -88,7 +88,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface MessageConstructor<T extends DataObject> {
-  new(props: T, listeners?: Set<Listener<T>>): Message<T>;
+  new(props: T, listeners?: ImmutableSet<Listener<T>>): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -105,7 +105,7 @@ const registry = new FinalizationRegistry<string>((key) => {
 export abstract class Message<T extends DataObject> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
-  protected readonly $listeners: Set<Listener<T>>;
+  protected readonly $listeners: ImmutableSet<Listener<T>>;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
   #serialized?: string;
   #hash?: number;
@@ -119,36 +119,25 @@ export abstract class Message<T extends DataObject> {
   protected constructor(
     typeTag: symbol,
     typeName: string,
-    listeners?: Set<Listener<T>>
+    listeners?: ImmutableSet<Listener<T>>
   ) {
     this.#typeTag = typeTag;
     this.#typeName = typeName;
-    this.$listeners = listeners ?? new Set();
+    this.$listeners = listeners ?? new ImmutableSet();
   }
 
-  [ADD_UPDATE_LISTENER](
-    listener: (val: Message<T>) => void
-  ): Message<T> {
-    const l = listener as unknown as Listener<T>;
-    const newListeners = new Set(this.$listeners);
-    newListeners.add(l);
+  public [ADD_UPDATE_LISTENER](listener: (val: this) => void): this {
+    const newListeners = this.$listeners.add(listener);
+    return this.$cloneWithListeners(newListeners);
+  }
 
-    const descriptors = this.$getPropDescriptors();
-    const entries: Record<string, unknown> = {};
-    for (const descriptor of descriptors) {
-      entries[String(descriptor.name)] = descriptor.getValue();
-    }
-
-    const Constructor = this.constructor as MessageConstructor<T>;
-    return new Constructor(
-      this.$fromEntries(entries),
-      newListeners
-    );
+  protected $cloneWithListeners(listeners: ImmutableSet<Listener<T>>): this {
+    const Constructor = this.constructor as unknown as MessageConstructor<T>;
+    return new Constructor(this.cerealize(), listeners) as this;
   }
 
   protected $update(value: this): this {
-    // eslint-disable-next-line unicorn/no-useless-spread
-    for (const listener of [...this.$listeners]) {
+    for (const listener of this.$listeners) {
       listener(value as unknown as Message<T>);
     }
     return value;
@@ -206,7 +195,7 @@ export abstract class Message<T extends DataObject> {
 
     const Constructor = this.constructor as new (
       props: T,
-      listeners?: Set<Listener<T>>
+      listeners?: ImmutableSet<Listener<T>>
     ) => this;
 
     const detached = new Constructor(this.$fromEntries(entries), undefined);
