@@ -5,6 +5,10 @@ export type {
   MessageClass,
 } from '@propanejs/pms-core';
 
-// Client
+// HTTP Client
 export { PmsClient, PmsProtocolError } from './client.js';
 export type { PmsClientOptions } from './client.js';
+
+// WebSocket Client (PMWS)
+export { PmwsClient, PmwsProtocolError, PmwsConnectionError } from './ws-client.js';
+export type { PmwsClientOptions } from './ws-client.js';

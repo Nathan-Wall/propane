@@ -8,8 +8,9 @@ compile-time type safety between requests and responses.
 
 - **Type-Safe RPC** - Request types are linked to response types at compile time
 - **Automatic Routing** - Handlers are dispatched based on message type
-- **Zero Config Serialization** - Uses Propane's built-in serialization
-- **Minimal Dependencies** - Server uses raw Node.js HTTP (no Express/Fastify)
+- **Efficient Serialization** - Uses Propane's built-in serialization
+- **Multiple Transports** - HTTP and WebSocket support
+- **Minimal Dependencies** - Server uses raw Node.js (no Express/Fastify)
 
 ## Installation
 
@@ -19,9 +20,6 @@ npm i @propanejs/pms-server
 
 # Client
 npm i @propanejs/pms-client
-
-# Both depend on
-npm i @propanejs/pms-core @propanejs/runtime
 ```
 
 ## Defining Messages
@@ -257,3 +255,152 @@ Registering two handlers for the same message type throws an error:
 server.handle(GetUserRequest, handler1);
 server.handle(GetUserRequest, handler2); // Error: Handler already registered for type: GetUserRequest
 ```
+
+---
+
+# PMWS: Propane Messages over WebSockets
+
+PMWS provides WebSocket transport for persistent, bidirectional communication.
+Use PMWS when you need:
+
+- **Persistent connections** - Avoid connection overhead for frequent requests
+- **Lower latency** - No HTTP handshake per request
+- **Server push** - Future support for server-initiated messages
+
+## Server with WebSocket
+
+Use `WsTransport` instead of the default `HttpTransport`:
+
+```typescript
+import { PmsServer, WsTransport } from '@propanejs/pms-server';
+
+const server = new PmsServer();
+
+// Register handlers (same as HTTP)
+server.handle(GetUserRequest, async (req) => {
+  const user = await db.findUser(req.id);
+  return new GetUserResponse(user);
+});
+
+// Use WebSocket transport
+const transport = new WsTransport({ port: 8080 });
+await server.listen({ transport });
+
+console.log('WebSocket server running on port 8080');
+```
+
+## WebSocket Client
+
+Use `PmwsClient` for WebSocket connections:
+
+```typescript
+import { PmwsClient } from '@propanejs/pms-client';
+
+const client = new PmwsClient({ url: 'ws://localhost:8080' });
+
+// Connect (optional - auto-connects on first call)
+await client.connect();
+
+// Make calls (same API as PmsClient)
+const user = await client.call(
+  new GetUserRequest({ id: 123 }),
+  GetUserResponse
+);
+
+// Connection is reused for subsequent calls
+const user2 = await client.call(
+  new GetUserRequest({ id: 456 }),
+  GetUserResponse
+);
+
+// Close when done
+await client.close();
+```
+
+## Auto-Reconnection
+
+The WebSocket client automatically reconnects on connection loss:
+
+```typescript
+const client = new PmwsClient({
+  url: 'ws://localhost:8080',
+  autoReconnect: true,        // Default: true
+  reconnectDelay: 1000,       // Default: 1000ms
+  maxReconnectAttempts: 10,   // Default: 10
+});
+```
+
+To disable auto-reconnection:
+
+```typescript
+const client = new PmwsClient({
+  url: 'ws://localhost:8080',
+  autoReconnect: false,
+});
+```
+
+## Connection Status
+
+Check if the client is connected:
+
+```typescript
+if (client.connected) {
+  console.log('Connected to server');
+}
+```
+
+## Error Handling
+
+WebSocket-specific errors use `PmwsConnectionError`:
+
+```typescript
+import { PmwsClient, PmwsProtocolError, PmwsConnectionError } from '@propanejs/pms-client';
+
+try {
+  await client.call(request, ResponseClass);
+} catch (error) {
+  if (error instanceof PmwsProtocolError) {
+    // Server returned an error (same as PmsProtocolError)
+    console.error(`Server error: ${error.code}`);
+  } else if (error instanceof PmwsConnectionError) {
+    // Connection failed or was lost
+    console.error(`Connection error: ${error.message}`);
+  }
+}
+```
+
+## Client Options
+
+```typescript
+const client = new PmwsClient({
+  url: 'ws://localhost:8080',   // WebSocket URL (required)
+  timeout: 30000,               // Request timeout (default: 30000ms)
+  connectTimeout: 5000,         // Connection timeout (default: 5000ms)
+  autoReconnect: true,          // Auto-reconnect on disconnect (default: true)
+  reconnectDelay: 1000,         // Delay between reconnect attempts (default: 1000ms)
+  maxReconnectAttempts: 10,     // Max reconnection attempts (default: 10)
+});
+```
+
+## Server Monitoring
+
+The WebSocket transport provides connection metrics:
+
+```typescript
+const transport = new WsTransport({ port: 8080 });
+await server.listen({ transport });
+
+// Check number of connected clients
+console.log(`Connected clients: ${transport.clientCount}`);
+```
+
+## Choosing HTTP vs WebSocket
+
+| Use Case | Recommended |
+|----------|-------------|
+| Occasional requests | HTTP (`PmsClient`) |
+| Frequent requests | WebSocket (`PmwsClient`) |
+| Stateless/serverless | HTTP |
+| Long-running connections | WebSocket |
+| Browser environment | Both supported |
+| Load balancing | HTTP (simpler) |
