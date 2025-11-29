@@ -69,11 +69,12 @@ export class PmsServer {
       const context: HandlerContext = {
         requestId,
         receivedAt: new Date(),
+        headers: request.headers ?? {},
       };
 
       try {
-        const responseBody = await this.registry.dispatch(request.body, context);
-        return { status: 200, body: responseBody };
+        const result = await this.registry.dispatch(request.body, context);
+        return { status: 200, body: result.body, headers: result.headers };
       } catch (error) {
         return this.handleError(error, requestId);
       }

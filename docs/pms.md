@@ -94,6 +94,30 @@ console.log('Server running on port 8080');
 process.on('SIGTERM', () => server.close());
 ```
 
+### Returning Custom Headers
+
+Handlers can return custom HTTP headers (e.g., for cookies) by returning an
+object with `response` and `headers`:
+
+```typescript
+server.handle(LoginRequest, async (req) => {
+  const session = await createSession(req.username, req.password);
+
+  // Return response with Set-Cookie header
+  return {
+    response: new LoginResponse({ success: true, userId: session.userId }),
+    headers: {
+      'Set-Cookie': `session=${session.token}; HttpOnly; Secure; SameSite=Strict; Path=/`,
+    },
+  };
+});
+
+// Simple responses (no headers) still work
+server.handle(GetUserRequest, async (req) => {
+  return new GetUserResponse({ id: req.id, name: 'Alice' });
+});
+```
+
 ## Client
 
 The client provides type-safe RPC calls:
@@ -198,6 +222,40 @@ server.handle(GetUserRequest, async (req, context) => {
 Context properties:
 - `requestId` - Unique identifier for the request
 - `receivedAt` - `Date` when the request was received
+- `headers` - Request headers (read-only)
+
+### Reading Cookies
+
+Access cookies via the `headers` property:
+
+```typescript
+server.handle(GetUserRequest, async (req, context) => {
+  // Get the raw Cookie header
+  const cookieHeader = context.headers['cookie'];
+
+  // Parse cookies (simple example)
+  const cookies = parseCookies(cookieHeader);
+  const sessionId = cookies['session'];
+
+  if (!sessionId) {
+    throw new HandlerError('UNAUTHORIZED', 'No session cookie');
+  }
+
+  const user = await validateSession(sessionId);
+  return new GetUserResponse({ id: user.id, name: user.name });
+});
+
+// Simple cookie parser
+function parseCookies(cookieHeader?: string): Record<string, string> {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split(';').map(cookie => {
+      const [name, ...rest] = cookie.trim().split('=');
+      return [name, rest.join('=')];
+    })
+  );
+}
+```
 
 ## Configuration
 

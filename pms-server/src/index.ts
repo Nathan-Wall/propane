@@ -13,7 +13,10 @@ export type {
   Handler,
   HandlerContext,
   HandlerDescriptor,
+  HandlerResult,
+  HandlerResponseWithHeaders,
 } from './handler.js';
+export { isResponseWithHeaders } from './handler.js';
 
 // Transport
 export type {

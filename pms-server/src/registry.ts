@@ -4,7 +4,17 @@ import {
   isTaggedMessageData,
 } from '@propanejs/runtime';
 import { type MessageClass, type RpcRequest, HandlerError } from '@propanejs/pms-core';
-import type { Handler, HandlerDescriptor, HandlerContext } from './handler.js';
+import { type Handler, type HandlerDescriptor, type HandlerContext, isResponseWithHeaders } from './handler.js';
+
+/**
+ * Result from dispatching a request.
+ */
+export interface DispatchResult {
+  /** Serialized response body */
+  readonly body: string;
+  /** Optional custom headers from handler */
+  readonly headers?: Record<string, string>;
+}
 
 /**
  * Registry for message handlers.
@@ -56,9 +66,9 @@ export class HandlerRegistry {
 
   /**
    * Dispatch a serialized request to the appropriate handler.
-   * Returns the serialized response.
+   * Returns the serialized response and any custom headers.
    */
-  async dispatch(body: string, context: HandlerContext): Promise<string> {
+  async dispatch(body: string, context: HandlerContext): Promise<DispatchResult> {
     // Parse the cereal string
     const parsed = parseCerealString(body);
 
@@ -86,11 +96,25 @@ export class HandlerRegistry {
     const request = new descriptor.messageClass(props);
 
     // Call the handler
-    const response = await descriptor.handler(request, context);
+    const result = await descriptor.handler(request, context);
+
+    // Extract response and optional headers
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let response: Message<any>;
+    let headers: Record<string, string> | undefined;
+
+    if (isResponseWithHeaders(result)) {
+      response = result.response;
+      headers = result.headers;
+    } else {
+      response = result;
+    }
 
     // Serialize response with type tag
     // The serialize() method returns `:{ ... }`, so we insert the type tag after `:`
     const serialized = response.serialize();
-    return `:$${response.$typeName}${serialized.slice(1)}`;
+    const serializedBody = `:$${response.$typeName}${serialized.slice(1)}`;
+
+    return { body: serializedBody, headers };
   }
 }
