@@ -1,0 +1,124 @@
+# Getting Started
+
+## Installation
+
+```bash
+# Runtime dependencies
+npm i @propanejs/runtime
+
+# Development dependencies (CLI)
+npm i -D @propanejs/cli
+
+# Optional: React integration
+npm i @propanejs/react
+
+# Optional: RPC server/client
+npm i @propanejs/pms-server @propanejs/pms-client
+```
+
+## Quick Example
+
+**Define a type** in `person.propane`:
+
+```typescript
+export type Person = {
+  id: number;
+  name: string;
+  email?: string;
+};
+```
+
+**Compile propane files**:
+
+```bash
+npx propanec src/models
+```
+
+This compiles all `.propane` files to `.propane.ts` files.
+
+You can also watch for changes:
+
+```bash
+npx propanec src/models --watch
+```
+
+**Use the generated class**:
+
+```typescript
+import { Person } from './person.propane.js';
+
+// Create
+const alice = new Person({
+  id: 1,
+  name: 'Alice',
+});
+
+// Update (returns new instance)
+const updated = alice.setName('Alice Smith').setEmail('alice@example.com');
+
+// Serialize
+const serialized = updated.serialize(); // outputs a string
+
+// Deserialize
+const restored = Person.deserialize(serialized);
+
+// Compare
+console.log(updated.equals(restored));  // true
+```
+
+## File Naming
+
+- Source: `person.propane`
+- Generated: `person.propane.ts` (or `.js` after TypeScript compilation)
+
+## Generated API
+
+Every generated class provides:
+
+### Constructor
+
+```typescript
+new Person({ id: 1, name: 'Alice' })  // With values
+new Person()                          // Default values (0, '', false, etc.)
+```
+
+### Getters
+
+```typescript
+person.id      // number
+person.name    // string
+person.email   // string | undefined
+```
+
+### Setters
+
+```typescript
+person.setId(2)           // Returns new Person
+person.setName('Bob')     // Original unchanged
+```
+
+### Delete Methods (Optional Fields)
+
+```typescript
+person.deleteEmail()      // Returns new Person without email
+```
+
+### Serialization
+
+```typescript
+const str = person.serialize();           // Compact string
+const restored = Person.deserialize(str); // Reconstruct
+```
+
+### Equality & Hashing
+
+```typescript
+person1.equals(person2)   // Deep structural equality
+person.hashCode()         // Stable hash (Immutable.js compatible)
+```
+
+## Next Steps
+
+- [Writing Propane Files](./propane-files.md) - Type syntax and supported types
+- [React Integration](./react-integration.md) - Using Propane with React
+- [Propane Message System](./pms.md) - RPC framework for client-server communication
