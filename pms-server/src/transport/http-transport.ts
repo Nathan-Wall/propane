@@ -26,11 +26,38 @@ export interface CorsOptions {
   maxAge?: number;
 }
 
+export interface CsrfOptions {
+  /**
+   * Allowed origins for CSRF validation. Requests with an Origin header
+   * not in this list will be rejected. If not specified, uses the CORS
+   * origin list. For same-origin only, use an empty array.
+   */
+  allowedOrigins?: string[];
+  /**
+   * Require a custom header to be present. This prevents simple form
+   * submissions since forms cannot set custom headers.
+   * Default: true
+   */
+  requireHeader?: boolean;
+  /**
+   * Name of the required header. Default: 'X-PMS-Request'
+   */
+  headerName?: string;
+}
+
 export interface HttpTransportOptions {
   port?: number;
   host?: string;
   /** CORS configuration. Set to true for permissive defaults, or provide options. */
   cors?: boolean | CorsOptions;
+  /** CSRF protection. Set to true for defaults, or provide options. Default: true */
+  csrf?: boolean | CsrfOptions;
+}
+
+interface NormalizedCsrfConfig {
+  allowedOrigins: string[] | null; // null means use CORS origins or allow all
+  requireHeader: boolean;
+  headerName: string;
 }
 
 /**
@@ -40,10 +67,46 @@ export class HttpTransport implements Transport {
   private server: Server | null = null;
   private readonly options: HttpTransportOptions;
   private readonly corsConfig: CorsOptions | null;
+  private readonly csrfConfig: NormalizedCsrfConfig;
 
   constructor(options: HttpTransportOptions = {}) {
     this.options = options;
     this.corsConfig = this.normalizeCorsOptions(options.cors);
+    this.csrfConfig = this.normalizeCsrfOptions(options.csrf);
+
+    // If CSRF requires a header, add it to CORS allowed headers
+    if (this.corsConfig && this.csrfConfig.requireHeader) {
+      const headerName = this.csrfConfig.headerName;
+      if (!this.corsConfig.allowedHeaders?.includes(headerName)) {
+        this.corsConfig.allowedHeaders = [
+          ...(this.corsConfig.allowedHeaders ?? []),
+          headerName,
+        ];
+      }
+    }
+  }
+
+  private normalizeCsrfOptions(csrf?: boolean | CsrfOptions): NormalizedCsrfConfig {
+    // Default to enabled
+    if (csrf === undefined || csrf === true) {
+      return {
+        allowedOrigins: null,
+        requireHeader: true,
+        headerName: 'X-PMS-Request',
+      };
+    }
+    if (csrf === false) {
+      return {
+        allowedOrigins: null,
+        requireHeader: false,
+        headerName: 'X-PMS-Request',
+      };
+    }
+    return {
+      allowedOrigins: csrf.allowedOrigins ?? null,
+      requireHeader: csrf.requireHeader ?? true,
+      headerName: csrf.headerName ?? 'X-PMS-Request',
+    };
   }
 
   private normalizeCorsOptions(cors?: boolean | CorsOptions): CorsOptions | null {
@@ -64,6 +127,46 @@ export class HttpTransport implements Transport {
       credentials: cors.credentials ?? false,
       maxAge: cors.maxAge ?? 86400,
     };
+  }
+
+  /**
+   * Validate CSRF protection.
+   * Returns null if valid, or an error message if invalid.
+   */
+  private validateCsrf(req: IncomingMessage): string | null {
+    // Check required header
+    if (this.csrfConfig.requireHeader) {
+      const headerName = this.csrfConfig.headerName.toLowerCase();
+      if (!req.headers[headerName]) {
+        return `Missing required header: ${this.csrfConfig.headerName}`;
+      }
+    }
+
+    // Check origin if present
+    const origin = req.headers.origin;
+    if (origin) {
+      // Determine allowed origins
+      let allowedOrigins: string[] | null = this.csrfConfig.allowedOrigins;
+
+      // Fall back to CORS origins if not explicitly set
+      if (allowedOrigins === null && this.corsConfig) {
+        const corsOrigin = this.corsConfig.origin;
+        if (corsOrigin === '*') {
+          allowedOrigins = null; // Allow all
+        } else if (Array.isArray(corsOrigin)) {
+          allowedOrigins = corsOrigin;
+        } else if (typeof corsOrigin === 'string') {
+          allowedOrigins = [corsOrigin];
+        }
+      }
+
+      // Validate origin if we have a restricted list
+      if (allowedOrigins !== null && !allowedOrigins.includes(origin)) {
+        return `Origin not allowed: ${origin}`;
+      }
+    }
+
+    return null;
   }
 
   private getCorsHeaders(requestOrigin?: string): Record<string, string> {
@@ -136,6 +239,17 @@ export class HttpTransport implements Transport {
               ...this.getCorsHeaders(requestOrigin),
             });
             res.end('Method Not Allowed');
+            return;
+          }
+
+          // Validate CSRF protection
+          const csrfError = this.validateCsrf(req);
+          if (csrfError) {
+            res.writeHead(403, {
+              'Content-Type': 'text/plain',
+              ...this.getCorsHeaders(requestOrigin),
+            });
+            res.end(`Forbidden: ${csrfError}`);
             return;
           }
 

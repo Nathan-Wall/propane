@@ -249,6 +249,44 @@ CORS options:
 | `credentials` | `boolean` | `false` | Allow credentials |
 | `maxAge` | `number` | `86400` | Preflight cache duration (seconds) |
 
+### CSRF Protection
+
+CSRF protection is **enabled by default**. It requires requests to include an
+`X-PMS-Request` header, which prevents form-based CSRF attacks since HTML forms
+cannot set custom headers.
+
+The `PmsClient` automatically includes this header, so no configuration is
+needed for standard usage.
+
+```typescript
+// CSRF is enabled by default - no configuration needed
+const transport = new HttpTransport({ port: 8080 });
+
+// Disable CSRF protection (not recommended)
+const transport = new HttpTransport({
+  port: 8080,
+  csrf: false,
+});
+
+// Custom CSRF configuration
+const transport = new HttpTransport({
+  port: 8080,
+  csrf: {
+    allowedOrigins: ['https://example.com'],  // Restrict origins
+    requireHeader: true,                       // Require X-PMS-Request header
+    headerName: 'X-PMS-Request',              // Custom header name
+  },
+});
+```
+
+CSRF options:
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `allowedOrigins` | `string[]` | - | Restrict to specific origins (uses CORS origins if not set) |
+| `requireHeader` | `boolean` | `true` | Require `X-PMS-Request` header |
+| `headerName` | `string` | `'X-PMS-Request'` | Name of required header |
+
 ### Client Options
 
 ```typescript
