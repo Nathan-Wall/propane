@@ -173,6 +173,29 @@ test('method names strip Request suffix and camelCase', () => {
   }
 });
 
+// Test: default class name derived from file name
+test('default class name derived from output file name', () => {
+  const result = parseFiles([messagesFile]);
+
+  // api-client.ts -> ApiClient
+  const code1 = generateClient(result, { outputPath: '/output/api-client.ts' });
+  if (!code1.includes('export class ApiClient')) {
+    throw new Error('Expected class name ApiClient from api-client.ts');
+  }
+
+  // user_service.ts -> UserService
+  const code2 = generateClient(result, { outputPath: '/output/user_service.ts' });
+  if (!code2.includes('export class UserService')) {
+    throw new Error('Expected class name UserService from user_service.ts');
+  }
+
+  // MyClient.ts -> MyClient
+  const code3 = generateClient(result, { outputPath: '/output/MyClient.ts' });
+  if (!code3.includes('export class MyClient')) {
+    throw new Error('Expected class name MyClient from MyClient.ts');
+  }
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 
 cleanup();

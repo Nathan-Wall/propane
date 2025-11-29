@@ -10,7 +10,7 @@ interface CliOptions {
   files: string[];
   dir?: string;
   output: string;
-  className: string;
+  className?: string;
   websocket: boolean;
 }
 
@@ -23,19 +23,19 @@ Generate a typed PMS client from .propane files.
 Options:
   -d, --dir <path>      Directory to search for .propane files
   -o, --output <path>   Output file path (required)
-  -n, --name <name>     Generated class name (default: GeneratedPmsClient)
+  -n, --name <name>     Generated class name (default: derived from output file)
   -w, --websocket       Generate WebSocket client instead of HTTP
   -h, --help            Show this help message
 
 Examples:
-  # Compile specific files
-  pmscc -o src/generated/client.ts src/messages/*.propane
+  # Compile to api-client.ts -> generates class ApiClient
+  pmscc -o src/generated/api-client.ts src/messages/*.propane
 
   # Compile all .propane files in a directory
-  pmscc -d src/messages -o src/generated/client.ts
+  pmscc -d src/messages -o src/generated/api-client.ts
 
   # Generate WebSocket client with custom name
-  pmscc -d src/api -o src/client.ts -n ApiClient -w
+  pmscc -d src/api -o src/client.ts -n MyClient -w
 `);
 }
 
@@ -66,7 +66,7 @@ function parseCliArgs(): CliOptions | null {
       options: {
         dir: { type: 'string', short: 'd' },
         output: { type: 'string', short: 'o' },
-        name: { type: 'string', short: 'n', default: 'GeneratedPmsClient' },
+        name: { type: 'string', short: 'n' },
         websocket: { type: 'boolean', short: 'w', default: false },
         help: { type: 'boolean', short: 'h', default: false },
       },
@@ -105,7 +105,7 @@ function parseCliArgs(): CliOptions | null {
       files,
       dir: values.dir,
       output: resolve(values.output),
-      className: values.name ?? 'GeneratedPmsClient',
+      className: values.name,
       websocket: values.websocket ?? false,
     };
   } catch (error) {

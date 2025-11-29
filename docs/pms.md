@@ -233,9 +233,14 @@ console.log(user.name);
 |--------|-------------|
 | `-o, --output <path>` | Output file path (required) |
 | `-d, --dir <path>` | Directory to search for .propane files |
-| `-n, --name <name>` | Generated class name (default: GeneratedPmsClient) |
+| `-n, --name <name>` | Generated class name (default: derived from output file) |
 | `-w, --websocket` | Generate WebSocket client (PmwsClient) instead of HTTP |
 | `-h, --help` | Show help |
+
+The default class name is derived from the output file name:
+- `api-client.ts` → `ApiClient`
+- `user_service.ts` → `UserService`
+- `MyClient.ts` → `MyClient`
 
 ## Error Handling
 

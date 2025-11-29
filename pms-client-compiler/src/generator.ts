@@ -2,12 +2,32 @@ import { relative, dirname, basename } from 'node:path';
 import type { RpcEndpoint, ParseResult } from './parser.js';
 
 export interface GeneratorOptions {
-  /** Name of the generated client class. Default: "GeneratedPmsClient" */
+  /** Name of the generated client class. Default: derived from output file name */
   className?: string;
   /** Whether to generate a WebSocket client instead of HTTP. Default: false */
   websocket?: boolean;
-  /** Output file path (used for calculating relative imports) */
+  /** Output file path (used for calculating relative imports and default class name) */
   outputPath: string;
+}
+
+/**
+ * Convert a file name to a PascalCase class name.
+ * Examples:
+ *   api-client.ts -> ApiClient
+ *   user_service.ts -> UserService
+ *   myClient.ts -> MyClient
+ */
+function fileNameToClassName(outputPath: string): string {
+  // Get the base name without extension
+  let name = basename(outputPath).replace(/\.(ts|js)$/, '');
+
+  // Split on common separators (-, _, .)
+  const parts = name.split(/[-_\.]+/);
+
+  // Convert each part to PascalCase
+  return parts
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join('');
 }
 
 /**
@@ -67,7 +87,7 @@ export function generateClient(
   options: GeneratorOptions
 ): string {
   const { endpoints } = parseResult;
-  const className = options.className ?? 'GeneratedPmsClient';
+  const className = options.className ?? fileNameToClassName(options.outputPath);
   const clientType = options.websocket ? 'PmwsClient' : 'PmsClient';
   const clientImport = options.websocket
     ? "import { PmwsClient } from '@propanejs/pms-client';"
