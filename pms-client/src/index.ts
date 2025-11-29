@@ -6,5 +6,5 @@ export type {
 } from '@propanejs/pms-core';
 
 // Client
-export { PMSClient, PMSProtocolError } from './client.js';
-export type { PMSClientOptions } from './client.js';
+export { PmsClient, PmsProtocolError } from './client.js';
+export type { PmsClientOptions } from './client.js';

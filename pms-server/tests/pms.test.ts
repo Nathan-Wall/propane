@@ -1,10 +1,10 @@
 /**
- * Integration tests for PMS (Propane Message Server).
+ * Integration tests for PMS (Propane Message System).
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PMServer, HandlerError, HttpTransport } from '@propanejs/pms-server';
-import { PMSClient } from '@propanejs/pms-client';
+import { PmsServer, HandlerError, HttpTransport } from '@propanejs/pms-server';
+import { PmsClient } from '@propanejs/pms-client';
 import {
   EchoRequest,
   EchoResponse,
@@ -39,7 +39,7 @@ async function runTests(): Promise<void> {
 
   // Test: Server can be created and started
   await test('Server can be created and started', async () => {
-    const server = new PMServer();
+    const server = new PmsServer();
     server.handle(EchoRequest as any, async (req: EchoRequest) => {
       return new EchoResponse({ echo: req.message, timestamp: Date.now() });
     });
@@ -52,7 +52,7 @@ async function runTests(): Promise<void> {
 
   // Test: Echo request/response
   await test('Echo request/response works', async () => {
-    const server = new PMServer();
+    const server = new PmsServer();
     server.handle(EchoRequest as any, async (req: EchoRequest) => {
       return new EchoResponse({ echo: `Echo: ${req.message}`, timestamp: 12345 });
     });
@@ -61,7 +61,7 @@ async function runTests(): Promise<void> {
     const transport = server.getTransport() as HttpTransport;
     const port = transport.port!;
 
-    const client = new PMSClient({ baseUrl: `http://localhost:${port}` });
+    const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
     const response = await client.call(
       new EchoRequest({ message: 'Hello, PMS!' }) as any,
       EchoResponse as any
@@ -75,7 +75,7 @@ async function runTests(): Promise<void> {
 
   // Test: Add request/response
   await test('Add request/response works', async () => {
-    const server = new PMServer();
+    const server = new PmsServer();
     server.handle(AddRequest as any, async (req: AddRequest) => {
       return new AddResponse({ sum: req.a + req.b });
     });
@@ -84,7 +84,7 @@ async function runTests(): Promise<void> {
     const transport = server.getTransport() as HttpTransport;
     const port = transport.port!;
 
-    const client = new PMSClient({ baseUrl: `http://localhost:${port}` });
+    const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
     const response = await client.call(
       new AddRequest({ a: 17, b: 25 }) as any,
       AddResponse as any
@@ -97,7 +97,7 @@ async function runTests(): Promise<void> {
 
   // Test: Multiple handlers
   await test('Multiple handlers work', async () => {
-    const server = new PMServer();
+    const server = new PmsServer();
     server
       .handle(EchoRequest as any, async (req: EchoRequest) => {
         return new EchoResponse({ echo: req.message, timestamp: 1 });
@@ -110,7 +110,7 @@ async function runTests(): Promise<void> {
     const transport = server.getTransport() as HttpTransport;
     const port = transport.port!;
 
-    const client = new PMSClient({ baseUrl: `http://localhost:${port}` });
+    const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
 
     const echoResponse = await client.call(
       new EchoRequest({ message: 'test' }) as any,
@@ -129,7 +129,7 @@ async function runTests(): Promise<void> {
 
   // Test: Handler error
   await test('Handler errors are propagated', async () => {
-    const server = new PMServer();
+    const server = new PmsServer();
     server.handle(EchoRequest as any, async (): Promise<EchoResponse> => {
       throw new HandlerError('TEST_ERROR', 'This is a test error');
     });
@@ -138,7 +138,7 @@ async function runTests(): Promise<void> {
     const transport = server.getTransport() as HttpTransport;
     const port = transport.port!;
 
-    const client = new PMSClient({ baseUrl: `http://localhost:${port}` });
+    const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
 
     try {
       await client.call(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
@@ -157,7 +157,7 @@ async function runTests(): Promise<void> {
   await test('Handler receives context', async () => {
     let receivedContext: { requestId: string; receivedAt: Date } | null = null;
 
-    const server = new PMServer();
+    const server = new PmsServer();
     server.handle(EchoRequest as any, async (req: EchoRequest, context) => {
       receivedContext = context;
       return new EchoResponse({ echo: req.message, timestamp: 0 });
@@ -167,7 +167,7 @@ async function runTests(): Promise<void> {
     const transport = server.getTransport() as HttpTransport;
     const port = transport.port!;
 
-    const client = new PMSClient({ baseUrl: `http://localhost:${port}` });
+    const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
     await client.call(new EchoRequest({ message: 'context test' }) as any, EchoResponse as any);
 
     assert(receivedContext !== null, 'Context should be received');

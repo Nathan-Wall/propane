@@ -11,18 +11,18 @@ import { HttpTransport } from './transport/http-transport.js';
 import type { Transport, TransportResponse } from './transport/transport.js';
 import type { Handler, HandlerContext } from './handler.js';
 
-export interface PMServerOptions {
+export interface PmsServerOptions {
   port?: number;
   host?: string;
   transport?: Transport;
 }
 
 /**
- * Propane Message Server - RPC server for propane messages.
+ * Propane Message System - RPC server for propane messages.
  *
  * @example
  * ```typescript
- * const server = new PMServer();
+ * const server = new PmsServer();
  * server.handle(GetUserRequest, async (req) => {
  *   const user = await db.getUser(req.id);
  *   return new GetUserResponse({ user });
@@ -30,7 +30,7 @@ export interface PMServerOptions {
  * await server.listen({ port: 8080 });
  * ```
  */
-export class PMServer {
+export class PmsServer {
   private readonly registry = new HandlerRegistry();
   private transport: Transport | null = null;
 
@@ -56,7 +56,7 @@ export class PMServer {
    *
    * @param options - Server configuration options
    */
-  async listen(options: PMServerOptions = {}): Promise<void> {
+  async listen(options: PmsServerOptions = {}): Promise<void> {
     this.transport =
       options.transport ??
       new HttpTransport({
@@ -133,7 +133,7 @@ function serializeProtocolError(
 ): string {
   // Create a simple tagged object for the error
   const details = error.details ? `,"details":${JSON.stringify(error.details)}` : '';
-  return `:$PMSError{"code":${JSON.stringify(error.code)},"message":${JSON.stringify(error.message)},"requestId":${JSON.stringify(requestId)}${details}}`;
+  return `:$PmsError{"code":${JSON.stringify(error.code)},"message":${JSON.stringify(error.message)},"requestId":${JSON.stringify(requestId)}${details}}`;
 }
 
 /**

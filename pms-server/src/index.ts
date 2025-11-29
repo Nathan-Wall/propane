@@ -26,8 +26,8 @@ export { HttpTransport } from './transport/http-transport.js';
 export type { HttpTransportOptions } from './transport/http-transport.js';
 
 // Server
-export { PMServer } from './server.js';
-export type { PMServerOptions } from './server.js';
+export { PmsServer } from './server.js';
+export type { PmsServerOptions } from './server.js';
 
 // Registry (for advanced use cases)
 export { HandlerRegistry } from './registry.js';

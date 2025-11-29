@@ -5,7 +5,7 @@ import {
 } from '@propanejs/runtime';
 import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
 
-export interface PMSClientOptions {
+export interface PmsClientOptions {
   /** Base URL of the PMS server */
   baseUrl: string;
   /** Optional timeout in milliseconds (default: 30000) */
@@ -15,7 +15,7 @@ export interface PMSClientOptions {
 /**
  * Error thrown when a protocol error is received from the server.
  */
-export class PMSProtocolError extends Error {
+export class PmsProtocolError extends Error {
   constructor(
     public readonly code: string,
     message: string,
@@ -23,25 +23,25 @@ export class PMSProtocolError extends Error {
     public readonly details?: string
   ) {
     super(message);
-    this.name = 'PMSProtocolError';
+    this.name = 'PmsProtocolError';
   }
 }
 
 /**
- * Client for making RPC calls to a Propane Message Server.
+ * Client for making RPC calls to a Propane Message System server.
  *
  * @example
  * ```typescript
- * const client = new PMSClient({ baseUrl: 'http://localhost:8080' });
+ * const client = new PmsClient({ baseUrl: 'http://localhost:8080' });
  * const response = await client.call(new GetUserRequest({ id: 123 }), GetUserResponse);
  * // response is typed as GetUserResponse
  * ```
  */
-export class PMSClient {
+export class PmsClient {
   private readonly baseUrl: string;
   private readonly timeout: number;
 
-  constructor(options: PMSClientOptions) {
+  constructor(options: PmsClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.timeout = options.timeout ?? 30_000;
   }
@@ -52,7 +52,7 @@ export class PMSClient {
    * @param request - The request message
    * @param responseClass - The message class for the expected response
    * @returns The deserialized response
-   * @throws PMSProtocolError if the server returns a protocol error
+   * @throws PmsProtocolError if the server returns a protocol error
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async call<TResponse extends Message<any>>(
@@ -83,7 +83,7 @@ export class PMSClient {
       // Check for protocol error
       if (!response.ok) {
         const error = this.parseProtocolError(responseBody);
-        throw new PMSProtocolError(
+        throw new PmsProtocolError(
           error.code,
           error.message,
           error.requestId,
@@ -120,7 +120,7 @@ export class PMSClient {
   } {
     try {
       const parsed = parseCerealString(body);
-      if (isTaggedMessageData(parsed) && parsed.$tag === 'PMSError') {
+      if (isTaggedMessageData(parsed) && parsed.$tag === 'PmsError') {
         return {
           code: String(parsed.$data['code'] ?? 'UNKNOWN'),
           message: String(parsed.$data['message'] ?? 'Unknown error'),
