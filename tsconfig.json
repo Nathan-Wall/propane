@@ -19,10 +19,12 @@
     "paths": {
       "@propanejs/babel-messages": ["tools/babel/messages/index.ts"],
       "@propanejs/runtime": ["runtime/index.ts"],
+      "@propanejs/pms": ["pms/src/index.ts"],
       "@propanejs/cli": ["cli/index.ts"],
       "@propanejs/react": ["react/index.ts"],
       "@propanejs/babel-messages/*": ["tools/babel/messages/*"],
       "@propanejs/runtime/*": ["runtime/*"],
+      "@propanejs/pms/*": ["pms/src/*"],
       "@propanejs/cli/*": ["cli/*"],
       "@propanejs/react/*": ["react/*"],
       "react": ["./node_modules/@types/react"]

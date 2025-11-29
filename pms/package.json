@@ -1,0 +1,15 @@
+{
+  "name": "@propanejs/pms",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "../build/pms/src/index.js",
+  "types": "../build/pms/src/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@propanejs/runtime": "*"
+  }
+}

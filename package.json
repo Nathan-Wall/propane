@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": [
     "runtime",
+    "pms",
     "tools/babel/messages",
     "cli",
     "react",
