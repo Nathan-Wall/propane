@@ -178,6 +178,9 @@ npx pmscc -d src/api -o src/client.ts -n ApiClient
 
 # Generate WebSocket client
 npx pmscc -d src/api -o src/client.ts -w
+
+# Watch mode - regenerate on file changes
+npx pmscc -d src/messages -o src/generated/api-client.ts -W
 ```
 
 ### Generated Output
@@ -235,12 +238,26 @@ console.log(user.name);
 | `-d, --dir <path>` | Directory to search for .propane files |
 | `-n, --name <name>` | Generated class name (default: derived from output file) |
 | `-w, --websocket` | Generate WebSocket client (PmwsClient) instead of HTTP |
+| `-W, --watch` | Watch for changes and regenerate automatically |
 | `-h, --help` | Show help |
 
 The default class name is derived from the output file name:
 - `api-client.ts` → `ApiClient`
 - `user_service.ts` → `UserService`
 - `MyClient.ts` → `MyClient`
+
+### Watch Mode
+
+Use `-W` or `--watch` to continuously monitor `.propane` files for changes and
+automatically regenerate the client. This is useful during development:
+
+```bash
+npx pmscc -d src/messages -o src/generated/api-client.ts -W
+# Watching for changes... (press Ctrl+C to stop)
+```
+
+When files change, the compiler re-scans the directory (if using `-d`) to pick
+up any new files, then regenerates the output.
 
 ## Error Handling
 
