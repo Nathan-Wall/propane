@@ -6,6 +6,7 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import propanePlugin from '@propanejs/babel-messages';
+import chokidar from 'chokidar';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,7 +31,7 @@ for (const arg of args) {
         break;
       case '--version':
       case '-v': {
-        const pkgPath = path.resolve(__dirname, '..', 'package.json');
+        const pkgPath = path.join(__dirname, 'package.json');
         const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { version: string };
         console.log(`propanec v${pkg.version}`);
         process.exit(0);
@@ -158,30 +159,36 @@ const success = compileAll();
 if (watch) {
   console.log('\nWatching for changes...\n');
 
-  // Collect directories to watch from targets
-  const directories = new Set<string>();
-  for (const target of targets) {
-    const resolved = path.resolve(target);
-    if (fs.existsSync(resolved)) {
-      const stats = fs.statSync(resolved);
-      if (stats.isDirectory()) {
-        directories.add(resolved);
-      } else if (stats.isFile()) {
-        directories.add(path.dirname(resolved));
+  const watcher = chokidar
+    .watch(targets, {
+      ignored: /(^|[/\\])\../, // ignore dotfiles
+      persistent: true,
+      ignoreInitial: true, // Don't trigger 'add' events for files that already exist
+      depth: 99, // Watch deeply
+    })
+    .on('ready', () => console.log('Initial scan complete. Ready for changes'))
+    .on('add', (filePath) => {
+      if (filePath.endsWith('.propane')) {
+        transpileFile(filePath);
       }
-    }
-  }
-
-  for (const dir of directories) {
-    fs.watch(dir, { recursive: true }, (eventType, filename) => {
-      if (filename?.endsWith('.propane')) {
-        const fullPath = path.join(dir, filename);
-        if (fs.existsSync(fullPath)) {
-          transpileFile(fullPath);
+    })
+    .on('change', (filePath) => {
+      if (filePath.endsWith('.propane')) {
+        transpileFile(filePath);
+      }
+    })
+    .on('unlink', (filePath) => {
+      // Optional: Delete the generated .propane.ts file if the original .propane file is deleted
+      if (filePath.endsWith('.propane')) {
+        const outputPath = filePath.replace(/\.propane$/, '.propane.ts');
+        if (fs.existsSync(outputPath)) {
+          fs.unlinkSync(outputPath);
+          const relOutput = path.relative(process.cwd(), outputPath);
+          console.log(`✗ Deleted ${relOutput}`);
         }
       }
     });
-  }
+
 } else if (!success) {
   process.exit(1);
 }

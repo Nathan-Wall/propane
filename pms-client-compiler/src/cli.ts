@@ -2,7 +2,8 @@
 
 import { parseArgs } from 'node:util';
 import { resolve, join, dirname } from 'node:path';
-import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync, watch } from 'node:fs';
+import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'node:fs';
+import chokidar from 'chokidar';
 import { parseFiles } from './parser.js';
 import { generateClient } from './generator.js';
 
@@ -201,7 +202,13 @@ function watchFiles(options: CliOptions): void {
       // Re-scan directory if using -d option to pick up new files
       if (options.dir) {
         const dirPath = resolve(options.dir);
-        options.files = findPropaneFiles(dirPath);
+        // Note: This preserves the behavior of the original code, which might
+        // drop files passed as arguments if -d is also used.
+        const dirFiles = findPropaneFiles(dirPath);
+        // If we had files not in the dir, we might want to keep them, but 
+        // strict adherence to the previous logic implies we just reload the dir.
+        // However, let's at least ensure we don't lose the dir files.
+        options.files = dirFiles;
       }
 
       const success = compile(options, false);
@@ -211,59 +218,24 @@ function watchFiles(options: CliOptions): void {
     }, debounceMs);
   };
 
-  // Watch individual files
-  const watchedPaths = new Set<string>();
-
-  for (const file of options.files) {
-    if (!watchedPaths.has(file)) {
-      watchedPaths.add(file);
-      try {
-        watch(file, (eventType) => {
-          if (eventType === 'change') {
-            triggerRecompile(file);
-          }
-        });
-      } catch {
-        console.warn(`Warning: Could not watch file: ${file}`);
-      }
-    }
-  }
-
-  // Watch directory if -d was specified (to detect new files)
+  const pathsToWatch: string[] = [];
   if (options.dir) {
-    const dirPath = resolve(options.dir);
-    try {
-      watch(dirPath, { recursive: true }, (eventType, filename) => {
-        if (filename && filename.endsWith('.propane')) {
-          triggerRecompile(join(dirPath, filename));
-        }
-      });
-    } catch {
-      // Fallback: watch individual directories if recursive not supported
-      const watchDir = (dir: string) => {
-        try {
-          watch(dir, (eventType, filename) => {
-            if (filename && filename.endsWith('.propane')) {
-              triggerRecompile(join(dir, filename));
-            }
-          });
-
-          // Watch subdirectories
-          const entries = readdirSync(dir);
-          for (const entry of entries) {
-            const fullPath = join(dir, entry);
-            if (statSync(fullPath).isDirectory()) {
-              watchDir(fullPath);
-            }
-          }
-        } catch {
-          console.warn(`Warning: Could not watch directory: ${dir}`);
-        }
-      };
-
-      watchDir(dirPath);
-    }
+    pathsToWatch.push(resolve(options.dir));
   }
+  // Also watch the specific files in the list (chokidar handles redundancies)
+  pathsToWatch.push(...options.files);
+
+  chokidar
+    .watch(pathsToWatch, {
+      ignored: /(^|[/\\])\../, // ignore dotfiles
+      persistent: true,
+      ignoreInitial: true,
+    })
+    .on('all', (event, filePath) => {
+      if (filePath.endsWith('.propane')) {
+        triggerRecompile(filePath);
+      }
+    });
 }
 
 function main(): void {
