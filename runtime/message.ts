@@ -729,13 +729,19 @@ function jsonStringifyUrl(value: URL): string {
   return JSON.stringify(value.toString());
 }
 
-function serializePrimitive(value: unknown): string {
+function serializePrimitive(
+  value: unknown,
+  ancestors: Set<object> = new Set()
+): string {
   if (value === undefined) {
     return 'undefined';
   }
 
   if (Array.isArray(value) || value instanceof ImmutableArray) {
-    return serializeArrayLiteral(Array.isArray(value) ? value : [...value]);
+    return serializeArrayLiteral(
+      Array.isArray(value) ? value : [...value],
+      ancestors
+    );
   }
 
   if (isArrayBufferValue(value)) {
@@ -747,11 +753,11 @@ function serializePrimitive(value: unknown): string {
   }
 
   if (isMapValue(value)) {
-    return serializeMapLiteral(value);
+    return serializeMapLiteral(value, ancestors);
   }
 
   if (isSetValue(value)) {
-    return serializeSetLiteral(value);
+    return serializeSetLiteral(value, ancestors);
   }
 
   if (typeof value === 'bigint') {
@@ -768,14 +774,14 @@ function serializePrimitive(value: unknown): string {
       key: String(d.name),
       value: d.getValue(),
     }));
-    return serializeObjectLiteral(entries);
+    return serializeObjectLiteral(entries, ancestors);
   }
 
   if (value && typeof value === 'object') {
     if (isDateValue(value)) {
       return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
     }
-    return serializeObjectLiteral(value as DataObject);
+    return serializeObjectLiteral(value as DataObject, ancestors);
   }
 
   if (typeof value === 'string') {
@@ -788,22 +794,41 @@ function serializePrimitive(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function serializeArrayLiteral(values: unknown[]): string {
-  return `[${values.map((value) => serializePrimitive(value)).join(',')}]`;
+function serializeArrayLiteral(
+  values: unknown[],
+  ancestors: Set<object> = new Set()
+): string {
+  // Track the array itself as an ancestor during serialization
+  if (ancestors.has(values)) {
+    throw new Error('Circular reference detected during serialization');
+  }
+  ancestors.add(values);
+  const result = `[${values.map((value) => serializePrimitive(value, ancestors)).join(',')}]`;
+  ancestors.delete(values);
+  return result;
 }
 
-function serializeMapLiteral(entries: ReadonlyMap<unknown, unknown>): string {
+function serializeMapLiteral(
+  entries: ReadonlyMap<unknown, unknown>,
+  ancestors: Set<object> = new Set()
+): string {
   const serialized = [...entries.entries()].map(([key, value]) =>
-    serializeArrayLiteral([key, value])
+    serializeArrayLiteral([key, value], ancestors)
   );
   return `M[${serialized.join(',')}]`;
 }
 
-function serializeSetLiteral(values: ReadonlySet<unknown>): string {
-  return `S${serializeArrayLiteral([...values.values()])}`;
+function serializeSetLiteral(
+  values: ReadonlySet<unknown>,
+  ancestors: Set<object> = new Set()
+): string {
+  return `S${serializeArrayLiteral([...values.values()], ancestors)}`;
 }
 
-function serializeTaggedMessage(message: Message<DataObject>): string {
+function serializeTaggedMessage(
+  message: Message<DataObject>,
+  ancestors: Set<object> = new Set()
+): string {
   const typeName = message.$typeName;
   interface DescriptorGetter {
     $getPropDescriptors(): MessagePropDescriptor<DataObject>[];
@@ -839,7 +864,7 @@ function serializeTaggedMessage(message: Message<DataObject>): string {
     expectedIndex = fieldNumber + 1;
   }
 
-  return `$${typeName}${serializeObjectLiteral(entries)}`;
+  return `$${typeName}${serializeObjectLiteral(entries, ancestors)}`;
 }
 
 function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
@@ -936,8 +961,17 @@ interface ObjectEntry {
 }
 
 function serializeObjectLiteral(
-  recordOrEntries: DataObject | ObjectEntry[]
+  recordOrEntries: DataObject | ObjectEntry[],
+  ancestors: Set<object> = new Set()
 ): string {
+  // Check for circular reference on the source object (not entry arrays)
+  if (!Array.isArray(recordOrEntries)) {
+    if (ancestors.has(recordOrEntries)) {
+      throw new Error('Circular reference detected during serialization');
+    }
+    ancestors.add(recordOrEntries);
+  }
+
   const entries = Array.isArray(recordOrEntries)
     ? recordOrEntries
     : Object.entries(recordOrEntries).map(([key, value]) => ({
@@ -948,12 +982,18 @@ function serializeObjectLiteral(
 
   const serialized = entries.map(({ key, value, tagMessages }) => {
     const serializedValue = tagMessages && value instanceof Message
-      ? serializeTaggedMessage(value as Message<DataObject>)
-      : serializePrimitive(value);
+      ? serializeTaggedMessage(value as Message<DataObject>, ancestors)
+      : serializePrimitive(value, ancestors);
     return key == null
       ? serializedValue
       : `${serializeObjectKey(key as string)}:${serializedValue}`;
   });
+
+  // Remove from ancestors after processing (allows shared references)
+  if (!Array.isArray(recordOrEntries)) {
+    ancestors.delete(recordOrEntries);
+  }
+
   return `{${serialized.join(',')}}`;
 }
 
