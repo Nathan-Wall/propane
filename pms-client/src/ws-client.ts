@@ -4,7 +4,41 @@ import {
   isTaggedMessageData,
 } from '@propanejs/runtime';
 import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
-import { WebSocket } from 'ws';
+
+// WebSocket implementation - use native browser WebSocket or ws package for Node.js
+type WebSocketLike = {
+  readyState: number;
+  send(data: string): void;
+  close(): void;
+  onopen: ((event: unknown) => void) | null;
+  onmessage: ((event: { data: unknown }) => void) | null;
+  onclose: ((event: unknown) => void) | null;
+  onerror: ((event: unknown) => void) | null;
+};
+
+// WebSocket ready states
+const WS_OPEN = 1;
+
+// Get WebSocket constructor - browser native or ws package
+let WebSocketImpl: new (url: string) => WebSocketLike;
+
+if (typeof WebSocket !== 'undefined') {
+  // Browser environment - use native WebSocket
+  WebSocketImpl = WebSocket as unknown as new (url: string) => WebSocketLike;
+} else {
+  // Node.js environment - will be set on first use
+  WebSocketImpl = null as unknown as new (url: string) => WebSocketLike;
+}
+
+async function getWebSocketImpl(): Promise<new (url: string) => WebSocketLike> {
+  if (WebSocketImpl) {
+    return WebSocketImpl;
+  }
+  // Dynamic import for Node.js
+  const ws = await import('ws');
+  WebSocketImpl = ws.WebSocket as unknown as new (url: string) => WebSocketLike;
+  return WebSocketImpl;
+}
 
 export interface PmwsClientOptions {
   /** WebSocket URL of the PMWS server (e.g., 'ws://localhost:8080') */
@@ -76,7 +110,7 @@ export class PmwsClient {
   private readonly reconnectDelay: number;
   private readonly maxReconnectAttempts: number;
 
-  private ws: WebSocket | null = null;
+  private ws: WebSocketLike | null = null;
   private requestId = 0;
   private pendingRequests = new Map<string, PendingRequest>();
   private reconnectAttempts = 0;
@@ -97,7 +131,7 @@ export class PmwsClient {
    * This is called automatically on first call() if not already connected.
    */
   async connect(): Promise<void> {
-    if (this.ws?.readyState === WebSocket.OPEN) {
+    if (this.ws?.readyState === WS_OPEN) {
       return;
     }
 
@@ -113,9 +147,11 @@ export class PmwsClient {
     }
   }
 
-  private doConnect(): Promise<void> {
+  private async doConnect(): Promise<void> {
+    const WS = await getWebSocketImpl();
+
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(this.url);
+      const ws = new WS(this.url);
       let connected = false;
 
       const connectTimer = setTimeout(() => {
@@ -125,27 +161,33 @@ export class PmwsClient {
         }
       }, this.connectTimeout);
 
-      ws.on('open', () => {
+      ws.onopen = () => {
         connected = true;
         clearTimeout(connectTimer);
         this.reconnectAttempts = 0;
         resolve();
-      });
+      };
 
-      ws.on('message', (data: Buffer | string) => {
-        this.handleMessage(data.toString('utf8'));
-      });
+      ws.onmessage = (event) => {
+        // Handle both browser (event.data is string) and Node.js (event.data is Buffer)
+        const data = event.data;
+        const message = typeof data === 'string' ? data : String(data);
+        this.handleMessage(message);
+      };
 
-      ws.on('close', () => {
+      ws.onclose = () => {
         this.handleDisconnect();
-      });
+      };
 
-      ws.on('error', (error: Error) => {
+      ws.onerror = (event) => {
         if (!connected) {
           clearTimeout(connectTimer);
-          reject(new PmwsConnectionError(error.message));
+          const message = event && typeof event === 'object' && 'message' in event
+            ? String((event as { message: unknown }).message)
+            : 'Connection failed';
+          reject(new PmwsConnectionError(message));
         }
-      });
+      };
 
       this.ws = ws;
     });
@@ -221,7 +263,7 @@ export class PmwsClient {
    * Check if the client is connected.
    */
   get connected(): boolean {
-    return this.ws?.readyState === WebSocket.OPEN;
+    return this.ws?.readyState === WS_OPEN;
   }
 
   /**
@@ -242,7 +284,7 @@ export class PmwsClient {
     // Ensure connected
     await this.connect();
 
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+    if (!this.ws || this.ws.readyState !== WS_OPEN) {
       throw new PmwsConnectionError('Not connected');
     }
 

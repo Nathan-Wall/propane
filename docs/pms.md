@@ -11,6 +11,7 @@ compile-time type safety between requests and responses.
 - **Efficient Serialization** - Uses Propane's built-in serialization
 - **Multiple Transports** - HTTP and WebSocket support
 - **Client Code Generation** - Generate typed client methods from .propane files
+- **Isomorphic Client** - Works in both browser and Node.js (18+)
 - **Minimal Dependencies** - Server uses raw Node.js (no Express/Fastify)
 
 ## Installation
