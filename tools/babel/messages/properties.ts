@@ -499,18 +499,15 @@ export function getDefaultValue(prop: {
   }
 
   if (prop.isArray) {
-    return t.callExpression(
-      t.memberExpression(t.identifier('Object'), t.identifier('freeze')),
-      [t.arrayExpression([])]
-    );
+    return t.newExpression(t.identifier('ImmutableArray'), []);
   }
 
   if (prop.isMap) {
-    return t.newExpression(t.identifier('Map'), []);
+    return t.newExpression(t.identifier('ImmutableMap'), []);
   }
 
   if (prop.isSet) {
-    return t.newExpression(t.identifier('Set'), []);
+    return t.newExpression(t.identifier('ImmutableSet'), []);
   }
 
   return getDefaultValueForType(prop.typeAnnotation);

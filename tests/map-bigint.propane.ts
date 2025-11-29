@@ -8,7 +8,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   constructor(props?: MapBigintKey.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG, "MapBigintKey", listeners);
-    this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new Map();
+    this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new ImmutableMap();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }

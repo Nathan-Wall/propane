@@ -54,10 +54,10 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   constructor(props?: ArrayMessage.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
     super(ArrayMessage.TYPE_TAG, "ArrayMessage", listeners);
-    this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : Object.freeze([]);
-    this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : Object.freeze([]);
+    this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : new ImmutableArray();
+    this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : new ImmutableArray();
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
-    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : Object.freeze([]);
+    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : new ImmutableArray();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }

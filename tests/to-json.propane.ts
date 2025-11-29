@@ -10,9 +10,9 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   constructor(props?: ToJson_Nested.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
     super(ToJson_Nested.TYPE_TAG, "ToJson_Nested", listeners);
-    this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : Object.freeze([]);
-    this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
-    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new Map();
+    this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : new ImmutableArray();
+    this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
+    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new ImmutableMap();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }
@@ -415,8 +415,8 @@ export class ToJson extends Message<ToJson.Data> {
   constructor(props?: ToJson.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && ToJson.EMPTY) return ToJson.EMPTY;
     super(ToJson.TYPE_TAG, "ToJson", listeners);
-    this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new Map();
-    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new Map();
+    this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
+    this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new ImmutableMap();
     this.#big = props ? props.big : 0n;
     this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date) : new ImmutableDate(0);
     this.#optional = props ? props.optional : undefined;

@@ -116,7 +116,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   constructor(props?: MapObjectKey.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
     super(MapObjectKey.TYPE_TAG, "MapObjectKey", listeners);
-    this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new Map();
+    this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new ImmutableMap();
     this.#optionalObjectMap = props ? props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();

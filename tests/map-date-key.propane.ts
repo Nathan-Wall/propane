@@ -10,8 +10,8 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   constructor(props?: MapDateKey.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && MapDateKey.EMPTY) return MapDateKey.EMPTY;
     super(MapDateKey.TYPE_TAG, "MapDateKey", listeners);
-    this.#dateValues = props ? props.dateValues === undefined || props.dateValues === null ? props.dateValues : new ImmutableMap(Array.from(props.dateValues).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : new Map();
-    this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? props.urlValues : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new Map();
+    this.#dateValues = props ? props.dateValues === undefined || props.dateValues === null ? props.dateValues : new ImmutableMap(Array.from(props.dateValues).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : new ImmutableMap();
+    this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? props.urlValues : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new ImmutableMap();
     this.#optionalDateMap = props ? props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : undefined;
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();

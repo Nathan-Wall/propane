@@ -14,7 +14,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     this.#id = props ? props.id : 0;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
-    this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : Object.freeze([]);
+    this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : new ImmutableArray();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }

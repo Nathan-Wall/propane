@@ -96,9 +96,9 @@ export class MapMessage extends Message<MapMessage.Data> {
   constructor(props?: MapMessage.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && MapMessage.EMPTY) return MapMessage.EMPTY;
     super(MapMessage.TYPE_TAG, "MapMessage", listeners);
-    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new Map();
+    this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new ImmutableMap();
     this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])) : undefined;
-    this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new Map();
+    this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new ImmutableMap();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }

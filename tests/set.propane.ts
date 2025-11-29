@@ -9,7 +9,7 @@ export class SetMessage extends Message<SetMessage.Data> {
   constructor(props?: SetMessage.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && SetMessage.EMPTY) return SetMessage.EMPTY;
     super(SetMessage.TYPE_TAG, "SetMessage", listeners);
-    this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new Set();
+    this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new ImmutableSet();
     this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();

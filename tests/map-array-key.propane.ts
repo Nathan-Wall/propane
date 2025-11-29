@@ -10,8 +10,8 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
   constructor(props?: MapArrayKey.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && MapArrayKey.EMPTY) return MapArrayKey.EMPTY;
     super(MapArrayKey.TYPE_TAG, "MapArrayKey", listeners);
-    this.#arrayValues = props ? props.arrayValues === undefined || props.arrayValues === null ? props.arrayValues : new ImmutableMap(Array.from(props.arrayValues).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new Map();
-    this.#numberArrayMap = props ? props.numberArrayMap === undefined || props.numberArrayMap === null ? props.numberArrayMap : new ImmutableMap(Array.from(props.numberArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new Map();
+    this.#arrayValues = props ? props.arrayValues === undefined || props.arrayValues === null ? props.arrayValues : new ImmutableMap(Array.from(props.arrayValues).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new ImmutableMap();
+    this.#numberArrayMap = props ? props.numberArrayMap === undefined || props.numberArrayMap === null ? props.numberArrayMap : new ImmutableMap(Array.from(props.numberArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new ImmutableMap();
     this.#optionalArrayMap = props ? props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();

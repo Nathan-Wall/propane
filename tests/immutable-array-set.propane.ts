@@ -11,8 +11,8 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   constructor(props?: ImmutableArraySet.Value, listeners?: Set<(val: this) => void>) {
     if (!props && !listeners && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
     super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet", listeners);
-    this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : Object.freeze([]);
-    this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new Set();
+    this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : new ImmutableArray();
+    this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new ImmutableSet();
     if (this.$listeners.size > 0) {
       this.$enableChildListeners();
     }
