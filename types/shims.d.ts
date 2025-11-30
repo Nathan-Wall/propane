@@ -60,7 +60,3 @@ declare module '@babel/core' {
   };
 }
 
-declare const process: {
-  exit(code?: number): never;
-  cwd(): string;
-};

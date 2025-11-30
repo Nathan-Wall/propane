@@ -9,6 +9,7 @@ import { generateClient } from './generator.js';
 
 interface CliOptions {
   files: string[];
+  positionalFiles: string[];
   dir?: string;
   output: string;
   className?: string;
@@ -131,7 +132,8 @@ function parseCliArgs(): CliOptions | null {
       return null;
     }
 
-    let files: string[] = positionals.map((f) => resolve(f));
+    const positionalFiles: string[] = positionals.map((f) => resolve(f));
+    let files: string[] = [...positionalFiles];
     const dir = values.dir || config?.inputDir;
 
     if (dir) {
@@ -151,6 +153,7 @@ function parseCliArgs(): CliOptions | null {
 
     return {
       files,
+      positionalFiles,
       dir,
       output,
       className: values.name || config?.className,
@@ -243,13 +246,8 @@ function watchFiles(options: CliOptions): void {
       // Re-scan directory if using -d option to pick up new files
       if (options.dir) {
         const dirPath = resolve(options.dir);
-        // Note: This preserves the behavior of the original code, which might
-        // drop files passed as arguments if -d is also used.
         const dirFiles = findPropaneFiles(dirPath);
-        // If we had files not in the dir, we might want to keep them, but 
-        // strict adherence to the previous logic implies we just reload the dir.
-        // However, let's at least ensure we don't lose the dir files.
-        options.files = dirFiles;
+        options.files = [...options.positionalFiles, ...dirFiles];
       }
 
       const success = compile(options, false);
@@ -266,7 +264,7 @@ function watchFiles(options: CliOptions): void {
   // Also watch the specific files in the list (chokidar handles redundancies)
   pathsToWatch.push(...options.files);
 
-  chokidar
+  const watcher = chokidar
     .watch(pathsToWatch, {
       ignored: /(^|[/\\])\../, // ignore dotfiles
       persistent: true,
@@ -277,6 +275,13 @@ function watchFiles(options: CliOptions): void {
         triggerRecompile(filePath);
       }
     });
+
+  const shutdown = () => {
+    watcher.close();
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 }
 
 function main(): void {

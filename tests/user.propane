@@ -7,7 +7,6 @@ export type User = {
   '2:name': string;
   '3:email': Email;
   '4:passwordHash': Hash;
-  '5:temp': number;
   created: Date;
   updated: Date;
   active: boolean;

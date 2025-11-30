@@ -94,7 +94,7 @@ Options:
 
 Configuration:
   Reads propane.config.json from current directory if present.
-  
+
   {
     "include": ["src"],
     "exclude": [],
@@ -212,7 +212,7 @@ function compileAll() {
 const success = compileAll();
 
 if (watch) {
-  console.log('\nWatching for changes...\n');
+  console.log('\nScanning files.');
 
   const watcher = chokidar
     .watch(targets, {
@@ -221,7 +221,7 @@ if (watch) {
       ignoreInitial: true, // Don't trigger 'add' events for files that already exist
       depth: 99, // Watch deeply
     })
-    .on('ready', () => console.log('Initial scan complete. Ready for changes'))
+    .on('ready', () => console.log('Initial scan complete. Watching for changes...'))
     .on('add', (filePath) => {
       if (filePath.endsWith('.propane')) {
         transpileFile(filePath);
@@ -250,6 +250,13 @@ if (watch) {
         }
       }
     });
+
+  const shutdown = () => {
+    watcher.close();
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
 } else if (!success) {
   process.exit(1);
