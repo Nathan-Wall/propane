@@ -1,0 +1,10 @@
+// Nested message types for testing memo behavior with state persistence
+
+export type InnerMessage = {
+  '1:value': string;
+};
+
+export type OuterMessage = {
+  '1:counter': number;
+  '2:inner': InnerMessage;
+};
