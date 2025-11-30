@@ -73,6 +73,33 @@ async function cleanOutput() {
   }
 }
 
+async function buildReact() {
+  const reactDir = path.join(projectRoot, 'react');
+  const reactOutDir = path.join(projectRoot, 'build', 'react');
+  ensureDir(reactOutDir);
+
+  const srcPath = path.join(reactDir, 'index.ts');
+  const destPath = path.join(reactOutDir, 'index.js');
+
+  const source = fs.readFileSync(srcPath, 'utf8');
+
+  // Rewrite imports
+  let rewritten = source;
+  rewritten = rewritten.replaceAll('@propanejs/runtime', '../runtime/index.js');
+
+  const transpiled = ts.transpileModule(rewritten, {
+    compilerOptions: {
+      module: ts.ModuleKind.ESNext,
+      target: ts.ScriptTarget.ES2020,
+      esModuleInterop: true,
+      moduleResolution: ts.ModuleResolutionKind.NodeNext,
+    },
+    fileName: srcPath,
+  });
+
+  fs.writeFileSync(destPath, transpiled.outputText, 'utf8');
+}
+
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -170,22 +197,26 @@ function rewriteTestImports(content) {
   let result = content.replaceAll('./tmp/', './');
   result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
   result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
-  
+
   // Fix relative paths for build/ structure
   // Explicitly handle the pattern seen in tests using string replacement
   // Handle case without trailing slash just in case
   result = result.split('../../runtime').join('../runtime');
   result = result.split('../../common').join('../runtime/common');
-  
+
+  // Handle react imports - ../react/ from tests/ becomes ../react/ from build/tests/
+  result = result.split('../react/index.ts').join('../react/index.js');
+  result = result.split('../react/').join('../react/');
+
   // Regex backup
   result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+runtime\//g, "from $1../runtime/");
   result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+common\//g, "from $1../runtime/common/");
-  
+
   result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
   result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
   result = result.replaceAll(/from ['"](\.\.\/tools\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
-  
+
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
   result = result.replaceAll(/(import\(\s*['"])(\.\.?(?:\/[^'"]+))\.ts(['"]\s*\))/g, '$1$2.js$3');
