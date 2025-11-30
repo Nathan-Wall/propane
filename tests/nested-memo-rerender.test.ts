@@ -227,6 +227,7 @@ export default function runNestedMemoRerenderTests() {
   testInnerChangeRerenderInner();
   testOuterStatePersistsWhenInnerChanges();
   testMultipleOuterChangesBeforeInnerChange();
+  testStaleInnerRefWhenMemoSkipsRerender();
   console.log('All nested memo rerender tests passed!');
 }
 
@@ -387,4 +388,97 @@ function testMultipleOuterChangesBeforeInnerChange() {
   );
 
   console.log('Multiple outer changes before inner change: PASSED');
+}
+
+/**
+ * This test simulates the stale reference bug that occurs when memoPropane
+ * skips re-rendering because the inner prop is structurally equal.
+ *
+ * Scenario:
+ * 1. OuterComponent renders with state { counter: 0, inner: { value: 'hello' } }
+ * 2. InnerComponent (memoPropane) receives inner prop, renders, holds reference
+ * 3. OuterComponent changes counter to 10 (inner content unchanged)
+ * 4. OuterComponent re-renders, passes new inner to InnerComponent
+ * 5. memoPropane: oldInner.equals(newInner) === true → SKIP re-render
+ * 6. InnerComponent still has OLD inner reference from step 2
+ * 7. User interaction in InnerComponent calls oldInner.setValue('world')
+ * 8. BUG: Counter reverts to 0 because old inner's listener has stale parent
+ */
+function testStaleInnerRefWhenMemoSkipsRerender() {
+  console.log('Testing: stale inner ref when memoPropane skips re-render...');
+
+  // Step 1: Setup OuterComponent with usePropaneState
+  const initialInner = new InnerState({ value: 'hello' });
+  const initialOuter = new OuterState({ counter: 0, inner: initialInner });
+
+  const outerComponent = simulateUsePropaneState(initialOuter);
+
+  // Step 2: InnerComponent renders and holds reference to inner
+  // This simulates what happens inside a memoized component
+  const innerComponent = simulateMemoPropane({ inner: outerComponent.getState().inner });
+
+  // The inner component holds onto its prop reference
+  // (In real React, this would be via props or a ref)
+  let innerComponentHeldRef = innerComponent.getProps().inner;
+
+  console.log(`  Initial: counter=${outerComponent.getState().counter}, inner="${innerComponentHeldRef.value}"`);
+
+  // Step 3: OuterComponent changes counter (inner content unchanged)
+  outerComponent.getState().setCounter(10);
+
+  console.log(`  After setCounter(10): counter=${outerComponent.getState().counter}`);
+  assert(outerComponent.getState().counter === 10, 'Counter should be 10');
+
+  // Step 4-5: OuterComponent re-renders, passes new inner to InnerComponent
+  // memoPropane checks equality
+  const newInnerProp = outerComponent.getState().inner;
+  const didRerender = innerComponent.updateProps({ inner: newInnerProp });
+
+  console.log(`  oldInner.equals(newInner) = ${innerComponentHeldRef.equals(newInnerProp)}`);
+  console.log(`  memoPropane re-rendered: ${didRerender}`);
+
+  // Verify memoPropane skipped re-render
+  assert(!didRerender, 'memoPropane should skip re-render (inner values equal)');
+  assert(innerComponent.getRenderCount() === 1, 'Inner should still have 1 render');
+
+  // Step 6: InnerComponent still has OLD reference
+  // (In real code, the component function didn't re-run, so props/refs are stale)
+  // innerComponentHeldRef is still pointing to the old inner
+  console.log(`  InnerComponent still holds ref to inner with value="${innerComponentHeldRef.value}"`);
+
+  // Step 7: User interaction calls setValue on the OLD inner reference
+  // This simulates a button click handler that was closed over the old props
+  console.log(`  Calling setValue('world') on OLD inner reference...`);
+  innerComponentHeldRef.setValue('world');
+
+  // Step 8: Check final state
+  const finalCounter = outerComponent.getState().counter;
+  const finalInnerValue = outerComponent.getState().inner.value;
+
+  console.log(`  Final state: counter=${finalCounter}, inner="${finalInnerValue}"`);
+
+  // Verify inner value changed
+  assert(
+    finalInnerValue === 'world',
+    `Inner value should be 'world', got '${finalInnerValue}'`
+  );
+
+  // THE KEY ASSERTION: Does counter persist or revert?
+  // If the bug exists, counter will revert to 0
+  // If fixed, counter should stay at 10
+  if (finalCounter === 10) {
+    console.log('  RESULT: Counter persisted correctly (10)');
+    console.log('Stale inner ref when memoPropane skips re-render: PASSED');
+  } else if (finalCounter === 0) {
+    console.log('  RESULT: Counter REVERTED to 0!');
+    console.log('  BUG: The old inner reference has a listener with stale parent state.');
+    console.log('  When setValue was called on old inner, it used counter=0 from the');
+    console.log('  original OuterState instead of counter=10 from current state.');
+    assert(
+      false,
+      `BUG: Counter reverted from 10 to ${finalCounter} due to stale closure in listener`
+    );
+  } else {
+    assert(false, `Unexpected counter value: ${finalCounter}`);
+  }
 }
