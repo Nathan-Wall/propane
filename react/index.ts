@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useRef, useSyncExternalStore, memo } from 'react';
 import type { Dispatch, SetStateAction, ComponentType } from 'react';
 import { equals, ADD_UPDATE_LISTENER } from '@propanejs/runtime';
 
@@ -142,6 +142,75 @@ export function usePropaneState<S>(
   }, []);
 
   return [state, setPropaneState];
+}
+
+/**
+ * Select a derived value from Propane state with automatic memoization.
+ *
+ * Similar to Redux's useSelector, this hook runs a selector function against
+ * the state and only triggers a re-render when the selected value changes
+ * (using Propane's structural equality via `equals()`).
+ *
+ * @example
+ * // Only re-render when user.name changes, not on other state changes
+ * const userName = usePropaneSelector(state, s => s.user.name);
+ *
+ * @example
+ * // Derive computed values - re-renders only when result changes
+ * const completedCount = usePropaneSelector(state, s =>
+ *   s.todos.filter(t => t.completed).length
+ * );
+ *
+ * @example
+ * // Select nested objects - uses structural equality
+ * const settings = usePropaneSelector(state, s => s.user.settings);
+ */
+export function usePropaneSelector<S extends object, R>(
+  state: S,
+  selector: (state: S) => R
+): R {
+  const selectorRef = useRef(selector);
+  selectorRef.current = selector;
+
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
+  const selectedRef = useRef<R | undefined>(undefined);
+  if (selectedRef.current === undefined) {
+    selectedRef.current = selector(state);
+  }
+
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      if (
+        state
+        && typeof state === 'object'
+        && ADD_UPDATE_LISTENER in state
+      ) {
+        const listenable = state as unknown as PropaneListenable<S>;
+        const subscribed = listenable[ADD_UPDATE_LISTENER]((next: S) => {
+          stateRef.current = next;
+          const nextSelected = selectorRef.current(next);
+          if (!equals(selectedRef.current, nextSelected)) {
+            selectedRef.current = nextSelected;
+            onStoreChange();
+          }
+        });
+        stateRef.current = subscribed;
+        return () => {
+          // Cleanup handled by Propane internally via weak refs
+        };
+      }
+      return () => {};
+    },
+    [state]
+  );
+
+  const getSnapshot = useCallback(() => {
+    return selectedRef.current as R;
+  }, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
 function shallowEqual(objA: unknown, objB: unknown) {

@@ -91,6 +91,63 @@ update(() => {
 });
 ```
 
+## Selectors with `usePropaneSelector`
+
+Use `usePropaneSelector` to derive values from state with automatic memoization.
+The component only re-renders when the selected value changes (using structural equality):
+
+```typescript
+import { usePropaneState, usePropaneSelector, update } from '@propanejs/react';
+import { AppState } from './types.propane.ts';
+
+function UserName() {
+  const [state] = usePropaneState<AppState>(initialState);
+
+  // Only re-renders when user.name changes, not on other state changes
+  const userName = usePropaneSelector(state, s => s.user.name);
+
+  return <h1>{userName}</h1>;
+}
+```
+
+### Computed Values
+
+Selectors can compute derived values. Re-renders only happen when the result changes:
+
+```typescript
+function TodoStats() {
+  const [state] = usePropaneState<AppState>(initialState);
+
+  const completedCount = usePropaneSelector(state, s =>
+    s.todos.filter(t => t.completed).length
+  );
+
+  const totalCount = usePropaneSelector(state, s => s.todos.length);
+
+  return <p>{completedCount} of {totalCount} completed</p>;
+}
+```
+
+### Selecting Objects
+
+When selecting objects, Propane's structural equality prevents unnecessary re-renders:
+
+```typescript
+function SettingsPanel() {
+  const [state] = usePropaneState<AppState>(initialState);
+
+  // Re-renders only when settings content changes, not on reference changes
+  const settings = usePropaneSelector(state, s => s.user.settings);
+
+  return (
+    <div>
+      <p>Theme: {settings.theme}</p>
+      <p>Notifications: {settings.notifications ? 'On' : 'Off'}</p>
+    </div>
+  );
+}
+```
+
 ## Memoization with `memoPropane`
 
 Use `memoPropane` instead of `React.memo` for components receiving Propane props.
@@ -426,7 +483,7 @@ needing to anticipate every possible mutation.
 ## Complete Example
 
 ```typescript
-import { usePropaneState, update, memoPropane } from '@propanejs/react';
+import { usePropaneState, usePropaneSelector, update, memoPropane } from '@propanejs/react';
 import { GameState, BoardState } from './types.propane.ts';
 
 const Square = memoPropane(({ value, onClick }: SquareProps) => (
