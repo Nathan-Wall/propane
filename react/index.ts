@@ -264,7 +264,8 @@ export function usePropaneSelector<S extends object, R>(
               const nextTyped = next as unknown as S;
               stateRef.current = nextTyped;
               const nextSelected = selectorRef.current(nextTyped);
-              if (!equals(selectedRef.current, nextSelected)) {
+              // Use path-aware equality to distinguish identical siblings
+              if (!equalsFromRoot(nextTyped, selectedRef.current, nextSelected)) {
                 selectedRef.current = nextSelected;
                 setupListener(nextTyped);
                 onStoreChange();
