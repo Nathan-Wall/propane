@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-order.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static EMPTY: StringFirst;
   #value: string | number;
-  constructor(props?: StringFirst.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && StringFirst.EMPTY) return StringFirst.EMPTY;
-    super(StringFirst.TYPE_TAG, "StringFirst", listeners);
+  constructor(props?: StringFirst.Value) {
+    if (!props && StringFirst.EMPTY) return StringFirst.EMPTY;
+    super(StringFirst.TYPE_TAG, "StringFirst");
     this.#value = props ? props.value : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) StringFirst.EMPTY = this;
+    if (!props) StringFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
     return [{
@@ -48,14 +45,11 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
   static EMPTY: NumberFirst;
   #value: number | string;
-  constructor(props?: NumberFirst.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && NumberFirst.EMPTY) return NumberFirst.EMPTY;
-    super(NumberFirst.TYPE_TAG, "NumberFirst", listeners);
+  constructor(props?: NumberFirst.Value) {
+    if (!props && NumberFirst.EMPTY) return NumberFirst.EMPTY;
+    super(NumberFirst.TYPE_TAG, "NumberFirst");
     this.#value = props ? props.value : 0;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) NumberFirst.EMPTY = this;
+    if (!props) NumberFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
     return [{

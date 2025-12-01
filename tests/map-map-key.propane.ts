@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-map-key.propane
-import { Message, MessagePropDescriptor, ImmutableMap, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "@propanejs/runtime";
 export class MapMapKey extends Message<MapMapKey.Data> {
   static TYPE_TAG = Symbol("MapMapKey");
   static EMPTY: MapMapKey;
   #nested: ImmutableMap<ImmutableMap<string, number>, string>;
   #optional: ImmutableMap<ImmutableMap<string, number>, number> | undefined;
-  constructor(props?: MapMapKey.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapMapKey.EMPTY) return MapMapKey.EMPTY;
-    super(MapMapKey.TYPE_TAG, "MapMapKey", listeners);
+  constructor(props?: MapMapKey.Value) {
+    if (!props && MapMapKey.EMPTY) return MapMapKey.EMPTY;
+    super(MapMapKey.TYPE_TAG, "MapMapKey");
     this.#nested = props ? props.nested === undefined || props.nested === null ? props.nested : props.nested instanceof ImmutableMap || Object.prototype.toString.call(props.nested) === "[object ImmutableMap]" ? props.nested : new ImmutableMap(props.nested) : new ImmutableMap();
     this.#optional = props ? props.optional === undefined || props.optional === null ? props.optional : props.optional instanceof ImmutableMap || Object.prototype.toString.call(props.optional) === "[object ImmutableMap]" ? props.optional : new ImmutableMap(props.optional) : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapMapKey.EMPTY = this;
+    if (!props) MapMapKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMapKey.Data>[] {
     return [{
@@ -41,15 +38,25 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     props.optional = optionalMapValue;
     return props as MapMapKey.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#nested = this.#nested[ADD_UPDATE_LISTENER](newValue => {
-      this.setNested(newValue);
-    });
-    if (this.#optional) {
-      this.#optional = this.#optional[ADD_UPDATE_LISTENER](newValue => {
-        this.setOptional(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): MapMapKey {
+    switch (key) {
+      case "nested":
+        return new MapMapKey({
+          nested: child,
+          optional: this.#optional
+        });
+      case "optional":
+        return new MapMapKey({
+          nested: this.#nested,
+          optional: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["nested", this.#nested];
+    yield ["optional", this.#optional];
   }
   get nested(): ImmutableMap<ImmutableMap<string, number>, string> {
     return this.#nested;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
   static EMPTY: Indexed;
@@ -12,9 +12,9 @@ export class Indexed extends Message<Indexed.Data> {
   #score: number | null;
   #alias: string | null;
   #status: string;
-  constructor(props?: Indexed.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Indexed.EMPTY) return Indexed.EMPTY;
-    super(Indexed.TYPE_TAG, "Indexed", listeners);
+  constructor(props?: Indexed.Value) {
+    if (!props && Indexed.EMPTY) return Indexed.EMPTY;
+    super(Indexed.TYPE_TAG, "Indexed");
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
@@ -23,10 +23,7 @@ export class Indexed extends Message<Indexed.Data> {
     this.#score = props ? props.score : 0;
     this.#alias = props ? props.alias : undefined;
     this.#status = props ? props.status : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Indexed.EMPTY = this;
+    if (!props) Indexed.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Indexed.Data>[] {
     return [{

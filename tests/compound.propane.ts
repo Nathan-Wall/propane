@@ -2,19 +2,16 @@
 // Generated from tests/compound.propane
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
-import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static EMPTY: Compound_Inline;
   #value: string;
-  constructor(props?: Compound_Inline.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
-    super(Compound_Inline.TYPE_TAG, "Compound_Inline", listeners);
+  constructor(props?: Compound_Inline.Value) {
+    if (!props && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
+    super(Compound_Inline.TYPE_TAG, "Compound_Inline");
     this.#value = props ? props.value : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Compound_Inline.EMPTY = this;
+    if (!props) Compound_Inline.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound_Inline.Data>[] {
     return [{
@@ -52,16 +49,13 @@ export class Compound extends Message<Compound.Data> {
   #user: User;
   #indexed: Indexed;
   #inline: Compound_Inline;
-  constructor(props?: Compound.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Compound.EMPTY) return Compound.EMPTY;
-    super(Compound.TYPE_TAG, "Compound", listeners);
+  constructor(props?: Compound.Value) {
+    if (!props && Compound.EMPTY) return Compound.EMPTY;
+    super(Compound.TYPE_TAG, "Compound");
     this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
     this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Compound.EMPTY = this;
+    if (!props) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
     return [{
@@ -94,16 +88,34 @@ export class Compound extends Message<Compound.Data> {
     props.inline = inlineMessageValue;
     return props as Compound.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#user = this.#user[ADD_UPDATE_LISTENER](newValue => {
-      this.setUser(newValue);
-    });
-    this.#indexed = this.#indexed[ADD_UPDATE_LISTENER](newValue => {
-      this.setIndexed(newValue);
-    });
-    this.#inline = this.#inline[ADD_UPDATE_LISTENER](newValue => {
-      this.setInline(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): Compound {
+    switch (key) {
+      case "user":
+        return new Compound({
+          user: child,
+          indexed: this.#indexed,
+          inline: this.#inline
+        });
+      case "indexed":
+        return new Compound({
+          user: this.#user,
+          indexed: child,
+          inline: this.#inline
+        });
+      case "inline":
+        return new Compound({
+          user: this.#user,
+          indexed: this.#indexed,
+          inline: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["user", this.#user];
+    yield ["indexed", this.#indexed];
+    yield ["inline", this.#inline];
   }
   get user(): User {
     return this.#user;

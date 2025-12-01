@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.propane
-import { Message, MessagePropDescriptor, ImmutableArray, ImmutableUrl, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "@propanejs/runtime";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
   static EMPTY: UrlMessage;
@@ -8,17 +8,14 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   #primary: ImmutableUrl;
   #secondary: ImmutableUrl;
   #links: ImmutableArray<ImmutableUrl>;
-  constructor(props?: UrlMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && UrlMessage.EMPTY) return UrlMessage.EMPTY;
-    super(UrlMessage.TYPE_TAG, "UrlMessage", listeners);
+  constructor(props?: UrlMessage.Value) {
+    if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
+    super(UrlMessage.TYPE_TAG, "UrlMessage");
     this.#id = props ? props.id : 0;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
     this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : new ImmutableArray();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) UrlMessage.EMPTY = this;
+    if (!props) UrlMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
     return [{
@@ -60,10 +57,21 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     props.links = linksArrayValue;
     return props as UrlMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#links = this.#links[ADD_UPDATE_LISTENER](newValue => {
-      this.setLinks(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): UrlMessage {
+    switch (key) {
+      case "links":
+        return new UrlMessage({
+          id: this.#id,
+          primary: this.#primary,
+          secondary: this.#secondary,
+          links: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["links", this.#links];
   }
   get id(): number {
     return this.#id;

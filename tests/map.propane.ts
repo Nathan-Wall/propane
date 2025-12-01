@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.propane
-import { Message, MessagePropDescriptor, ImmutableMap, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "@propanejs/runtime";
 export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static EMPTY: MapMessage_Metadata_Value;
   #value: string;
-  constructor(props?: MapMessage_Metadata_Value.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
-    super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value", listeners);
+  constructor(props?: MapMessage_Metadata_Value.Value) {
+    if (!props && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
+    super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value");
     this.#value = props ? props.value : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapMessage_Metadata_Value.EMPTY = this;
+    if (!props) MapMessage_Metadata_Value.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Metadata_Value.Data>[] {
     return [{
@@ -48,14 +45,11 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   static TYPE_TAG = Symbol("MapMessage_Extras_Value");
   static EMPTY: MapMessage_Extras_Value;
   #note: string | null;
-  constructor(props?: MapMessage_Extras_Value.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
-    super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value", listeners);
+  constructor(props?: MapMessage_Extras_Value.Value) {
+    if (!props && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
+    super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value");
     this.#note = props ? props.note : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapMessage_Extras_Value.EMPTY = this;
+    if (!props) MapMessage_Extras_Value.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage_Extras_Value.Data>[] {
     return [{
@@ -93,16 +87,13 @@ export class MapMessage extends Message<MapMessage.Data> {
   #labels: ImmutableMap<string | number, number>;
   #metadata: ImmutableMap<string, MapMessage_Metadata_Value> | undefined;
   #extras: ImmutableMap<string, MapMessage_Extras_Value>;
-  constructor(props?: MapMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapMessage.EMPTY) return MapMessage.EMPTY;
-    super(MapMessage.TYPE_TAG, "MapMessage", listeners);
+  constructor(props?: MapMessage.Value) {
+    if (!props && MapMessage.EMPTY) return MapMessage.EMPTY;
+    super(MapMessage.TYPE_TAG, "MapMessage");
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : props.labels instanceof ImmutableMap || Object.prototype.toString.call(props.labels) === "[object ImmutableMap]" ? props.labels : new ImmutableMap(props.labels) : new ImmutableMap();
     this.#metadata = props ? props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata).map(([k, v]) => [k, v instanceof MapMessage_Metadata_Value ? v : new MapMessage_Metadata_Value(v)])) : undefined;
     this.#extras = props ? props.extras === undefined || props.extras === null ? props.extras : new ImmutableMap(Array.from(props.extras).map(([k, v]) => [k, v instanceof MapMessage_Extras_Value ? v : new MapMessage_Extras_Value(v)])) : new ImmutableMap();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapMessage.EMPTY = this;
+    if (!props) MapMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMessage.Data>[] {
     return [{
@@ -138,18 +129,34 @@ export class MapMessage extends Message<MapMessage.Data> {
     props.extras = extrasMapValue;
     return props as MapMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#labels = this.#labels[ADD_UPDATE_LISTENER](newValue => {
-      this.setLabels(newValue);
-    });
-    if (this.#metadata) {
-      this.#metadata = this.#metadata[ADD_UPDATE_LISTENER](newValue => {
-        this.setMetadata(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): MapMessage {
+    switch (key) {
+      case "labels":
+        return new MapMessage({
+          labels: child,
+          metadata: this.#metadata,
+          extras: this.#extras
+        });
+      case "metadata":
+        return new MapMessage({
+          labels: this.#labels,
+          metadata: child,
+          extras: this.#extras
+        });
+      case "extras":
+        return new MapMessage({
+          labels: this.#labels,
+          metadata: this.#metadata,
+          extras: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
-    this.#extras = this.#extras[ADD_UPDATE_LISTENER](newValue => {
-      this.setExtras(newValue);
-    });
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["labels", this.#labels];
+    yield ["metadata", this.#metadata];
+    yield ["extras", this.#extras];
   }
   get labels(): ImmutableMap<string | number, number> {
     return this.#labels;

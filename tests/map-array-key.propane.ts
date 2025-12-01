@@ -1,22 +1,19 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-array-key.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "@propanejs/runtime";
 export class MapArrayKey extends Message<MapArrayKey.Data> {
   static TYPE_TAG = Symbol("MapArrayKey");
   static EMPTY: MapArrayKey;
   #arrayValues: ImmutableMap<ImmutableArray<string>, number>;
   #numberArrayMap: ImmutableMap<ImmutableArray<number>, string>;
   #optionalArrayMap: ImmutableMap<ImmutableArray<boolean>, ImmutableDate> | undefined;
-  constructor(props?: MapArrayKey.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapArrayKey.EMPTY) return MapArrayKey.EMPTY;
-    super(MapArrayKey.TYPE_TAG, "MapArrayKey", listeners);
+  constructor(props?: MapArrayKey.Value) {
+    if (!props && MapArrayKey.EMPTY) return MapArrayKey.EMPTY;
+    super(MapArrayKey.TYPE_TAG, "MapArrayKey");
     this.#arrayValues = props ? props.arrayValues === undefined || props.arrayValues === null ? props.arrayValues : new ImmutableMap(Array.from(props.arrayValues).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new ImmutableMap();
     this.#numberArrayMap = props ? props.numberArrayMap === undefined || props.numberArrayMap === null ? props.numberArrayMap : new ImmutableMap(Array.from(props.numberArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])) : new ImmutableMap();
     this.#optionalArrayMap = props ? props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapArrayKey.EMPTY = this;
+    if (!props) MapArrayKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapArrayKey.Data>[] {
     return [{
@@ -52,18 +49,34 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     props.optionalArrayMap = optionalArrayMapMapValue;
     return props as MapArrayKey.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#arrayValues = this.#arrayValues[ADD_UPDATE_LISTENER](newValue => {
-      this.setArrayValues(newValue);
-    });
-    this.#numberArrayMap = this.#numberArrayMap[ADD_UPDATE_LISTENER](newValue => {
-      this.setNumberArrayMap(newValue);
-    });
-    if (this.#optionalArrayMap) {
-      this.#optionalArrayMap = this.#optionalArrayMap[ADD_UPDATE_LISTENER](newValue => {
-        this.setOptionalArrayMap(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): MapArrayKey {
+    switch (key) {
+      case "arrayValues":
+        return new MapArrayKey({
+          arrayValues: child,
+          numberArrayMap: this.#numberArrayMap,
+          optionalArrayMap: this.#optionalArrayMap
+        });
+      case "numberArrayMap":
+        return new MapArrayKey({
+          arrayValues: this.#arrayValues,
+          numberArrayMap: child,
+          optionalArrayMap: this.#optionalArrayMap
+        });
+      case "optionalArrayMap":
+        return new MapArrayKey({
+          arrayValues: this.#arrayValues,
+          numberArrayMap: this.#numberArrayMap,
+          optionalArrayMap: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["arrayValues", this.#arrayValues];
+    yield ["numberArrayMap", this.#numberArrayMap];
+    yield ["optionalArrayMap", this.#optionalArrayMap];
   }
   get arrayValues(): ImmutableMap<ImmutableArray<string>, number> {
     return this.#arrayValues;

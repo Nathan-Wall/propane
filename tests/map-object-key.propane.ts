@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-object-key.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableDate, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals } from "@propanejs/runtime";
 export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys_Key.Data> {
   static TYPE_TAG = Symbol("MapObjectKey_ObjectKeys_Key");
   static EMPTY: MapObjectKey_ObjectKeys_Key;
   #id: string;
   #version: number;
-  constructor(props?: MapObjectKey_ObjectKeys_Key.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapObjectKey_ObjectKeys_Key.EMPTY) return MapObjectKey_ObjectKeys_Key.EMPTY;
-    super(MapObjectKey_ObjectKeys_Key.TYPE_TAG, "MapObjectKey_ObjectKeys_Key", listeners);
+  constructor(props?: MapObjectKey_ObjectKeys_Key.Value) {
+    if (!props && MapObjectKey_ObjectKeys_Key.EMPTY) return MapObjectKey_ObjectKeys_Key.EMPTY;
+    super(MapObjectKey_ObjectKeys_Key.TYPE_TAG, "MapObjectKey_ObjectKeys_Key");
     this.#id = props ? props.id : "";
     this.#version = props ? props.version : 0;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapObjectKey_ObjectKeys_Key.EMPTY = this;
+    if (!props) MapObjectKey_ObjectKeys_Key.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey_ObjectKeys_Key.Data>[] {
     return [{
@@ -69,14 +66,11 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   static TYPE_TAG = Symbol("MapObjectKey_OptionalObjectMap_Key");
   static EMPTY: MapObjectKey_OptionalObjectMap_Key;
   #name: string;
-  constructor(props?: MapObjectKey_OptionalObjectMap_Key.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapObjectKey_OptionalObjectMap_Key.EMPTY) return MapObjectKey_OptionalObjectMap_Key.EMPTY;
-    super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG, "MapObjectKey_OptionalObjectMap_Key", listeners);
+  constructor(props?: MapObjectKey_OptionalObjectMap_Key.Value) {
+    if (!props && MapObjectKey_OptionalObjectMap_Key.EMPTY) return MapObjectKey_OptionalObjectMap_Key.EMPTY;
+    super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG, "MapObjectKey_OptionalObjectMap_Key");
     this.#name = props ? props.name : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapObjectKey_OptionalObjectMap_Key.EMPTY = this;
+    if (!props) MapObjectKey_OptionalObjectMap_Key.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey_OptionalObjectMap_Key.Data>[] {
     return [{
@@ -113,15 +107,12 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   static EMPTY: MapObjectKey;
   #objectKeys: ImmutableMap<MapObjectKey_ObjectKeys_Key, string>;
   #optionalObjectMap: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> | undefined;
-  constructor(props?: MapObjectKey.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
-    super(MapObjectKey.TYPE_TAG, "MapObjectKey", listeners);
+  constructor(props?: MapObjectKey.Value) {
+    if (!props && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
+    super(MapObjectKey.TYPE_TAG, "MapObjectKey");
     this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new ImmutableMap();
     this.#optionalObjectMap = props ? props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapObjectKey.EMPTY = this;
+    if (!props) MapObjectKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey.Data>[] {
     return [{
@@ -148,15 +139,25 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     props.optionalObjectMap = optionalObjectMapMapValue;
     return props as MapObjectKey.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#objectKeys = this.#objectKeys[ADD_UPDATE_LISTENER](newValue => {
-      this.setObjectKeys(newValue);
-    });
-    if (this.#optionalObjectMap) {
-      this.#optionalObjectMap = this.#optionalObjectMap[ADD_UPDATE_LISTENER](newValue => {
-        this.setOptionalObjectMap(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): MapObjectKey {
+    switch (key) {
+      case "objectKeys":
+        return new MapObjectKey({
+          objectKeys: child,
+          optionalObjectMap: this.#optionalObjectMap
+        });
+      case "optionalObjectMap":
+        return new MapObjectKey({
+          objectKeys: this.#objectKeys,
+          optionalObjectMap: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["objectKeys", this.#objectKeys];
+    yield ["optionalObjectMap", this.#optionalObjectMap];
   }
   get objectKeys(): ImmutableMap<MapObjectKey_ObjectKeys_Key, string> {
     return this.#objectKeys;

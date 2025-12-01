@@ -1,26 +1,23 @@
 import { assert } from './assert.ts';
-import { Message } from '../runtime/message.ts';
-import { ADD_UPDATE_LISTENER } from '../runtime/symbols.ts';
+import { Message, DataObject } from '../runtime/message.ts';
+import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.ts';
 import { equals } from '../runtime/common/data/equals.ts';
 
 // Shared type tag for UserState - must be the same symbol for equals() to work
 const USER_STATE_TAG = Symbol('UserState');
 
-// Test message class
+// Type for update listener callback
+type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+
+// Test message class using hybrid approach
 class UserState extends Message<{ name: string; age: number }> {
   #name: string;
   #age: number;
 
-  constructor(
-    props: { name: string; age: number },
-    listeners?: Set<(val: UserState) => void>
-  ) {
-    super(USER_STATE_TAG, 'UserState', listeners);
+  constructor(props: { name: string; age: number }) {
+    super(USER_STATE_TAG, 'UserState');
     this.#name = props.name;
     this.#age = props.age;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
   }
 
   protected $getPropDescriptors() {
@@ -34,9 +31,6 @@ class UserState extends Message<{ name: string; age: number }> {
     return { name: entries.name as string, age: entries.age as number };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected $enableChildListeners() {}
-
   get name() {
     return this.#name;
   }
@@ -46,14 +40,30 @@ class UserState extends Message<{ name: string; age: number }> {
   }
 
   setName(name: string) {
-    const next = new UserState({ name, age: this.#age }, this.$listeners);
+    const next = new UserState({ name, age: this.#age });
     return this.$update(next);
   }
 
   setAge(age: number) {
-    const next = new UserState({ name: this.#name, age }, this.$listeners);
+    const next = new UserState({ name: this.#name, age });
     return this.$update(next);
   }
+}
+
+// Type for hybrid listenable objects
+interface HybridListenable {
+  [SET_UPDATE_LISTENER]: (
+    key: symbol,
+    callback: UpdateListenerCallback
+  ) => void;
+}
+
+function hasHybridListener<S>(value: S): value is S & HybridListenable {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && SET_UPDATE_LISTENER in value
+  );
 }
 
 /**
@@ -72,24 +82,23 @@ function simulateSelector<S extends object, R>(
   let selectedValue = selector(initialState);
   let updateCount = 0;
 
-  // Subscribe if state is listenable
-  if (
-    initialState
-    && typeof initialState === 'object'
-    && ADD_UPDATE_LISTENER in initialState
-  ) {
-    type Listenable<T> = { [ADD_UPDATE_LISTENER](l: (v: T) => void): T };
-    const listenable = initialState as unknown as Listenable<S>;
-    currentState = listenable[ADD_UPDATE_LISTENER]((next: S) => {
-      currentState = next;
-      const nextSelected = selector(next);
-      // Only trigger update if selected value changed (using structural equality)
-      if (!equals(selectedValue, nextSelected)) {
-        selectedValue = nextSelected;
-        updateCount++;
-      }
-    });
-  }
+  // Subscribe if state is listenable using hybrid approach
+  const setupListener = (state: S) => {
+    if (hasHybridListener(state)) {
+      state[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+        currentState = next as unknown as S;
+        setupListener(currentState); // Re-setup on new state
+        const nextSelected = selector(currentState);
+        // Only trigger update if selected value changed (using structural equality)
+        if (!equals(selectedValue, nextSelected)) {
+          selectedValue = nextSelected;
+          updateCount++;
+        }
+      });
+    }
+  };
+
+  setupListener(currentState);
 
   return {
     getSelectedValue: () => selectedValue,
@@ -216,7 +225,7 @@ function testSelectorWithNonListenable() {
   assert(getSelectedValue() === 'Alice', 'Selector should work with plain objects');
   assert(getUpdateCount() === 0, 'No updates for non-listenable');
   assert(
-    !(ADD_UPDATE_LISTENER in plainState),
+    !(SET_UPDATE_LISTENER in plainState),
     'Plain object should not be listenable'
   );
 

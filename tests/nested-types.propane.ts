@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-types.propane
-import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
   static EMPTY: Wrapper;
   #payload: Date | {
     d: Date;
   };
-  constructor(props?: Wrapper.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Wrapper.EMPTY) return Wrapper.EMPTY;
-    super(Wrapper.TYPE_TAG, "Wrapper", listeners);
+  constructor(props?: Wrapper.Value) {
+    if (!props && Wrapper.EMPTY) return Wrapper.EMPTY;
+    super(Wrapper.TYPE_TAG, "Wrapper");
     this.#payload = props ? props.payload : new ImmutableDate(0);
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Wrapper.EMPTY = this;
+    if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
     return [{

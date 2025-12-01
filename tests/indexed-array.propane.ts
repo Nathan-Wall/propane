@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.propane
-import { Message, MessagePropDescriptor, ImmutableArray, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray } from "@propanejs/runtime";
 export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static EMPTY: ArrayMessage_Labels_Item;
   #name: string;
-  constructor(props?: ArrayMessage_Labels_Item.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
-    super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item", listeners);
+  constructor(props?: ArrayMessage_Labels_Item.Value) {
+    if (!props && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
+    super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item");
     this.#name = props ? props.name : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ArrayMessage_Labels_Item.EMPTY = this;
+    if (!props) ArrayMessage_Labels_Item.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage_Labels_Item.Data>[] {
     return [{
@@ -51,17 +48,14 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   #scores: ImmutableArray<number>;
   #flags: ImmutableArray<boolean> | undefined;
   #labels: ImmutableArray<ArrayMessage_Labels_Item>;
-  constructor(props?: ArrayMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
-    super(ArrayMessage.TYPE_TAG, "ArrayMessage", listeners);
+  constructor(props?: ArrayMessage.Value) {
+    if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
+    super(ArrayMessage.TYPE_TAG, "ArrayMessage");
     this.#names = props ? props.names === undefined || props.names === null ? props.names : props.names instanceof ImmutableArray ? props.names : new ImmutableArray(props.names) : new ImmutableArray();
     this.#scores = props ? props.scores === undefined || props.scores === null ? props.scores : props.scores instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores) : new ImmutableArray();
     this.#flags = props ? props.flags === undefined || props.flags === null ? props.flags : props.flags instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags) : undefined;
     this.#labels = props ? props.labels === undefined || props.labels === null ? props.labels : new ImmutableArray(Array.from(props.labels).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v))) : new ImmutableArray();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ArrayMessage.EMPTY = this;
+    if (!props) ArrayMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
     return [{
@@ -106,21 +100,45 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     props.labels = labelsArrayValue;
     return props as ArrayMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#names = this.#names[ADD_UPDATE_LISTENER](newValue => {
-      this.setNames(newValue);
-    });
-    this.#scores = this.#scores[ADD_UPDATE_LISTENER](newValue => {
-      this.setScores(newValue);
-    });
-    if (this.#flags) {
-      this.#flags = this.#flags[ADD_UPDATE_LISTENER](newValue => {
-        this.setFlags(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): ArrayMessage {
+    switch (key) {
+      case "names":
+        return new ArrayMessage({
+          names: child,
+          scores: this.#scores,
+          flags: this.#flags,
+          labels: this.#labels
+        });
+      case "scores":
+        return new ArrayMessage({
+          names: this.#names,
+          scores: child,
+          flags: this.#flags,
+          labels: this.#labels
+        });
+      case "flags":
+        return new ArrayMessage({
+          names: this.#names,
+          scores: this.#scores,
+          flags: child,
+          labels: this.#labels
+        });
+      case "labels":
+        return new ArrayMessage({
+          names: this.#names,
+          scores: this.#scores,
+          flags: this.#flags,
+          labels: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
-    this.#labels = this.#labels[ADD_UPDATE_LISTENER](newValue => {
-      this.setLabels(newValue);
-    });
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["names", this.#names];
+    yield ["scores", this.#scores];
+    yield ["flags", this.#flags];
+    yield ["labels", this.#labels];
   }
   get names(): ImmutableArray<string> {
     return this.#names;

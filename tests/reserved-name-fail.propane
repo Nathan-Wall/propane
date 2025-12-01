@@ -1,0 +1,4 @@
+// This should fail because 'equals' is a reserved name
+export type BadMessage = {
+  '1:equals': boolean;
+};

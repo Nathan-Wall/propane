@@ -4,17 +4,32 @@
  * This test verifies that when an inner message changes, the outer message's
  * other properties (like 'counter') are preserved correctly.
  *
- * The concern is that the listener set up in $enableChildListeners might
- * capture the outer state at the time the listener was created, leading to
- * stale values when the inner message updates.
+ * Uses the new hybrid approach with SET_UPDATE_LISTENER for update propagation.
  */
 
 import { assert } from './assert.ts';
 import { InnerMessage, OuterMessage } from './nested-memo-state.propane.ts';
-import { ADD_UPDATE_LISTENER } from '../runtime/symbols.ts';
+import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.ts';
+import type { Message, DataObject } from '../runtime/message.ts';
+
+// Type for state objects that support the hybrid listener approach
+interface HybridListenable {
+  [SET_UPDATE_LISTENER]: (
+    key: symbol,
+    callback: (val: Message<DataObject>) => void
+  ) => void;
+}
+
+function hasHybridListener<S>(value: S): value is S & HybridListenable {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && SET_UPDATE_LISTENER in value
+  );
+}
 
 /**
- * Simulates usePropaneState behavior
+ * Simulates usePropaneState behavior using the new hybrid approach
  */
 function simulateUsePropaneState<S extends object>(initialState: S): {
   getState: () => S;
@@ -23,18 +38,17 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
   let currentState = initialState;
   let renderCount = 0;
 
-  if (
-    initialState
-    && typeof initialState === 'object'
-    && ADD_UPDATE_LISTENER in initialState
-  ) {
-    type Listenable<T> = { [ADD_UPDATE_LISTENER](l: (v: T) => void): T };
-    const listenable = initialState as unknown as Listenable<S>;
-    currentState = listenable[ADD_UPDATE_LISTENER]((next: S) => {
-      currentState = next;
-      renderCount++;
-    });
-  }
+  const setupListener = (root: S) => {
+    if (hasHybridListener(root)) {
+      root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+        currentState = next as unknown as S;
+        renderCount++;
+        setupListener(currentState);
+      });
+    }
+  };
+
+  setupListener(currentState);
 
   return {
     getState: () => currentState,

@@ -12,27 +12,40 @@
  */
 
 import { assert } from './assert.ts';
-import { Message } from '../runtime/message.ts';
-import { ADD_UPDATE_LISTENER } from '../runtime/symbols.ts';
+import { Message, DataObject } from '../runtime/message.ts';
+import {
+  SET_UPDATE_LISTENER,
+  WITH_CHILD,
+  GET_MESSAGE_CHILDREN,
+  PROPAGATE_UPDATE,
+  REACT_LISTENER_KEY,
+} from '../runtime/symbols.ts';
 import { equals } from '../runtime/common/data/equals.ts';
 
 // Type tags must be shared for equals() to work
 const INNER_STATE_TAG = Symbol('InnerState');
 const OUTER_STATE_TAG = Symbol('OuterState');
 
-// Inner message class
+// Type for update listener callback
+type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+
+// Type for parent chain entry
+interface ParentChainEntry {
+  parent: WeakRef<Message<DataObject>>;
+  key: string | number;
+}
+
+// Inner message class using hybrid approach
 class InnerState extends Message<{ value: string }> {
   #value: string;
 
-  constructor(
-    props: { value: string },
-    listeners?: Set<(val: InnerState) => void>
-  ) {
-    super(INNER_STATE_TAG, 'InnerState', listeners);
+  // Hybrid approach: parent chains and callbacks
+  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+
+  constructor(props: { value: string }) {
+    super(INNER_STATE_TAG, 'InnerState');
     this.#value = props.value;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
   }
 
   protected $getPropDescriptors() {
@@ -45,16 +58,41 @@ class InnerState extends Message<{ value: string }> {
     return { value: entries.value as string };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected $enableChildListeners() {}
-
   get value() {
     return this.#value;
   }
 
   setValue(value: string) {
-    const next = new InnerState({ value }, this.$listeners);
-    return this.$update(next);
+    const next = new InnerState({ value });
+    this.$propagateUpdates(next);
+    return next;
+  }
+
+  // Hybrid approach: set up parent chain
+  public $setParentChain(key: symbol, parent: Message<DataObject>, parentKey: string | number): void {
+    this.#parentChains.set(key, {
+      parent: new WeakRef(parent),
+      key: parentKey,
+    });
+  }
+
+  // Hybrid approach: set listener callback
+  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+    this.#callbacks.set(key, callback);
+  }
+
+  // Hybrid approach: propagate updates through parent chains
+  private $propagateUpdates(newRoot: InnerState): void {
+    for (const [key, entry] of this.#parentChains) {
+      const parent = entry.parent.deref();
+      if (!parent) continue;
+      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
+      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    }
+    // Call direct callbacks at the root level
+    for (const [, callback] of this.#callbacks) {
+      callback(newRoot as unknown as Message<DataObject>);
+    }
   }
 }
 
@@ -63,16 +101,14 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   #counter: number;
   #inner: InnerState;
 
-  constructor(
-    props: { counter: number; inner: InnerState },
-    listeners?: Set<(val: OuterState) => void>
-  ) {
-    super(OUTER_STATE_TAG, 'OuterState', listeners);
+  // Hybrid approach: parent chains and callbacks
+  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+
+  constructor(props: { counter: number; inner: InnerState }) {
+    super(OUTER_STATE_TAG, 'OuterState');
     this.#counter = props.counter;
     this.#inner = props.inner;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
   }
 
   protected $getPropDescriptors() {
@@ -89,20 +125,6 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
     };
   }
 
-  protected $enableChildListeners() {
-    // Subscribe to inner message updates
-    if (this.#inner && ADD_UPDATE_LISTENER in this.#inner) {
-      this.#inner = this.#inner[ADD_UPDATE_LISTENER]((newInner: InnerState) => {
-        // When inner updates, create new outer with updated inner
-        const newOuter = new OuterState(
-          { counter: this.#counter, inner: newInner },
-          this.$listeners
-        );
-        this.$update(newOuter);
-      });
-    }
-  }
-
   get counter() {
     return this.#counter;
   }
@@ -112,24 +134,85 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   setCounter(counter: number) {
-    const next = new OuterState(
-      { counter, inner: this.#inner },
-      this.$listeners
-    );
-    return this.$update(next);
+    const next = new OuterState({ counter, inner: this.#inner });
+    this.$propagateUpdates(next);
+    return next;
   }
 
   setInner(inner: InnerState) {
-    const next = new OuterState(
-      { counter: this.#counter, inner },
-      this.$listeners
-    );
-    return this.$update(next);
+    const next = new OuterState({ counter: this.#counter, inner });
+    this.$propagateUpdates(next);
+    return next;
+  }
+
+  // Hybrid approach: create new OuterState with a child replaced
+  public [WITH_CHILD](
+    key: string | number,
+    child: Message<DataObject>
+  ): OuterState {
+    switch (key) {
+      case 'inner':
+        return new OuterState({ counter: this.#counter, inner: child as InnerState });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+
+  // Hybrid approach: yield all message children
+  public *[GET_MESSAGE_CHILDREN](): Iterable<[string | number, Message<DataObject>]> {
+    yield ['inner', this.#inner as unknown as Message<DataObject>];
+  }
+
+  // Hybrid approach: set up parent chain
+  public $setParentChain(key: symbol, parent: Message<DataObject>, parentKey: string | number): void {
+    this.#parentChains.set(key, {
+      parent: new WeakRef(parent),
+      key: parentKey,
+    });
+  }
+
+  // Hybrid approach: set listener callback and set up parent chain for children
+  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+    this.#callbacks.set(key, callback);
+    // Set up parent chain for inner (children don't get callback, only parent chain)
+    this.#inner.$setParentChain(key, this as unknown as Message<DataObject>, 'inner');
+  }
+
+  // Hybrid approach: propagate update
+  public [PROPAGATE_UPDATE](key: symbol, replacement: OuterState): void {
+    const chain = this.#parentChains.get(key);
+
+    if (chain?.parent.deref()) {
+      const parent = chain.parent.deref()!;
+      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
+      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    } else {
+      // Reached root - invoke callback
+      const callback = this.#callbacks.get(key);
+      if (callback) {
+        callback(replacement as unknown as Message<DataObject>);
+      }
+    }
+  }
+
+  // Hybrid approach: propagate updates through parent chains
+  private $propagateUpdates(newRoot: OuterState): void {
+    for (const [key, entry] of this.#parentChains) {
+      const parent = entry.parent.deref();
+      if (!parent) continue;
+      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
+      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    }
+    // Call direct callbacks at the root level
+    for (const [, callback] of this.#callbacks) {
+      callback(newRoot as unknown as Message<DataObject>);
+    }
   }
 }
 
 /**
- * Simulates usePropaneState behavior
+ * Simulates usePropaneState behavior using the hybrid approach
+ * (SET_UPDATE_LISTENER with back-pointer chains)
  */
 function simulateUsePropaneState<S extends object>(initialState: S): {
   getState: () => S;
@@ -138,19 +221,35 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
   let currentState = initialState;
   let renderCount = 0;
 
-  // Subscribe if state is listenable
-  if (
-    initialState
-    && typeof initialState === 'object'
-    && ADD_UPDATE_LISTENER in initialState
-  ) {
-    type Listenable<T> = { [ADD_UPDATE_LISTENER](l: (v: T) => void): T };
-    const listenable = initialState as unknown as Listenable<S>;
-    currentState = listenable[ADD_UPDATE_LISTENER]((next: S) => {
-      currentState = next;
-      renderCount++; // Simulates React re-render
-    });
-  }
+  // Check for hybrid approach support
+  type HybridListenable = {
+    [SET_UPDATE_LISTENER]: (
+      key: symbol,
+      callback: (val: Message<DataObject>) => void
+    ) => void;
+  };
+
+  const hasHybridListener = (value: S): value is S & HybridListenable => {
+    return (
+      value !== null
+      && typeof value === 'object'
+      && SET_UPDATE_LISTENER in value
+    );
+  };
+
+  // Setup listener recursively using hybrid approach
+  const setupListener = (root: S) => {
+    if (hasHybridListener(root)) {
+      root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+        const nextTyped = next as unknown as S;
+        setupListener(nextTyped);
+        currentState = nextTyped;
+        renderCount++; // Simulates React re-render
+      });
+    }
+  };
+
+  setupListener(initialState);
 
   return {
     getState: () => currentState,
@@ -402,7 +501,7 @@ function testMultipleOuterChangesBeforeInnerChange() {
  * 5. memoPropane: oldInner.equals(newInner) === true → SKIP re-render
  * 6. InnerComponent still has OLD inner reference from step 2
  * 7. User interaction in InnerComponent calls oldInner.setValue('world')
- * 8. BUG: Counter reverts to 0 because old inner's listener has stale parent
+ * 8. With hybrid approach: Counter should persist at 10
  */
 function testStaleInnerRefWhenMemoSkipsRerender() {
   console.log('Testing: stale inner ref when memoPropane skips re-render...');
@@ -463,22 +562,12 @@ function testStaleInnerRefWhenMemoSkipsRerender() {
     `Inner value should be 'world', got '${finalInnerValue}'`
   );
 
-  // THE KEY ASSERTION: Does counter persist or revert?
-  // If the bug exists, counter will revert to 0
-  // If fixed, counter should stay at 10
-  if (finalCounter === 10) {
-    console.log('  RESULT: Counter persisted correctly (10)');
-    console.log('Stale inner ref when memoPropane skips re-render: PASSED');
-  } else if (finalCounter === 0) {
-    console.log('  RESULT: Counter REVERTED to 0!');
-    console.log('  BUG: The old inner reference has a listener with stale parent state.');
-    console.log('  When setValue was called on old inner, it used counter=0 from the');
-    console.log('  original OuterState instead of counter=10 from current state.');
-    assert(
-      false,
-      `BUG: Counter reverted from 10 to ${finalCounter} due to stale closure in listener`
-    );
-  } else {
-    assert(false, `Unexpected counter value: ${finalCounter}`);
-  }
+  // THE KEY ASSERTION: Counter should persist at 10 with the hybrid approach
+  assert(
+    finalCounter === 10,
+    `Counter should persist at 10, got ${finalCounter}`
+  );
+
+  console.log('  RESULT: Counter persisted correctly (10)');
+  console.log('Stale inner ref when memoPropane skips re-render: PASSED');
 }

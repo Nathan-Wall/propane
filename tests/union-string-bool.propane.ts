@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
   static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;
-  constructor(props?: UnionStringBool.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
-    super(UnionStringBool.TYPE_TAG, "UnionStringBool", listeners);
+  constructor(props?: UnionStringBool.Value) {
+    if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
+    super(UnionStringBool.TYPE_TAG, "UnionStringBool");
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) UnionStringBool.EMPTY = this;
+    if (!props) UnionStringBool.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
     return [{

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/array-buffer.propane
-import { Message, MessagePropDescriptor, ImmutableArray, ImmutableArrayBuffer, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "@propanejs/runtime";
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
   static EMPTY: ArrayBufferMessage;
@@ -8,17 +8,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   #data: ImmutableArrayBuffer;
   #extra: ImmutableArrayBuffer | undefined;
   #chunks: ImmutableArray<ImmutableArrayBuffer>;
-  constructor(props?: ArrayBufferMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
-    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage", listeners);
+  constructor(props?: ArrayBufferMessage.Value) {
+    if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
+    super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage");
     this.#id = props ? props.id : 0;
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
     this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : new ImmutableArray();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ArrayBufferMessage.EMPTY = this;
+    if (!props) ArrayBufferMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
     return [{
@@ -62,10 +59,21 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     props.chunks = chunksArrayValue;
     return props as ArrayBufferMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#chunks = this.#chunks[ADD_UPDATE_LISTENER](newValue => {
-      this.setChunks(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): ArrayBufferMessage {
+    switch (key) {
+      case "chunks":
+        return new ArrayBufferMessage({
+          id: this.#id,
+          data: this.#data,
+          extra: this.#extra,
+          chunks: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["chunks", this.#chunks];
   }
   get id(): number {
     return this.#id;

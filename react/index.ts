@@ -1,10 +1,21 @@
-import { useState, useCallback, useRef, useSyncExternalStore, memo } from 'react';
-import type { Dispatch, SetStateAction, ComponentType } from 'react';
-import { equals, ADD_UPDATE_LISTENER } from '@propanejs/runtime';
-
-interface PropaneListenable<T> {
-  [ADD_UPDATE_LISTENER](listener: (val: T) => void): T;
-}
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useSyncExternalStore,
+  memo,
+  createContext,
+  useContext,
+} from 'react';
+import type { Dispatch, SetStateAction, ComponentType, ReactNode } from 'react';
+import type { Message, DataObject } from '@propanejs/runtime';
+import {
+  equals,
+  SET_UPDATE_LISTENER,
+  REGISTER_PATH,
+  EQUALS_FROM_ROOT,
+  REACT_LISTENER_KEY,
+} from '@propanejs/runtime';
 
 // Tracks whether we're inside an update() callback
 let updateDepth = 0;
@@ -95,28 +106,80 @@ export function update<T>(callback: () => T): T {
   }
 }
 
+// Type for messages with hybrid approach support
+interface HybridListenable<S> {
+  [SET_UPDATE_LISTENER]: (
+    key: symbol,
+    callback: (val: Message<DataObject>) => void
+  ) => void;
+  [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
+}
+
+function hasHybridListener<S>(value: S): value is S & HybridListenable<S> {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && SET_UPDATE_LISTENER in value
+  );
+}
+
+function canRegisterPath<S>(value: S): value is S & HybridListenable<S> {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && REGISTER_PATH in value
+  );
+}
+
+/**
+ * Register paths on a state tree for path-aware equality.
+ * This allows equalsFromRoot to distinguish siblings with identical content.
+ */
+function registerPaths<S>(root: S): void {
+  if (canRegisterPath(root)) {
+    // Register the root with itself at path '' (empty string for root)
+    root[REGISTER_PATH](root as unknown as Message<DataObject>, '');
+  }
+}
+
 export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
+  // Use ref to hold the current state setter for use in callbacks
+  const setStateRef = useRef<React.Dispatch<React.SetStateAction<S>> | null>(null);
+
   const [state, setState] = useState<S>(() => {
     const initial = typeof initialState === 'function'
       ? (initialState as () => S)()
       : initialState;
 
-    // Subscribe immediately if it's a listenable
-    if (
-      initial
-      && typeof initial === 'object'
-      && ADD_UPDATE_LISTENER in initial
-    ) {
-      const listenable = initial as unknown as PropaneListenable<S>;
-      return listenable[ADD_UPDATE_LISTENER]((next: S) => {
-        scheduleStateUpdate(() => setState(next));
-      });
+    // Hybrid approach: use SET_UPDATE_LISTENER if available
+    if (hasHybridListener(initial)) {
+      // Set up the listener recursively - each time state changes,
+      // we set up listeners on the new state and register paths
+      const setupListener = (root: S) => {
+        if (hasHybridListener(root)) {
+          // Register paths for path-aware equality (distinguishes identical siblings)
+          registerPaths(root);
+
+          root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+            scheduleStateUpdate(() => {
+              const nextTyped = next as unknown as S;
+              setupListener(nextTyped);
+              setStateRef.current?.(nextTyped);
+            });
+          });
+        }
+      };
+      setupListener(initial);
+      return initial;
     }
 
     return initial;
   });
+
+  // Keep setStateRef up to date
+  setStateRef.current = setState;
 
   const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
     setState((prev) => {
@@ -126,17 +189,27 @@ export function usePropaneState<S>(
       if (equals(prev, next)) {
         return prev;
       }
-      // Subscribe to the new value if it's a listenable
-      if (
-        next
-        && typeof next === 'object'
-        && ADD_UPDATE_LISTENER in next
-      ) {
-        const listenable = next as unknown as PropaneListenable<S>;
-        return listenable[ADD_UPDATE_LISTENER]((updated: S) => {
-          scheduleStateUpdate(() => setState(updated));
-        });
+
+      // Hybrid approach: set up listener on new state
+      if (hasHybridListener(next)) {
+        const setupListener = (root: S) => {
+          if (hasHybridListener(root)) {
+            // Register paths for path-aware equality (distinguishes identical siblings)
+            registerPaths(root);
+
+            root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (updated) => {
+              scheduleStateUpdate(() => {
+                const updatedTyped = updated as unknown as S;
+                setupListener(updatedTyped);
+                setStateRef.current?.(updatedTyped);
+              });
+            });
+          }
+        };
+        setupListener(next);
+        return next;
       }
+
       return next;
     });
   }, []);
@@ -182,21 +255,24 @@ export function usePropaneSelector<S extends object, R>(
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      if (
-        state
-        && typeof state === 'object'
-        && ADD_UPDATE_LISTENER in state
-      ) {
-        const listenable = state as unknown as PropaneListenable<S>;
-        const subscribed = listenable[ADD_UPDATE_LISTENER]((next: S) => {
-          stateRef.current = next;
-          const nextSelected = selectorRef.current(next);
-          if (!equals(selectedRef.current, nextSelected)) {
-            selectedRef.current = nextSelected;
-            onStoreChange();
+      if (hasHybridListener(state)) {
+        // Set up listener using hybrid approach
+        const setupListener = (root: S) => {
+          if (hasHybridListener(root)) {
+            registerPaths(root);
+            root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+              const nextTyped = next as unknown as S;
+              stateRef.current = nextTyped;
+              const nextSelected = selectorRef.current(nextTyped);
+              if (!equals(selectedRef.current, nextSelected)) {
+                selectedRef.current = nextSelected;
+                setupListener(nextTyped);
+                onStoreChange();
+              }
+            });
           }
-        });
-        stateRef.current = subscribed;
+        };
+        setupListener(state);
         return () => {
           // Cleanup handled by Propane internally via weak refs
         };
@@ -213,7 +289,80 @@ export function usePropaneSelector<S extends object, R>(
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
 
-function shallowEqual(objA: unknown, objB: unknown) {
+// ============================================
+// HYBRID APPROACH: Propane Root Context
+// ============================================
+
+/**
+ * Context for tracking the current Propane state root.
+ * Used by memoPropane to perform path-aware equality comparisons.
+ */
+const PropaneRootContext = createContext<unknown>(null);
+
+/**
+ * Props for PropaneRoot component.
+ */
+interface PropaneRootProps<T> {
+  state: T;
+  children: ReactNode;
+}
+
+/**
+ * Provides the current Propane state root to descendant components.
+ * Used by memoPropane to perform path-aware equality comparisons.
+ *
+ * @example
+ * function App() {
+ *   const [state] = usePropaneState(() => new AppState({ ... }));
+ *   return (
+ *     <PropaneRoot state={state}>
+ *       <TodoList todos={state.todos} />
+ *     </PropaneRoot>
+ *   );
+ * }
+ */
+export function PropaneRoot<T>({ state, children }: PropaneRootProps<T>) {
+  return React.createElement(
+    PropaneRootContext.Provider,
+    { value: state },
+    children
+  );
+}
+
+// ============================================
+// HYBRID APPROACH: Path-Aware Equality
+// ============================================
+
+/**
+ * Check if a value is a Propane message with path-aware equality.
+ */
+function isEqualsFromRootCapable(value: unknown): value is {
+  [EQUALS_FROM_ROOT]: (root: unknown, other: unknown) => boolean;
+} {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && EQUALS_FROM_ROOT in value
+    && typeof (value as Record<symbol, unknown>)[EQUALS_FROM_ROOT] === 'function'
+  );
+}
+
+/**
+ * Compare two values with path-awareness when possible.
+ */
+function equalsFromRoot(root: unknown, a: unknown, b: unknown): boolean {
+  // If both support path-aware equality, use it
+  if (isEqualsFromRootCapable(a) && isEqualsFromRootCapable(b)) {
+    return a[EQUALS_FROM_ROOT](root, b);
+  }
+  // Fall back to standard equality
+  return equals(a, b);
+}
+
+/**
+ * Shallow equal with path-awareness for Propane messages.
+ */
+function shallowEqualWithRoot(root: unknown, objA: unknown, objB: unknown) {
   if (Object.is(objA, objB)) {
     return true;
   }
@@ -239,7 +388,7 @@ function shallowEqual(objA: unknown, objB: unknown) {
   for (const key of keysA) {
     if (
       !Object.prototype.hasOwnProperty.call(objB, key)
-      || !equals(recordA[key], recordB[key])
+      || !equalsFromRoot(root, recordA[key], recordB[key])
     ) {
       return false;
     }
@@ -248,6 +397,45 @@ function shallowEqual(objA: unknown, objB: unknown) {
   return true;
 }
 
-export function memoPropane<P extends object>(Component: ComponentType<P>) {
-  return memo(Component, shallowEqual);
+// Legacy: simple shallow equal without path awareness
+function shallowEqual(objA: unknown, objB: unknown) {
+  return shallowEqualWithRoot(null, objA, objB);
+}
+
+/**
+ * Memoize a component with Propane-aware equality checking.
+ *
+ * Uses path-aware equality when inside a PropaneRoot context,
+ * which correctly distinguishes between structurally identical
+ * messages at different positions in the state tree.
+ *
+ * @example
+ * // This correctly handles arrays of identical items
+ * const state = new AppState({
+ *   todos: [new Todo('hello'), new Todo('hello')]
+ * });
+ *
+ * // Without path awareness: todos[0].equals(todos[1]) === true
+ * // With path awareness: equalsFromRoot(root, todos[0], todos[1]) === false
+ *
+ * const TodoItem = memoPropane(({ todo }: { todo: Todo }) => {
+ *   return <div>{todo.text}</div>;
+ * });
+ */
+export function memoPropane<P extends object>(Component: ComponentType<P>): ComponentType<P> {
+  // Store current root for comparison function
+  let currentRoot: unknown = null;
+
+  const MemoizedInner = memo(Component, (oldProps: P, newProps: P) => {
+    return shallowEqualWithRoot(currentRoot, oldProps, newProps);
+  });
+
+  // Wrapper that captures current root before memo comparison runs
+  function MemoWrapper(props: P) {
+    currentRoot = useContext(PropaneRootContext);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return React.createElement(MemoizedInner as any, props);
+  }
+
+  return MemoWrapper;
 }

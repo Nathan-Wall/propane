@@ -175,25 +175,6 @@ export function buildClassFromProperties(
   );
   constructorParam.optional = true;
 
-  const listenersParam = t.identifier('listeners');
-  listenersParam.typeAnnotation = t.tsTypeAnnotation(
-    t.tsTypeReference(
-      t.identifier('Set'),
-      t.tsTypeParameterInstantiation([
-        t.tsFunctionType(
-          null,
-          [
-            Object.assign(t.identifier('val'), {
-              typeAnnotation: t.tsTypeAnnotation(t.tsThisType()),
-            }),
-          ],
-          t.tsTypeAnnotation(t.tsVoidKeyword())
-        ),
-      ])
-    )
-  );
-  listenersParam.optional = true;
-
   const constructorAssignments = propDescriptors.map((prop) => {
     const propsAccess = t.memberExpression(
       t.identifier('props'),
@@ -285,37 +266,11 @@ export function buildClassFromProperties(
     return t.expressionStatement(assignment);
   });
 
-  const enableListenersCall = t.ifStatement(
-    t.binaryExpression(
-      '>',
-      t.memberExpression(
-        t.memberExpression(t.thisExpression(), t.identifier('$listeners')),
-        t.identifier('size')
-      ),
-      t.numericLiteral(0)
-    ),
-    t.blockStatement([
-      t.expressionStatement(
-        t.callExpression(
-          t.memberExpression(
-            t.thisExpression(),
-            t.identifier('$enableChildListeners')
-          ),
-          []
-        )
-      ),
-    ])
-  );
-
   const memoizationCheck = t.ifStatement(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
-      t.logicalExpression(
-        '&&',
-        t.unaryExpression('!', t.identifier('listeners')),
-        t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
-      )
+      t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
     ),
     t.returnStatement(
       t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
@@ -323,11 +278,7 @@ export function buildClassFromProperties(
   );
 
   const memoizationSet = t.ifStatement(
-    t.logicalExpression(
-      '&&',
-      t.unaryExpression('!', t.identifier('props')),
-      t.unaryExpression('!', t.identifier('listeners'))
-    ),
+    t.unaryExpression('!', t.identifier('props')),
     t.expressionStatement(
       t.assignmentExpression(
         '=',
@@ -340,7 +291,7 @@ export function buildClassFromProperties(
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
-    [constructorParam, listenersParam],
+    [constructorParam],
     t.blockStatement([
       memoizationCheck,
       t.expressionStatement(
@@ -350,11 +301,9 @@ export function buildClassFromProperties(
             t.identifier('TYPE_TAG')
           ),
           t.stringLiteral(typeName),
-          t.identifier('listeners'),
         ])
       ),
       ...constructorAssignments,
-      enableListenersCall,
       memoizationSet,
     ])
   );
@@ -387,11 +336,6 @@ export function buildClassFromProperties(
     state
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
-  const enableChildListenersMethod = buildEnableChildListenersMethod(
-    typeName,
-    propDescriptors,
-    state
-  );
 
   const setterMethods = propDescriptors.map((prop) =>
     buildSetterMethod(
@@ -417,6 +361,17 @@ export function buildClassFromProperties(
     propDescriptors
   );
 
+  // Build hybrid approach methods
+  const withChildMethod = buildWithChildMethod(
+    typeName,
+    propDescriptors,
+    declaredMessageTypeNames
+  );
+  const getMessageChildrenMethod = buildGetMessageChildrenMethod(
+    propDescriptors,
+    declaredMessageTypeNames
+  );
+
   const classBodyMembers = [
     ...staticFields,
     ...backingFields,
@@ -425,8 +380,12 @@ export function buildClassFromProperties(
     fromEntriesMethod,
   ];
 
-  if (enableChildListenersMethod) {
-    classBodyMembers.push(enableChildListenersMethod);
+  // Add hybrid approach methods
+  if (withChildMethod) {
+    classBodyMembers.push(withChildMethod);
+  }
+  if (getMessageChildrenMethod) {
+    classBodyMembers.push(getMessageChildrenMethod);
   }
 
   classBodyMembers.push(...getters,
@@ -687,7 +646,6 @@ function buildFromEntriesMethod(
       );
       checkedValueId = abValueId;
     } else if (prop.isMessageType && prop.messageTypeName) {
-      state.usesListeners = true;
       const messageValueId = t.identifier(`${prop.name}MessageValue`);
       statements.push(
         t.variableDeclaration('const', [
@@ -2472,90 +2430,150 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
   return [predicateId];
 }
 
-function buildEnableChildListenersMethod(
+/**
+ * Builds the [WITH_CHILD] method that replaces a child at a given key.
+ * This is part of the hybrid approach for update propagation.
+ */
+function buildWithChildMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  state: PluginStateFlags
+  declaredMessageTypeNames: Set<string>
 ): t.ClassMethod | null {
-  const statements: t.Statement[] = [];
-
-  const listenableProps = propDescriptors.filter(
+  // Find all message-type children (including collections with messages)
+  const messageChildren = propDescriptors.filter(
     (prop) =>
-      prop.isMessageType && prop.messageTypeName
+      prop.isMessageType
       || prop.isArray
       || prop.isMap
       || prop.isSet
   );
 
-  if (listenableProps.length > 0) {
-    state.usesListeners = true;
+  if (messageChildren.length === 0) {
+    return null;
   }
 
-  for (const prop of listenableProps) {
-    const fieldAccess = t.memberExpression(
-      t.thisExpression(),
-      t.cloneNode(prop.privateName)
-    );
+  const keyId = t.identifier('key');
+  keyId.typeAnnotation = t.tsTypeAnnotation(
+    t.tsUnionType([t.tsStringKeyword(), t.tsNumberKeyword()])
+  );
 
-    // this.#field = this.#field[ADD_UPDATE_LISTENER]((newValue) => {
-    //   this.setField(newValue);
-    // });
-    const addListenerCall = t.callExpression(
-      t.memberExpression(
-        t.cloneNode(fieldAccess),
-        t.identifier('ADD_UPDATE_LISTENER'),
-        true
-      ),
-      [
-        t.arrowFunctionExpression(
-          [t.identifier('newValue')],
-          t.blockStatement([
-            t.expressionStatement(
-              t.callExpression(
-                t.memberExpression(
-                  t.thisExpression(),
-                  t.identifier(`set${capitalize(prop.name)}`)
-                ),
-                [t.identifier('newValue')]
-              )
-            ),
-          ])
-        ),
-      ]
-    );
+  const childId = t.identifier('child');
+  childId.typeAnnotation = t.tsTypeAnnotation(t.tsUnknownKeyword());
 
-    const assignmentStatement = t.expressionStatement(
-      t.assignmentExpression(
-        '=',
-        t.cloneNode(fieldAccess),
-        addListenerCall
+  // Build switch cases for each child property
+  const switchCases: t.SwitchCase[] = messageChildren.map((prop) => {
+    // Create new instance with this property replaced
+    const propsObject = t.objectExpression(
+      propDescriptors.map((p) =>
+        t.objectProperty(
+          t.identifier(p.name),
+          p === prop
+            ? t.cloneNode(childId)
+            : t.memberExpression(t.thisExpression(), t.cloneNode(p.privateName))
+        )
       )
     );
 
-    if (prop.optional || typeAllowsNull(prop.typeAnnotation)) {
-      statements.push(
-        t.ifStatement(
-          fieldAccess,
-          t.blockStatement([assignmentStatement])
-        )
-      );
-    } else {
-      statements.push(assignmentStatement);
-    }
-  }
+    return t.switchCase(t.stringLiteral(prop.name), [
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), [propsObject])
+      ),
+    ]);
+  });
 
-  if (statements.length === 0) {
-    return null;
-  }
-  
+  // Add default case that throws
+  switchCases.push(
+    t.switchCase(null, [
+      t.throwStatement(
+        t.newExpression(t.identifier('Error'), [
+          t.templateLiteral(
+            [
+              t.templateElement({ raw: 'Unknown key: ', cooked: 'Unknown key: ' }),
+              t.templateElement({ raw: '', cooked: '' }, true),
+            ],
+            [t.cloneNode(keyId)]
+          ),
+        ])
+      ),
+    ])
+  );
+
+  const body = t.blockStatement([
+    t.switchStatement(t.cloneNode(keyId), switchCases),
+  ]);
+
+  // Create method with computed property name for symbol
   const method = t.classMethod(
     'method',
-    t.identifier('$enableChildListeners'),
-    [],
-    t.blockStatement(statements)
+    t.memberExpression(
+      t.identifier('Symbol'),
+      t.identifier('for')
+    ),
+    [keyId, childId],
+    body,
+    true // computed = true
   );
-  method.accessibility = 'protected';
-  method.returnType = t.tsTypeAnnotation(t.tsVoidKeyword());
+
+  // Actually, we need to use the imported symbol. Let's use a different approach.
+  // We'll create a method with an identifier and add a comment
+  const withChildMethod = t.classMethod(
+    'method',
+    t.identifier('[WITH_CHILD]'),
+    [keyId, childId],
+    body
+  );
+  withChildMethod.computed = true;
+  withChildMethod.key = t.identifier('WITH_CHILD');
+  withChildMethod.returnType = t.tsTypeAnnotation(
+    t.tsTypeReference(t.identifier(typeName))
+  );
+
+  return withChildMethod;
+}
+
+/**
+ * Builds the [GET_MESSAGE_CHILDREN] generator method.
+ * This is part of the hybrid approach for propagating listeners to children.
+ */
+function buildGetMessageChildrenMethod(
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  declaredMessageTypeNames: Set<string>
+): t.ClassMethod | null {
+  // Find all message-type children (including collections with messages)
+  const messageChildren = propDescriptors.filter(
+    (prop) =>
+      prop.isMessageType
+      || prop.isArray
+      || prop.isMap
+      || prop.isSet
+  );
+
+  if (messageChildren.length === 0) {
+    return null;
+  }
+
+  // Build yield statements for each child
+  const yieldStatements = messageChildren.map((prop) =>
+    t.expressionStatement(
+      t.yieldExpression(
+        t.arrayExpression([
+          t.stringLiteral(prop.name),
+          t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName)),
+        ])
+      )
+    )
+  );
+
+  const body = t.blockStatement(yieldStatements);
+
+  const method = t.classMethod(
+    'method',
+    t.identifier('GET_MESSAGE_CHILDREN'),
+    [],
+    body
+  );
+  method.computed = true;
+  method.generator = true;
 
   return method;
 }

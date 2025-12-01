@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.propane
-import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static EMPTY: OptionalHole;
@@ -8,17 +8,14 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   #created: ImmutableDate;
   #note: string;
   #name: string;
-  constructor(props?: OptionalHole.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && OptionalHole.EMPTY) return OptionalHole.EMPTY;
-    super(OptionalHole.TYPE_TAG, "OptionalHole", listeners);
+  constructor(props?: OptionalHole.Value) {
+    if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
+    super(OptionalHole.TYPE_TAG, "OptionalHole");
     this.#id = props ? props.id : 0;
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#note = props ? props.note : undefined;
     this.#name = props ? props.name : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) OptionalHole.EMPTY = this;
+    if (!props) OptionalHole.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalHole.Data>[] {
     return [{

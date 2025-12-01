@@ -1,22 +1,19 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableArray, ImmutableDate, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "@propanejs/runtime";
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static EMPTY: ToJson_Nested;
   #array: ImmutableArray<(number | undefined)>;
   #map: ImmutableMap<string, bigint>;
   #imap: ImmutableMap<string, ImmutableDate>;
-  constructor(props?: ToJson_Nested.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
-    super(ToJson_Nested.TYPE_TAG, "ToJson_Nested", listeners);
+  constructor(props?: ToJson_Nested.Value) {
+    if (!props && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
+    super(ToJson_Nested.TYPE_TAG, "ToJson_Nested");
     this.#array = props ? props.array === undefined || props.array === null ? props.array : props.array instanceof ImmutableArray ? props.array : new ImmutableArray(props.array) : new ImmutableArray();
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : new ImmutableMap(Array.from(props.imap).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : new ImmutableMap();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ToJson_Nested.EMPTY = this;
+    if (!props) ToJson_Nested.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
     return [{
@@ -52,16 +49,34 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     props.imap = imapMapValue;
     return props as ToJson_Nested.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#array = this.#array[ADD_UPDATE_LISTENER](newValue => {
-      this.setArray(newValue);
-    });
-    this.#map = this.#map[ADD_UPDATE_LISTENER](newValue => {
-      this.setMap(newValue);
-    });
-    this.#imap = this.#imap[ADD_UPDATE_LISTENER](newValue => {
-      this.setImap(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): ToJson_Nested {
+    switch (key) {
+      case "array":
+        return new ToJson_Nested({
+          array: child,
+          map: this.#map,
+          imap: this.#imap
+        });
+      case "map":
+        return new ToJson_Nested({
+          array: this.#array,
+          map: child,
+          imap: this.#imap
+        });
+      case "imap":
+        return new ToJson_Nested({
+          array: this.#array,
+          map: this.#map,
+          imap: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["array", this.#array];
+    yield ["map", this.#map];
+    yield ["imap", this.#imap];
   }
   get array(): ImmutableArray<(number | undefined)> {
     return this.#array;
@@ -412,9 +427,9 @@ export class ToJson extends Message<ToJson.Data> {
   #optional: string;
   #nonFinite: number;
   #nested: ToJson_Nested;
-  constructor(props?: ToJson.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ToJson.EMPTY) return ToJson.EMPTY;
-    super(ToJson.TYPE_TAG, "ToJson", listeners);
+  constructor(props?: ToJson.Value) {
+    if (!props && ToJson.EMPTY) return ToJson.EMPTY;
+    super(ToJson.TYPE_TAG, "ToJson");
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
     this.#imap = props ? props.imap === undefined || props.imap === null ? props.imap : props.imap instanceof ImmutableMap || Object.prototype.toString.call(props.imap) === "[object ImmutableMap]" ? props.imap : new ImmutableMap(props.imap) : new ImmutableMap();
     this.#big = props ? props.big : 0n;
@@ -422,10 +437,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ToJson.EMPTY = this;
+    if (!props) ToJson.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
     return [{
@@ -492,16 +504,46 @@ export class ToJson extends Message<ToJson.Data> {
     props.nested = nestedMessageValue;
     return props as ToJson.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#map = this.#map[ADD_UPDATE_LISTENER](newValue => {
-      this.setMap(newValue);
-    });
-    this.#imap = this.#imap[ADD_UPDATE_LISTENER](newValue => {
-      this.setImap(newValue);
-    });
-    this.#nested = this.#nested[ADD_UPDATE_LISTENER](newValue => {
-      this.setNested(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): ToJson {
+    switch (key) {
+      case "map":
+        return new ToJson({
+          map: child,
+          imap: this.#imap,
+          big: this.#big,
+          date: this.#date,
+          optional: this.#optional,
+          nonFinite: this.#nonFinite,
+          nested: this.#nested
+        });
+      case "imap":
+        return new ToJson({
+          map: this.#map,
+          imap: child,
+          big: this.#big,
+          date: this.#date,
+          optional: this.#optional,
+          nonFinite: this.#nonFinite,
+          nested: this.#nested
+        });
+      case "nested":
+        return new ToJson({
+          map: this.#map,
+          imap: this.#imap,
+          big: this.#big,
+          date: this.#date,
+          optional: this.#optional,
+          nonFinite: this.#nonFinite,
+          nested: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["map", this.#map];
+    yield ["imap", this.#imap];
+    yield ["nested", this.#nested];
   }
   get map(): ImmutableMap<string, number> {
     return this.#map;

@@ -3,7 +3,7 @@
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
-import { Message, MessagePropDescriptor, ImmutableDate, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static EMPTY: User;
@@ -16,9 +16,9 @@ export class User extends Message<User.Data> {
   #active: boolean;
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
-  constructor(props?: User.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && User.EMPTY) return User.EMPTY;
-    super(User.TYPE_TAG, "User", listeners);
+  constructor(props?: User.Value) {
+    if (!props && User.EMPTY) return User.EMPTY;
+    super(User.TYPE_TAG, "User");
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();
@@ -28,10 +28,7 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) User.EMPTY = this;
+    if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
     return [{
@@ -110,10 +107,26 @@ export class User extends Message<User.Data> {
     props.height = heightMessageValue;
     return props as User.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#height = this.#height[ADD_UPDATE_LISTENER](newValue => {
-      this.setHeight(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): User {
+    switch (key) {
+      case "height":
+        return new User({
+          id: this.#id,
+          name: this.#name,
+          email: this.#email,
+          passwordHash: this.#passwordHash,
+          created: this.#created,
+          updated: this.#updated,
+          active: this.#active,
+          eyeColor: this.#eyeColor,
+          height: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["height", this.#height];
   }
   get id(): number {
     return this.#id;

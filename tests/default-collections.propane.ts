@@ -5,23 +5,20 @@ import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
 
 // Test message with non-optional collection fields to verify defaults
-import { Message, MessagePropDescriptor, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, equals } from "@propanejs/runtime";
 export class DefaultCollections extends Message<DefaultCollections.Data> {
   static TYPE_TAG = Symbol("DefaultCollections");
   static EMPTY: DefaultCollections;
   #arr: ImmutableArray<number>;
   #map: ImmutableMap<string, number>;
   #set: ImmutableSet<string>;
-  constructor(props?: DefaultCollections.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && DefaultCollections.EMPTY) return DefaultCollections.EMPTY;
-    super(DefaultCollections.TYPE_TAG, "DefaultCollections", listeners);
+  constructor(props?: DefaultCollections.Value) {
+    if (!props && DefaultCollections.EMPTY) return DefaultCollections.EMPTY;
+    super(DefaultCollections.TYPE_TAG, "DefaultCollections");
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : new ImmutableArray();
     this.#map = props ? props.map === undefined || props.map === null ? props.map : props.map instanceof ImmutableMap || Object.prototype.toString.call(props.map) === "[object ImmutableMap]" ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new ImmutableSet();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) DefaultCollections.EMPTY = this;
+    if (!props) DefaultCollections.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<DefaultCollections.Data>[] {
     return [{
@@ -57,16 +54,34 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
     props.set = setSetValue;
     return props as DefaultCollections.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#arr = this.#arr[ADD_UPDATE_LISTENER](newValue => {
-      this.setArr(newValue);
-    });
-    this.#map = this.#map[ADD_UPDATE_LISTENER](newValue => {
-      this.setMap(newValue);
-    });
-    this.#set = this.#set[ADD_UPDATE_LISTENER](newValue => {
-      this.setSet(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): DefaultCollections {
+    switch (key) {
+      case "arr":
+        return new DefaultCollections({
+          arr: child,
+          map: this.#map,
+          set: this.#set
+        });
+      case "map":
+        return new DefaultCollections({
+          arr: this.#arr,
+          map: child,
+          set: this.#set
+        });
+      case "set":
+        return new DefaultCollections({
+          arr: this.#arr,
+          map: this.#map,
+          set: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["arr", this.#arr];
+    yield ["map", this.#map];
+    yield ["set", this.#set];
   }
   get arr(): ImmutableArray<number> {
     return this.#arr;

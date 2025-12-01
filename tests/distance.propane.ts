@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export type DistanceUnit = 'm' | 'ft';
 export type DistanceUnitType = DistanceUnit;
 export class Distance extends Message<Distance.Data> {
@@ -8,15 +8,12 @@ export class Distance extends Message<Distance.Data> {
   static EMPTY: Distance;
   #unit: DistanceUnit;
   #value: number;
-  constructor(props?: Distance.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Distance.EMPTY) return Distance.EMPTY;
-    super(Distance.TYPE_TAG, "Distance", listeners);
+  constructor(props?: Distance.Value) {
+    if (!props && Distance.EMPTY) return Distance.EMPTY;
+    super(Distance.TYPE_TAG, "Distance");
     this.#unit = props ? props.unit : new DistanceUnit();
     this.#value = props ? props.value : 0;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Distance.EMPTY = this;
+    if (!props) Distance.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
     return [{

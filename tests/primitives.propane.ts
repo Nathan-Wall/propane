@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
   static EMPTY: Primitives;
@@ -10,19 +10,16 @@ export class Primitives extends Message<Primitives.Data> {
   #size: bigint;
   #empty: null;
   #missing: undefined;
-  constructor(props?: Primitives.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Primitives.EMPTY) return Primitives.EMPTY;
-    super(Primitives.TYPE_TAG, "Primitives", listeners);
+  constructor(props?: Primitives.Value) {
+    if (!props && Primitives.EMPTY) return Primitives.EMPTY;
+    super(Primitives.TYPE_TAG, "Primitives");
     this.#flag = props ? props.flag : false;
     this.#count = props ? props.count : 0;
     this.#label = props ? props.label : "";
     this.#size = props ? props.size : 0n;
     this.#empty = props ? props.empty : null;
     this.#missing = props ? props.missing : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Primitives.EMPTY = this;
+    if (!props) Primitives.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
     return [{

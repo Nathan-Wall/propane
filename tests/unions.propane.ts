@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
-import { Message, MessagePropDescriptor, ImmutableDate } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static EMPTY: Unions;
@@ -12,16 +12,13 @@ export class Unions extends Message<Unions.Data> {
   } | {
     updated: Date;
   };
-  constructor(props?: Unions.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Unions.EMPTY) return Unions.EMPTY;
-    super(Unions.TYPE_TAG, "Unions", listeners);
+  constructor(props?: Unions.Value) {
+    if (!props && Unions.EMPTY) return Unions.EMPTY;
+    super(Unions.TYPE_TAG, "Unions");
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Unions.EMPTY = this;
+    if (!props) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
     return [{

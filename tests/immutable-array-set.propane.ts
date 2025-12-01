@@ -2,21 +2,18 @@
 // Generated from tests/immutable-array-set.propane
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static EMPTY: ImmutableArraySet;
   #arr: ImmutableArray<number>;
   #set: ImmutableSet<string>;
-  constructor(props?: ImmutableArraySet.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
-    super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet", listeners);
+  constructor(props?: ImmutableArraySet.Value) {
+    if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
+    super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet");
     this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : new ImmutableArray();
     this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new ImmutableSet();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ImmutableArraySet.EMPTY = this;
+    if (!props) ImmutableArraySet.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
     return [{
@@ -43,13 +40,25 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     props.set = setSetValue;
     return props as ImmutableArraySet.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#arr = this.#arr[ADD_UPDATE_LISTENER](newValue => {
-      this.setArr(newValue);
-    });
-    this.#set = this.#set[ADD_UPDATE_LISTENER](newValue => {
-      this.setSet(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): ImmutableArraySet {
+    switch (key) {
+      case "arr":
+        return new ImmutableArraySet({
+          arr: child,
+          set: this.#set
+        });
+      case "set":
+        return new ImmutableArraySet({
+          arr: this.#arr,
+          set: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["arr", this.#arr];
+    yield ["set", this.#set];
   }
   get arr(): ImmutableArray<number> {
     return this.#arr;

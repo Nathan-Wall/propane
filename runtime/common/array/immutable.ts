@@ -1,16 +1,20 @@
 import { normalizeForJson } from '../json/stringify.js';
-import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import {
+  SET_UPDATE_LISTENER,
+  REGISTER_PATH,
+  PROPAGATE_UPDATE,
+  WITH_CHILD,
+  FROM_ROOT,
+} from '../../symbols.js';
 import { needsDetach, detachValue } from '../detach.js';
+import type { Message, DataObject } from '../../message.js';
 
-// Basic Listener type compatible with Message Listener
-type Listener<T> = (val: ImmutableArray<T>) => void;
 function isMessageLike(
   value: unknown
 ): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
-  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => unknown;
 } {
   return Boolean(
     value
@@ -74,17 +78,30 @@ function hashValue(value: unknown): string {
   return `obj:${hashString(Object.prototype.toString.call(value))}`;
 }
 
+// Type for update listener callback
+type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+
+// Type for parent chain entry
+interface ParentChainEntry {
+  parent: WeakRef<Message<DataObject> | ImmutableArray<unknown>>;
+  key: string | number;
+}
+
 export class ImmutableArray<T> implements ReadonlyArray<T> {
   #items: T[];
   #hash?: number;
-  protected readonly $listeners: Set<Listener<T>>;
   readonly [Symbol.toStringTag] = 'ImmutableArray';
 
-  constructor(
-    items?: Iterable<T> | ArrayLike<T>,
-    listeners?: Set<Listener<T>>
-  ) {
-    this.$listeners = listeners ?? new Set();
+  // Hybrid approach: path tracking for equality comparisons
+  readonly #fromRoot: WeakMap<Message<DataObject>, string> = new WeakMap();
+
+  // Hybrid approach: parent chains for update propagation (keyed by listener symbol)
+  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+
+  // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
+  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+
+  constructor(items?: Iterable<T> | ArrayLike<T>) {
     if (!items) {
       this.#items = [];
       this.#defineIndexProps();
@@ -101,47 +118,141 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       );
     }
 
-    // Subscribe to children before freezing, replacing items with listener-enabled versions
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-
     this.#defineIndexProps();
     Object.freeze(this.#items);
     Object.freeze(this);
   }
 
-  [ADD_UPDATE_LISTENER](
-    listener: (val: ImmutableArray<T>) => void
-  ): ImmutableArray<T> {
-    const l = listener as unknown as Listener<T>;
-    const newListeners = new Set(this.$listeners);
-    newListeners.add(l);
-
-    return new ImmutableArray(
-      this.toArray(),
-      newListeners
-    );
+  /**
+   * Check if this array has active listeners (parent chains or callbacks).
+   */
+  private hasActiveListeners(): boolean {
+    return this.#parentChains.size > 0 || this.#callbacks.size > 0;
   }
 
-  protected $enableChildListeners(): void {
+  /**
+   * Propagate updates through parent chains.
+   */
+  private $propagateUpdates(newArray: ImmutableArray<T>): void {
+    for (const [key, entry] of this.#parentChains) {
+      const parent = entry.parent.deref();
+      if (!parent) continue;
+      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](entry.key, newArray);
+      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    }
+    // Also call direct callbacks at the root level
+    for (const [, callback] of this.#callbacks) {
+      callback(newArray as unknown as Message<DataObject>);
+    }
+  }
+
+  /**
+   * Update the array and propagate through parent chains.
+   */
+  protected $update(value: this): this {
+    this.$propagateUpdates(value as unknown as ImmutableArray<T>);
+    return value;
+  }
+
+  // ============================================
+  // HYBRID APPROACH: Path Registration
+  // ============================================
+
+  /**
+   * Register the path from a root message to this array.
+   */
+  public [REGISTER_PATH](root: Message<DataObject>, path: string): void {
+    this.#fromRoot.set(root, path);
+    // Recursively register children
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
-      if (isMessageLike(item) && item[ADD_UPDATE_LISTENER]) {
-        const listened = item[ADD_UPDATE_LISTENER]((newItem) => {
-          this.set(i, newItem as T);
-        });
-        this.#items[i] = listened as T;
+      if (isMessageLike(item) && REGISTER_PATH in item) {
+        (item as { [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void })[REGISTER_PATH](root, `${path}[${i}]`);
       }
     }
   }
 
-  protected $update(value: this): this {
-    // eslint-disable-next-line unicorn/no-useless-spread
-    for (const listener of [...this.$listeners]) {
-      listener(value as unknown as ImmutableArray<T>);
+  /**
+   * Get the path from a root to this array.
+   */
+  public [FROM_ROOT](root: Message<DataObject>): string | undefined {
+    return this.#fromRoot.get(root);
+  }
+
+  // ============================================
+  // HYBRID APPROACH: Update Listener Management
+  // ============================================
+
+  /**
+   * Set an update listener for a given symbol key.
+   * Called by parent message to set up this collection's parent chain.
+   * When used as a root-level state (no parent), only callback is needed.
+   */
+  public [SET_UPDATE_LISTENER](
+    key: symbol,
+    callback: UpdateListenerCallback,
+    parent?: Message<DataObject>,
+    parentKey?: string | number
+  ): void {
+    // Store the callback
+    this.#callbacks.set(key, callback);
+
+    // Set up parent chain if parent is provided
+    if (parent !== undefined && parentKey !== undefined) {
+      this.#parentChains.set(key, {
+        parent: new WeakRef(parent),
+        key: parentKey,
+      });
     }
-    return value;
+
+    // Propagate to children
+    for (let i = 0; i < this.#items.length; i++) {
+      const item = this.#items[i];
+      if (isMessageLike(item) && SET_UPDATE_LISTENER in item) {
+        // For Message children, set up their parent chain to point to this array
+        const msgItem = item as unknown as {
+          $setParentChain: (key: symbol, parent: unknown, parentKey: string | number) => void;
+          [SET_UPDATE_LISTENER]: (key: symbol, callback: UpdateListenerCallback) => void;
+        };
+        msgItem.$setParentChain(key, this, i);
+        // Recursively set up listener
+        msgItem[SET_UPDATE_LISTENER](key, callback);
+      }
+    }
+  }
+
+  // ============================================
+  // HYBRID APPROACH: Update Propagation
+  // ============================================
+
+  /**
+   * Create a new array with a child replaced at the given index.
+   */
+  public [WITH_CHILD](index: number, child: T): ImmutableArray<T> {
+    const newItems = [...this.#items];
+    newItems[index] = child;
+    return new ImmutableArray(newItems);
+  }
+
+  /**
+   * Propagate an update through the parent chain.
+   */
+  public [PROPAGATE_UPDATE](key: symbol, replacement: ImmutableArray<T>): void {
+    const chain = this.#parentChains.get(key);
+
+    if (chain?.parent.deref()) {
+      const parent = chain.parent.deref()!;
+      // Create new parent with replacement at this position
+      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
+      // Continue propagation
+      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    } else {
+      // Reached root - invoke callback
+      const callback = this.#callbacks.get(key);
+      if (callback) {
+        callback(replacement as unknown as Message<DataObject>);
+      }
+    }
   }
 
   /**
@@ -150,7 +261,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Setters on the returned array won't trigger React state updates.
    */
   detach(): ImmutableArray<T> {
-    if (this.$listeners.size === 0) {
+    if (!this.hasActiveListeners()) {
       // Still need to detach children if they have listeners
       let childNeedsDetach = false;
       for (const item of this.#items) {
@@ -189,7 +300,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const newItems = [...this.#items];
     newItems[index] = value;
-    const next = new ImmutableArray(newItems, new Set(this.$listeners));
+    const next = new ImmutableArray(newItems);
     return this.$update(next as unknown as this);
   }
 
@@ -470,7 +581,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   copyWithin(target: number, start: number, end?: number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.copyWithin(target, start, end);
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     return this.$update(next as unknown as this);
   }
 
@@ -480,7 +591,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   fill(value: T, start?: number, end?: number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.fill(value, start, end);
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     return this.$update(next as unknown as this);
   }
 
@@ -494,7 +605,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const copy = [...this.#items];
     const popped = copy.pop();
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     this.$update(next as unknown as this);
     return [popped, next];
   }
@@ -506,10 +617,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     if (items.length === 0) {
       return this;
     }
-    const next = new ImmutableArray(
-      [...this.#items, ...items],
-      new Set(this.$listeners)
-    );
+    const next = new ImmutableArray([...this.#items, ...items]);
     return this.$update(next as unknown as this);
   }
 
@@ -517,10 +625,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Returns a new ImmutableArray with elements in reversed order.
    */
   reverse(): ImmutableArray<T> {
-    const next = new ImmutableArray(
-      this.#items.toReversed(),
-      new Set(this.$listeners)
-    );
+    const next = new ImmutableArray(this.#items.toReversed());
     return this.$update(next as unknown as this);
   }
 
@@ -534,7 +639,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     }
     const copy = [...this.#items];
     const shifted = copy.shift();
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     this.$update(next as unknown as this);
     return [shifted, next];
   }
@@ -545,7 +650,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   sort(compareFn?: (a: T, b: T) => number): ImmutableArray<T> {
     const copy = [...this.#items];
     copy.sort(compareFn);
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     return this.$update(next as unknown as this);
   }
 
@@ -560,7 +665,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   ): [T[], ImmutableArray<T>] {
     const copy = [...this.#items];
     const removed = copy.splice(start, deleteCount ?? 0, ...items);
-    const next = new ImmutableArray(copy, new Set(this.$listeners));
+    const next = new ImmutableArray(copy);
     this.$update(next as unknown as this);
     return [removed, next];
   }
@@ -572,10 +677,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     if (items.length === 0) {
       return this;
     }
-    const next = new ImmutableArray(
-      [...items, ...this.#items],
-      new Set(this.$listeners)
-    );
+    const next = new ImmutableArray([...items, ...this.#items]);
     return this.$update(next as unknown as this);
   }
 

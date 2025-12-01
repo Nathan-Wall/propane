@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/object-only.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class ObjectOnly extends Message<ObjectOnly.Data> {
   static TYPE_TAG = Symbol("ObjectOnly");
   static EMPTY: ObjectOnly;
@@ -8,17 +8,14 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   #name: string;
   #age: number;
   #active: boolean;
-  constructor(props?: ObjectOnly.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
-    super(ObjectOnly.TYPE_TAG, "ObjectOnly", listeners);
+  constructor(props?: ObjectOnly.Value) {
+    if (!props && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
+    super(ObjectOnly.TYPE_TAG, "ObjectOnly");
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#age = props ? props.age : 0;
     this.#active = props ? props.active : false;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) ObjectOnly.EMPTY = this;
+    if (!props) ObjectOnly.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ObjectOnly.Data>[] {
     return [{

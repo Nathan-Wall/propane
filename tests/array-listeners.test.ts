@@ -1,45 +1,80 @@
 import { assert } from './assert.ts';
 import { ImmutableArray } from '../runtime/common/array/immutable.ts';
-import { ADD_UPDATE_LISTENER } from '../runtime/symbols.ts';
-import { Message } from '../runtime/message.ts';
+import {
+  SET_UPDATE_LISTENER,
+  WITH_CHILD,
+  PROPAGATE_UPDATE,
+  REACT_LISTENER_KEY,
+} from '../runtime/symbols.ts';
+import type { Message, DataObject } from '../runtime/message.ts';
 
-// Mock message class for testing
-class TestMessage extends Message<{ value: string }> {
+// Type for update listener callback
+type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+
+// Type for parent chain entry (parent can be Message or ImmutableArray)
+interface ParentChainEntry {
+  parent: WeakRef<object>;
+  key: string | number;
+}
+
+// Mock message class for testing using hybrid approach
+class TestMessage {
   #value: string;
 
-  constructor(
-    props: { value: string },
-    listeners?: Set<(val: TestMessage) => void>
-  ) {
-    super(Symbol('TestMessage'), 'TestMessage', listeners);
+  // Hybrid approach: parent chains and callbacks
+  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+
+  constructor(props: { value: string }) {
     this.#value = props.value;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
   }
-
-  protected $getPropDescriptors() {
-    return [{
-      name: 'value' as const,
-      fieldNumber: 1,
-      getValue: () => this.#value,
-    }];
-  }
-
-  protected $fromEntries(entries: Record<string, unknown>) {
-    return { value: entries.value as string };
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  protected $enableChildListeners() {}
 
   getValue() {
     return this.#value;
   }
 
+  // Required for isMessageLike check in ImmutableArray
+  equals(other: unknown): boolean {
+    return other instanceof TestMessage && other.#value === this.#value;
+  }
+
   setValue(newValue: string) {
-    const next = new TestMessage({ value: newValue }, this.$listeners);
-    return this.$update(next);
+    const next = new TestMessage({ value: newValue });
+    this.$propagateUpdates(next);
+    return next;
+  }
+
+  // Hybrid approach: set up parent chain (parent can be Message or ImmutableArray)
+  public $setParentChain(key: symbol, parent: object, parentKey: string | number): void {
+    this.#parentChains.set(key, {
+      parent: new WeakRef(parent),
+      key: parentKey,
+    });
+  }
+
+  // Hybrid approach: set listener callback
+  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+    this.#callbacks.set(key, callback);
+  }
+
+  // Hybrid approach: propagate updates through parent chains
+  // Note: Children don't call callbacks directly - they propagate through parent chains.
+  // Only root-level items with no parent would call callbacks directly.
+  private $propagateUpdates(newRoot: TestMessage): void {
+    // Check if we have any parent chains - if so, propagate through them
+    if (this.#parentChains.size > 0) {
+      for (const [key, entry] of this.#parentChains) {
+        const parent = entry.parent.deref();
+        if (!parent) continue;
+        const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
+        (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      }
+    } else {
+      // No parent chains - this is a root-level item, call callbacks directly
+      for (const [, callback] of this.#callbacks) {
+        callback(newRoot as unknown as Message<DataObject>);
+      }
+    }
   }
 }
 
@@ -56,19 +91,23 @@ function testArrayDeepUpdate() {
   // Create array
   const array = new ImmutableArray([item1, item2]);
 
-  // Simulate React state update
-  // We subscribe to the *current* array.
-  // If it updates, we update our reference and (in real React) re-subscribe.
-  // Here we just keep the reference updated.
+  // Track state updates
+  let currentArray = array;
 
-  let currentArray: ImmutableArray<TestMessage>;
-
-  const updateHandler = (newArray: ImmutableArray<TestMessage>) => {
-    currentArray = newArray;
+  // Named listener function for re-subscription
+  const setupListener = (arr: ImmutableArray<TestMessage>) => {
+    type Listenable = { [SET_UPDATE_LISTENER]: (key: symbol, cb: (val: unknown) => void) => void };
+    (arr as unknown as Listenable)[SET_UPDATE_LISTENER](
+      REACT_LISTENER_KEY,
+      (newArray) => {
+        currentArray = newArray as ImmutableArray<TestMessage>;
+        // Re-setup listener on new array (like usePropaneState does)
+        setupListener(currentArray);
+      }
+    );
   };
 
-  // Initial subscription - returns new instance with listener
-  currentArray = array[ADD_UPDATE_LISTENER](updateHandler);
+  setupListener(array);
 
   // Trigger update 1
   currentArray.get(0)!.setValue('one-updated');

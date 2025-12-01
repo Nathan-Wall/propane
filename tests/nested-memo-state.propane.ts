@@ -1,19 +1,16 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.propane
-import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 // Nested message types for testing memo behavior with state persistence
 export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
   static EMPTY: InnerMessage;
   #value: string;
-  constructor(props?: InnerMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && InnerMessage.EMPTY) return InnerMessage.EMPTY;
-    super(InnerMessage.TYPE_TAG, "InnerMessage", listeners);
+  constructor(props?: InnerMessage.Value) {
+    if (!props && InnerMessage.EMPTY) return InnerMessage.EMPTY;
+    super(InnerMessage.TYPE_TAG, "InnerMessage");
     this.#value = props ? props.value : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) InnerMessage.EMPTY = this;
+    if (!props) InnerMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<InnerMessage.Data>[] {
     return [{
@@ -50,15 +47,12 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   static EMPTY: OuterMessage;
   #counter: number;
   #inner: InnerMessage;
-  constructor(props?: OuterMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && OuterMessage.EMPTY) return OuterMessage.EMPTY;
-    super(OuterMessage.TYPE_TAG, "OuterMessage", listeners);
+  constructor(props?: OuterMessage.Value) {
+    if (!props && OuterMessage.EMPTY) return OuterMessage.EMPTY;
+    super(OuterMessage.TYPE_TAG, "OuterMessage");
     this.#counter = props ? props.counter : 0;
     this.#inner = props ? props.inner instanceof InnerMessage ? props.inner : new InnerMessage(props.inner) : new InnerMessage();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) OuterMessage.EMPTY = this;
+    if (!props) OuterMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OuterMessage.Data>[] {
     return [{
@@ -83,10 +77,19 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     props.inner = innerMessageValue;
     return props as OuterMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#inner = this.#inner[ADD_UPDATE_LISTENER](newValue => {
-      this.setInner(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): OuterMessage {
+    switch (key) {
+      case "inner":
+        return new OuterMessage({
+          counter: this.#counter,
+          inner: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["inner", this.#inner];
   }
   get counter(): number {
     return this.#counter;

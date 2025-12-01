@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.propane
-import { Message, MessagePropDescriptor, isTaggedMessageData } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "@propanejs/runtime";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static EMPTY: Cat;
   #name: string;
   #meows: boolean;
-  constructor(props?: Cat.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Cat.EMPTY) return Cat.EMPTY;
-    super(Cat.TYPE_TAG, "Cat", listeners);
+  constructor(props?: Cat.Value) {
+    if (!props && Cat.EMPTY) return Cat.EMPTY;
+    super(Cat.TYPE_TAG, "Cat");
     this.#name = props ? props.name : "";
     this.#meows = props ? props.meows : false;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Cat.EMPTY = this;
+    if (!props) Cat.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Cat.Data>[] {
     return [{
@@ -70,15 +67,12 @@ export class Dog extends Message<Dog.Data> {
   static EMPTY: Dog;
   #name: string;
   #barks: boolean;
-  constructor(props?: Dog.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Dog.EMPTY) return Dog.EMPTY;
-    super(Dog.TYPE_TAG, "Dog", listeners);
+  constructor(props?: Dog.Value) {
+    if (!props && Dog.EMPTY) return Dog.EMPTY;
+    super(Dog.TYPE_TAG, "Dog");
     this.#name = props ? props.name : "";
     this.#barks = props ? props.barks : false;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Dog.EMPTY = this;
+    if (!props) Dog.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Dog.Data>[] {
     return [{
@@ -135,16 +129,13 @@ export class PetOwner extends Message<PetOwner.Data> {
   #ownerName: string;
   #pet: Cat | Dog;
   #optionalPet: Cat | Dog;
-  constructor(props?: PetOwner.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && PetOwner.EMPTY) return PetOwner.EMPTY;
-    super(PetOwner.TYPE_TAG, "PetOwner", listeners);
+  constructor(props?: PetOwner.Value) {
+    if (!props && PetOwner.EMPTY) return PetOwner.EMPTY;
+    super(PetOwner.TYPE_TAG, "PetOwner");
     this.#ownerName = props ? props.ownerName : "";
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) PetOwner.EMPTY = this;
+    if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
     return [{

@@ -1,22 +1,19 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-hole.propane
-import { Message, MessagePropDescriptor } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Hole extends Message<Hole.Data> {
   static TYPE_TAG = Symbol("Hole");
   static EMPTY: Hole;
   #id: number;
   #value: number;
   #name: string;
-  constructor(props?: Hole.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && Hole.EMPTY) return Hole.EMPTY;
-    super(Hole.TYPE_TAG, "Hole", listeners);
+  constructor(props?: Hole.Value) {
+    if (!props && Hole.EMPTY) return Hole.EMPTY;
+    super(Hole.TYPE_TAG, "Hole");
     this.#id = props ? props.id : 0;
     this.#value = props ? props.value : 0;
     this.#name = props ? props.name : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) Hole.EMPTY = this;
+    if (!props) Hole.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Hole.Data>[] {
     return [{

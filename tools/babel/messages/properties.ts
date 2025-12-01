@@ -99,6 +99,15 @@ export function normalizePropertyKey(
   );
 }
 
+// Reserved names that would collide with Message base class methods
+const RESERVED_PROPERTY_NAMES = new Set([
+  'detach',
+  'hashCode',
+  'equals',
+  'serialize',
+  'toJSON',
+]);
+
 export function assertValidPropertyName(
   name: string,
   keyPath: NodePath<t.Identifier | t.StringLiteral>
@@ -106,6 +115,11 @@ export function assertValidPropertyName(
   if (name.includes('$')) {
     throw keyPath.buildCodeFrameError(
       'Propane property names cannot contain "$".'
+    );
+  }
+  if (RESERVED_PROPERTY_NAMES.has(name)) {
+    throw keyPath.buildCodeFrameError(
+      `"${name}" is a reserved name that would collide with Message.${name}().`
     );
   }
 }

@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.propane
-import { Message, MessagePropDescriptor, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static EMPTY: UnionFirstNumber;
   #val: number | string;
-  constructor(props?: UnionFirstNumber.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
-    super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber", listeners);
+  constructor(props?: UnionFirstNumber.Value) {
+    if (!props && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
+    super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber");
     this.#val = props ? props.val : 0;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) UnionFirstNumber.EMPTY = this;
+    if (!props) UnionFirstNumber.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
     return [{
@@ -48,14 +45,11 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
   static EMPTY: UnionFirstString;
   #val: string | number;
-  constructor(props?: UnionFirstString.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
-    super(UnionFirstString.TYPE_TAG, "UnionFirstString", listeners);
+  constructor(props?: UnionFirstString.Value) {
+    if (!props && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
+    super(UnionFirstString.TYPE_TAG, "UnionFirstString");
     this.#val = props ? props.val : "";
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) UnionFirstString.EMPTY = this;
+    if (!props) UnionFirstString.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
     return [{
@@ -91,14 +85,11 @@ export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
   static EMPTY: OptionalField;
   #val: string;
-  constructor(props?: OptionalField.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && OptionalField.EMPTY) return OptionalField.EMPTY;
-    super(OptionalField.TYPE_TAG, "OptionalField", listeners);
+  constructor(props?: OptionalField.Value) {
+    if (!props && OptionalField.EMPTY) return OptionalField.EMPTY;
+    super(OptionalField.TYPE_TAG, "OptionalField");
     this.#val = props ? props.val : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) OptionalField.EMPTY = this;
+    if (!props) OptionalField.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalField.Data>[] {
     return [{
@@ -137,14 +128,11 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
-  constructor(props?: RequiredMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
-    super(RequiredMessage.TYPE_TAG, "RequiredMessage", listeners);
+  constructor(props?: RequiredMessage.Value) {
+    if (!props && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
+    super(RequiredMessage.TYPE_TAG, "RequiredMessage");
     this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) RequiredMessage.EMPTY = this;
+    if (!props) RequiredMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
     return [{
@@ -161,10 +149,18 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     props.sub = subMessageValue;
     return props as RequiredMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#sub = this.#sub[ADD_UPDATE_LISTENER](newValue => {
-      this.setSub(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): RequiredMessage {
+    switch (key) {
+      case "sub":
+        return new RequiredMessage({
+          sub: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["sub", this.#sub];
   }
   get sub(): UnionFirstNumber {
     return this.#sub;

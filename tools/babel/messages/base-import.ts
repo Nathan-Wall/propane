@@ -27,7 +27,13 @@ export function ensureBaseImport(
       t.isImportDeclaration(stmt)
       && stmt.source.value === MESSAGE_SOURCE
   );
-  const requiredSpecifiers = ['Message', 'MessagePropDescriptor'];
+  const requiredSpecifiers = [
+    'Message',
+    'MessagePropDescriptor',
+    // Hybrid approach symbols
+    'WITH_CHILD',
+    'GET_MESSAGE_CHILDREN',
+  ];
   if (state.usesImmutableMap && !hasImportBinding('ImmutableMap')) {
     requiredSpecifiers.push('ImmutableMap');
   }
@@ -51,9 +57,6 @@ export function ensureBaseImport(
   }
   if (state.usesTaggedMessageData) {
     requiredSpecifiers.push('isTaggedMessageData');
-  }
-  if (state.usesListeners) {
-    requiredSpecifiers.push('ADD_UPDATE_LISTENER');
   }
 
   if (existingImport) {

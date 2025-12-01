@@ -1,12 +1,27 @@
 import { normalizeForJson } from '../json/stringify.js';
-import { ADD_UPDATE_LISTENER } from '../../symbols.js';
+import {
+  SET_UPDATE_LISTENER,
+  REGISTER_PATH,
+  PROPAGATE_UPDATE,
+  WITH_CHILD,
+  FROM_ROOT,
+} from '../../symbols.js';
 import { needsDetach, detachValue } from '../detach.js';
+import type { Message, DataObject } from '../../message.js';
+
+// Type for update listener callback
+type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+
+// Type for parent chain entry
+interface ParentChainEntry {
+  parent: WeakRef<Message<DataObject> | ImmutableMap<unknown, unknown>>;
+  key: string | number;
+}
 
 function isMessageLike(value: unknown): value is {
   equals: (other: unknown) => boolean;
   hashCode?: () => number;
   serialize?: () => string;
-  [ADD_UPDATE_LISTENER]?: (listener: (val: unknown) => void) => unknown;
 } {
   return Boolean(
     value
@@ -164,24 +179,28 @@ function hashString(value: string): number {
   return hash;
 }
 
-type Listener<K, V> = (val: ImmutableMap<K, V>) => void;
-
 export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   #buckets: Map<string, [K, V][]>;
   #size: number;
   #hash?: number;
-  protected readonly $listeners: Set<Listener<K, V>>;
   readonly [Symbol.toStringTag] = 'ImmutableMap';
+
+  // Hybrid approach: path tracking for equality comparisons
+  readonly #fromRoot: WeakMap<Message<DataObject>, string> = new WeakMap();
+
+  // Hybrid approach: parent chains for update propagation (keyed by listener symbol)
+  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+
+  // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
+  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
 
   constructor(
     entries?:
       | Iterable<readonly [K, V]>
       | readonly (readonly [K, V])[]
       | ReadonlyMap<K, V>
-      | null,
-    listeners?: Set<Listener<K, V>>
+      | null
   ) {
-    this.$listeners = listeners ?? new Set();
     this.#buckets = new Map();
     this.#size = 0;
 
@@ -203,45 +222,121 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
         this.#set(key, value);
       }
     }
+  }
 
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
+  /**
+   * Check if this map has active listeners (parent chains or callbacks).
+   */
+  private hasActiveListeners(): boolean {
+    return this.#parentChains.size > 0 || this.#callbacks.size > 0;
+  }
+
+  /**
+   * Propagate updates through parent chains.
+   */
+  private $propagateUpdates(newMap: ImmutableMap<K, V>): void {
+    for (const [key, entry] of this.#parentChains) {
+      const parent = entry.parent.deref();
+      if (!parent) continue;
+      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](entry.key, newMap);
+      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    }
+    // Also call direct callbacks at the root level
+    for (const [, callback] of this.#callbacks) {
+      callback(newMap as unknown as Message<DataObject>);
     }
   }
 
-  [ADD_UPDATE_LISTENER](
-    listener: (val: ImmutableMap<K, V>) => void
-  ): ImmutableMap<K, V> {
-    const l = listener as unknown as Listener<K, V>;
-    const newListeners = new Set(this.$listeners);
-    newListeners.add(l);
-
-    return new ImmutableMap(
-      [...this],
-      newListeners
-    );
+  /**
+   * Update the map and propagate through parent chains.
+   */
+  protected $update(value: this): this {
+    this.$propagateUpdates(value as unknown as ImmutableMap<K, V>);
+    return value;
   }
 
-  protected $enableChildListeners(): void {
-    for (const bucket of this.#buckets.values()) {
-      for (let i = 0; i < bucket.length; i++) {
-        const [key, value] = bucket[i];
-        if (isMessageLike(value) && value[ADD_UPDATE_LISTENER]) {
-          const listened = value[ADD_UPDATE_LISTENER]((updatedValue: V) => {
-            this.set(key, updatedValue);
-          });
-          bucket[i] = [key, listened as V];
-        }
+  // ============================================
+  // HYBRID APPROACH: Path Registration
+  // ============================================
+
+  public [REGISTER_PATH](root: Message<DataObject>, path: string): void {
+    this.#fromRoot.set(root, path);
+    for (const [key, value] of this) {
+      const keyStr = this.#serializeKeyForPath(key);
+      if (isMessageLike(value) && REGISTER_PATH in value) {
+        (value as { [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void })[REGISTER_PATH](root, `${path}[${keyStr}]`);
       }
     }
   }
 
-  protected $update(value: this): this {
-    // eslint-disable-next-line unicorn/no-useless-spread
-    for (const listener of [...this.$listeners]) {
-      listener(value as unknown as ImmutableMap<K, V>);
+  #serializeKeyForPath(key: K): string {
+    if (typeof key === 'string') return JSON.stringify(key);
+    if (typeof key === 'number') return String(key);
+    return hashKey(key);
+  }
+
+  public [FROM_ROOT](root: Message<DataObject>): string | undefined {
+    return this.#fromRoot.get(root);
+  }
+
+  // ============================================
+  // HYBRID APPROACH: Update Listener Management
+  // ============================================
+
+  public [SET_UPDATE_LISTENER](
+    key: symbol,
+    callback: UpdateListenerCallback,
+    parent?: Message<DataObject>,
+    parentKey?: string | number
+  ): void {
+    this.#callbacks.set(key, callback);
+    if (parent !== undefined && parentKey !== undefined) {
+      this.#parentChains.set(key, {
+        parent: new WeakRef(parent),
+        key: parentKey,
+      });
     }
-    return value;
+
+    for (const [mapKey, value] of this) {
+      if (isMessageLike(value) && SET_UPDATE_LISTENER in value) {
+        const msgValue = value as unknown as {
+          $setParentChain: (key: symbol, parent: unknown, parentKey: string | number) => void;
+          [SET_UPDATE_LISTENER]: (key: symbol, callback: UpdateListenerCallback) => void;
+        };
+        const keyStr = this.#serializeKeyForPath(mapKey);
+        msgValue.$setParentChain(key, this, keyStr);
+        msgValue[SET_UPDATE_LISTENER](key, callback);
+      }
+    }
+  }
+
+  // ============================================
+  // HYBRID APPROACH: Update Propagation
+  // ============================================
+
+  public [WITH_CHILD](mapKey: string, child: V): ImmutableMap<K, V> {
+    // Find the original key that matches this serialized key
+    for (const [key] of this) {
+      if (this.#serializeKeyForPath(key) === mapKey) {
+        return this.set(key, child);
+      }
+    }
+    return this;
+  }
+
+  public [PROPAGATE_UPDATE](key: symbol, replacement: ImmutableMap<K, V>): void {
+    const chain = this.#parentChains.get(key);
+
+    if (chain?.parent.deref()) {
+      const parent = chain.parent.deref()!;
+      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
+      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+    } else {
+      const callback = this.#callbacks.get(key);
+      if (callback) {
+        callback(replacement as unknown as Message<DataObject>);
+      }
+    }
   }
 
   /**
@@ -250,7 +345,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    * Setters on the returned map won't trigger React state updates.
    */
   detach(): ImmutableMap<K, V> {
-    if (this.$listeners.size === 0) {
+    if (!this.hasActiveListeners()) {
       // Still need to detach children if they have listeners
       let childNeedsDetach = false;
       for (const [k, v] of this) {
@@ -296,23 +391,20 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
         return this;
       }
     }
-    const next = new ImmutableMap(
-      [...this, [key, value]],
-      new Set(this.$listeners)
-    );
+    const next = new ImmutableMap([...this, [key, value]]);
     return this.$update(next as this);
   }
 
   delete(key: K): ImmutableMap<K, V> {
     if (!this.has(key)) return this;
     const newEntries = [...this].filter(([k]) => !equalKeys(k, key));
-    const next = new ImmutableMap(newEntries, new Set(this.$listeners));
+    const next = new ImmutableMap(newEntries);
     return this.$update(next as this);
   }
 
   clear(): ImmutableMap<K, V> {
     if (this.size === 0) return this;
-    const next = new ImmutableMap(null, new Set(this.$listeners));
+    const next = new ImmutableMap<K, V>(null);
     return this.$update(next as this);
   }
 

@@ -1,20 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.propane
-import { Message, MessagePropDescriptor, ImmutableSet, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet } from "@propanejs/runtime";
 export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static EMPTY: SetMessage;
   #tags: ImmutableSet<string>;
   #ids: ImmutableSet<number> | undefined;
-  constructor(props?: SetMessage.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && SetMessage.EMPTY) return SetMessage.EMPTY;
-    super(SetMessage.TYPE_TAG, "SetMessage", listeners);
+  constructor(props?: SetMessage.Value) {
+    if (!props && SetMessage.EMPTY) return SetMessage.EMPTY;
+    super(SetMessage.TYPE_TAG, "SetMessage");
     this.#tags = props ? props.tags === undefined || props.tags === null ? props.tags : props.tags instanceof ImmutableSet || Object.prototype.toString.call(props.tags) === "[object ImmutableSet]" ? props.tags : new ImmutableSet(props.tags) : new ImmutableSet();
     this.#ids = props ? props.ids === undefined || props.ids === null ? props.ids : props.ids instanceof ImmutableSet || Object.prototype.toString.call(props.ids) === "[object ImmutableSet]" ? props.ids : new ImmutableSet(props.ids) : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) SetMessage.EMPTY = this;
+    if (!props) SetMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
     return [{
@@ -41,15 +38,25 @@ export class SetMessage extends Message<SetMessage.Data> {
     props.ids = idsSetValue;
     return props as SetMessage.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#tags = this.#tags[ADD_UPDATE_LISTENER](newValue => {
-      this.setTags(newValue);
-    });
-    if (this.#ids) {
-      this.#ids = this.#ids[ADD_UPDATE_LISTENER](newValue => {
-        this.setIds(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): SetMessage {
+    switch (key) {
+      case "tags":
+        return new SetMessage({
+          tags: child,
+          ids: this.#ids
+        });
+      case "ids":
+        return new SetMessage({
+          tags: this.#tags,
+          ids: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["tags", this.#tags];
+    yield ["ids", this.#ids];
   }
   get tags(): ImmutableSet<string> {
     return this.#tags;

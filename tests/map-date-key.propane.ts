@@ -1,22 +1,19 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-date-key.propane
-import { Message, MessagePropDescriptor, ImmutableMap, ImmutableDate, ImmutableUrl, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals } from "@propanejs/runtime";
 export class MapDateKey extends Message<MapDateKey.Data> {
   static TYPE_TAG = Symbol("MapDateKey");
   static EMPTY: MapDateKey;
   #dateValues: ImmutableMap<ImmutableDate, number>;
   #urlValues: ImmutableMap<ImmutableUrl, string>;
   #optionalDateMap: ImmutableMap<ImmutableDate, boolean> | undefined;
-  constructor(props?: MapDateKey.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapDateKey.EMPTY) return MapDateKey.EMPTY;
-    super(MapDateKey.TYPE_TAG, "MapDateKey", listeners);
+  constructor(props?: MapDateKey.Value) {
+    if (!props && MapDateKey.EMPTY) return MapDateKey.EMPTY;
+    super(MapDateKey.TYPE_TAG, "MapDateKey");
     this.#dateValues = props ? props.dateValues === undefined || props.dateValues === null ? props.dateValues : new ImmutableMap(Array.from(props.dateValues).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : new ImmutableMap();
     this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? props.urlValues : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new ImmutableMap();
     this.#optionalDateMap = props ? props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : undefined;
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapDateKey.EMPTY = this;
+    if (!props) MapDateKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapDateKey.Data>[] {
     return [{
@@ -52,18 +49,34 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     props.optionalDateMap = optionalDateMapMapValue;
     return props as MapDateKey.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#dateValues = this.#dateValues[ADD_UPDATE_LISTENER](newValue => {
-      this.setDateValues(newValue);
-    });
-    this.#urlValues = this.#urlValues[ADD_UPDATE_LISTENER](newValue => {
-      this.setUrlValues(newValue);
-    });
-    if (this.#optionalDateMap) {
-      this.#optionalDateMap = this.#optionalDateMap[ADD_UPDATE_LISTENER](newValue => {
-        this.setOptionalDateMap(newValue);
-      });
+  [WITH_CHILD](key: string | number, child: unknown): MapDateKey {
+    switch (key) {
+      case "dateValues":
+        return new MapDateKey({
+          dateValues: child,
+          urlValues: this.#urlValues,
+          optionalDateMap: this.#optionalDateMap
+        });
+      case "urlValues":
+        return new MapDateKey({
+          dateValues: this.#dateValues,
+          urlValues: child,
+          optionalDateMap: this.#optionalDateMap
+        });
+      case "optionalDateMap":
+        return new MapDateKey({
+          dateValues: this.#dateValues,
+          urlValues: this.#urlValues,
+          optionalDateMap: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
     }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["dateValues", this.#dateValues];
+    yield ["urlValues", this.#urlValues];
+    yield ["optionalDateMap", this.#optionalDateMap];
   }
   get dateValues(): ImmutableMap<ImmutableDate, number> {
     return this.#dateValues;

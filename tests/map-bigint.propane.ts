@@ -1,18 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.propane
-import { Message, MessagePropDescriptor, ImmutableMap, equals, ADD_UPDATE_LISTENER } from "@propanejs/runtime";
+import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "@propanejs/runtime";
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static EMPTY: MapBigintKey;
   #values: ImmutableMap<bigint, string>;
-  constructor(props?: MapBigintKey.Value, listeners?: Set<(val: this) => void>) {
-    if (!props && !listeners && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
-    super(MapBigintKey.TYPE_TAG, "MapBigintKey", listeners);
+  constructor(props?: MapBigintKey.Value) {
+    if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
+    super(MapBigintKey.TYPE_TAG, "MapBigintKey");
     this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new ImmutableMap();
-    if (this.$listeners.size > 0) {
-      this.$enableChildListeners();
-    }
-    if (!props && !listeners) MapBigintKey.EMPTY = this;
+    if (!props) MapBigintKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
     return [{
@@ -30,10 +27,18 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     props.values = valuesMapValue;
     return props as MapBigintKey.Data;
   }
-  protected $enableChildListeners(): void {
-    this.#values = this.#values[ADD_UPDATE_LISTENER](newValue => {
-      this.setValues(newValue);
-    });
+  [WITH_CHILD](key: string | number, child: unknown): MapBigintKey {
+    switch (key) {
+      case "values":
+        return new MapBigintKey({
+          values: child
+        });
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  *[GET_MESSAGE_CHILDREN]() {
+    yield ["values", this.#values];
   }
   get values(): ImmutableMap<bigint, string> {
     return this.#values;
