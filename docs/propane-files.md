@@ -117,3 +117,19 @@ export type Cache = {
   coords: Map<[number, number], string>;  // Tuple keys
 };
 ```
+
+## Reserved Field Names
+
+The following field names are reserved and cannot be used because they would
+collide with methods on the generated `Message` base class:
+
+- `detach` - Creates a listener-free copy of the message
+- `hashCode` - Returns a stable hash for use in collections
+- `equals` - Compares structural equality with another value
+- `serialize` - Converts the message to a string
+- `toJSON` - JSON serialization support
+
+Using these names will result in a compilation error.
+
+Additionally, `$` is not an allowed character in Propane field names.
+
