@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
+  static readonly $typeName = "UnionFirstNumber";
   static EMPTY: UnionFirstNumber;
   #val: number | string;
   constructor(props?: UnionFirstNumber.Value) {
@@ -32,7 +33,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   setVal(value: number | string): UnionFirstNumber {
     return this.$update(new UnionFirstNumber({
       val: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace UnionFirstNumber {
@@ -43,6 +44,7 @@ export namespace UnionFirstNumber {
 }
 export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
+  static readonly $typeName = "UnionFirstString";
   static EMPTY: UnionFirstString;
   #val: string | number;
   constructor(props?: UnionFirstString.Value) {
@@ -72,7 +74,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   setVal(value: string | number): UnionFirstString {
     return this.$update(new UnionFirstString({
       val: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace UnionFirstString {
@@ -83,6 +85,7 @@ export namespace UnionFirstString {
 }
 export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
+  static readonly $typeName = "OptionalField";
   static EMPTY: OptionalField;
   #val: string;
   constructor(props?: OptionalField.Value) {
@@ -110,12 +113,12 @@ export class OptionalField extends Message<OptionalField.Data> {
     return this.#val;
   }
   deleteVal(): OptionalField {
-    return this.$update(new OptionalField({}, this.$listeners));
+    return this.$update(new OptionalField({}));
   }
   setVal(value: string): OptionalField {
     return this.$update(new OptionalField({
       val: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace OptionalField {
@@ -126,6 +129,7 @@ export namespace OptionalField {
 }
 export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
+  static readonly $typeName = "RequiredMessage";
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
   constructor(props?: RequiredMessage.Value) {
@@ -168,7 +172,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   setSub(value: UnionFirstNumber.Value): RequiredMessage {
     return this.$update(new RequiredMessage({
       sub: value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value)
-    }, this.$listeners));
+    }));
   }
 }
 export namespace RequiredMessage {

@@ -5,6 +5,7 @@ import { User } from './user.propane';
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
+  static readonly $typeName = "Compound_Inline";
   static EMPTY: Compound_Inline;
   #value: string;
   constructor(props?: Compound_Inline.Value) {
@@ -34,7 +35,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   setValue(value: string): Compound_Inline {
     return this.$update(new Compound_Inline({
       value: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Compound_Inline {
@@ -45,6 +46,7 @@ export namespace Compound_Inline {
 }
 export class Compound extends Message<Compound.Data> {
   static TYPE_TAG = Symbol("Compound");
+  static readonly $typeName = "Compound";
   static EMPTY: Compound;
   #user: User;
   #indexed: Indexed;
@@ -131,21 +133,21 @@ export class Compound extends Message<Compound.Data> {
       user: this.#user,
       indexed: value instanceof Indexed ? value : new Indexed(value),
       inline: this.#inline
-    }, this.$listeners));
+    }));
   }
   setInline(value: Compound_Inline.Value): Compound {
     return this.$update(new Compound({
       user: this.#user,
       indexed: this.#indexed,
       inline: value instanceof Compound_Inline ? value : new Compound_Inline(value)
-    }, this.$listeners));
+    }));
   }
   setUser(value: User.Value): Compound {
     return this.$update(new Compound({
       user: value instanceof User ? value : new User(value),
       indexed: this.#indexed,
       inline: this.#inline
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Compound {

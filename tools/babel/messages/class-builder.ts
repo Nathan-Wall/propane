@@ -5,7 +5,7 @@ import {
   getDefaultValue,
   wrapImmutableType,
 } from './properties.js';
-import type { PropDescriptor, PluginStateFlags } from './properties.js';
+import type { PropDescriptor, PluginStateFlags, TypeParameter } from './properties.js';
 import {
   typeAllowsNull,
   buildRuntimeTypeCheckExpression,
@@ -98,12 +98,300 @@ function needsMapConversions(conversions: MapConversionInfo): boolean {
   );
 }
 
+/**
+ * Get the private field name for a type parameter's constructor reference.
+ * E.g., 'T' -> '#tClass', 'U' -> '#uClass'
+ */
+function getConstructorFieldName(paramName: string): string {
+  return `${paramName.toLowerCase()}Class`;
+}
+
+/**
+ * Build the class type parameters for a generic message.
+ * E.g., Container<T extends Message<any>> becomes:
+ * t.tsTypeParameterDeclaration([t.tsTypeParameter('T', constraint, null)])
+ */
+function buildClassTypeParameters(
+  typeParameters: TypeParameter[]
+): t.TSTypeParameterDeclaration | null {
+  if (typeParameters.length === 0) {
+    return null;
+  }
+
+  const params = typeParameters.map((param) => {
+    // Create the constraint: Message<any>
+    const constraint = t.tsTypeReference(
+      t.identifier('Message'),
+      t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
+    );
+
+    const tsParam = t.tsTypeParameter(constraint, null, param.name);
+    return tsParam;
+  });
+
+  return t.tsTypeParameterDeclaration(params);
+}
+
+/**
+ * Build private fields to store constructor references for generic types.
+ * E.g., #tClass: MessageConstructor<T>;
+ */
+function buildConstructorRefFields(
+  typeParameters: TypeParameter[]
+): t.ClassPrivateProperty[] {
+  return typeParameters.map((param) => {
+    const fieldName = getConstructorFieldName(param.name);
+    const field = t.classPrivateProperty(
+      t.privateName(t.identifier(fieldName))
+    );
+
+    // Type: MessageConstructor<T>
+    field.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('MessageConstructor'),
+        t.tsTypeParameterInstantiation([
+          t.tsTypeReference(t.identifier(param.name))
+        ])
+      )
+    );
+
+    return field;
+  });
+}
+
+/**
+ * Build constructor parameters for generic type constructors.
+ * E.g., tClass: MessageConstructor<T>, uClass: MessageConstructor<U>
+ */
+function buildConstructorClassParams(
+  typeParameters: TypeParameter[]
+): t.Identifier[] {
+  return typeParameters.map((param) => {
+    const paramName = getConstructorFieldName(param.name);
+    const paramId = t.identifier(paramName);
+
+    // Type: MessageConstructor<T>
+    paramId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsTypeReference(
+        t.identifier('MessageConstructor'),
+        t.tsTypeParameterInstantiation([
+          t.tsTypeReference(t.identifier(param.name))
+        ])
+      )
+    );
+
+    return paramId;
+  });
+}
+
+/**
+ * Build assignments to store constructor references in the constructor body.
+ * E.g., this.#tClass = tClass;
+ */
+function buildConstructorRefAssignments(
+  typeParameters: TypeParameter[]
+): t.ExpressionStatement[] {
+  return typeParameters.map((param) => {
+    const fieldName = getConstructorFieldName(param.name);
+    return t.expressionStatement(
+      t.assignmentExpression(
+        '=',
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        ),
+        t.identifier(fieldName)
+      )
+    );
+  });
+}
+
+/**
+ * Build the $typeName string for a generic message.
+ * For generic: `TypeName<${tClass.$typeName}>`
+ * For non-generic: just typeName
+ */
+function buildTypeNameExpression(
+  typeName: string,
+  typeParameters: TypeParameter[]
+): t.Expression {
+  if (typeParameters.length === 0) {
+    return t.stringLiteral(typeName);
+  }
+
+  // Build template literal: `TypeName<${tClass.$typeName},...>`
+  const quasis: t.TemplateElement[] = [];
+  const expressions: t.Expression[] = [];
+
+  // First quasi: "TypeName<"
+  quasis.push(t.templateElement({ raw: `${typeName}<`, cooked: `${typeName}<` }, false));
+
+  typeParameters.forEach((param, index) => {
+    const fieldName = getConstructorFieldName(param.name);
+    // Expression: tClass.$typeName
+    expressions.push(
+      t.memberExpression(
+        t.identifier(fieldName),
+        t.identifier('$typeName')
+      )
+    );
+
+    // Quasi after expression: "," or ">"
+    const isLast = index === typeParameters.length - 1;
+    quasis.push(t.templateElement(
+      { raw: isLast ? '>' : ',', cooked: isLast ? '>' : ',' },
+      isLast
+    ));
+  });
+
+  return t.templateLiteral(quasis, expressions);
+}
+
+/**
+ * Build the static bind() method for generic messages.
+ */
+function buildBindMethod(
+  typeName: string,
+  typeParameters: TypeParameter[]
+): t.ClassMethod | null {
+  if (typeParameters.length === 0) {
+    return null;
+  }
+
+  // Build type parameters for the static method
+  const methodTypeParams = buildClassTypeParameters(typeParameters);
+
+  // Build parameters: tClass: MessageConstructor<T>, ...
+  const params = buildConstructorClassParams(typeParameters);
+
+  // Return type: MessageConstructor<TypeName<T, U, ...>>
+  const returnTypeParams = typeParameters.map((param) =>
+    t.tsTypeReference(t.identifier(param.name))
+  );
+  const returnType = t.tsTypeReference(
+    t.identifier('MessageConstructor'),
+    t.tsTypeParameterInstantiation([
+      t.tsTypeReference(
+        t.identifier(typeName),
+        t.tsTypeParameterInstantiation(returnTypeParams)
+      )
+    ])
+  );
+
+  // Build the bound constructor function
+  // const boundCtor = function(props: TypeName.Data<T>) { return new TypeName(tClass, props); }
+  const propsParam = t.identifier('props');
+  propsParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeReference(
+      t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
+      t.tsTypeParameterInstantiation(returnTypeParams)
+    )
+  );
+
+  const constructorArgs = [
+    ...typeParameters.map((param) => t.identifier(getConstructorFieldName(param.name))),
+    t.identifier('props')
+  ];
+
+  const boundCtorFn = t.functionExpression(
+    null,
+    [propsParam],
+    t.blockStatement([
+      t.returnStatement(
+        t.newExpression(t.identifier(typeName), constructorArgs)
+      )
+    ])
+  );
+
+  // Cast to MessageConstructor
+  const boundCtorCast = t.tsAsExpression(
+    t.tsAsExpression(boundCtorFn, t.tsUnknownKeyword()),
+    returnType
+  );
+
+  const boundCtorDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(t.identifier('boundCtor'), boundCtorCast)
+  ]);
+
+  // boundCtor.deserialize = (data: string) => TypeName.deserialize(tClass, ..., data);
+  const deserializeParams = [
+    ...typeParameters.map((param) => t.identifier(getConstructorFieldName(param.name))),
+    t.identifier('data')
+  ];
+  const dataParam = t.identifier('data');
+  dataParam.typeAnnotation = t.tsTypeAnnotation(t.tsStringKeyword());
+
+  const deserializeAssign = t.expressionStatement(
+    t.assignmentExpression(
+      '=',
+      t.memberExpression(t.identifier('boundCtor'), t.identifier('deserialize')),
+      t.arrowFunctionExpression(
+        [dataParam],
+        t.callExpression(
+          t.memberExpression(t.identifier(typeName), t.identifier('deserialize')),
+          deserializeParams
+        )
+      )
+    )
+  );
+
+  // boundCtor.$typeName = `TypeName<${tClass.$typeName}>`;
+  const typeNameAssign = t.expressionStatement(
+    t.assignmentExpression(
+      '=',
+      t.memberExpression(t.identifier('boundCtor'), t.identifier('$typeName')),
+      buildTypeNameExpression(typeName, typeParameters)
+    )
+  );
+
+  // return boundCtor;
+  const returnStmt = t.returnStatement(t.identifier('boundCtor'));
+
+  const methodBody = t.blockStatement([
+    boundCtorDecl,
+    deserializeAssign,
+    typeNameAssign,
+    returnStmt
+  ]);
+
+  const bindMethod = t.classMethod(
+    'method',
+    t.identifier('bind'),
+    params,
+    methodBody,
+    false,
+    true // static
+  );
+  bindMethod.typeParameters = methodTypeParams;
+  bindMethod.returnType = t.tsTypeAnnotation(returnType);
+
+  return bindMethod;
+}
+
+/**
+ * Build the static $typeName property for non-generic messages.
+ */
+function buildStaticTypeName(typeName: string): t.ClassProperty {
+  const prop = t.classProperty(
+    t.identifier('$typeName'),
+    t.stringLiteral(typeName),
+    null,
+    null,
+    false,
+    true // static
+  );
+  prop.readonly = true;
+  return prop;
+}
+
 export function buildClassFromProperties(
   typeName: string,
   properties: PropDescriptor[],
   declaredMessageTypeNames: Set<string>,
-  state: PluginStateFlags
+  state: PluginStateFlags,
+  typeParameters: TypeParameter[] = []
 ): t.ClassDeclaration {
+  const isGeneric = typeParameters.length > 0;
   const backingFields: t.ClassPrivateProperty[] = [];
   const getters: t.ClassMethod[] = [];
   const propDescriptors = properties.map((prop) => ({
@@ -147,6 +435,12 @@ export function buildClassFromProperties(
 
     getter.returnType = t.tsTypeAnnotation(getterReturnType);
     getters.push(getter);
+  }
+
+  // Add private fields for constructor references (for generic types)
+  if (isGeneric) {
+    const constructorRefFields = buildConstructorRefFields(typeParameters);
+    backingFields.push(...constructorRefFields);
   }
 
   if (propDescriptors.length === 0) {
@@ -249,7 +543,22 @@ export function buildClassFromProperties(
       );
     }
 
-    const defaultValue = getDefaultValue(prop);
+    // For generic type parameters, use the stored constructor ref for default value
+    let defaultValue: t.Expression;
+    if (prop.isGenericParam && prop.genericParamName) {
+      // Use the stored constructor reference: new this.#tClass()
+      // Pass undefined (no args) so the inner class uses its EMPTY instance
+      const fieldName = getConstructorFieldName(prop.genericParamName);
+      defaultValue = t.newExpression(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        ),
+        []
+      );
+    } else {
+      defaultValue = getDefaultValue(prop);
+    }
     const assignment = t.assignmentExpression(
       '=',
       t.memberExpression(
@@ -266,7 +575,9 @@ export function buildClassFromProperties(
     return t.expressionStatement(assignment);
   });
 
-  const memoizationCheck = t.ifStatement(
+  // Generic messages don't support memoization (EMPTY instance)
+  // because they require constructor parameters
+  const memoizationCheck = isGeneric ? null : t.ifStatement(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
@@ -277,7 +588,7 @@ export function buildClassFromProperties(
     )
   );
 
-  const memoizationSet = t.ifStatement(
+  const memoizationSet = isGeneric ? null : t.ifStatement(
     t.unaryExpression('!', t.identifier('props')),
     t.expressionStatement(
       t.assignmentExpression(
@@ -288,27 +599,55 @@ export function buildClassFromProperties(
     )
   );
 
+  // Build constructor parameters: for generics, add class params before props
+  const constructorClassParams = isGeneric
+    ? buildConstructorClassParams(typeParameters)
+    : [];
+  const allConstructorParams = [...constructorClassParams, constructorParam];
+
+  // Build constructor body
+  const constructorBody: t.Statement[] = [];
+
+  // Add memoization check (only for non-generic)
+  if (memoizationCheck) {
+    constructorBody.push(memoizationCheck);
+  }
+
+  // Add super() call with appropriate $typeName
+  constructorBody.push(
+    t.expressionStatement(
+      t.callExpression(t.super(), [
+        t.memberExpression(
+          t.identifier(typeName),
+          t.identifier('TYPE_TAG')
+        ),
+        buildTypeNameExpression(typeName, typeParameters),
+      ])
+    )
+  );
+
+  // Add constructor ref assignments for generics
+  if (isGeneric) {
+    constructorBody.push(...buildConstructorRefAssignments(typeParameters));
+  }
+
+  // Add property assignments
+  constructorBody.push(...constructorAssignments);
+
+  // Add memoization set (only for non-generic)
+  if (memoizationSet) {
+    constructorBody.push(memoizationSet);
+  }
+
   const constructor = t.classMethod(
     'constructor',
     t.identifier('constructor'),
-    [constructorParam],
-    t.blockStatement([
-      memoizationCheck,
-      t.expressionStatement(
-        t.callExpression(t.super(), [
-          t.memberExpression(
-            t.identifier(typeName),
-            t.identifier('TYPE_TAG')
-          ),
-          t.stringLiteral(typeName),
-        ])
-      ),
-      ...constructorAssignments,
-      memoizationSet,
-    ])
+    allConstructorParams,
+    t.blockStatement(constructorBody)
   );
 
-  const staticFields = [
+  // Build static fields
+  const staticFields: t.ClassProperty[] = [
     t.classProperty(
       t.identifier('TYPE_TAG'),
       t.callExpression(t.identifier('Symbol'), [t.stringLiteral(typeName)]),
@@ -317,17 +656,26 @@ export function buildClassFromProperties(
       false,
       true
     ),
-    t.classProperty(
-      t.identifier('EMPTY'),
-      null,
-      t.tsTypeAnnotation(
-        t.tsTypeReference(t.identifier(typeName))
-      ),
-      null,
-      false,
-      true
-    ),
   ];
+
+  // Add static $typeName for non-generic messages
+  // (generic messages get $typeName set dynamically in constructor)
+  if (!isGeneric) {
+    staticFields.push(buildStaticTypeName(typeName));
+    // Add EMPTY memoization field (only for non-generic)
+    staticFields.push(
+      t.classProperty(
+        t.identifier('EMPTY'),
+        null,
+        t.tsTypeAnnotation(
+          t.tsTypeReference(t.identifier(typeName))
+        ),
+        null,
+        false,
+        true
+      )
+    );
+  }
 
   const fromEntriesMethod = buildFromEntriesMethod(
     propDescriptors,
@@ -342,23 +690,27 @@ export function buildClassFromProperties(
       typeName,
       propDescriptors,
       prop,
-      declaredMessageTypeNames
+      declaredMessageTypeNames,
+      typeParameters
     )
   );
   const deleteMethods = propDescriptors
     .filter((prop) => prop.optional)
-    .map((prop) => buildDeleteMethod(typeName, propDescriptors, prop));
+    .map((prop) => buildDeleteMethod(typeName, propDescriptors, prop, typeParameters));
   const arrayMethods = buildArrayMutatorMethods(
     typeName,
-    propDescriptors
+    propDescriptors,
+    typeParameters
   );
   const mapMethods = buildMapMutatorMethods(
     typeName,
-    propDescriptors
+    propDescriptors,
+    typeParameters
   );
   const setMethods = buildSetMutatorMethods(
     typeName,
-    propDescriptors
+    propDescriptors,
+    typeParameters
   );
 
   // Build hybrid approach methods
@@ -388,6 +740,14 @@ export function buildClassFromProperties(
     classBodyMembers.push(getMessageChildrenMethod);
   }
 
+  // Add bind() method for generic messages
+  if (isGeneric) {
+    const bindMethod = buildBindMethod(typeName, typeParameters);
+    if (bindMethod) {
+      classBodyMembers.push(bindMethod);
+    }
+  }
+
   classBodyMembers.push(...getters,
     ...[
       ...setterMethods,
@@ -412,8 +772,23 @@ export function buildClassFromProperties(
     []
   );
 
+  // Add type parameters to the class for generics
+  if (isGeneric) {
+    classDecl.typeParameters = buildClassTypeParameters(typeParameters);
+  }
+
+  // Update propsTypeRef to include type parameters for generics
+  const superTypeArg = isGeneric
+    ? t.tsTypeReference(
+        t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
+        t.tsTypeParameterInstantiation(
+          typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
+        )
+      )
+    : t.cloneNode(propsTypeRef);
+
   classDecl.superTypeParameters = t.tsTypeParameterInstantiation([
-    t.cloneNode(propsTypeRef),
+    superTypeArg,
   ]);
 
   return classDecl;
@@ -883,7 +1258,8 @@ function buildSetterMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   targetProp: PropDescriptor & { privateName: t.PrivateName },
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const valueId = t.identifier('value');
   valueId.typeAnnotation = t.tsTypeAnnotation(
@@ -924,20 +1300,27 @@ function buildSetterMethod(
     setterValueExpr
   );
 
-  const onUpdateAccess = t.memberExpression(
-    t.thisExpression(),
-    t.identifier('$listeners')
-  );
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(propsObject);
 
   const body = t.blockStatement([
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
         [
-          t.newExpression(t.identifier(typeName), [
-            propsObject,
-            onUpdateAccess,
-          ]),
+          t.newExpression(t.identifier(typeName), constructorArgs),
         ]
       )
     ),
@@ -959,7 +1342,8 @@ function buildSetterMethod(
 function buildDeleteMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  targetProp: PropDescriptor & { privateName: t.PrivateName }
+  targetProp: PropDescriptor & { privateName: t.PrivateName },
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const propsObject = buildPropsObjectExpression(
     propDescriptors,
@@ -968,20 +1352,27 @@ function buildDeleteMethod(
     { omitTarget: true }
   );
 
-  const onUpdateAccess = t.memberExpression(
-    t.thisExpression(),
-    t.identifier('$listeners')
-  );
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(propsObject);
 
   const body = t.blockStatement([
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
         [
-          t.newExpression(t.identifier(typeName), [
-            propsObject,
-            onUpdateAccess,
-          ]),
+          t.newExpression(t.identifier(typeName), constructorArgs),
         ]
       )
     ),
@@ -997,7 +1388,8 @@ function buildDeleteMethod(
 
 function buildArrayMutatorMethods(
   typeName: string,
-  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
@@ -1016,7 +1408,8 @@ function buildArrayMutatorMethods(
         () => [],
         {
           append: [t.spreadElement(t.identifier('values'))],
-        }
+        },
+        typeParameters
       ),
       buildArrayMutationMethod(
         typeName,
@@ -1031,7 +1424,9 @@ function buildArrayMutatorMethods(
               []
             )
           ),
-        ]
+        ],
+        {},
+        typeParameters
       ),
       buildArrayMutationMethod(
         typeName,
@@ -1046,7 +1441,9 @@ function buildArrayMutatorMethods(
               []
             )
           ),
-        ]
+        ],
+        {},
+        typeParameters
       ),
       buildArrayMutationMethod(
         typeName,
@@ -1057,9 +1454,10 @@ function buildArrayMutatorMethods(
         () => [],
         {
           prepend: [t.spreadElement(t.identifier('values'))],
-        }
+        },
+        typeParameters
       ),
-      buildSpliceMethod(typeName, propDescriptors, prop),
+      buildSpliceMethod(typeName, propDescriptors, prop, typeParameters),
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1073,9 +1471,11 @@ function buildArrayMutatorMethods(
               []
             )
           ),
-        ]
+        ],
+        {},
+        typeParameters
       ),
-      buildSortMethod(typeName, propDescriptors, prop),
+      buildSortMethod(typeName, propDescriptors, prop, typeParameters),
       buildArrayMutationMethod(
         typeName,
         propDescriptors,
@@ -1093,7 +1493,9 @@ function buildArrayMutatorMethods(
               ]
             )
           ),
-        ]
+        ],
+        {},
+        typeParameters
       ),
       buildArrayMutationMethod(
         typeName,
@@ -1112,7 +1514,9 @@ function buildArrayMutatorMethods(
               ]
             )
           ),
-        ]
+        ],
+        {},
+        typeParameters
       )
     );
   }
@@ -1158,7 +1562,8 @@ function buildCopyWithinParams(): t.Identifier[] {
 function buildSortMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  prop: PropDescriptor & { privateName: t.PrivateName }
+  prop: PropDescriptor & { privateName: t.PrivateName },
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const compareId = t.identifier('compareFn');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
@@ -1191,14 +1596,17 @@ function buildSortMethod(
           [t.identifier('compareFn')]
         )
       ),
-    ]
+    ],
+    {},
+    typeParameters
   );
 }
 
 function buildSpliceMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  prop: PropDescriptor & { privateName: t.PrivateName }
+  prop: PropDescriptor & { privateName: t.PrivateName },
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
@@ -1239,7 +1647,9 @@ function buildSpliceMethod(
           )
         ),
       ];
-    }
+    },
+    {},
+    typeParameters
   );
 }
 
@@ -1253,7 +1663,8 @@ function buildArrayMutationMethod(
   cloneOptions: {
     prepend?: t.SpreadElement[];
     append?: t.SpreadElement[];
-  } = {}
+  } = {},
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const { statements, nextName } = buildArrayCloneSetup(prop, cloneOptions);
   const nextRef = () => t.identifier(nextName);
@@ -1312,9 +1723,25 @@ function buildArrayMutationMethod(
     );
   }
 
-  const onUpdateAccess = t.memberExpression(
-    t.thisExpression(),
-    t.identifier('$listeners')
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(
+    buildPropsObjectExpression(
+      propDescriptors,
+      prop,
+      nextRef()
+    )
   );
 
   const bodyStatements = [
@@ -1325,14 +1752,7 @@ function buildArrayMutationMethod(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
         [
-          t.newExpression(t.identifier(typeName), [
-            buildPropsObjectExpression(
-              propDescriptors,
-              prop,
-              nextRef()
-            ),
-            onUpdateAccess,
-          ]),
+          t.newExpression(t.identifier(typeName), constructorArgs),
         ]
       )
     ),
@@ -1402,7 +1822,8 @@ function buildArrayCloneSetup(
 
 function buildMapMutatorMethods(
   typeName: string,
-  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
@@ -1426,7 +1847,8 @@ function buildMapMutatorMethods(
             )
           ),
         ],
-        buildSetEntryOptions(prop)
+        buildSetEntryOptions(prop),
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1442,7 +1864,8 @@ function buildMapMutatorMethods(
             )
           ),
         ],
-        buildDeleteEntryOptions(prop)
+        buildDeleteEntryOptions(prop),
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1458,7 +1881,8 @@ function buildMapMutatorMethods(
             )
           ),
         ],
-        buildClearMapOptions(prop)
+        buildClearMapOptions(prop),
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1487,7 +1911,9 @@ function buildMapMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        {},
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1521,7 +1947,9 @@ function buildMapMutatorMethods(
               )
             ),
           ];
-        }
+        },
+        {},
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1584,7 +2012,9 @@ function buildMapMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        {},
+        typeParameters
       ),
       buildMapMutationMethod(
         typeName,
@@ -1620,7 +2050,9 @@ function buildMapMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        {},
+        typeParameters
       )
     );
   }
@@ -1630,7 +2062,8 @@ function buildMapMutatorMethods(
 
 function buildSetMutatorMethods(
   typeName: string,
-  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[]
+  propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
   const methods: t.ClassMethod[] = [];
 
@@ -1653,7 +2086,8 @@ function buildSetMutatorMethods(
               [t.identifier('value')]
             )
           ),
-        ]
+        ],
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1679,7 +2113,8 @@ function buildSetMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1694,7 +2129,8 @@ function buildSetMutatorMethods(
               [t.identifier('value')]
             )
           ),
-        ]
+        ],
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1720,7 +2156,8 @@ function buildSetMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1735,7 +2172,8 @@ function buildSetMutatorMethods(
               []
             )
           ),
-        ]
+        ],
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1788,7 +2226,8 @@ function buildSetMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1845,7 +2284,8 @@ function buildSetMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        typeParameters
       ),
       buildSetMutationMethod(
         typeName,
@@ -1883,7 +2323,8 @@ function buildSetMutatorMethods(
               ])
             ),
           ];
-        }
+        },
+        typeParameters
       )
     );
   }
@@ -1901,7 +2342,8 @@ function buildMapMutationMethod(
   options: {
     prelude?: t.Statement[];
     skipNoopGuard?: boolean;
-  } = {}
+  } = {},
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const { prelude = [], skipNoopGuard = false } = options;
   const { statements, nextName } = buildMapCloneSetup(prop);
@@ -1911,10 +2353,21 @@ function buildMapMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
-  const onUpdateAccess = t.memberExpression(
-    t.thisExpression(),
-    t.identifier('$listeners')
-  );
+
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(buildPropsObjectExpression(propDescriptors, prop, nextRef()));
 
   const bodyStatements = [
     ...prelude,
@@ -1925,10 +2378,7 @@ function buildMapMutationMethod(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
         [
-          t.newExpression(t.identifier(typeName), [
-            buildPropsObjectExpression(propDescriptors, prop, nextRef()),
-            onUpdateAccess,
-          ]),
+          t.newExpression(t.identifier(typeName), constructorArgs),
         ]
       )
     ),
@@ -2015,7 +2465,8 @@ function buildSetMutationMethod(
   prop: PropDescriptor & { privateName: t.PrivateName },
   methodName: string,
   params: (t.Identifier | t.RestElement)[],
-  buildMutations: (setRef: () => t.Identifier) => t.Statement[]
+  buildMutations: (setRef: () => t.Identifier) => t.Statement[],
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const { statements, nextName } = buildSetCloneSetup(prop);
   const nextRef = () => t.identifier(nextName);
@@ -2024,9 +2475,26 @@ function buildSetMutationMethod(
     t.thisExpression(),
     t.identifier(prop.name)
   );
-  const onUpdateAccess = t.memberExpression(
-    t.thisExpression(),
-    t.identifier('$listeners')
+
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(
+    buildPropsObjectExpression(
+      propDescriptors,
+      prop,
+      nextRef()
+    )
   );
 
   const bodyStatements = [
@@ -2037,14 +2505,7 @@ function buildSetMutationMethod(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
         [
-          t.newExpression(t.identifier(typeName), [
-            buildPropsObjectExpression(
-              propDescriptors,
-              prop,
-              nextRef()
-            ),
-            onUpdateAccess,
-          ]),
+          t.newExpression(t.identifier(typeName), constructorArgs),
         ]
       )
     ),

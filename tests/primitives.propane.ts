@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
+  static readonly $typeName = "Primitives";
   static EMPTY: Primitives;
   #flag: boolean;
   #count: number;
@@ -102,7 +103,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$listeners));
+    }));
   }
   setEmpty(value: null): Primitives {
     return this.$update(new Primitives({
@@ -112,7 +113,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: value,
       missing: this.#missing
-    }, this.$listeners));
+    }));
   }
   setFlag(value: boolean): Primitives {
     return this.$update(new Primitives({
@@ -122,7 +123,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$listeners));
+    }));
   }
   setLabel(value: string): Primitives {
     return this.$update(new Primitives({
@@ -132,7 +133,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$listeners));
+    }));
   }
   setMissing(value: undefined): Primitives {
     return this.$update(new Primitives({
@@ -142,7 +143,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: value
-    }, this.$listeners));
+    }));
   }
   setSize(value: bigint): Primitives {
     return this.$update(new Primitives({
@@ -152,7 +153,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: value,
       empty: this.#empty,
       missing: this.#missing
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Primitives {

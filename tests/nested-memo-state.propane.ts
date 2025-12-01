@@ -4,6 +4,7 @@ import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from
 // Nested message types for testing memo behavior with state persistence
 export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
+  static readonly $typeName = "InnerMessage";
   static EMPTY: InnerMessage;
   #value: string;
   constructor(props?: InnerMessage.Value) {
@@ -33,7 +34,7 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   setValue(value: string): InnerMessage {
     return this.$update(new InnerMessage({
       value: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace InnerMessage {
@@ -44,6 +45,7 @@ export namespace InnerMessage {
 }
 export class OuterMessage extends Message<OuterMessage.Data> {
   static TYPE_TAG = Symbol("OuterMessage");
+  static readonly $typeName = "OuterMessage";
   static EMPTY: OuterMessage;
   #counter: number;
   #inner: InnerMessage;
@@ -101,13 +103,13 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     return this.$update(new OuterMessage({
       counter: value,
       inner: this.#inner
-    }, this.$listeners));
+    }));
   }
   setInner(value: InnerMessage.Value): OuterMessage {
     return this.$update(new OuterMessage({
       counter: this.#counter,
       inner: value instanceof InnerMessage ? value : new InnerMessage(value)
-    }, this.$listeners));
+    }));
   }
 }
 export namespace OuterMessage {

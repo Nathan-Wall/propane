@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Foo extends Message<Foo.Data> {
   static TYPE_TAG = Symbol("Foo");
+  static readonly $typeName = "Foo";
   static EMPTY: Foo;
   #name: string;
   #_name: string;
@@ -46,13 +47,13 @@ export class Foo extends Message<Foo.Data> {
     return this.$update(new Foo({
       name: value,
       _name: this.#_name
-    }, this.$listeners));
+    }));
   }
   set_name(value: string): Foo {
     return this.$update(new Foo({
       name: this.#name,
       _name: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Foo {

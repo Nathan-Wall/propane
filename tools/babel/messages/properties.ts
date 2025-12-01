@@ -29,6 +29,15 @@ export interface PluginStateFlags {
   usesEquals: boolean;
   usesTaggedMessageData: boolean;
   usesListeners: boolean;
+  usesMessageConstructor: boolean;
+}
+
+/**
+ * Represents a generic type parameter like T in `Container<T extends Message>`.
+ */
+export interface TypeParameter {
+  name: string;           // e.g., 'T'
+  constraint: string;     // e.g., 'Message' or specific type like 'User'
 }
 
 export interface PropDescriptor {
@@ -55,6 +64,11 @@ export interface PropDescriptor {
   setElementType: t.TSType | null;
   setElementInputType: t.TSType | null;
   displayType: t.TSType;
+  // Generic type parameter tracking
+  isGenericParam: boolean;              // true if type is a generic parameter (e.g., T)
+  genericParamName: string | null;      // the parameter name (e.g., 'T')
+  genericParamIndex: number | null;     // index in the type parameters array
+  unionGenericParams: string[];         // for unions like T | U, lists ['T', 'U']
 }
 
 export function normalizePropertyKey(
@@ -124,6 +138,50 @@ export function assertValidPropertyName(
   }
 }
 
+/**
+ * Check if a type reference refers to a generic type parameter.
+ */
+function getGenericParamInfo(
+  typePath: NodePath<t.TSType>,
+  typeParameters: TypeParameter[]
+): { name: string; index: number } | null {
+  if (!typePath.isTSTypeReference()) {
+    return null;
+  }
+  const typeName = typePath.node.typeName;
+  if (!t.isIdentifier(typeName)) {
+    return null;
+  }
+  const paramIndex = typeParameters.findIndex((p) => p.name === typeName.name);
+  if (paramIndex >= 0) {
+    return { name: typeName.name, index: paramIndex };
+  }
+  return null;
+}
+
+/**
+ * Extract generic parameter names from a union type (e.g., T | U).
+ */
+function extractUnionGenericParams(
+  typePath: NodePath<t.TSType>,
+  typeParameters: TypeParameter[]
+): string[] {
+  if (!typePath.isTSUnionType()) {
+    const info = getGenericParamInfo(typePath, typeParameters);
+    return info ? [info.name] : [];
+  }
+
+  const genericParams: string[] = [];
+  const types = typePath.get('types');
+  for (const memberType of types) {
+    const info = getGenericParamInfo(memberType, typeParameters);
+    if (info) {
+      genericParams.push(info.name);
+    }
+  }
+  return genericParams;
+}
+
 export function extractProperties(
   memberPaths: NodePath<t.TSPropertySignature>[],
   generatedTypes: t.TSTypeAliasDeclaration[],
@@ -135,7 +193,8 @@ export function extractProperties(
   assertSupportedType: (
     typePath: NodePath<t.TSType>,
     declaredTypeNames: Set<string>
-  ) => void
+  ) => void,
+  typeParameters: TypeParameter[] = []
 ): PropDescriptor[] {
   const props: PropDescriptor[] = [];
   const usedFieldNumbers = new Set<number>();
@@ -213,6 +272,18 @@ export function extractProperties(
       propTypePath,
       getMessageReferenceName
     );
+
+    // Detect generic type parameters
+    const genericParamInfo = getGenericParamInfo(propTypePath, typeParameters);
+    const unionGenericParams = extractUnionGenericParams(
+      propTypePath,
+      typeParameters
+    );
+    const isGenericParam = genericParamInfo !== null;
+    if (isGenericParam || unionGenericParams.length > 0) {
+      state.usesMessageConstructor = true;
+    }
+
     const isDateType = propTypePath.isTSTypeReference()
       && isDateReference(propTypePath.node);
     const isUrlType = propTypePath.isTSTypeReference()
@@ -375,6 +446,11 @@ export function extractProperties(
       setElementType: setArg,
       setElementInputType: setArg ? buildInputAcceptingMutable(setArg) : null,
       displayType,
+      // Generic type parameter tracking
+      isGenericParam,
+      genericParamName: genericParamInfo?.name ?? null,
+      genericParamIndex: genericParamInfo?.index ?? null,
+      unionGenericParams,
     });
   }
 

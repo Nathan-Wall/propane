@@ -1,11 +1,12 @@
 import * as t from '@babel/types';
-import type { PropDescriptor } from './properties.js';
+import type { PropDescriptor, TypeParameter } from './properties.js';
 
 export function buildTypeNamespace(
   typeAlias: t.TSTypeAliasDeclaration,
   properties: PropDescriptor[],
   exported: boolean,
-  generatedTypeNames: string[] = []
+  generatedTypeNames: string[] = [],
+  _typeParameters: TypeParameter[] = []
 ): t.ExportNamedDeclaration | t.TSModuleDeclaration {
   const namespaceId = t.identifier(typeAlias.id.name);
   const typeId = t.identifier('Data');

@@ -4,6 +4,7 @@ import { Email } from './email.propane';
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
+  static readonly $typeName = "Unions";
   static EMPTY: Unions;
   #username: string | null;
   #email: Email | null;
@@ -69,7 +70,7 @@ export class Unions extends Message<Unions.Data> {
       username: this.#username,
       email: value,
       metadata: this.#metadata
-    }, this.$listeners));
+    }));
   }
   setMetadata(value: {
     created: Date;
@@ -80,14 +81,14 @@ export class Unions extends Message<Unions.Data> {
       username: this.#username,
       email: this.#email,
       metadata: value
-    }, this.$listeners));
+    }));
   }
   setUsername(value: string | null): Unions {
     return this.$update(new Unions({
       username: value,
       email: this.#email,
       metadata: this.#metadata
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Unions {

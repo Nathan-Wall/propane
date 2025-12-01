@@ -5,6 +5,7 @@ export type DistanceUnit = 'm' | 'ft';
 export type DistanceUnitType = DistanceUnit;
 export class Distance extends Message<Distance.Data> {
   static TYPE_TAG = Symbol("Distance");
+  static readonly $typeName = "Distance";
   static EMPTY: Distance;
   #unit: DistanceUnit;
   #value: number;
@@ -47,13 +48,13 @@ export class Distance extends Message<Distance.Data> {
     return this.$update(new Distance({
       unit: value,
       value: this.#value
-    }, this.$listeners));
+    }));
   }
   setValue(value: number): Distance {
     return this.$update(new Distance({
       unit: this.#unit,
       value: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Distance {

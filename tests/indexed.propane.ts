@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
+  static readonly $typeName = "Indexed";
   static EMPTY: Indexed;
   #id: number;
   #name: string;
@@ -128,7 +129,7 @@ export class Indexed extends Message<Indexed.Data> {
       nickname: this.#nickname,
       score: this.#score,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   deleteNickname(): Indexed {
     return this.$update(new Indexed({
@@ -139,7 +140,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setActive(value: boolean): Indexed {
     return this.$update(new Indexed({
@@ -151,7 +152,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setAge(value: number): Indexed {
     return this.$update(new Indexed({
@@ -163,7 +164,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setAlias(value: string | null): Indexed {
     return this.$update(new Indexed({
@@ -175,7 +176,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: value,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setId(value: number): Indexed {
     return this.$update(new Indexed({
@@ -187,7 +188,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setName(value: string): Indexed {
     return this.$update(new Indexed({
@@ -199,7 +200,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setNickname(value: string): Indexed {
     return this.$update(new Indexed({
@@ -211,7 +212,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setScore(value: number | null): Indexed {
     return this.$update(new Indexed({
@@ -223,7 +224,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: value,
       alias: this.#alias,
       status: this.#status
-    }, this.$listeners));
+    }));
   }
   setStatus(value: string): Indexed {
     return this.$update(new Indexed({
@@ -235,7 +236,7 @@ export class Indexed extends Message<Indexed.Data> {
       score: this.#score,
       alias: this.#alias,
       status: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Indexed {

@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
+  static readonly $typeName = "UnionStringBool";
   static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;
@@ -45,19 +46,19 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   deleteOptional(): UnionStringBool {
     return this.$update(new UnionStringBool({
       value: this.#value
-    }, this.$listeners));
+    }));
   }
   setOptional(value: string | boolean): UnionStringBool {
     return this.$update(new UnionStringBool({
       value: this.#value,
       optional: value
-    }, this.$listeners));
+    }));
   }
   setValue(value: string | boolean): UnionStringBool {
     return this.$update(new UnionStringBool({
       value: value,
       optional: this.#optional
-    }, this.$listeners));
+    }));
   }
 }
 export namespace UnionStringBool {

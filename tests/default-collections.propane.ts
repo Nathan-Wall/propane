@@ -8,6 +8,7 @@ import { ImmutableSet } from '../runtime/common/set/immutable';
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, equals } from "@propanejs/runtime";
 export class DefaultCollections extends Message<DefaultCollections.Data> {
   static TYPE_TAG = Symbol("DefaultCollections");
+  static readonly $typeName = "DefaultCollections";
   static EMPTY: DefaultCollections;
   #arr: ImmutableArray<number>;
   #map: ImmutableMap<string, number>;
@@ -104,7 +105,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   addSet(value: string): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -116,7 +117,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   clearMap(): DefaultCollections {
     const mapCurrent = this.map;
@@ -129,7 +130,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   clearSet(): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -141,7 +142,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   copyWithinArr(target: number, start: number, end?: number): DefaultCollections {
     const arrArray = this.#arr;
@@ -151,7 +152,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   deleteAllSet(values: Iterable<string>): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -165,7 +166,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   deleteMapEntry(key: string): DefaultCollections {
     const mapCurrent = this.map;
@@ -178,7 +179,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   deleteSet(value: string): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -190,7 +191,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   fillArr(value: number, start?: number, end?: number): DefaultCollections {
     const arrArray = this.#arr;
@@ -200,7 +201,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   filterMapEntries(predicate: (value: number, key: string) => boolean): DefaultCollections {
     const mapMapSource = this.#map;
@@ -214,7 +215,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   filterSet(predicate: (value) => boolean): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -233,7 +234,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   mapMapEntries(mapper: (value: number, key: string) => [string, number]): DefaultCollections {
     const mapMapSource = this.#map;
@@ -253,7 +254,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   mapSet(mapper: (value) => string): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -273,7 +274,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
   mergeMapEntries(entries: Iterable<[string, number]> | ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): DefaultCollections {
     const mapMapSource = this.#map;
@@ -287,7 +288,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   popArr(): DefaultCollections {
     if ((this.arr ?? []).length === 0) return this;
@@ -298,7 +299,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   pushArr(...values): DefaultCollections {
     if (values.length === 0) return this;
@@ -308,7 +309,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   reverseArr(): DefaultCollections {
     const arrArray = this.#arr;
@@ -318,21 +319,21 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   setArr(value: number[] | Iterable<number>): DefaultCollections {
     return this.$update(new DefaultCollections({
       arr: value,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   setMap(value: Map<string, number> | Iterable<[string, number]>): DefaultCollections {
     return this.$update(new DefaultCollections({
       arr: this.#arr,
       map: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   setMapEntry(key: string, value: number): DefaultCollections {
     const mapCurrent = this.map;
@@ -348,14 +349,14 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   setSet(value: Set<string> | Iterable<string>): DefaultCollections {
     return this.$update(new DefaultCollections({
       arr: this.#arr,
       map: this.#map,
       set: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value)
-    }, this.$listeners));
+    }));
   }
   shiftArr(): DefaultCollections {
     if ((this.arr ?? []).length === 0) return this;
@@ -366,7 +367,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   sortArr(compareFn?: (a: number, b: number) => number): DefaultCollections {
     const arrArray = this.#arr;
@@ -376,7 +377,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   spliceArr(start: number, deleteCount?: number, ...items): DefaultCollections {
     const arrArray = this.#arr;
@@ -386,7 +387,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   unshiftArr(...values): DefaultCollections {
     if (values.length === 0) return this;
@@ -396,7 +397,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext,
       map: this.#map,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): DefaultCollections {
     const mapMapSource = this.#map;
@@ -410,7 +411,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: mapMapNext,
       set: this.#set
-    }, this.$listeners));
+    }));
   }
   updateSet(updater: (current: ImmutableSet<string>) => Iterable<string>): DefaultCollections {
     const setSetSource = this.set ?? [];
@@ -426,7 +427,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr,
       map: this.#map,
       set: setSetNext
-    }, this.$listeners));
+    }));
   }
 }
 export namespace DefaultCollections {

@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "@propanejs/runtime";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
+  static readonly $typeName = "UrlMessage";
   static EMPTY: UrlMessage;
   #id: number;
   #primary: ImmutableUrl;
@@ -94,14 +95,14 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   deleteSecondary(): UrlMessage {
     return this.$update(new UrlMessage({
       id: this.#id,
       primary: this.#primary,
       links: this.#links
-    }, this.$listeners));
+    }));
   }
   fillLinks(value: URL, start?: number, end?: number): UrlMessage {
     const linksArray = this.#links;
@@ -112,7 +113,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   popLinks(): UrlMessage {
     if ((this.links ?? []).length === 0) return this;
@@ -124,7 +125,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   pushLinks(...values): UrlMessage {
     if (values.length === 0) return this;
@@ -135,7 +136,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   reverseLinks(): UrlMessage {
     const linksArray = this.#links;
@@ -146,7 +147,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   setId(value: number): UrlMessage {
     return this.$update(new UrlMessage({
@@ -154,7 +155,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: this.#links
-    }, this.$listeners));
+    }));
   }
   setLinks(value: URL[] | Iterable<URL>): UrlMessage {
     return this.$update(new UrlMessage({
@@ -162,7 +163,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: value
-    }, this.$listeners));
+    }));
   }
   setPrimary(value: ImmutableUrl | URL): UrlMessage {
     return this.$update(new UrlMessage({
@@ -170,7 +171,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: value,
       secondary: this.#secondary,
       links: this.#links
-    }, this.$listeners));
+    }));
   }
   setSecondary(value: ImmutableUrl | URL): UrlMessage {
     return this.$update(new UrlMessage({
@@ -178,7 +179,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: value,
       links: this.#links
-    }, this.$listeners));
+    }));
   }
   shiftLinks(): UrlMessage {
     if ((this.links ?? []).length === 0) return this;
@@ -190,7 +191,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   sortLinks(compareFn?: (a: URL, b: URL) => number): UrlMessage {
     const linksArray = this.#links;
@@ -201,7 +202,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   spliceLinks(start: number, deleteCount?: number, ...items): UrlMessage {
     const linksArray = this.#links;
@@ -212,7 +213,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
   unshiftLinks(...values): UrlMessage {
     if (values.length === 0) return this;
@@ -223,7 +224,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary,
       secondary: this.#secondary,
       links: linksNext
-    }, this.$listeners));
+    }));
   }
 }
 export namespace UrlMessage {

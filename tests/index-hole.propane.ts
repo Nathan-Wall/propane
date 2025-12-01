@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Hole extends Message<Hole.Data> {
   static TYPE_TAG = Symbol("Hole");
+  static readonly $typeName = "Hole";
   static EMPTY: Hole;
   #id: number;
   #value: number;
@@ -60,21 +61,21 @@ export class Hole extends Message<Hole.Data> {
       id: value,
       value: this.#value,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
   setName(value: string): Hole {
     return this.$update(new Hole({
       id: this.#id,
       value: this.#value,
       name: value
-    }, this.$listeners));
+    }));
   }
   setValue(value: number): Hole {
     return this.$update(new Hole({
       id: this.#id,
       value: value,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Hole {

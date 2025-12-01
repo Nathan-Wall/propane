@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
+  static readonly $typeName = "StringFirst";
   static EMPTY: StringFirst;
   #value: string | number;
   constructor(props?: StringFirst.Value) {
@@ -32,7 +33,7 @@ export class StringFirst extends Message<StringFirst.Data> {
   setValue(value: string | number): StringFirst {
     return this.$update(new StringFirst({
       value: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace StringFirst {
@@ -43,6 +44,7 @@ export namespace StringFirst {
 }
 export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
+  static readonly $typeName = "NumberFirst";
   static EMPTY: NumberFirst;
   #value: number | string;
   constructor(props?: NumberFirst.Value) {
@@ -72,7 +74,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   setValue(value: number | string): NumberFirst {
     return this.$update(new NumberFirst({
       value: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace NumberFirst {

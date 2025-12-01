@@ -1,10 +1,75 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
-import { extractProperties } from './properties.js';
+import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
 import { buildClassFromProperties } from './class-builder.js';
 import type { PropaneState } from './plugin.js';
+
+/**
+ * Extract and validate type parameters from a TSTypeParameterDeclaration.
+ * Returns an array of TypeParameter objects with name and constraint.
+ * Throws an error if a type parameter doesn't have an `extends Message` constraint.
+ */
+function extractTypeParameters(
+  typeParams: t.TSTypeParameterDeclaration | null | undefined,
+  declaredMessageTypeNames: Set<string>
+): TypeParameter[] {
+  if (!typeParams) {
+    return [];
+  }
+
+  return typeParams.params.map((param) => {
+    const name = param.name;
+
+    // Validate that the type parameter has a constraint
+    if (!param.constraint) {
+      throw new Error(
+        `Generic type parameter "${name}" must have an "extends Message" constraint. ` +
+        `Example: ${name} extends Message`
+      );
+    }
+
+    if (!t.isTSTypeReference(param.constraint)) {
+      throw new Error(
+        `Generic type parameter "${name}" constraint must be a type reference (extends Message or a message type).`
+      );
+    }
+
+    let constraint: string;
+    if (t.isIdentifier(param.constraint.typeName)) {
+      constraint = param.constraint.typeName.name;
+    } else if (t.isTSQualifiedName(param.constraint.typeName)) {
+      // Handle qualified names like Namespace.Type
+      constraint = getQualifiedName(param.constraint.typeName);
+    } else {
+      throw new Error(
+        `Generic type parameter "${name}" has an invalid constraint.`
+      );
+    }
+
+    // Validate that the constraint is Message or a declared message type
+    const baseConstraint = constraint.split('.')[0];
+    if (baseConstraint !== 'Message' && !declaredMessageTypeNames.has(baseConstraint)) {
+      throw new Error(
+        `Generic type parameter "${name}" must extend Message or a message type, ` +
+        `but extends "${constraint}".`
+      );
+    }
+
+    return { name, constraint };
+  });
+}
+
+/**
+ * Get the full name of a qualified type name.
+ */
+function getQualifiedName(typeName: t.TSQualifiedName): string {
+  if (t.isIdentifier(typeName.left)) {
+    return `${typeName.left.name}.${typeName.right.name}`;
+  }
+  return `${getQualifiedName(typeName.left)}.${typeName.right.name}`;
+}
 
 export const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
 
@@ -42,6 +107,32 @@ export function buildDeclarations(
     return null;
   }
 
+  // Extract type parameters (e.g., T, U from Container<T extends Message, U extends Message>)
+  const typeParameters = extractTypeParameters(
+    typeAlias.typeParameters,
+    declaredMessageTypeNames
+  );
+
+  // Create a set of type parameter names for validation
+  const typeParamNames = new Set(typeParameters.map((p) => p.name));
+
+  // Create a wrapper for assertSupportedType that includes type parameters
+  const assertSupportedTypeWithGenerics = (
+    typePath: NodePath<t.TSType>,
+    declared: Set<string>
+  ) => {
+    // Check if the type is a generic type parameter
+    if (typePath.isTSTypeReference()) {
+      const typeName = typePath.node.typeName;
+      if (t.isIdentifier(typeName) && typeParamNames.has(typeName.name)) {
+        // This is a generic type parameter reference, which is allowed
+        return;
+      }
+    }
+    // Fall back to standard validation
+    assertSupportedType(typePath, declared);
+  };
+
   const generatedTypes: t.TSTypeAliasDeclaration[] = [];
   const memberPaths = typeLiteralPath.get('members').filter(
     (m): m is NodePath<t.TSPropertySignature> => m.isTSPropertySignature()
@@ -54,7 +145,8 @@ export function buildDeclarations(
     declaredTypeNames,
     declaredMessageTypeNames,
     getMessageReferenceName,
-    assertSupportedType
+    assertSupportedTypeWithGenerics,
+    typeParameters
   );
   if (properties.some((prop) => prop.isMap)) {
     state.usesImmutableMap = true;
@@ -80,13 +172,15 @@ export function buildDeclarations(
     typeAlias,
     properties,
     exported,
-    generatedTypeNames
+    generatedTypeNames,
+    typeParameters
   );
   const classDecl = buildClassFromProperties(
     typeAlias.id.name,
     properties,
     declaredMessageTypeNames,
-    state
+    state,
+    typeParameters
   );
 
   state.usesPropaneBase = true;

@@ -6,6 +6,7 @@ import { Hash } from './hash.propane';
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
+  static readonly $typeName = "User";
   static EMPTY: User;
   #id: number;
   #name: string;
@@ -166,7 +167,7 @@ export class User extends Message<User.Data> {
       active: value,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setCreated(value: ImmutableDate | Date): User {
     return this.$update(new User({
@@ -179,7 +180,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setEmail(value: Email): User {
     return this.$update(new User({
@@ -192,7 +193,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel'): User {
     return this.$update(new User({
@@ -205,7 +206,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: value,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setHeight(value: Distance.Value): User {
     return this.$update(new User({
@@ -218,7 +219,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: value instanceof Distance ? value : new Distance(value)
-    }, this.$listeners));
+    }));
   }
   setId(value: number): User {
     return this.$update(new User({
@@ -231,7 +232,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setName(value: string): User {
     return this.$update(new User({
@@ -244,7 +245,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setPasswordHash(value: Hash): User {
     return this.$update(new User({
@@ -257,7 +258,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
   setUpdated(value: ImmutableDate | Date): User {
     return this.$update(new User({
@@ -270,7 +271,7 @@ export class User extends Message<User.Data> {
       active: this.#active,
       eyeColor: this.#eyeColor,
       height: this.#height
-    }, this.$listeners));
+    }));
   }
 }
 export namespace User {

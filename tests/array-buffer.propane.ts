@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "@propanejs/runtime";
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
+  static readonly $typeName = "ArrayBufferMessage";
   static EMPTY: ArrayBufferMessage;
   #id: number;
   #data: ImmutableArrayBuffer;
@@ -96,14 +97,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   deleteExtra(): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
       id: this.#id,
       data: this.#data,
       chunks: this.#chunks
-    }, this.$listeners));
+    }));
   }
   fillChunks(value: ArrayBuffer, start?: number, end?: number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -114,7 +115,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   popChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
@@ -126,7 +127,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   pushChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
@@ -137,7 +138,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   reverseChunks(): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -148,7 +149,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -156,7 +157,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: value
-    }, this.$listeners));
+    }));
   }
   setData(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -164,7 +165,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: value,
       extra: this.#extra,
       chunks: this.#chunks
-    }, this.$listeners));
+    }));
   }
   setExtra(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -172,7 +173,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: value,
       chunks: this.#chunks
-    }, this.$listeners));
+    }));
   }
   setId(value: number): ArrayBufferMessage {
     return this.$update(new ArrayBufferMessage({
@@ -180,7 +181,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: this.#chunks
-    }, this.$listeners));
+    }));
   }
   shiftChunks(): ArrayBufferMessage {
     if ((this.chunks ?? []).length === 0) return this;
@@ -192,7 +193,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -203,7 +204,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   spliceChunks(start: number, deleteCount?: number, ...items): ArrayBufferMessage {
     const chunksArray = this.#chunks;
@@ -214,7 +215,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
   unshiftChunks(...values): ArrayBufferMessage {
     if (values.length === 0) return this;
@@ -225,7 +226,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       data: this.#data,
       extra: this.#extra,
       chunks: chunksNext
-    }, this.$listeners));
+    }));
   }
 }
 export namespace ArrayBufferMessage {

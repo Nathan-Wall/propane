@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
+  static readonly $typeName = "OptionalHole";
   static EMPTY: OptionalHole;
   #id: number;
   #created: ImmutableDate;
@@ -73,7 +74,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       id: this.#id,
       created: this.#created,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
   setCreated(value: ImmutableDate | Date): OptionalHole {
     return this.$update(new OptionalHole({
@@ -81,7 +82,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: value,
       note: this.#note,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
   setId(value: number): OptionalHole {
     return this.$update(new OptionalHole({
@@ -89,7 +90,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: this.#created,
       note: this.#note,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
   setName(value: string): OptionalHole {
     return this.$update(new OptionalHole({
@@ -97,7 +98,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: this.#created,
       note: this.#note,
       name: value
-    }, this.$listeners));
+    }));
   }
   setNote(value: string): OptionalHole {
     return this.$update(new OptionalHole({
@@ -105,7 +106,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: this.#created,
       note: value,
       name: this.#name
-    }, this.$listeners));
+    }));
   }
 }
 export namespace OptionalHole {

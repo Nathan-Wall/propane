@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class ObjectOnly extends Message<ObjectOnly.Data> {
   static TYPE_TAG = Symbol("ObjectOnly");
+  static readonly $typeName = "ObjectOnly";
   static EMPTY: ObjectOnly;
   #id: number;
   #name: string;
@@ -74,7 +75,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: this.#age,
       active: value
-    }, this.$listeners));
+    }));
   }
   setAge(value: number): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -82,7 +83,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: value,
       active: this.#active
-    }, this.$listeners));
+    }));
   }
   setId(value: number): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -90,7 +91,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: this.#name,
       age: this.#age,
       active: this.#active
-    }, this.$listeners));
+    }));
   }
   setName(value: string): ObjectOnly {
     return this.$update(new ObjectOnly({
@@ -98,7 +99,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       name: value,
       age: this.#age,
       active: this.#active
-    }, this.$listeners));
+    }));
   }
 }
 export namespace ObjectOnly {

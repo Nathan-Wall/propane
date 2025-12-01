@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
+  static readonly $typeName = "Wrapper";
   static EMPTY: Wrapper;
   #payload: bigint | {
     id: bigint;
@@ -38,7 +39,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }): Wrapper {
     return this.$update(new Wrapper({
       payload: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Wrapper {

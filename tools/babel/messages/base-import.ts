@@ -58,6 +58,51 @@ export function ensureBaseImport(
   if (state.usesTaggedMessageData) {
     requiredSpecifiers.push('isTaggedMessageData');
   }
+  // MessageConstructor is a type-only import - add a separate type import if needed
+  if (state.usesMessageConstructor && !hasImportBinding('MessageConstructor')) {
+    // Check if type import already exists
+    const existingTypeImport = program.body.find(
+      (stmt): stmt is t.ImportDeclaration =>
+        t.isImportDeclaration(stmt)
+        && stmt.source.value === MESSAGE_SOURCE
+        && stmt.importKind === 'type'
+    );
+
+    if (existingTypeImport) {
+      // Add to existing type import
+      const existingSpecifiers = new Set(
+        existingTypeImport.specifiers
+          .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
+          .map((spec) =>
+            t.isIdentifier(spec.imported)
+              ? spec.imported.name
+              : spec.imported.value
+          )
+      );
+      if (!existingSpecifiers.has('MessageConstructor')) {
+        existingTypeImport.specifiers.push(
+          t.importSpecifier(t.identifier('MessageConstructor'), t.identifier('MessageConstructor'))
+        );
+      }
+    } else {
+      // Create new type-only import
+      const typeImportDecl = t.importDeclaration(
+        [t.importSpecifier(t.identifier('MessageConstructor'), t.identifier('MessageConstructor'))],
+        t.stringLiteral(MESSAGE_SOURCE)
+      );
+      typeImportDecl.importKind = 'type';
+
+      // Insert at the beginning with other imports
+      const insertionIndex = program.body.findIndex(
+        (stmt) => !t.isImportDeclaration(stmt)
+      );
+      if (insertionIndex === -1) {
+        program.body.push(typeImportDecl);
+      } else {
+        program.body.splice(insertionIndex, 0, typeImportDecl);
+      }
+    }
+  }
 
   if (existingImport) {
     const existingSpecifiers = new Set(

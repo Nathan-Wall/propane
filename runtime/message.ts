@@ -99,11 +99,21 @@ export interface MessagePropDescriptor<T extends object> {
   unionMessageTypes?: string[];
 }
 
+/**
+ * Interface for generic message constructors.
+ * Used when passing constructors to generic message classes.
+ */
+export interface MessageConstructor<T extends Message<DataObject>> {
+  new (props: unknown): T;
+  deserialize(data: string): T;
+  readonly $typeName: string;
+}
+
 type MessageFromEntries<T extends DataObject> = Message<T> & {
   $fromEntries(entries: Record<string, unknown>): T;
 };
 
-interface MessageConstructor<T extends DataObject> {
+interface InternalMessageConstructor<T extends DataObject> {
   new(props: T): Message<T>;
   prototype: MessageFromEntries<T>;
 }
@@ -503,7 +513,7 @@ export abstract class Message<T extends DataObject> {
   }
 
   static deserialize<T extends DataObject>(
-    this: MessageConstructor<T>,
+    this: InternalMessageConstructor<T>,
     message: string
   ): Message<T> {
     const payload = parseCerealString(message);

@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray } from "@propanejs/runtime";
 export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
+  static readonly $typeName = "ArrayMessage_Labels_Item";
   static EMPTY: ArrayMessage_Labels_Item;
   #name: string;
   constructor(props?: ArrayMessage_Labels_Item.Value) {
@@ -32,7 +33,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   setName(value: string): ArrayMessage_Labels_Item {
     return this.$update(new ArrayMessage_Labels_Item({
       name: value
-    }, this.$listeners));
+    }));
   }
 }
 export namespace ArrayMessage_Labels_Item {
@@ -43,6 +44,7 @@ export namespace ArrayMessage_Labels_Item {
 }
 export class ArrayMessage extends Message<ArrayMessage.Data> {
   static TYPE_TAG = Symbol("ArrayMessage");
+  static readonly $typeName = "ArrayMessage";
   static EMPTY: ArrayMessage;
   #names: ImmutableArray<string>;
   #scores: ImmutableArray<number>;
@@ -161,7 +163,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   copyWithinLabels(target: number, start: number, end?: number): ArrayMessage {
     const labelsArray = this.#labels;
@@ -172,7 +174,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   copyWithinNames(target: number, start: number, end?: number): ArrayMessage {
     const namesArray = this.#names;
@@ -183,7 +185,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   copyWithinScores(target: number, start: number, end?: number): ArrayMessage {
     const scoresArray = this.#scores;
@@ -194,14 +196,14 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   deleteFlags(): ArrayMessage {
     return this.$update(new ArrayMessage({
       names: this.#names,
       scores: this.#scores,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   fillFlags(value: boolean, start?: number, end?: number): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -212,7 +214,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   fillLabels(value: ArrayMessage_Labels_Item, start?: number, end?: number): ArrayMessage {
     const labelsArray = this.#labels;
@@ -223,7 +225,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   fillNames(value: string, start?: number, end?: number): ArrayMessage {
     const namesArray = this.#names;
@@ -234,7 +236,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   fillScores(value: number, start?: number, end?: number): ArrayMessage {
     const scoresArray = this.#scores;
@@ -245,7 +247,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   popFlags(): ArrayMessage {
     if ((this.flags ?? []).length === 0) return this;
@@ -257,7 +259,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   popLabels(): ArrayMessage {
     if ((this.labels ?? []).length === 0) return this;
@@ -269,7 +271,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   popNames(): ArrayMessage {
     if ((this.names ?? []).length === 0) return this;
@@ -281,7 +283,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   popScores(): ArrayMessage {
     if ((this.scores ?? []).length === 0) return this;
@@ -293,7 +295,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   pushFlags(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -304,7 +306,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   pushLabels(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -315,7 +317,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   pushNames(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -326,7 +328,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   pushScores(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -337,7 +339,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   reverseFlags(): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -348,7 +350,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   reverseLabels(): ArrayMessage {
     const labelsArray = this.#labels;
@@ -359,7 +361,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   reverseNames(): ArrayMessage {
     const namesArray = this.#names;
@@ -370,7 +372,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   reverseScores(): ArrayMessage {
     const scoresArray = this.#scores;
@@ -381,7 +383,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   setFlags(value: boolean[] | Iterable<boolean>): ArrayMessage {
     return this.$update(new ArrayMessage({
@@ -389,7 +391,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: value,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   setLabels(value: ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>): ArrayMessage {
     return this.$update(new ArrayMessage({
@@ -397,7 +399,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: value
-    }, this.$listeners));
+    }));
   }
   setNames(value: string[] | Iterable<string>): ArrayMessage {
     return this.$update(new ArrayMessage({
@@ -405,7 +407,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   setScores(value: number[] | Iterable<number>): ArrayMessage {
     return this.$update(new ArrayMessage({
@@ -413,7 +415,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: value,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   shiftFlags(): ArrayMessage {
     if ((this.flags ?? []).length === 0) return this;
@@ -425,7 +427,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   shiftLabels(): ArrayMessage {
     if ((this.labels ?? []).length === 0) return this;
@@ -437,7 +439,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   shiftNames(): ArrayMessage {
     if ((this.names ?? []).length === 0) return this;
@@ -449,7 +451,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   shiftScores(): ArrayMessage {
     if ((this.scores ?? []).length === 0) return this;
@@ -461,7 +463,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   sortFlags(compareFn?: (a: boolean, b: boolean) => number): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -472,7 +474,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   sortLabels(compareFn?: (a: ArrayMessage_Labels_Item, b: ArrayMessage_Labels_Item) => number): ArrayMessage {
     const labelsArray = this.#labels;
@@ -483,7 +485,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   sortNames(compareFn?: (a: string, b: string) => number): ArrayMessage {
     const namesArray = this.#names;
@@ -494,7 +496,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   sortScores(compareFn?: (a: number, b: number) => number): ArrayMessage {
     const scoresArray = this.#scores;
@@ -505,7 +507,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   spliceFlags(start: number, deleteCount?: number, ...items): ArrayMessage {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -516,7 +518,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   spliceLabels(start: number, deleteCount?: number, ...items): ArrayMessage {
     const labelsArray = this.#labels;
@@ -527,7 +529,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   spliceNames(start: number, deleteCount?: number, ...items): ArrayMessage {
     const namesArray = this.#names;
@@ -538,7 +540,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   spliceScores(start: number, deleteCount?: number, ...items): ArrayMessage {
     const scoresArray = this.#scores;
@@ -549,7 +551,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   unshiftFlags(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -560,7 +562,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: flagsNext,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   unshiftLabels(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -571,7 +573,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: labelsNext
-    }, this.$listeners));
+    }));
   }
   unshiftNames(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -582,7 +584,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
   unshiftScores(...values): ArrayMessage {
     if (values.length === 0) return this;
@@ -593,7 +595,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext,
       flags: this.#flags,
       labels: this.#labels
-    }, this.$listeners));
+    }));
   }
 }
 export namespace ArrayMessage {

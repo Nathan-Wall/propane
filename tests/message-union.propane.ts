@@ -3,6 +3,7 @@
 import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "@propanejs/runtime";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
+  static readonly $typeName = "Cat";
   static EMPTY: Cat;
   #name: string;
   #meows: boolean;
@@ -46,13 +47,13 @@ export class Cat extends Message<Cat.Data> {
     return this.$update(new Cat({
       name: this.#name,
       meows: value
-    }, this.$listeners));
+    }));
   }
   setName(value: string): Cat {
     return this.$update(new Cat({
       name: value,
       meows: this.#meows
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Cat {
@@ -64,6 +65,7 @@ export namespace Cat {
 }
 export class Dog extends Message<Dog.Data> {
   static TYPE_TAG = Symbol("Dog");
+  static readonly $typeName = "Dog";
   static EMPTY: Dog;
   #name: string;
   #barks: boolean;
@@ -107,13 +109,13 @@ export class Dog extends Message<Dog.Data> {
     return this.$update(new Dog({
       name: this.#name,
       barks: value
-    }, this.$listeners));
+    }));
   }
   setName(value: string): Dog {
     return this.$update(new Dog({
       name: value,
       barks: this.#barks
-    }, this.$listeners));
+    }));
   }
 }
 export namespace Dog {
@@ -125,6 +127,7 @@ export namespace Dog {
 }
 export class PetOwner extends Message<PetOwner.Data> {
   static TYPE_TAG = Symbol("PetOwner");
+  static readonly $typeName = "PetOwner";
   static EMPTY: PetOwner;
   #ownerName: string;
   #pet: Cat | Dog;
@@ -201,28 +204,28 @@ export class PetOwner extends Message<PetOwner.Data> {
     return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: this.#pet
-    }, this.$listeners));
+    }));
   }
   setOptionalPet(value: Cat | Dog): PetOwner {
     return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: this.#pet,
       optionalPet: value
-    }, this.$listeners));
+    }));
   }
   setOwnerName(value: string): PetOwner {
     return this.$update(new PetOwner({
       ownerName: value,
       pet: this.#pet,
       optionalPet: this.#optionalPet
-    }, this.$listeners));
+    }));
   }
   setPet(value: Cat | Dog): PetOwner {
     return this.$update(new PetOwner({
       ownerName: this.#ownerName,
       pet: value,
       optionalPet: this.#optionalPet
-    }, this.$listeners));
+    }));
   }
 }
 export namespace PetOwner {
