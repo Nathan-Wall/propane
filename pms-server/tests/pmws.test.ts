@@ -1,7 +1,8 @@
 /**
  * Integration tests for PMWS (Propane Messages over WebSockets).
  */
-
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { PmsServer, HandlerError, WsTransport } from '@propanejs/pms-server';
 import { PmwsClient, PmwsConnectionError } from '@propanejs/pms-client';
 import {
@@ -11,33 +12,8 @@ import {
   AddResponse,
 } from './messages.js';
 
-// Test utilities
-function assert(condition: boolean, message: string): void {
-  if (!condition) {
-    throw new Error(`Assertion failed: ${message}`);
-  }
-}
-
-async function runTests(): Promise<void> {
-  console.log('Running PMWS tests...\n');
-
-  let passed = 0;
-  let failed = 0;
-
-  async function test(name: string, fn: () => Promise<void>): Promise<void> {
-    try {
-      await fn();
-      console.log(`✓ ${name}`);
-      passed++;
-    } catch (error) {
-      console.log(`✗ ${name}`);
-      console.log(`  Error: ${error instanceof Error ? error.message : String(error)}`);
-      failed++;
-    }
-  }
-
-  // Test: Server can be created with WebSocket transport
-  await test('Server can be created with WebSocket transport', async () => {
+describe('PMWS Server', () => {
+  it('can be created with WebSocket transport', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
@@ -45,12 +21,11 @@ async function runTests(): Promise<void> {
     });
 
     await server.listen({ transport });
-    assert(transport.port !== undefined, 'Server should have a port');
+    assert.ok(transport.port !== undefined, 'Server should have a port');
     await server.close();
   });
 
-  // Test: WebSocket echo request/response
-  await test('WebSocket echo request/response works', async () => {
+  it('handles WebSocket echo request/response', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
@@ -68,15 +43,14 @@ async function runTests(): Promise<void> {
       EchoResponse
     );
 
-    assert(response.echo === 'Echo: Hello, PMWS!', `Expected echo message, got: ${response.echo}`);
-    assert(response.timestamp === 12_345, `Expected timestamp 12345, got: ${response.timestamp}`);
+    assert.strictEqual(response.echo, 'Echo: Hello, PMWS!');
+    assert.strictEqual(response.timestamp, 12_345);
 
-    await client.close();
+    client.close();
     await server.close();
   });
 
-  // Test: Multiple calls on same connection
-  await test('Multiple calls on same connection work', async () => {
+  it('supports multiple calls on same connection', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(AddRequest, (req: AddRequest) => {
@@ -89,31 +63,29 @@ async function runTests(): Promise<void> {
     const client = new PmwsClient({ url: `ws://localhost:${port}` });
     await client.connect();
 
-    // Make multiple calls on same connection
     const response1 = await client.request(
       new AddRequest({ a: 1, b: 2 }),
       AddResponse
     );
-    assert(response1.sum === 3, `Expected sum 3, got: ${response1.sum}`);
+    assert.strictEqual(response1.sum, 3);
 
     const response2 = await client.request(
       new AddRequest({ a: 10, b: 20 }),
       AddResponse
     );
-    assert(response2.sum === 30, `Expected sum 30, got: ${response2.sum}`);
+    assert.strictEqual(response2.sum, 30);
 
     const response3 = await client.request(
       new AddRequest({ a: 100, b: 200 }),
       AddResponse
     );
-    assert(response3.sum === 300, `Expected sum 300, got: ${response3.sum}`);
+    assert.strictEqual(response3.sum, 300);
 
-    await client.close();
+    client.close();
     await server.close();
   });
 
-  // Test: Concurrent requests
-  await test('Concurrent requests work', async () => {
+  it('handles concurrent requests', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(AddRequest, async (req: AddRequest) => {
@@ -135,16 +107,15 @@ async function runTests(): Promise<void> {
       client.request(new AddRequest({ a: 3, b: 3 }), AddResponse),
     ]);
 
-    assert(r1.sum === 2, `Expected sum 2, got: ${r1.sum}`);
-    assert(r2.sum === 4, `Expected sum 4, got: ${r2.sum}`);
-    assert(r3.sum === 6, `Expected sum 6, got: ${r3.sum}`);
+    assert.strictEqual(r1.sum, 2);
+    assert.strictEqual(r2.sum, 4);
+    assert.strictEqual(r3.sum, 6);
 
-    await client.close();
+    client.close();
     await server.close();
   });
 
-  // Test: Handler errors are propagated
-  await test('Handler errors are propagated', async () => {
+  it('propagates handler errors', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(EchoRequest, (): EchoResponse => {
@@ -157,22 +128,21 @@ async function runTests(): Promise<void> {
     const client = new PmwsClient({ url: `ws://localhost:${port}` });
     await client.connect();
 
-    try {
-      await client.request(new EchoRequest({ message: 'fail' }), EchoResponse);
-      assert(false, 'Should have thrown an error');
-    } catch (error) {
-      assert(
-        error instanceof Error && error.message.includes('test error'),
-        `Expected error message to contain 'test error', got: ${String(error)}`
-      );
-    }
+    await assert.rejects(
+      async () => {
+        await client.request(new EchoRequest({ message: 'fail' }), EchoResponse);
+      },
+      (error: Error) => {
+        return error.message.toLowerCase().includes('test error');
+      },
+      'Should throw error containing "test error"'
+    );
 
-    await client.close();
+    client.close();
     await server.close();
   });
 
-  // Test: Auto-connect on first call
-  await test('Auto-connect on first call works', async () => {
+  it('auto-connects on first call', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
@@ -190,36 +160,32 @@ async function runTests(): Promise<void> {
       EchoResponse
     );
 
-    assert(response.echo === 'auto', `Expected echo 'auto', got: ${response.echo}`);
-    assert(client.connected, 'Client should be connected');
+    assert.strictEqual(response.echo, 'auto');
+    assert.ok(client.connected, 'Client should be connected');
 
-    await client.close();
+    client.close();
     await server.close();
   });
 
-  // Test: Connection error handling
-  await test('Connection error is thrown for invalid server', async () => {
+  it('throws connection error for invalid server', async () => {
     const client = new PmwsClient({
       url: 'ws://localhost:59999', // Unlikely to be in use
       connectTimeout: 500,
       autoReconnect: false,
     });
 
-    try {
-      await client.connect();
-      assert(false, 'Should have thrown a connection error');
-    } catch (error) {
-      assert(
-        error instanceof PmwsConnectionError,
-        `Expected PmwsConnectionError, got: ${String(error)}`
-      );
-    }
+    await assert.rejects(
+      async () => {
+        await client.connect();
+      },
+      PmwsConnectionError,
+      'Expected PmwsConnectionError'
+    );
 
-    await client.close();
+    client.close();
   });
 
-  // Test: Client count
-  await test('Server tracks connected clients', async () => {
+  it('tracks connected clients', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
@@ -229,38 +195,26 @@ async function runTests(): Promise<void> {
     await server.listen({ transport });
     const port = transport.port!;
 
-    assert(transport.clientCount === 0, 'Should start with 0 clients');
+    assert.strictEqual(transport.clientCount, 0, 'Should start with 0 clients');
 
     const client1 = new PmwsClient({ url: `ws://localhost:${port}` });
     await client1.connect();
 
     // Give the server a moment to register the connection
     await new Promise(resolve => setTimeout(resolve, 50));
-    assert(transport.clientCount === 1, `Expected 1 client, got: ${transport.clientCount}`);
+    assert.strictEqual(transport.clientCount, 1, 'Expected 1 client');
 
     const client2 = new PmwsClient({ url: `ws://localhost:${port}` });
     await client2.connect();
 
     await new Promise(resolve => setTimeout(resolve, 50));
-    assert(transport.clientCount === 2, `Expected 2 clients, got: ${transport.clientCount}`);
+    assert.strictEqual(transport.clientCount, 2, 'Expected 2 clients');
 
-    await client1.close();
+    client1.close();
     await new Promise(resolve => setTimeout(resolve, 50));
-    assert(transport.clientCount === 1, `Expected 1 client after close, got: ${transport.clientCount}`);
+    assert.strictEqual(transport.clientCount, 1, 'Expected 1 client after close');
 
-    await client2.close();
+    client2.close();
     await server.close();
   });
-
-  // Summary
-  console.log(`\n${passed} passed, ${failed} failed`);
-
-  if (failed > 0) {
-    process.exit(1);
-  }
-}
-
-runTests().catch((error) => {
-  console.error('Test runner error:', error);
-  process.exit(1);
 });

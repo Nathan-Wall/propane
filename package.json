@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "build": "tsc && node scripts/post-build.js",
-    "test": "node scripts/build-fixtures.js && node build/tests/run-tests.js",
+    "test": "node scripts/build-fixtures.js && node --test 'build/**/*.test.js'",
     "lint": "eslint .",
     "propane:compile": "node scripts/propane-compiler.js",
     "prepublishOnly": "npm run build",

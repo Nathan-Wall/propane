@@ -1,9 +1,9 @@
 /**
  * Integration tests for PMS (Propane Message System).
  */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { HttpTransport} from '@propanejs/pms-server';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
+import type { HttpTransport } from '@propanejs/pms-server';
 import { PmsServer, HandlerError, Response } from '@propanejs/pms-server';
 import { PmsClient } from '@propanejs/pms-client';
 import {
@@ -13,33 +13,8 @@ import {
   AddResponse,
 } from './messages.js';
 
-// Test utilities
-function assert(condition: boolean, message: string): void {
-  if (!condition) {
-    throw new Error(`Assertion failed: ${message}`);
-  }
-}
-
-async function runTests(): Promise<void> {
-  console.log('Running PMS tests...\n');
-
-  let passed = 0;
-  let failed = 0;
-
-  async function test(name: string, fn: () => Promise<void>): Promise<void> {
-    try {
-      await fn();
-      console.log(`✓ ${name}`);
-      passed++;
-    } catch (error) {
-      console.log(`✗ ${name}`);
-      console.log(`  Error: ${error instanceof Error ? error.message : String(error)}`);
-      failed++;
-    }
-  }
-
-  // Test: Server can be created and started
-  await test('Server can be created and started', async () => {
+describe('PMS Server', () => {
+  it('can be created and started', async () => {
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
       return new EchoResponse({ echo: req.message, timestamp: Date.now() });
@@ -47,12 +22,11 @@ async function runTests(): Promise<void> {
 
     await server.listen({ port: 0 }); // Port 0 = random available port
     const transport = server.getTransport() as HttpTransport;
-    assert(transport.port !== undefined, 'Server should have a port');
+    assert.ok(transport.port !== undefined, 'Server should have a port');
     await server.close();
   });
 
-  // Test: Echo request/response
-  await test('Echo request/response works', async () => {
+  it('handles echo request/response', async () => {
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
       return new EchoResponse({ echo: `Echo: ${req.message}`, timestamp: 12_345 });
@@ -68,14 +42,13 @@ async function runTests(): Promise<void> {
       EchoResponse
     );
 
-    assert(response.echo === 'Echo: Hello, PMS!', `Expected echo message, got: ${response.echo}`);
-    assert(response.timestamp === 12_345, `Expected timestamp 12345, got: ${response.timestamp}`);
+    assert.strictEqual(response.echo, 'Echo: Hello, PMS!');
+    assert.strictEqual(response.timestamp, 12_345);
 
     await server.close();
   });
 
-  // Test: Add request/response
-  await test('Add request/response works', async () => {
+  it('handles add request/response', async () => {
     const server = new PmsServer();
     server.handle(AddRequest, (req: AddRequest) => {
       return new AddResponse({ sum: req.a + req.b });
@@ -91,13 +64,12 @@ async function runTests(): Promise<void> {
       AddResponse
     );
 
-    assert(response.sum === 42, `Expected sum 42, got: ${response.sum}`);
+    assert.strictEqual(response.sum, 42);
 
     await server.close();
   });
 
-  // Test: Multiple handlers
-  await test('Multiple handlers work', async () => {
+  it('supports multiple handlers', async () => {
     const server = new PmsServer();
     server
       .handle(EchoRequest, (req: EchoRequest) => {
@@ -117,19 +89,18 @@ async function runTests(): Promise<void> {
       new EchoRequest({ message: 'test' }),
       EchoResponse
     );
-    assert(echoResponse.echo === 'test', 'Echo should work');
+    assert.strictEqual(echoResponse.echo, 'test');
 
     const addResponse = await client.request(
       new AddRequest({ a: 1, b: 2 }),
       AddResponse
     );
-    assert(addResponse.sum === 3, 'Add should work');
+    assert.strictEqual(addResponse.sum, 3);
 
     await server.close();
   });
 
-  // Test: Handler error
-  await test('Handler errors are propagated', async () => {
+  it('propagates handler errors', async () => {
     const server = new PmsServer();
     server.handle(EchoRequest, (): EchoResponse => {
       throw new HandlerError('TEST_ERROR', 'This is a test error');
@@ -141,21 +112,20 @@ async function runTests(): Promise<void> {
 
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
 
-    try {
-      await client.request(new EchoRequest({ message: 'fail' }), EchoResponse);
-      assert(false, 'Should have thrown an error');
-    } catch (error) {
-      assert(
-        error instanceof Error && error.message.includes('test error'),
-        `Expected error message to contain 'test error', got: ${String(error)}`
-      );
-    }
+    await assert.rejects(
+      async () => {
+        await client.request(new EchoRequest({ message: 'fail' }), EchoResponse);
+      },
+      (error: Error) => {
+        return error.message.toLowerCase().includes('test error');
+      },
+      'Should throw error containing "test error"'
+    );
 
     await server.close();
   });
 
-  // Test: Handler context
-  await test('Handler receives context', async () => {
+  it('provides handler context', async () => {
     let receivedContext: { requestId: string; receivedAt: Date } | null = null;
 
     const server = new PmsServer();
@@ -171,22 +141,23 @@ async function runTests(): Promise<void> {
     const client = new PmsClient({ baseUrl: `http://localhost:${port}` });
     await client.request(new EchoRequest({ message: 'context test' }), EchoResponse);
 
-    assert(receivedContext !== null, 'Context should be received');
-    assert(typeof receivedContext!.requestId === 'string', 'requestId should be a string');
-    assert(receivedContext!.receivedAt instanceof Date, 'receivedAt should be a Date');
+    assert.ok(receivedContext !== null, 'Context should be received');
+    const ctx = receivedContext as { requestId: string; receivedAt: Date };
+    assert.strictEqual(typeof ctx.requestId, 'string');
+    assert.ok(ctx.receivedAt instanceof Date);
 
     await server.close();
   });
 
-  // Test: Response with headers
-  await test('new Response returns response with custom headers', async () => {
+  it('supports Response with custom headers', async () => {
     const server = new PmsServer();
-    // Use explicit type assertion for test - the Response wrapper returns headers with the message body
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
     (server as any).handle(EchoRequest, (req: EchoRequest) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
       return new Response(EchoResponse as any, {
         body: new EchoResponse({ echo: req.message, timestamp: 42 }),
         headers: new Map([['X-Custom-Header', 'test-value'], ['Set-Cookie', 'session=abc123']])
-    });
+      });
     });
 
     await server.listen({ port: 0 });
@@ -204,25 +175,13 @@ async function runTests(): Promise<void> {
     });
 
     const responseHeaders = Object.fromEntries(response.headers.entries());
-    assert(responseHeaders['x-custom-header'] === 'test-value', 'Custom header should be present');
-    assert(responseHeaders['set-cookie'] === 'session=abc123', 'Set-Cookie header should be present');
+    assert.strictEqual(responseHeaders['x-custom-header'], 'test-value');
+    assert.strictEqual(responseHeaders['set-cookie'], 'session=abc123');
 
     const body = await response.text();
-    assert(body.includes('EchoResponse'), 'Response should contain EchoResponse');
-    assert(body.includes('hello'), 'Response should contain the echoed message');
+    assert.ok(body.includes('EchoResponse'));
+    assert.ok(body.includes('hello'));
 
     await server.close();
   });
-
-  // Summary
-  console.log(`\n${passed} passed, ${failed} failed`);
-
-  if (failed > 0) {
-    process.exit(1);
-  }
-}
-
-runTests().catch((error) => {
-  console.error('Test runner error:', error);
-  process.exit(1);
 });

@@ -10,7 +10,7 @@ interface WebSocketLike {
   readyState: number;
   send(data: string): void;
   close(): void;
-  addEventListener(event: string, listener: () => void): void;
+  addEventListener(event: string, listener: (event: unknown) => void): void;
   onopen: ((event: unknown) => void) | null;
   onmessage: ((event: { data: unknown }) => void) | null;
   onclose: ((event: unknown) => void) | null;

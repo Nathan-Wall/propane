@@ -1,305 +1,384 @@
-import { assert } from './assert.ts';
+import { describe, it } from 'node:test';
+import assert from 'node:assert';
 import { ImmutableArray } from '../runtime/common/array/immutable.ts';
 
-export default function runImmutableArrayTests() {
-  testConstruction();
-  testBasicAccess();
-  testIterators();
-  testReadOnlyMethods();
-  testMutatingMethods();
-  testEqualsAndHashCode();
-  testImmutability();
-  console.log('All ImmutableArray tests passed!');
-}
+describe('ImmutableArray', () => {
+  describe('construction', () => {
+    it('creates empty array', () => {
+      const empty = new ImmutableArray<number>();
+      assert.strictEqual(empty.length, 0);
+    });
 
-function testConstruction() {
-  // Empty construction
-  const empty = new ImmutableArray<number>();
-  assert(empty.length === 0, 'Empty array should have length 0');
+    it('creates from array', () => {
+      const fromArray = new ImmutableArray([1, 2, 3]);
+      assert.strictEqual(fromArray.length, 3);
+      assert.strictEqual(fromArray[0], 1);
+    });
 
-  // From array
-  const fromArray = new ImmutableArray([1, 2, 3]);
-  assert(fromArray.length === 3, 'Should have length 3');
-  assert(fromArray[0] === 1, 'Index 0 should be 1');
+    it('creates from iterable', () => {
+      const set = new Set([4, 5, 6]);
+      const fromIterable = new ImmutableArray(set);
+      assert.strictEqual(fromIterable.length, 3);
+    });
 
-  // From iterable
-  const set = new Set([4, 5, 6]);
-  const fromIterable = new ImmutableArray(set);
-  assert(fromIterable.length === 3, 'Should have length 3 from Set');
+    it('creates from array-like', () => {
+      const arrayLike = { length: 2, 0: 'a', 1: 'b' };
+      const fromArrayLike = new ImmutableArray(arrayLike);
+      assert.strictEqual(fromArrayLike.length, 2);
+      assert.strictEqual(fromArrayLike[0], 'a');
+    });
+  });
 
-  // From array-like
-  const arrayLike = { length: 2, 0: 'a', 1: 'b' };
-  const fromArrayLike = new ImmutableArray(arrayLike);
-  assert(fromArrayLike.length === 2, 'Should have length 2 from array-like');
-  assert(fromArrayLike[0] === 'a', 'Index 0 should be "a"');
-}
+  describe('basic access', () => {
+    const arr = new ImmutableArray([10, 20, 30, 40, 50]);
 
-function testBasicAccess() {
-  const arr = new ImmutableArray([10, 20, 30, 40, 50]);
+    it('at() returns correct values', () => {
+      assert.strictEqual(arr.at(0), 10);
+      assert.strictEqual(arr.at(-1), 50);
+      assert.strictEqual(arr.at(10), undefined);
+    });
 
-  // at()
-  assert(arr.at(0) === 10, 'at(0) should be 10');
-  assert(arr.at(-1) === 50, 'at(-1) should be 50');
-  assert(arr.at(10) === undefined, 'at(10) should be undefined');
+    it('get() returns correct values', () => {
+      assert.strictEqual(arr.get(1), 20);
+    });
 
-  // get()
-  assert(arr.get(1) === 20, 'get(1) should be 20');
+    it('set() creates modified copy', () => {
+      const modified = arr.set(2, 999);
+      assert.strictEqual(modified[2], 999);
+      assert.strictEqual(arr[2], 30, 'Original should be unchanged');
+    });
 
-  // set()
-  const modified = arr.set(2, 999);
-  assert(modified[2] === 999, 'set should change value');
-  assert(arr[2] === 30, 'Original should be unchanged');
-  assert(arr.set(100, 1) === arr, 'set out of bounds returns same instance');
+    it('set() out of bounds returns same instance', () => {
+      assert.strictEqual(arr.set(100, 1), arr);
+    });
 
-  // length
-  assert(arr.length === 5, 'length should be 5');
-}
+    it('length is correct', () => {
+      assert.strictEqual(arr.length, 5);
+    });
+  });
 
-function testIterators() {
-  const arr = new ImmutableArray(['a', 'b', 'c']);
+  describe('iterators', () => {
+    const arr = new ImmutableArray(['a', 'b', 'c']);
 
-  // entries()
-  const entries = [...arr.entries()];
-  assert(entries.length === 3, 'entries should have 3 items');
-  assert(entries[0][0] === 0 && entries[0][1] === 'a', 'First entry should be [0, "a"]');
+    it('entries() works', () => {
+      const entries = [...arr.entries()];
+      assert.strictEqual(entries.length, 3);
+      assert.deepStrictEqual(entries[0], [0, 'a']);
+    });
 
-  // keys()
-  const keys = [...arr.keys()];
-  assert(keys.length === 3, 'keys should have 3 items');
-  assert(keys[0] === 0 && keys[2] === 2, 'Keys should be indices');
+    it('keys() works', () => {
+      const keys = [...arr.keys()];
+      assert.deepStrictEqual(keys, [0, 1, 2]);
+    });
 
-  // values()
-  const values = [...arr.values()];
-  assert(values.length === 3, 'values should have 3 items');
-  assert(values[0] === 'a' && values[2] === 'c', 'Values should match');
+    it('values() works', () => {
+      const values = [...arr.values()];
+      assert.deepStrictEqual(values, ['a', 'b', 'c']);
+    });
 
-  // Symbol.iterator
-  const iterated = [...arr];
-  assert(iterated.length === 3, 'Spread should have 3 items');
-  assert(iterated[1] === 'b', 'Second item should be "b"');
+    it('Symbol.iterator works', () => {
+      const iterated = [...arr];
+      assert.deepStrictEqual(iterated, ['a', 'b', 'c']);
+    });
 
-  // forEach
-  const collected: string[] = [];
-  for (const v of arr) collected.push(v);
-  assert(collected.length === 3, 'forEach should visit 3 items');
-}
+    it('for...of works', () => {
+      const collected: string[] = [];
+      for (const v of arr) collected.push(v);
+      assert.strictEqual(collected.length, 3);
+    });
+  });
 
-function testReadOnlyMethods() {
-  const nums = new ImmutableArray([1, 2, 3, 4, 5]);
-  const strs = new ImmutableArray(['apple', 'banana', 'cherry']);
+  describe('read-only methods', () => {
+    const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+    const strs = new ImmutableArray(['apple', 'banana', 'cherry']);
 
-  // map
-  const doubled = nums.map((n) => n * 2);
-  assert(doubled instanceof ImmutableArray, 'map should return ImmutableArray');
-  assert(doubled.length === 5 && doubled[0] === 2 && doubled[4] === 10, 'map should double');
+    it('map() returns ImmutableArray with transformed values', () => {
+      const doubled = nums.map((n) => n * 2);
+      assert.ok(doubled instanceof ImmutableArray);
+      assert.deepStrictEqual([...doubled], [2, 4, 6, 8, 10]);
+    });
 
-  // filter
-  const evens = nums.filter((n) => n % 2 === 0);
-  assert(evens instanceof ImmutableArray, 'filter should return ImmutableArray');
-  assert(evens.length === 2 && evens[0] === 2 && evens[1] === 4, 'filter should get evens');
+    it('filter() returns ImmutableArray with filtered values', () => {
+      const evens = nums.filter((n) => n % 2 === 0);
+      assert.ok(evens instanceof ImmutableArray);
+      assert.deepStrictEqual([...evens], [2, 4]);
+    });
 
-  // concat
-  const concatenated = nums.concat([6, 7], [8]);
-  assert(concatenated.length === 8, 'concat should have 8 items');
-  assert(concatenated[7] === 8, 'Last item should be 8');
+    it('concat() combines arrays', () => {
+      const concatenated = nums.concat([6, 7], [8]);
+      assert.strictEqual(concatenated.length, 8);
+      assert.strictEqual(concatenated[7], 8);
+    });
 
-  // every
-  assert(nums.every((n) => n > 0), 'every: all positive');
-  assert(!nums.every((n) => n > 3), 'every: not all > 3');
+    it('every() tests all elements', () => {
+      assert.ok(nums.every((n) => n > 0));
+      assert.ok(!nums.every((n) => n > 3));
+    });
 
-  // some
-  assert(nums.some((n) => n > 4), 'some: has item > 4');
-  assert(!nums.some((n) => n > 10), 'some: none > 10');
+    it('some() tests for any match', () => {
+      assert.ok(nums.some((n) => n > 4));
+      assert.ok(!nums.some((n) => n > 10));
+    });
 
-  // find
-  assert(nums.find((n) => n > 3) === 4, 'find first > 3');
-  // eslint-disable-next-line unicorn/prefer-array-some -- testing find() behavior
-  assert(nums.find((n) => n > 10) === undefined, 'find returns undefined');
+    it('find() returns first match', () => {
+      assert.strictEqual(nums.find((n) => n > 3), 4);
+      assert.strictEqual(nums.find((n) => n > 10), undefined);
+    });
 
-  // findIndex
-  assert(nums.findIndex((n) => n > 3) === 3, 'findIndex of first > 3');
-  assert(!nums.some((n) => n > 10) , 'findIndex returns -1');
+    it('findIndex() returns index of first match', () => {
+      assert.strictEqual(nums.findIndex((n) => n > 3), 3);
+      assert.strictEqual(nums.findIndex((n) => n > 10), -1);
+    });
 
-  // findLast
-  assert(nums.findLast((n) => n < 4) === 3, 'findLast < 4');
+    it('findLast() returns last match', () => {
+      assert.strictEqual(nums.findLast((n) => n < 4), 3);
+    });
 
-  // findLastIndex
-  assert(nums.findLastIndex((n) => n < 4) === 2, 'findLastIndex < 4');
+    it('findLastIndex() returns index of last match', () => {
+      assert.strictEqual(nums.findLastIndex((n) => n < 4), 2);
+    });
 
-  // flat
-  const nested = new ImmutableArray([[1, 2], [3, 4]]);
-  const flattened = nested.flat();
-  assert(flattened.length === 4, 'flat should have 4 items');
+    it('flat() flattens nested arrays', () => {
+      const nested = new ImmutableArray([[1, 2], [3, 4]]);
+      const flattened = nested.flat();
+      assert.strictEqual(flattened.length, 4);
+    });
 
-  // flatMap
-  const flatMapped = nums.flatMap((n) => [n, n * 10]);
-  assert(flatMapped.length === 10, 'flatMap should have 10 items');
+    it('flatMap() maps and flattens', () => {
+      const flatMapped = nums.flatMap((n) => [n, n * 10]);
+      assert.strictEqual(flatMapped.length, 10);
+    });
 
-  // includes
-  assert(nums.includes(3), 'includes 3');
-  assert(!nums.includes(10), 'does not include 10');
+    it('includes() checks membership', () => {
+      assert.ok(nums.includes(3));
+      assert.ok(!nums.includes(10));
+    });
 
-  // indexOf
-  assert(nums.indexOf(3) === 2, 'indexOf 3');
-  assert(!nums.includes(10), 'indexOf missing');
+    it('indexOf() returns index', () => {
+      assert.strictEqual(nums.indexOf(3), 2);
+      assert.strictEqual(nums.indexOf(10), -1);
+    });
 
-  // lastIndexOf
-  const withDupes = new ImmutableArray([1, 2, 3, 2, 1]);
-  assert(withDupes.lastIndexOf(2) === 3, 'lastIndexOf 2');
+    it('lastIndexOf() returns last index', () => {
+      const withDupes = new ImmutableArray([1, 2, 3, 2, 1]);
+      assert.strictEqual(withDupes.lastIndexOf(2), 3);
+    });
 
-  // join
-  assert(strs.join(', ') === 'apple, banana, cherry', 'join with comma');
-  assert(nums.join(',') === '1,2,3,4,5', 'join default separator');
+    it('join() concatenates elements', () => {
+      assert.strictEqual(strs.join(', '), 'apple, banana, cherry');
+      assert.strictEqual(nums.join(','), '1,2,3,4,5');
+    });
 
-  // reduce
-  const sum = nums.reduce((acc, n) => acc + n, 0);
-  assert(sum === 15, 'reduce sum');
-  const sumNoInit = nums.reduce((acc, n) => acc + n);
-  assert(sumNoInit === 15, 'reduce sum without initial');
+    it('reduce() accumulates values', () => {
+      const sum = nums.reduce((acc, n) => acc + n, 0);
+      assert.strictEqual(sum, 15);
+      const sumNoInit = nums.reduce((acc, n) => acc + n);
+      assert.strictEqual(sumNoInit, 15);
+    });
 
-  // reduceRight
-  const rightJoin = strs.reduceRight((acc, s) => acc + s, '');
-  assert(rightJoin === 'cherrybanannapple' || rightJoin === 'cherrybananaapple', 'reduceRight joins from right');
+    it('reduceRight() accumulates from right', () => {
+      const rightJoin = strs.reduceRight((acc, s) => acc + s, '');
+      assert.strictEqual(rightJoin, 'cherrybananaapple');
+    });
 
-  // slice
-  const sliced = nums.slice(1, 4);
-  assert(sliced instanceof ImmutableArray, 'slice returns ImmutableArray');
-  assert(sliced.length === 3 && sliced[0] === 2, 'slice 1-4');
+    it('slice() returns ImmutableArray subset', () => {
+      const sliced = nums.slice(1, 4);
+      assert.ok(sliced instanceof ImmutableArray);
+      assert.deepStrictEqual([...sliced], [2, 3, 4]);
+    });
 
-  // toReversed
-  const reversed = nums.toReversed();
-  assert(reversed[0] === 5 && reversed[4] === 1, 'toReversed');
+    it('toReversed() returns reversed copy', () => {
+      const reversed = nums.toReversed();
+      assert.deepStrictEqual([...reversed], [5, 4, 3, 2, 1]);
+    });
 
-  // toSorted
-  const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
-  const sorted = unsorted.toSorted((a, b) => a - b);
-  assert(sorted[0] === 1 && sorted[4] === 5, 'toSorted');
+    it('toSorted() returns sorted copy', () => {
+      const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
+      const sorted = unsorted.toSorted((a, b) => a - b);
+      assert.deepStrictEqual([...sorted], [1, 1, 3, 4, 5]);
+    });
 
-  // toSpliced
-  const spliced = nums.toSpliced(2, 1, 99, 100);
-  assert(spliced.length === 6, 'toSpliced length');
-  assert(spliced[2] === 99 && spliced[3] === 100, 'toSpliced values');
+    it('toSpliced() returns spliced copy', () => {
+      const spliced = nums.toSpliced(2, 1, 99, 100);
+      assert.strictEqual(spliced.length, 6);
+      assert.strictEqual(spliced[2], 99);
+      assert.strictEqual(spliced[3], 100);
+    });
 
-  // with
-  const withReplaced = nums.with(2, 999);
-  assert(withReplaced[2] === 999, 'with replaces value');
-  assert(nums[2] === 3, 'original unchanged');
+    it('with() returns copy with replaced value', () => {
+      const withReplaced = nums.with(2, 999);
+      assert.strictEqual(withReplaced[2], 999);
+      assert.strictEqual(nums[2], 3, 'original unchanged');
+    });
 
-  // toString
-  assert(nums.toString() === '1,2,3,4,5', 'toString');
+    it('toString() returns string representation', () => {
+      assert.strictEqual(nums.toString(), '1,2,3,4,5');
+    });
 
-  // toLocaleString
-  assert(typeof nums.toLocaleString() === 'string', 'toLocaleString returns string');
+    it('toLocaleString() returns string', () => {
+      assert.strictEqual(typeof nums.toLocaleString(), 'string');
+    });
 
-  // toArray
-  const plain = nums.toArray();
-  assert(Array.isArray(plain), 'toArray returns plain array');
-  assert(plain.length === 5, 'toArray has correct length');
-}
+    it('toArray() returns plain array', () => {
+      const plain = nums.toArray();
+      assert.ok(Array.isArray(plain));
+      assert.strictEqual(plain.length, 5);
+    });
+  });
 
-function testMutatingMethods() {
-  const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+  describe('mutating methods (return new instances)', () => {
+    it('copyWithin() returns modified copy', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const copied = nums.copyWithin(0, 3);
+      assert.strictEqual(copied[0], 4);
+      assert.strictEqual(copied[1], 5);
+      assert.strictEqual(nums[0], 1, 'original unchanged');
+    });
 
-  // copyWithin
-  const copied = nums.copyWithin(0, 3);
-  assert(copied[0] === 4 && copied[1] === 5, 'copyWithin copies from index 3');
-  assert(nums[0] === 1, 'original unchanged after copyWithin');
+    it('fill() returns filled copy', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const filled = nums.fill(0, 1, 4);
+      assert.deepStrictEqual([...filled], [1, 0, 0, 0, 5]);
+      assert.strictEqual(nums[2], 3, 'original unchanged');
+    });
 
-  // fill
-  const filled = nums.fill(0, 1, 4);
-  assert(filled[1] === 0 && filled[2] === 0 && filled[3] === 0, 'fill replaces range');
-  assert(filled[0] === 1 && filled[4] === 5, 'fill preserves outside range');
-  assert(nums[2] === 3, 'original unchanged after fill');
+    it('pop() returns [value, newArray]', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const [popped, afterPop] = nums.pop();
+      assert.strictEqual(popped, 5);
+      assert.strictEqual(afterPop.length, 4);
+      assert.strictEqual(nums.length, 5, 'original unchanged');
+    });
 
-  // pop
-  const [popped, afterPop] = nums.pop();
-  assert(popped === 5, 'pop returns last element');
-  assert(afterPop.length === 4, 'afterPop has length 4');
-  assert(nums.length === 5, 'original unchanged after pop');
+    it('pop() on empty returns [undefined, same instance]', () => {
+      const emptyArr = new ImmutableArray<number>();
+      const [emptyPopped, afterEmptyPop] = emptyArr.pop();
+      assert.strictEqual(emptyPopped, undefined);
+      assert.strictEqual(afterEmptyPop, emptyArr);
+    });
 
-  const emptyArr = new ImmutableArray<number>();
-  const [emptyPopped, afterEmptyPop] = emptyArr.pop();
-  assert(emptyPopped === undefined, 'pop on empty returns undefined');
-  assert(afterEmptyPop === emptyArr, 'pop on empty returns same instance');
+    it('push() returns new array with added elements', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const pushed = nums.push(6, 7);
+      assert.strictEqual(pushed.length, 7);
+      assert.strictEqual(pushed[5], 6);
+      assert.strictEqual(pushed[6], 7);
+      assert.strictEqual(nums.length, 5, 'original unchanged');
+    });
 
-  // push
-  const pushed = nums.push(6, 7);
-  assert(pushed.length === 7, 'push adds elements');
-  assert(pushed[5] === 6 && pushed[6] === 7, 'push appends correctly');
-  assert(nums.length === 5, 'original unchanged after push');
-  assert(nums.push() === nums, 'push with no args returns same instance');
+    it('push() with no args returns same instance', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      assert.strictEqual(nums.push(), nums);
+    });
 
-  // reverse
-  // eslint-disable-next-line unicorn/no-array-reverse -- testing ImmutableArray.reverse()
-  const reversed = nums.reverse();
-  assert(reversed[0] === 5 && reversed[4] === 1, 'reverse reverses');
-  assert(nums[0] === 1, 'original unchanged after reverse');
+    it('reverse() returns reversed copy', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const reversed = nums.reverse();
+      assert.deepStrictEqual([...reversed], [5, 4, 3, 2, 1]);
+      assert.strictEqual(nums[0], 1, 'original unchanged');
+    });
 
-  // shift
-  const [shifted, afterShift] = nums.shift();
-  assert(shifted === 1, 'shift returns first element');
-  assert(afterShift.length === 4, 'afterShift has length 4');
-  assert(afterShift[0] === 2, 'afterShift starts with second element');
-  assert(nums.length === 5, 'original unchanged after shift');
+    it('shift() returns [value, newArray]', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const [shifted, afterShift] = nums.shift();
+      assert.strictEqual(shifted, 1);
+      assert.strictEqual(afterShift.length, 4);
+      assert.strictEqual(afterShift[0], 2);
+      assert.strictEqual(nums.length, 5, 'original unchanged');
+    });
 
-  const [emptyShifted, afterEmptyShift] = emptyArr.shift();
-  assert(emptyShifted === undefined, 'shift on empty returns undefined');
-  assert(afterEmptyShift === emptyArr, 'shift on empty returns same instance');
+    it('shift() on empty returns [undefined, same instance]', () => {
+      const emptyArr = new ImmutableArray<number>();
+      const [emptyShifted, afterEmptyShift] = emptyArr.shift();
+      assert.strictEqual(emptyShifted, undefined);
+      assert.strictEqual(afterEmptyShift, emptyArr);
+    });
 
-  // sort
-  const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
-  // eslint-disable-next-line unicorn/no-array-sort -- testing ImmutableArray.sort()
-  const sorted = unsorted.sort((a, b) => a - b);
-  assert(sorted[0] === 1 && sorted[4] === 5, 'sort sorts');
-  assert(unsorted[0] === 3, 'original unchanged after sort');
+    it('sort() returns sorted copy', () => {
+      const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
+      const sorted = unsorted.sort((a, b) => a - b);
+      assert.deepStrictEqual([...sorted], [1, 1, 3, 4, 5]);
+      assert.strictEqual(unsorted[0], 3, 'original unchanged');
+    });
 
-  // splice
-  const [removed, afterSplice] = nums.splice(2, 2, 99);
-  assert(removed.length === 2 && removed[0] === 3 && removed[1] === 4, 'splice returns removed');
-  assert(afterSplice.length === 4, 'splice adjusts length');
-  assert(afterSplice[2] === 99, 'splice inserts value');
-  assert(nums.length === 5, 'original unchanged after splice');
+    it('splice() returns [removed, newArray]', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const [removed, afterSplice] = nums.splice(2, 2, 99);
+      assert.deepStrictEqual([...removed], [3, 4]);
+      assert.strictEqual(afterSplice.length, 4);
+      assert.strictEqual(afterSplice[2], 99);
+      assert.strictEqual(nums.length, 5, 'original unchanged');
+    });
 
-  // unshift
-  const unshifted = nums.unshift(-1, 0);
-  assert(unshifted.length === 7, 'unshift adds elements');
-  assert(unshifted[0] === -1 && unshifted[1] === 0, 'unshift prepends');
-  assert(nums.length === 5, 'original unchanged after unshift');
-  assert(nums.unshift() === nums, 'unshift with no args returns same instance');
-}
+    it('unshift() returns new array with prepended elements', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      const unshifted = nums.unshift(-1, 0);
+      assert.strictEqual(unshifted.length, 7);
+      assert.strictEqual(unshifted[0], -1);
+      assert.strictEqual(unshifted[1], 0);
+      assert.strictEqual(nums.length, 5, 'original unchanged');
+    });
 
-function testEqualsAndHashCode() {
-  const arr1 = new ImmutableArray([1, 2, 3]);
-  const arr2 = new ImmutableArray([1, 2, 3]);
-  const arr3 = new ImmutableArray([1, 2, 4]);
-  const arr4 = new ImmutableArray([1, 2]);
+    it('unshift() with no args returns same instance', () => {
+      const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      assert.strictEqual(nums.unshift(), nums);
+    });
+  });
 
-  // equals
-  assert(arr1.equals(arr2), 'Same contents should be equal');
-  assert(arr1.equals([1, 2, 3]), 'Should equal plain array');
-  assert(!arr1.equals(arr3), 'Different contents not equal');
-  assert(!arr1.equals(arr4), 'Different lengths not equal');
-  assert(!arr1.equals(null), 'Not equal to null');
-  assert(!arr1.equals(undefined), 'Not equal to undefined');
+  describe('equals and hashCode', () => {
+    const arr1 = new ImmutableArray([1, 2, 3]);
+    const arr2 = new ImmutableArray([1, 2, 3]);
+    const arr3 = new ImmutableArray([1, 2, 4]);
+    const arr4 = new ImmutableArray([1, 2]);
 
-  // hashCode
-  assert(arr1.hashCode() === arr2.hashCode(), 'Equal arrays should have same hash');
-  assert(arr1.hashCode() === arr1.hashCode(), 'hashCode should be stable');
-}
+    it('equals() returns true for same contents', () => {
+      assert.ok(arr1.equals(arr2));
+    });
 
-function testImmutability() {
-  const arr = new ImmutableArray([1, 2, 3]);
+    it('equals() works with plain array', () => {
+      assert.ok(arr1.equals([1, 2, 3]));
+    });
 
-  // Verify frozen
-  assert(Object.isFrozen(arr), 'ImmutableArray should be frozen');
+    it('equals() returns false for different contents', () => {
+      assert.ok(!arr1.equals(arr3));
+    });
 
-  // Verify operations return new instances
-  const modified = arr.set(0, 99);
-  assert(modified !== arr, 'set should return new instance');
-  assert(arr[0] === 1, 'Original should be unchanged');
+    it('equals() returns false for different lengths', () => {
+      assert.ok(!arr1.equals(arr4));
+    });
 
-  // toArray returns mutable copy
-  const plain = arr.toArray();
-  plain[0] = 999;
-  assert(arr[0] === 1, 'Mutating toArray result should not affect original');
-}
+    it('equals() returns false for null/undefined', () => {
+      assert.ok(!arr1.equals(null));
+      assert.ok(!arr1.equals(undefined));
+    });
+
+    it('hashCode() is same for equal arrays', () => {
+      assert.strictEqual(arr1.hashCode(), arr2.hashCode());
+    });
+
+    it('hashCode() is stable', () => {
+      assert.strictEqual(arr1.hashCode(), arr1.hashCode());
+    });
+  });
+
+  describe('immutability', () => {
+    it('is frozen', () => {
+      const arr = new ImmutableArray([1, 2, 3]);
+      assert.ok(Object.isFrozen(arr));
+    });
+
+    it('operations return new instances', () => {
+      const arr = new ImmutableArray([1, 2, 3]);
+      const modified = arr.set(0, 99);
+      assert.notStrictEqual(modified, arr);
+      assert.strictEqual(arr[0], 1, 'Original unchanged');
+    });
+
+    it('toArray() returns mutable copy', () => {
+      const arr = new ImmutableArray([1, 2, 3]);
+      const plain = arr.toArray();
+      plain[0] = 999;
+      assert.strictEqual(arr[0], 1, 'Mutating toArray result does not affect original');
+    });
+  });
+});
