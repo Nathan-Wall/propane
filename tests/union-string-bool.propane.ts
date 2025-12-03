@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
   static readonly $typeName = "UnionStringBool";
@@ -62,9 +63,9 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   }
 }
 export namespace UnionStringBool {
-  export interface Data {
+  export type Data = {
     value: string | boolean;
     optional?: string | boolean | undefined;
-  }
+  };
   export type Value = UnionStringBool | UnionStringBool.Data;
 }

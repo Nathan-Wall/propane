@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.propane
 import { Email } from './email.propane';
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static readonly $typeName = "Unions";
@@ -48,7 +49,7 @@ export class Unions extends Message<Unions.Data> {
     props.email = emailValue;
     const metadataValue = entries["metadata"];
     if (metadataValue === undefined) throw new Error("Missing required property \"metadata\".");
-    if (!(typeof metadataValue === "object" && metadataValue !== null && metadataValue.created !== undefined && (metadataValue.created instanceof Date || metadataValue.created instanceof ImmutableDate || Object.prototype.toString.call(metadataValue.created) === "[object Date]" || Object.prototype.toString.call(metadataValue.created) === "[object ImmutableDate]") || typeof metadataValue === "object" && metadataValue !== null && metadataValue.updated !== undefined && (metadataValue.updated instanceof Date || metadataValue.updated instanceof ImmutableDate || Object.prototype.toString.call(metadataValue.updated) === "[object Date]" || Object.prototype.toString.call(metadataValue.updated) === "[object ImmutableDate]"))) throw new Error("Invalid value for property \"metadata\".");
+    if (!(typeof metadataValue === "object" && metadataValue !== null && metadataValue.created !== undefined && (metadataValue.created instanceof Date || metadataValue.created instanceof ImmutableDate) || typeof metadataValue === "object" && metadataValue !== null && metadataValue.updated !== undefined && (metadataValue.updated instanceof Date || metadataValue.updated instanceof ImmutableDate))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataValue;
     return props as Unions.Data;
   }
@@ -92,7 +93,7 @@ export class Unions extends Message<Unions.Data> {
   }
 }
 export namespace Unions {
-  export interface Data {
+  export type Data = {
     username: string | null;
     email: Email | null;
     metadata: {
@@ -100,6 +101,6 @@ export namespace Unions {
     } | {
       updated: Date;
     };
-  }
+  };
   export type Value = Unions | Unions.Data;
 }

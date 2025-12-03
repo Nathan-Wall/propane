@@ -1,0 +1,4 @@
+{
+  "include": ["tests", "pms-server/src", "examples"],
+  "runtimeImportPath": "./runtime/index.js"
+}

@@ -6,15 +6,16 @@ import {
 import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
 
 // WebSocket implementation - use native browser WebSocket or ws package for Node.js
-type WebSocketLike = {
+interface WebSocketLike {
   readyState: number;
   send(data: string): void;
   close(): void;
+  addEventListener(event: string, listener: () => void): void;
   onopen: ((event: unknown) => void) | null;
   onmessage: ((event: { data: unknown }) => void) | null;
   onclose: ((event: unknown) => void) | null;
   onerror: ((event: unknown) => void) | null;
-};
+}
 
 // WebSocket ready states
 const WS_OPEN = 1;
@@ -22,12 +23,12 @@ const WS_OPEN = 1;
 // Get WebSocket constructor - browser native or ws package
 let WebSocketImpl: new (url: string) => WebSocketLike;
 
-if (typeof WebSocket !== 'undefined') {
-  // Browser environment - use native WebSocket
-  WebSocketImpl = WebSocket as unknown as new (url: string) => WebSocketLike;
-} else {
+if (typeof WebSocket === 'undefined') {
   // Node.js environment - will be set on first use
   WebSocketImpl = null as unknown as new (url: string) => WebSocketLike;
+} else {
+  // Browser environment - use native WebSocket
+  WebSocketImpl = WebSocket as unknown as new (url: string) => WebSocketLike;
 }
 
 async function getWebSocketImpl(): Promise<new (url: string) => WebSocketLike> {
@@ -120,9 +121,9 @@ export class PmwsClient {
   constructor(options: PmwsClientOptions) {
     this.url = options.url;
     this.timeout = options.timeout ?? 30_000;
-    this.connectTimeout = options.connectTimeout ?? 5_000;
+    this.connectTimeout = options.connectTimeout ?? 5000;
     this.autoReconnect = options.autoReconnect ?? true;
-    this.reconnectDelay = options.reconnectDelay ?? 1_000;
+    this.reconnectDelay = options.reconnectDelay ?? 1000;
     this.maxReconnectAttempts = options.maxReconnectAttempts ?? 10;
   }
 
@@ -161,25 +162,25 @@ export class PmwsClient {
         }
       }, this.connectTimeout);
 
-      ws.onopen = () => {
+      ws.addEventListener('open', () => {
         connected = true;
         clearTimeout(connectTimer);
         this.reconnectAttempts = 0;
         resolve();
-      };
+      });
 
-      ws.onmessage = (event) => {
+      ws.addEventListener('message', (event) => {
         // Handle both browser (event.data is string) and Node.js (event.data is Buffer)
-        const data = event.data;
+        const data = (event as MessageEvent<unknown>).data;
         const message = typeof data === 'string' ? data : String(data);
         this.handleMessage(message);
-      };
+      });
 
-      ws.onclose = () => {
+      ws.addEventListener('close', () => {
         this.handleDisconnect();
-      };
+      });
 
-      ws.onerror = (event) => {
+      ws.addEventListener('error', (event) => {
         if (!connected) {
           clearTimeout(connectTimer);
           const message = event && typeof event === 'object' && 'message' in event
@@ -187,7 +188,7 @@ export class PmwsClient {
             : 'Connection failed';
           reject(new PmwsConnectionError(message));
         }
-      };
+      });
 
       this.ws = ws;
     });
@@ -243,7 +244,7 @@ export class PmwsClient {
   /**
    * Close the WebSocket connection.
    */
-  async close(): Promise<void> {
+  close(): void {
     this.isClosing = true;
 
     if (this.ws) {
@@ -284,7 +285,7 @@ export class PmwsClient {
     // Ensure connected
     await this.connect();
 
-    if (!this.ws || this.ws.readyState !== WS_OPEN) {
+    if (this.ws?.readyState !== WS_OPEN) {
       throw new PmwsConnectionError('Not connected');
     }
 
@@ -312,19 +313,23 @@ export class PmwsClient {
     const parsed = parseCerealString(responseBody);
     if (isTaggedMessageData(parsed)) {
       if (parsed.$tag === 'PmsError') {
+        const data = parsed.$data as Record<string, string | undefined>;
         throw new PmwsProtocolError(
-          String(parsed.$data['code'] ?? 'UNKNOWN'),
-          String(parsed.$data['message'] ?? 'Unknown error'),
-          parsed.$data['requestId'] as string | undefined,
-          parsed.$data['details'] as string | undefined
+          data['code'] ?? 'UNKNOWN',
+          data['message'] ?? 'Unknown error',
+          data['requestId'],
+          data['details']
         );
       }
 
       // Reconstruct the message from the parsed data
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const proto = responseClass.prototype as any;
+      // Use type assertion for prototype access to $fromEntries
+      type FromEntriesProto = {
+        $fromEntries(entries: Record<string, unknown>): unknown;
+      };
+      const proto = responseClass.prototype as FromEntriesProto;
       const props = proto.$fromEntries(parsed.$data);
-      return new responseClass(props) as TResponse;
+      return new responseClass(props as TResponse) as TResponse;
     }
 
     // Fallback to standard deserialization for non-tagged responses

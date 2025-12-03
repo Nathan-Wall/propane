@@ -2,7 +2,6 @@
  * Integration tests for PMWS (Propane Messages over WebSockets).
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PmsServer, HandlerError, WsTransport } from '@propanejs/pms-server';
 import { PmwsClient, PmwsConnectionError } from '@propanejs/pms-client';
 import {
@@ -32,7 +31,7 @@ async function runTests(): Promise<void> {
       passed++;
     } catch (error) {
       console.log(`✗ ${name}`);
-      console.log(`  Error: ${error instanceof Error ? error.message : error}`);
+      console.log(`  Error: ${error instanceof Error ? error.message : String(error)}`);
       failed++;
     }
   }
@@ -41,7 +40,7 @@ async function runTests(): Promise<void> {
   await test('Server can be created with WebSocket transport', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(EchoRequest as any, async (req: EchoRequest) => {
+    server.handle(EchoRequest, (req: EchoRequest) => {
       return new EchoResponse({ echo: req.message, timestamp: Date.now() });
     });
 
@@ -54,8 +53,8 @@ async function runTests(): Promise<void> {
   await test('WebSocket echo request/response works', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(EchoRequest as any, async (req: EchoRequest) => {
-      return new EchoResponse({ echo: `Echo: ${req.message}`, timestamp: 12345 });
+    server.handle(EchoRequest, (req: EchoRequest) => {
+      return new EchoResponse({ echo: `Echo: ${req.message}`, timestamp: 12_345 });
     });
 
     await server.listen({ transport });
@@ -65,12 +64,12 @@ async function runTests(): Promise<void> {
     await client.connect();
 
     const response = await client.request(
-      new EchoRequest({ message: 'Hello, PMWS!' }) as any,
-      EchoResponse as any
-    ) as EchoResponse;
+      new EchoRequest({ message: 'Hello, PMWS!' }),
+      EchoResponse
+    );
 
     assert(response.echo === 'Echo: Hello, PMWS!', `Expected echo message, got: ${response.echo}`);
-    assert(response.timestamp === 12345, `Expected timestamp 12345, got: ${response.timestamp}`);
+    assert(response.timestamp === 12_345, `Expected timestamp 12345, got: ${response.timestamp}`);
 
     await client.close();
     await server.close();
@@ -80,7 +79,7 @@ async function runTests(): Promise<void> {
   await test('Multiple calls on same connection work', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(AddRequest as any, async (req: AddRequest) => {
+    server.handle(AddRequest, (req: AddRequest) => {
       return new AddResponse({ sum: req.a + req.b });
     });
 
@@ -92,21 +91,21 @@ async function runTests(): Promise<void> {
 
     // Make multiple calls on same connection
     const response1 = await client.request(
-      new AddRequest({ a: 1, b: 2 }) as any,
-      AddResponse as any
-    ) as AddResponse;
+      new AddRequest({ a: 1, b: 2 }),
+      AddResponse
+    );
     assert(response1.sum === 3, `Expected sum 3, got: ${response1.sum}`);
 
     const response2 = await client.request(
-      new AddRequest({ a: 10, b: 20 }) as any,
-      AddResponse as any
-    ) as AddResponse;
+      new AddRequest({ a: 10, b: 20 }),
+      AddResponse
+    );
     assert(response2.sum === 30, `Expected sum 30, got: ${response2.sum}`);
 
     const response3 = await client.request(
-      new AddRequest({ a: 100, b: 200 }) as any,
-      AddResponse as any
-    ) as AddResponse;
+      new AddRequest({ a: 100, b: 200 }),
+      AddResponse
+    );
     assert(response3.sum === 300, `Expected sum 300, got: ${response3.sum}`);
 
     await client.close();
@@ -117,7 +116,7 @@ async function runTests(): Promise<void> {
   await test('Concurrent requests work', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(AddRequest as any, async (req: AddRequest) => {
+    server.handle(AddRequest, async (req: AddRequest) => {
       // Add a small delay to ensure requests are truly concurrent
       await new Promise(resolve => setTimeout(resolve, 10));
       return new AddResponse({ sum: req.a + req.b });
@@ -131,10 +130,10 @@ async function runTests(): Promise<void> {
 
     // Fire off multiple requests concurrently
     const [r1, r2, r3] = await Promise.all([
-      client.request(new AddRequest({ a: 1, b: 1 }) as any, AddResponse as any),
-      client.request(new AddRequest({ a: 2, b: 2 }) as any, AddResponse as any),
-      client.request(new AddRequest({ a: 3, b: 3 }) as any, AddResponse as any),
-    ]) as AddResponse[];
+      client.request(new AddRequest({ a: 1, b: 1 }), AddResponse),
+      client.request(new AddRequest({ a: 2, b: 2 }), AddResponse),
+      client.request(new AddRequest({ a: 3, b: 3 }), AddResponse),
+    ]);
 
     assert(r1.sum === 2, `Expected sum 2, got: ${r1.sum}`);
     assert(r2.sum === 4, `Expected sum 4, got: ${r2.sum}`);
@@ -148,7 +147,7 @@ async function runTests(): Promise<void> {
   await test('Handler errors are propagated', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(EchoRequest as any, async (): Promise<EchoResponse> => {
+    server.handle(EchoRequest, (): EchoResponse => {
       throw new HandlerError('TEST_ERROR', 'This is a test error');
     });
 
@@ -159,12 +158,12 @@ async function runTests(): Promise<void> {
     await client.connect();
 
     try {
-      await client.request(new EchoRequest({ message: 'fail' }) as any, EchoResponse as any);
+      await client.request(new EchoRequest({ message: 'fail' }), EchoResponse);
       assert(false, 'Should have thrown an error');
     } catch (error) {
       assert(
         error instanceof Error && error.message.includes('test error'),
-        `Expected error message to contain 'test error', got: ${error}`
+        `Expected error message to contain 'test error', got: ${String(error)}`
       );
     }
 
@@ -176,7 +175,7 @@ async function runTests(): Promise<void> {
   await test('Auto-connect on first call works', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(EchoRequest as any, async (req: EchoRequest) => {
+    server.handle(EchoRequest, (req: EchoRequest) => {
       return new EchoResponse({ echo: req.message, timestamp: 0 });
     });
 
@@ -187,9 +186,9 @@ async function runTests(): Promise<void> {
     const client = new PmwsClient({ url: `ws://localhost:${port}` });
 
     const response = await client.request(
-      new EchoRequest({ message: 'auto' }) as any,
-      EchoResponse as any
-    ) as EchoResponse;
+      new EchoRequest({ message: 'auto' }),
+      EchoResponse
+    );
 
     assert(response.echo === 'auto', `Expected echo 'auto', got: ${response.echo}`);
     assert(client.connected, 'Client should be connected');
@@ -212,7 +211,7 @@ async function runTests(): Promise<void> {
     } catch (error) {
       assert(
         error instanceof PmwsConnectionError,
-        `Expected PmwsConnectionError, got: ${error}`
+        `Expected PmwsConnectionError, got: ${String(error)}`
       );
     }
 
@@ -223,7 +222,7 @@ async function runTests(): Promise<void> {
   await test('Server tracks connected clients', async () => {
     const transport = new WsTransport({ port: 0 });
     const server = new PmsServer();
-    server.handle(EchoRequest as any, async (req: EchoRequest) => {
+    server.handle(EchoRequest, (req: EchoRequest) => {
       return new EchoResponse({ echo: req.message, timestamp: 0 });
     });
 

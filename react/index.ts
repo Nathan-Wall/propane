@@ -107,7 +107,7 @@ export function update<T>(callback: () => T): T {
 }
 
 // Type for messages with hybrid approach support
-interface HybridListenable<S> {
+interface HybridListenable {
   [SET_UPDATE_LISTENER]: (
     key: symbol,
     callback: (val: Message<DataObject>) => void
@@ -115,7 +115,7 @@ interface HybridListenable<S> {
   [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
 }
 
-function hasHybridListener<S>(value: S): value is S & HybridListenable<S> {
+function hasHybridListener<S>(value: S): value is S & HybridListenable {
   return (
     value !== null
     && typeof value === 'object'
@@ -123,7 +123,7 @@ function hasHybridListener<S>(value: S): value is S & HybridListenable<S> {
   );
 }
 
-function canRegisterPath<S>(value: S): value is S & HybridListenable<S> {
+function canRegisterPath<S>(value: S): value is S & HybridListenable {
   return (
     value !== null
     && typeof value === 'object'
@@ -138,7 +138,7 @@ function canRegisterPath<S>(value: S): value is S & HybridListenable<S> {
 function registerPaths<S>(root: S): void {
   if (canRegisterPath(root)) {
     // Register the root with itself at path '' (empty string for root)
-    root[REGISTER_PATH](root as unknown as Message<DataObject>, '');
+    (root as HybridListenable)[REGISTER_PATH](root as unknown as Message<DataObject>, '');
   }
 }
 
@@ -146,7 +146,8 @@ export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
   // Use ref to hold the current state setter for use in callbacks
-  const setStateRef = useRef<React.Dispatch<React.SetStateAction<S>> | null>(null);
+  type SetStateFn = React.Dispatch<React.SetStateAction<S>> | null;
+  const setStateRef = useRef<SetStateFn>(null);
 
   const [state, setState] = useState<S>(() => {
     const initial = typeof initialState === 'function'
@@ -264,8 +265,9 @@ export function usePropaneSelector<S extends object, R>(
               const nextTyped = next as unknown as S;
               stateRef.current = nextTyped;
               const nextSelected = selectorRef.current(nextTyped);
-              // Use path-aware equality to distinguish identical siblings
-              if (!equalsFromRoot(nextTyped, selectedRef.current, nextSelected)) {
+              // Use path-aware equality to distinguish siblings
+              const prev = selectedRef.current;
+              if (!equalsFromRoot(nextTyped, prev, nextSelected)) {
                 selectedRef.current = nextSelected;
                 setupListener(nextTyped);
                 onStoreChange();
@@ -278,13 +280,13 @@ export function usePropaneSelector<S extends object, R>(
           // Cleanup handled by Propane internally via weak refs
         };
       }
-      return () => {};
+      return () => undefined;
     },
     [state]
   );
 
   const getSnapshot = useCallback(() => {
-    return selectedRef.current as R;
+    return selectedRef.current!;
   }, []);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
@@ -398,11 +400,6 @@ function shallowEqualWithRoot(root: unknown, objA: unknown, objB: unknown) {
   return true;
 }
 
-// Legacy: simple shallow equal without path awareness
-function shallowEqual(objA: unknown, objB: unknown) {
-  return shallowEqualWithRoot(null, objA, objB);
-}
-
 /**
  * Memoize a component with Propane-aware equality checking.
  *
@@ -423,7 +420,9 @@ function shallowEqual(objA: unknown, objB: unknown) {
  *   return <div>{todo.text}</div>;
  * });
  */
-export function memoPropane<P extends object>(Component: ComponentType<P>): ComponentType<P> {
+export function memoPropane<P extends object>(
+  Component: ComponentType<P>
+): ComponentType<P> {
   // Store current root for comparison function
   let currentRoot: unknown = null;
 
@@ -434,8 +433,11 @@ export function memoPropane<P extends object>(Component: ComponentType<P>): Comp
   // Wrapper that captures current root before memo comparison runs
   function MemoWrapper(props: P) {
     currentRoot = useContext(PropaneRootContext);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return React.createElement(MemoizedInner as any, props);
+    // Type assertion needed due to memo's complex return type
+    return React.createElement(
+      MemoizedInner as unknown as ComponentType<P>,
+      props
+    );
   }
 
   return MemoWrapper;

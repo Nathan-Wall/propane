@@ -38,24 +38,20 @@ export class WsTransport implements Transport {
   async start(handler: TransportHandler): Promise<void> {
     return new Promise((resolve, reject) => {
       // Create HTTP or HTTPS server based on TLS configuration
-      if (this.options.tls) {
-        this.httpServer = createHttpsServer({
+      this.httpServer = this.options.tls ? createHttpsServer({
           key: this.options.tls.key,
           cert: this.options.tls.cert,
           ca: this.options.tls.ca,
           requestCert: this.options.tls.requestCert,
           rejectUnauthorized: this.options.tls.rejectUnauthorized,
-        });
-      } else {
-        this.httpServer = createHttpServer();
-      }
+        }) : createHttpServer();
 
       this.wss = new WebSocketServer({ server: this.httpServer });
 
       this.wss.on('connection', (ws: WebSocket) => {
         this.clients.add(ws);
 
-        ws.on('message', async (data: Buffer | string) => {
+        const handleMessage = async (data: Buffer | string) => {
           const message = data.toString('utf8');
 
           // Parse request: requestId\tbody
@@ -78,6 +74,11 @@ export class WsTransport implements Transport {
           } catch {
             ws.send(`${requestId}\t:$PmsError{"code":"INTERNAL_ERROR","message":"Internal server error","requestId":"${requestId}"}`);
           }
+        };
+
+        // Wrap async handler to satisfy void return type
+        ws.on('message', (data: Buffer | string) => {
+          void handleMessage(data);
         });
 
         ws.on('close', () => {

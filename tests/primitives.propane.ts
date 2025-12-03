@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
   static readonly $typeName = "Primitives";
@@ -157,13 +158,13 @@ export class Primitives extends Message<Primitives.Data> {
   }
 }
 export namespace Primitives {
-  export interface Data {
+  export type Data = {
     flag: boolean;
     count: number;
     label: string;
     size: bigint;
     empty: null;
     missing: undefined;
-  }
+  };
   export type Value = Primitives | Primitives.Data;
 }

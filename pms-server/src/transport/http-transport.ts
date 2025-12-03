@@ -52,7 +52,7 @@ export interface TlsOptions {
   /** PEM-encoded certificate */
   cert: string | Buffer;
   /** Optional PEM-encoded CA certificate(s) for client verification */
-  ca?: string | Buffer | Array<string | Buffer>;
+  ca?: string | Buffer | (string | Buffer)[];
   /** Request client certificate. Default: false */
   requestCert?: boolean;
   /** Reject unauthorized client certificates. Default: true when requestCert is true */
@@ -95,14 +95,16 @@ export class HttpTransport implements Transport {
       const headerName = this.csrfConfig.headerName;
       if (!this.corsConfig.allowedHeaders?.includes(headerName)) {
         this.corsConfig.allowedHeaders = [
-          ...(this.corsConfig.allowedHeaders ?? []),
+          ...this.corsConfig.allowedHeaders ?? [],
           headerName,
         ];
       }
     }
   }
 
-  private normalizeCsrfOptions(csrf?: boolean | CsrfOptions): NormalizedCsrfConfig {
+  private normalizeCsrfOptions(
+    csrf?: boolean | CsrfOptions
+  ): NormalizedCsrfConfig {
     // Default to enabled
     if (csrf === undefined || csrf === true) {
       return {
@@ -125,14 +127,16 @@ export class HttpTransport implements Transport {
     };
   }
 
-  private normalizeCorsOptions(cors?: boolean | CorsOptions): CorsOptions | null {
+  private normalizeCorsOptions(
+    cors?: boolean | CorsOptions
+  ): CorsOptions | null {
     if (!cors) return null;
     if (cors === true) {
       return {
         origin: '*',
         methods: ['POST', 'OPTIONS'],
         allowedHeaders: ['Content-Type'],
-        maxAge: 86400,
+        maxAge: 86_400,
       };
     }
     return {
@@ -141,7 +145,7 @@ export class HttpTransport implements Transport {
       allowedHeaders: cors.allowedHeaders ?? ['Content-Type'],
       exposedHeaders: cors.exposedHeaders,
       credentials: cors.credentials ?? false,
-      maxAge: cors.maxAge ?? 86400,
+      maxAge: cors.maxAge ?? 86_400,
     };
   }
 
@@ -236,7 +240,9 @@ export class HttpTransport implements Transport {
 
   async start(handler: TransportHandler): Promise<void> {
     return new Promise((resolve, reject) => {
-      const requestHandler = async (req: IncomingMessage, res: ServerResponse) => {
+      const asyncHandler = async (
+        req: IncomingMessage, res: ServerResponse
+      ) => {
         const requestOrigin = req.headers.origin;
 
         // Handle CORS preflight
@@ -304,9 +310,13 @@ export class HttpTransport implements Transport {
         }
       };
 
+      // Wrap async handler to satisfy void return type expected by http server
+      const requestHandler = (req: IncomingMessage, res: ServerResponse) => {
+        void asyncHandler(req, res);
+      };
+
       // Create HTTP or HTTPS server based on TLS configuration
-      if (this.options.tls) {
-        this.server = createHttpsServer(
+      this.server = this.options.tls ? createHttpsServer(
           {
             key: this.options.tls.key,
             cert: this.options.tls.cert,
@@ -315,10 +325,7 @@ export class HttpTransport implements Transport {
             rejectUnauthorized: this.options.tls.rejectUnauthorized,
           },
           requestHandler
-        );
-      } else {
-        this.server = createHttpServer(requestHandler);
-      }
+        ) : createHttpServer(requestHandler);
 
       const port = this.options.port ?? 3000;
       const host = this.options.host ?? '0.0.0.0';

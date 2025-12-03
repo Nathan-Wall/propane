@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-map-key.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
 export class MapMapKey extends Message<MapMapKey.Data> {
   static TYPE_TAG = Symbol("MapMapKey");
   static readonly $typeName = "MapMapKey";
@@ -10,8 +11,8 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   constructor(props?: MapMapKey.Value) {
     if (!props && MapMapKey.EMPTY) return MapMapKey.EMPTY;
     super(MapMapKey.TYPE_TAG, "MapMapKey");
-    this.#nested = props ? props.nested === undefined || props.nested === null ? props.nested : props.nested instanceof ImmutableMap || Object.prototype.toString.call(props.nested) === "[object ImmutableMap]" ? props.nested : new ImmutableMap(props.nested) : new ImmutableMap();
-    this.#optional = props ? props.optional === undefined || props.optional === null ? props.optional : props.optional instanceof ImmutableMap || Object.prototype.toString.call(props.optional) === "[object ImmutableMap]" ? props.optional : new ImmutableMap(props.optional) : undefined;
+    this.#nested = props ? props.nested === undefined || props.nested === null ? new ImmutableMap() : props.nested instanceof ImmutableMap ? props.nested : new ImmutableMap(props.nested) : new ImmutableMap();
+    this.#optional = props ? props.optional === undefined || props.optional === null ? props.optional : props.optional instanceof ImmutableMap ? props.optional : new ImmutableMap(props.optional) : undefined;
     if (!props) MapMapKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapMapKey.Data>[] {
@@ -29,35 +30,35 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     const props = {} as Partial<MapMapKey.Data>;
     const nestedValue = entries["nested"];
     if (nestedValue === undefined) throw new Error("Missing required property \"nested\".");
-    const nestedMapValue = nestedValue === undefined || nestedValue === null ? nestedValue : nestedValue instanceof ImmutableMap || Object.prototype.toString.call(nestedValue) === "[object ImmutableMap]" ? nestedValue : new ImmutableMap(nestedValue);
-    if (!((nestedMapValue instanceof ImmutableMap || Object.prototype.toString.call(nestedMapValue) === "[object ImmutableMap]" || nestedMapValue instanceof Map || Object.prototype.toString.call(nestedMapValue) === "[object Map]") && [...nestedMapValue.entries()].every(([mapKey, mapValue]) => (mapKey instanceof ImmutableMap || Object.prototype.toString.call(mapKey) === "[object ImmutableMap]" || mapKey instanceof Map || Object.prototype.toString.call(mapKey) === "[object Map]") && [...mapKey.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number") && typeof mapValue === "string"))) throw new Error("Invalid value for property \"nested\".");
-    props.nested = nestedMapValue;
+    const nestedMapValue = nestedValue === undefined || nestedValue === null ? new ImmutableMap() : nestedValue as object instanceof ImmutableMap ? nestedValue : new ImmutableMap(nestedValue as Iterable<[unknown, unknown]>);
+    if (!((nestedMapValue instanceof ImmutableMap || nestedMapValue instanceof Map) && [...(nestedMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey instanceof ImmutableMap || mapKey instanceof Map) && [...(mapKey as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number") && typeof mapValue === "string"))) throw new Error("Invalid value for property \"nested\".");
+    props.nested = nestedMapValue as ImmutableMap<ImmutableMap<string, number>, string>;
     const optionalValue = entries["optional"];
     const optionalNormalized = optionalValue === null ? undefined : optionalValue;
-    const optionalMapValue = optionalNormalized === undefined || optionalNormalized === null ? optionalNormalized : optionalNormalized instanceof ImmutableMap || Object.prototype.toString.call(optionalNormalized) === "[object ImmutableMap]" ? optionalNormalized : new ImmutableMap(optionalNormalized);
-    if (optionalMapValue !== undefined && !((optionalMapValue instanceof ImmutableMap || Object.prototype.toString.call(optionalMapValue) === "[object ImmutableMap]" || optionalMapValue instanceof Map || Object.prototype.toString.call(optionalMapValue) === "[object Map]") && [...optionalMapValue.entries()].every(([mapKey, mapValue]) => (mapKey instanceof ImmutableMap || Object.prototype.toString.call(mapKey) === "[object ImmutableMap]" || mapKey instanceof Map || Object.prototype.toString.call(mapKey) === "[object Map]") && [...mapKey.entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number") && typeof mapValue === "number"))) throw new Error("Invalid value for property \"optional\".");
-    props.optional = optionalMapValue;
+    const optionalMapValue = optionalNormalized === undefined || optionalNormalized === null ? optionalNormalized : optionalNormalized as object instanceof ImmutableMap ? optionalNormalized : new ImmutableMap(optionalNormalized as Iterable<[unknown, unknown]>);
+    if (optionalMapValue !== undefined && !((optionalMapValue instanceof ImmutableMap || optionalMapValue instanceof Map) && [...(optionalMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey instanceof ImmutableMap || mapKey instanceof Map) && [...(mapKey as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number") && typeof mapValue === "number"))) throw new Error("Invalid value for property \"optional\".");
+    props.optional = optionalMapValue as ImmutableMap<ImmutableMap<string, number>, number>;
     return props as MapMapKey.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): MapMapKey {
+  override [WITH_CHILD](key: string | number, child: unknown): MapMapKey {
     switch (key) {
       case "nested":
         return new MapMapKey({
-          nested: child,
+          nested: child as ImmutableMap<ImmutableMap<string, number>, string>,
           optional: this.#optional
         });
       case "optional":
         return new MapMapKey({
           nested: this.#nested,
-          optional: child
+          optional: child as ImmutableMap<ImmutableMap<string, number>, number>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["nested", this.#nested];
-    yield ["optional", this.#optional];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["nested", this.#nested] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["optional", this.#optional] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get nested(): ImmutableMap<ImmutableMap<string, number>, string> {
     return this.#nested;
@@ -91,7 +92,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   }
   deleteNestedEntry(key: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): MapMapKey {
     const nestedCurrent = this.nested;
-    if (nestedCurrent === undefined || !nestedCurrent.has(key)) return this;
+    if (!nestedCurrent?.has(key)) return this;
     const nestedMapSource = this.#nested;
     const nestedMapEntries = [...nestedMapSource.entries()];
     const nestedMapNext = new Map(nestedMapEntries);
@@ -108,7 +109,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   }
   deleteOptionalEntry(key: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): MapMapKey {
     const optionalCurrent = this.optional;
-    if (optionalCurrent === undefined || !optionalCurrent.has(key)) return this;
+    if (!optionalCurrent?.has(key)) return this;
     const optionalMapSource = this.#optional;
     const optionalMapEntries = optionalMapSource === undefined ? [] : [...optionalMapSource.entries()];
     const optionalMapNext = new Map(optionalMapEntries);
@@ -125,7 +126,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     for (const [entryKey, entryValue] of nestedMapNext) {
       if (!predicate(entryValue, entryKey)) nestedMapNext.delete(entryKey);
     }
-    if (this.nested === nestedMapNext || this.nested !== undefined && this.nested.equals(nestedMapNext)) return this;
+    if (this.nested === nestedMapNext as unknown || this.nested?.equals(nestedMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: nestedMapNext,
       optional: this.#optional
@@ -138,7 +139,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     for (const [entryKey, entryValue] of optionalMapNext) {
       if (!predicate(entryValue, entryKey)) optionalMapNext.delete(entryKey);
     }
-    if (this.optional === optionalMapNext || this.optional !== undefined && this.optional.equals(optionalMapNext)) return this;
+    if (this.optional === optionalMapNext as unknown || this.optional?.equals(optionalMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: this.#nested,
       optional: optionalMapNext
@@ -157,7 +158,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     for (const [newKey, newValue] of nestedMappedEntries) {
       nestedMapNext.set(newKey, newValue);
     }
-    if (this.nested === nestedMapNext || this.nested !== undefined && this.nested.equals(nestedMapNext)) return this;
+    if (this.nested === nestedMapNext as unknown || this.nested?.equals(nestedMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: nestedMapNext,
       optional: this.#optional
@@ -176,33 +177,33 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     for (const [newKey, newValue] of optionalMappedEntries) {
       optionalMapNext.set(newKey, newValue);
     }
-    if (this.optional === optionalMapNext || this.optional !== undefined && this.optional.equals(optionalMapNext)) return this;
+    if (this.optional === optionalMapNext as unknown || this.optional?.equals(optionalMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: this.#nested,
       optional: optionalMapNext
     }));
   }
-  mergeNestedEntries(entries: Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string]> | ImmutableMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string> | ReadonlyMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string> | Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string]>): MapMapKey {
+  mergeNestedEntries(entries: ImmutableMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string> | ReadonlyMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string> | Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, string]>): MapMapKey {
     const nestedMapSource = this.#nested;
     const nestedMapEntries = [...nestedMapSource.entries()];
     const nestedMapNext = new Map(nestedMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       nestedMapNext.set(mergeKey, mergeValue);
     }
-    if (this.nested === nestedMapNext || this.nested !== undefined && this.nested.equals(nestedMapNext)) return this;
+    if (this.nested === nestedMapNext as unknown || this.nested?.equals(nestedMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: nestedMapNext,
       optional: this.#optional
     }));
   }
-  mergeOptionalEntries(entries: Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number]> | ImmutableMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number> | ReadonlyMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number> | Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number]>): MapMapKey {
+  mergeOptionalEntries(entries: ImmutableMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number> | ReadonlyMap<ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number> | Iterable<[ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, number]>): MapMapKey {
     const optionalMapSource = this.#optional;
     const optionalMapEntries = optionalMapSource === undefined ? [] : [...optionalMapSource.entries()];
     const optionalMapNext = new Map(optionalMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       optionalMapNext.set(mergeKey, mergeValue);
     }
-    if (this.optional === optionalMapNext || this.optional !== undefined && this.optional.equals(optionalMapNext)) return this;
+    if (this.optional === optionalMapNext as unknown || this.optional?.equals(optionalMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: this.#nested,
       optional: optionalMapNext
@@ -210,13 +211,13 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   }
   setNested(value: Map<Map<string, number>, string> | Iterable<[Map<string, number>, string]>): MapMapKey {
     return this.$update(new MapMapKey({
-      nested: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value),
+      nested: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value),
       optional: this.#optional
     }));
   }
   setNestedEntry(key: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, value: string): MapMapKey {
     const nestedCurrent = this.nested;
-    if (nestedCurrent && nestedCurrent.has(key)) {
+    if (nestedCurrent?.has(key)) {
       const existing = nestedCurrent.get(key);
       if (equals(existing, value)) return this;
     }
@@ -232,12 +233,12 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   setOptional(value: Map<ReadonlyMap<string, number>, number> | Iterable<[ReadonlyMap<string, number>, number]>): MapMapKey {
     return this.$update(new MapMapKey({
       nested: this.#nested,
-      optional: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
+      optional: value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)
     }));
   }
   setOptionalEntry(key: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>, value: number): MapMapKey {
     const optionalCurrent = this.optional;
-    if (optionalCurrent && optionalCurrent.has(key)) {
+    if (optionalCurrent?.has(key)) {
       const existing = optionalCurrent.get(key);
       if (equals(existing, value)) return this;
     }
@@ -257,7 +258,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     const currentValue = nestedMapNext.get(key);
     const updatedValue = updater(currentValue);
     nestedMapNext.set(key, updatedValue);
-    if (this.nested === nestedMapNext || this.nested !== undefined && this.nested.equals(nestedMapNext)) return this;
+    if (this.nested === nestedMapNext as unknown || this.nested?.equals(nestedMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: nestedMapNext,
       optional: this.#optional
@@ -270,7 +271,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     const currentValue = optionalMapNext.get(key);
     const updatedValue = updater(currentValue);
     optionalMapNext.set(key, updatedValue);
-    if (this.optional === optionalMapNext || this.optional !== undefined && this.optional.equals(optionalMapNext)) return this;
+    if (this.optional === optionalMapNext as unknown || this.optional?.equals(optionalMapNext)) return this;
     return this.$update(new MapMapKey({
       nested: this.#nested,
       optional: optionalMapNext
@@ -278,9 +279,9 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   }
 }
 export namespace MapMapKey {
-  export interface Data {
+  export type Data = {
     nested: Map<Map<string, number>, string> | Iterable<[Map<string, number>, string]>;
     optional?: Map<ReadonlyMap<string, number>, number> | Iterable<[ReadonlyMap<string, number>, number]> | undefined;
-  }
+  };
   export type Value = MapMapKey | MapMapKey.Data;
 }

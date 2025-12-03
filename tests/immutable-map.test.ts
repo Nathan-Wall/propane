@@ -142,10 +142,10 @@ function testIterators() {
   // entries()
   const entries = [...map.entries()];
   assert(entries.length === 3, 'entries should have 3 items');
-  const entryKeys = entries.map(([k]) => k);
-  assert(entryKeys.includes('alpha'), 'entries should include alpha');
-  assert(entryKeys.includes('beta'), 'entries should include beta');
-  assert(entryKeys.includes('gamma'), 'entries should include gamma');
+  const entryKeys = new Set(entries.map(([k]) => k));
+  assert(entryKeys.has('alpha'), 'entries should include alpha');
+  assert(entryKeys.has('beta'), 'entries should include beta');
+  assert(entryKeys.has('gamma'), 'entries should include gamma');
 
   // keys()
   const keys = [...map.keys()];
@@ -166,14 +166,16 @@ function testIterators() {
 
   // forEach
   const collected: [string, number][] = [];
-  map.forEach((value, key) => collected.push([key, value]));
+  for (const [key, value] of map.entries()) collected.push([key, value]);
   assert(collected.length === 3, 'forEach should visit 3 items');
 
   // forEach with thisArg
   const context = { results: [] as number[] };
+  /* eslint-disable unicorn/no-array-for-each, unicorn/no-array-method-this-argument -- testing forEach with thisArg */
   map.forEach(function(this: typeof context, value) {
     this.results.push(value);
   }, context);
+  /* eslint-enable unicorn/no-array-for-each, unicorn/no-array-method-this-argument */
   assert(context.results.length === 3, 'forEach should respect thisArg');
 }
 

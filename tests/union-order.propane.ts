@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-order.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static readonly $typeName = "StringFirst";
@@ -37,9 +38,9 @@ export class StringFirst extends Message<StringFirst.Data> {
   }
 }
 export namespace StringFirst {
-  export interface Data {
+  export type Data = {
     value: string | number;
-  }
+  };
   export type Value = StringFirst | StringFirst.Data;
 }
 export class NumberFirst extends Message<NumberFirst.Data> {
@@ -78,8 +79,8 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   }
 }
 export namespace NumberFirst {
-  export interface Data {
+  export type Data = {
     value: number | string;
-  }
+  };
   export type Value = NumberFirst | NumberFirst.Data;
 }

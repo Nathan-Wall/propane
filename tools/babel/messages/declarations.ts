@@ -25,8 +25,8 @@ function extractTypeParameters(
     // Validate that the type parameter has a constraint
     if (!param.constraint) {
       throw new Error(
-        `Generic type parameter "${name}" must have an "extends Message" constraint. ` +
-        `Example: ${name} extends Message`
+        `Generic type parameter "${name}" must have an "extends Message" constraint. `
+        + `Example: ${name} extends Message`
       );
     }
 
@@ -49,11 +49,11 @@ function extractTypeParameters(
     }
 
     // Validate that the constraint is Message or a declared message type
-    const baseConstraint = constraint.split('.')[0];
+    const baseConstraint = constraint.split('.')[0]!;
     if (baseConstraint !== 'Message' && !declaredMessageTypeNames.has(baseConstraint)) {
       throw new Error(
-        `Generic type parameter "${name}" must extend Message or a message type, ` +
-        `but extends "${constraint}".`
+        `Generic type parameter "${name}" must extend Message or a message type, `
+        + `but extends "${constraint}".`
       );
     }
 
@@ -172,8 +172,7 @@ export function buildDeclarations(
     typeAlias,
     properties,
     exported,
-    generatedTypeNames,
-    typeParameters
+    generatedTypeNames
   );
   const classDecl = buildClassFromProperties(
     typeAlias.id.name,

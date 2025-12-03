@@ -1,0 +1,19 @@
+/**
+ * Response wrapper for handlers that need to return custom headers.
+ *
+ * @example
+ * ```typescript
+ * server.handle(Login, async (req) => {
+ *   return new Response({
+ *     body: new LoginResponse({ success: true }),
+ *     headers: new Map([['Set-Cookie', 'session=abc; HttpOnly']]),
+ *   });
+ * });
+ * ```
+ */
+import { Message } from '@propanejs/runtime';
+
+export type Response<T extends Message> = {
+  '1:body': T;
+  '2:headers'?: Map<string, string>;
+};

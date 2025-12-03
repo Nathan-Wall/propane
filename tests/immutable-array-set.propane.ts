@@ -2,7 +2,8 @@
 // Generated from tests/immutable-array-set.propane
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static readonly $typeName = "ImmutableArraySet";
@@ -12,8 +13,8 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   constructor(props?: ImmutableArraySet.Value) {
     if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
     super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet");
-    this.#arr = props ? props.arr === undefined || props.arr === null ? props.arr : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : new ImmutableArray();
-    this.#set = props ? props.set === undefined || props.set === null ? props.set : props.set instanceof ImmutableSet || Object.prototype.toString.call(props.set) === "[object ImmutableSet]" ? props.set : new ImmutableSet(props.set) : new ImmutableSet();
+    this.#arr = props ? props.arr === undefined || props.arr === null ? new ImmutableArray() : props.arr instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr) : new ImmutableArray();
+    this.#set = props ? props.set === undefined || props.set === null ? new ImmutableSet() : props.set instanceof ImmutableSet ? props.set : new ImmutableSet(props.set) : new ImmutableSet();
     if (!props) ImmutableArraySet.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
@@ -31,35 +32,35 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const props = {} as Partial<ImmutableArraySet.Data>;
     const arrValue = entries["arr"];
     if (arrValue === undefined) throw new Error("Missing required property \"arr\".");
-    const arrArrayValue = arrValue === undefined || arrValue === null ? arrValue : arrValue instanceof ImmutableArray ? arrValue : new ImmutableArray(arrValue);
-    if (!((arrArrayValue instanceof ImmutableArray || Object.prototype.toString.call(arrArrayValue) === "[object ImmutableArray]" || Array.isArray(arrArrayValue)) && [...arrArrayValue].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
-    props.arr = arrArrayValue;
+    const arrArrayValue = arrValue === undefined || arrValue === null ? new ImmutableArray() : arrValue as object instanceof ImmutableArray ? arrValue : new ImmutableArray(arrValue);
+    if (!((arrArrayValue instanceof ImmutableArray || Array.isArray(arrArrayValue)) && [...(arrArrayValue as Iterable<unknown>)].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
+    props.arr = arrArrayValue as ImmutableArray<number>;
     const setValue = entries["set"];
     if (setValue === undefined) throw new Error("Missing required property \"set\".");
-    const setSetValue = setValue === undefined || setValue === null ? setValue : setValue instanceof ImmutableSet || Object.prototype.toString.call(setValue) === "[object ImmutableSet]" ? setValue : new ImmutableSet(setValue);
-    if (!((setSetValue instanceof ImmutableSet || Object.prototype.toString.call(setSetValue) === "[object ImmutableSet]" || setSetValue instanceof Set || Object.prototype.toString.call(setSetValue) === "[object Set]") && [...setSetValue].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"set\".");
-    props.set = setSetValue;
+    const setSetValue = setValue === undefined || setValue === null ? new ImmutableSet() : setValue as object instanceof ImmutableSet ? setValue : new ImmutableSet(setValue);
+    if (!((setSetValue instanceof ImmutableSet || setSetValue instanceof Set) && [...(setSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"set\".");
+    props.set = setSetValue as ImmutableSet<string>;
     return props as ImmutableArraySet.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): ImmutableArraySet {
+  override [WITH_CHILD](key: string | number, child: unknown): ImmutableArraySet {
     switch (key) {
       case "arr":
         return new ImmutableArraySet({
-          arr: child,
+          arr: child as ImmutableArray<number>,
           set: this.#set
         });
       case "set":
         return new ImmutableArraySet({
           arr: this.#arr,
-          set: child
+          set: child as ImmutableSet<string>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["arr", this.#arr];
-    yield ["set", this.#set];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["arr", this.#arr] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["set", this.#set] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get arr(): ImmutableArray<number> {
     return this.#arr;
@@ -74,7 +75,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     for (const toAdd of values) {
       setSetNext.add(toAdd);
     }
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -85,7 +86,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
     setSetNext.add(value);
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -96,7 +97,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
     setSetNext.clear();
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -118,7 +119,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     for (const del of values) {
       setSetNext.delete(del);
     }
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -129,7 +130,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
     setSetNext.delete(value);
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -156,7 +157,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     for (const value of setFiltered) {
       setSetNext.add(value);
     }
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -175,7 +176,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     for (const value of setMapped) {
       setSetNext.add(value);
     }
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -218,7 +219,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   setSet(value: Set<string> | Iterable<string>): ImmutableArraySet {
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
-      set: value === undefined || value === null ? value : value instanceof ImmutableSet || Object.prototype.toString.call(value) === "[object ImmutableSet]" ? value : new ImmutableSet(value)
+      set: value === undefined || value === null ? new ImmutableSet() : value instanceof ImmutableSet ? value : new ImmutableSet(value)
     }));
   }
   shiftArr(): ImmutableArraySet {
@@ -267,7 +268,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     for (const updatedItem of updated) {
       setSetNext.add(updatedItem);
     }
-    if (this.set === setSetNext || this.set !== undefined && this.set.equals(setSetNext)) return this;
+    if (this.set === setSetNext as unknown || this.set?.equals(setSetNext)) return this;
     return this.$update(new ImmutableArraySet({
       arr: this.#arr,
       set: setSetNext
@@ -275,9 +276,9 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   }
 }
 export namespace ImmutableArraySet {
-  export interface Data {
+  export type Data = {
     arr: number[] | Iterable<number>;
     set: Set<string> | Iterable<string>;
-  }
+  };
   export type Value = ImmutableArraySet | ImmutableArraySet.Data;
 }

@@ -1,6 +1,5 @@
 import ts from 'typescript';
 import { readFileSync } from 'node:fs';
-import { basename, dirname, relative } from 'node:path';
 
 /**
  * Represents an RPC endpoint extracted from a .propane file.
@@ -35,7 +34,7 @@ export interface ParseResult {
  * ```
  */
 export function parseFile(filePath: string): RpcEndpoint[] {
-  const content = readFileSync(filePath, 'utf-8');
+  const content = readFileSync(filePath, 'utf8');
   const sourceFile = ts.createSourceFile(
     filePath,
     content,
@@ -77,7 +76,7 @@ function extractRpcEndpoint(
     if (ts.isTypeReferenceNode(member)) {
       const refName = getTypeName(member.typeName);
       if (refName === 'RpcRequest' && member.typeArguments?.length === 1) {
-        const responseTypeArg = member.typeArguments[0];
+        const responseTypeArg = member.typeArguments[0]!;
         if (ts.isTypeReferenceNode(responseTypeArg)) {
           const responseType = getTypeName(responseTypeArg.typeName);
           return {

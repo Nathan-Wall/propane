@@ -98,10 +98,13 @@ export class PmsClient {
       const parsed = parseCerealString(responseBody);
       if (isTaggedMessageData(parsed)) {
         // Reconstruct the message from the parsed data
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const proto = responseClass.prototype as any;
+        // Use type assertion for prototype access to $fromEntries
+        type FromEntriesProto = {
+          $fromEntries(entries: Record<string, unknown>): unknown;
+        };
+        const proto = responseClass.prototype as FromEntriesProto;
         const props = proto.$fromEntries(parsed.$data);
-        return new responseClass(props) as TResponse;
+        return new responseClass(props as TResponse) as TResponse;
       }
       // Fallback to standard deserialization for non-tagged responses
       return responseClass.deserialize(responseBody) as TResponse;
@@ -122,11 +125,12 @@ export class PmsClient {
     try {
       const parsed = parseCerealString(body);
       if (isTaggedMessageData(parsed) && parsed.$tag === 'PmsError') {
+        const data = parsed.$data as Record<string, string | undefined>;
         return {
-          code: String(parsed.$data['code'] ?? 'UNKNOWN'),
-          message: String(parsed.$data['message'] ?? 'Unknown error'),
-          requestId: parsed.$data['requestId'] as string | undefined,
-          details: parsed.$data['details'] as string | undefined,
+          code: data['code'] ?? 'UNKNOWN',
+          message: data['message'] ?? 'Unknown error',
+          requestId: data['requestId'],
+          details: data['details'],
         };
       }
     } catch {

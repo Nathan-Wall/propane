@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "../runtime/index.js";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
   static readonly $typeName = "UrlMessage";
@@ -15,7 +16,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     this.#id = props ? props.id : 0;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
-    this.#links = props ? props.links === undefined || props.links === null ? props.links : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : new ImmutableArray();
+    this.#links = props ? props.links === undefined || props.links === null ? new ImmutableArray() : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : new ImmutableArray();
     if (!props) UrlMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
@@ -45,34 +46,34 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     props.id = idValue;
     const primaryValue = entries["2"] === undefined ? entries["primary"] : entries["2"];
     if (primaryValue === undefined) throw new Error("Missing required property \"primary\".");
-    if (!(primaryValue instanceof URL || primaryValue instanceof ImmutableUrl || Object.prototype.toString.call(primaryValue) === "[object URL]" || Object.prototype.toString.call(primaryValue) === "[object ImmutableUrl]")) throw new Error("Invalid value for property \"primary\".");
+    if (!(primaryValue instanceof URL || primaryValue instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
     props.primary = primaryValue;
     const secondaryValue = entries["3"] === undefined ? entries["secondary"] : entries["3"];
     const secondaryNormalized = secondaryValue === null ? undefined : secondaryValue;
-    if (secondaryNormalized !== undefined && !(secondaryNormalized instanceof URL || secondaryNormalized instanceof ImmutableUrl || Object.prototype.toString.call(secondaryNormalized) === "[object URL]" || Object.prototype.toString.call(secondaryNormalized) === "[object ImmutableUrl]")) throw new Error("Invalid value for property \"secondary\".");
+    if (secondaryNormalized !== undefined && !(secondaryNormalized instanceof URL || secondaryNormalized instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
     props.secondary = secondaryNormalized;
     const linksValue = entries["4"] === undefined ? entries["links"] : entries["4"];
     if (linksValue === undefined) throw new Error("Missing required property \"links\".");
-    const linksArrayValue = linksValue === undefined || linksValue === null ? linksValue : linksValue instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue);
-    if (!((linksArrayValue instanceof ImmutableArray || Object.prototype.toString.call(linksArrayValue) === "[object ImmutableArray]" || Array.isArray(linksArrayValue)) && [...linksArrayValue].every(element => element instanceof URL || element instanceof ImmutableUrl || Object.prototype.toString.call(element) === "[object URL]" || Object.prototype.toString.call(element) === "[object ImmutableUrl]"))) throw new Error("Invalid value for property \"links\".");
-    props.links = linksArrayValue;
+    const linksArrayValue = linksValue === undefined || linksValue === null ? new ImmutableArray() : linksValue as object instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue);
+    if (!((linksArrayValue instanceof ImmutableArray || Array.isArray(linksArrayValue)) && [...(linksArrayValue as Iterable<unknown>)].every(element => element instanceof URL || element instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
+    props.links = linksArrayValue as ImmutableArray<ImmutableUrl>;
     return props as UrlMessage.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): UrlMessage {
+  override [WITH_CHILD](key: string | number, child: unknown): UrlMessage {
     switch (key) {
       case "links":
         return new UrlMessage({
           id: this.#id,
           primary: this.#primary,
           secondary: this.#secondary,
-          links: child
+          links: child as ImmutableArray<ImmutableUrl>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["links", this.#links];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["links", this.#links] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get id(): number {
     return this.#id;
@@ -228,11 +229,11 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   }
 }
 export namespace UrlMessage {
-  export interface Data {
+  export type Data = {
     id: number;
     primary: ImmutableUrl | URL;
     secondary?: ImmutableUrl | URL | undefined;
     links: URL[] | Iterable<URL>;
-  }
+  };
   export type Value = UrlMessage | UrlMessage.Data;
 }

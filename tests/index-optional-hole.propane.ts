@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static readonly $typeName = "OptionalHole";
@@ -45,7 +46,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     props.id = idValue;
     const createdValue = entries["2"] === undefined ? entries["created"] : entries["2"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate || Object.prototype.toString.call(createdValue) === "[object Date]" || Object.prototype.toString.call(createdValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"created\".");
+    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdValue;
     const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
     const noteNormalized = noteValue === null ? undefined : noteValue;
@@ -110,11 +111,11 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   }
 }
 export namespace OptionalHole {
-  export interface Data {
+  export type Data = {
     id: number;
     created: ImmutableDate | Date;
     note?: string | undefined;
     name: string;
-  }
+  };
   export type Value = OptionalHole | OptionalHole.Data;
 }

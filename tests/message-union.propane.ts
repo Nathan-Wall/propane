@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "../runtime/index.js";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static readonly $typeName = "Cat";
@@ -57,10 +58,10 @@ export class Cat extends Message<Cat.Data> {
   }
 }
 export namespace Cat {
-  export interface Data {
+  export type Data = {
     name: string;
     meows: boolean;
-  }
+  };
   export type Value = Cat | Cat.Data;
 }
 export class Dog extends Message<Dog.Data> {
@@ -119,10 +120,10 @@ export class Dog extends Message<Dog.Data> {
   }
 }
 export namespace Dog {
-  export interface Data {
+  export type Data = {
     name: string;
     barks: boolean;
-  }
+  };
   export type Value = Dog | Dog.Data;
 }
 export class PetOwner extends Message<PetOwner.Data> {
@@ -229,10 +230,10 @@ export class PetOwner extends Message<PetOwner.Data> {
   }
 }
 export namespace PetOwner {
-  export interface Data {
+  export type Data = {
     ownerName: string;
     pet: Cat | Dog;
     optionalPet?: Cat | Dog | undefined;
-  }
+  };
   export type Value = PetOwner | PetOwner.Data;
 }

@@ -13,6 +13,24 @@ if (!targets.length) {
   process.exit(1);
 }
 
+// Load propane config
+function loadPropaneConfig() {
+  const configPath = path.resolve(process.cwd(), 'propane.config.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      return {
+        config: JSON.parse(fs.readFileSync(configPath, 'utf8')),
+        configDir: path.dirname(configPath),
+      };
+    } catch {
+      return { config: {}, configDir: undefined };
+    }
+  }
+  return { config: {}, configDir: undefined };
+}
+
+const { config: propaneConfig, configDir } = loadPropaneConfig();
+
 function collectPropaneFiles(targetPath) {
   const stats = fs.statSync(targetPath);
 
@@ -31,6 +49,13 @@ function collectPropaneFiles(targetPath) {
 
 function transpileFile(sourcePath) {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
+  const pluginOptions = {};
+  if (propaneConfig.runtimeImportPath) {
+    pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
+  }
+  if (configDir) {
+    pluginOptions.runtimeImportBase = configDir;
+  }
   const result = transformSync(sourceCode, {
     filename: sourcePath,
     parserOpts: {
@@ -41,7 +66,7 @@ function transpileFile(sourcePath) {
       retainLines: false,
       compact: false,
     },
-    plugins: [propanePlugin],
+    plugins: [[propanePlugin, pluginOptions]],
     ast: false,
   });
 

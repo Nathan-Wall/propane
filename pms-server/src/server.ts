@@ -42,8 +42,12 @@ export class PmsServer {
    * @param handler - Function that handles the request and returns a response
    * @returns this - for method chaining
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handle<TRequest extends Message<any> & RpcRequest<TResponse>, TResponse extends Message<any>>(
+  handle<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TRequest extends Message<any> & RpcRequest<TResponse>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TResponse extends Message<any>
+  >(
     requestType: MessageClass,
     handler: Handler<TRequest, TResponse>
   ): this {
@@ -58,8 +62,8 @@ export class PmsServer {
    */
   async listen(options: PmsServerOptions = {}): Promise<void> {
     this.transport =
-      options.transport ??
-      new HttpTransport({
+      options.transport
+      ?? new HttpTransport({
         port: options.port ?? 3000,
         host: options.host ?? '0.0.0.0',
       });

@@ -18,7 +18,7 @@ export default function runCerealParserTests() {
 
   // 2. Quoted strings with escapes
   // Tests handling of escaped characters within strings
-  const escapedStr = ':{ "key": "Line\\nBreak", "quote": "He said \\"Hello\\"" }';
+  const escapedStr = String.raw`:{ "key": "Line\nBreak", "quote": "He said \"Hello\"" }`;
   const escObj = parseCerealString(escapedStr) as Record<string, string>;
   assert(escObj.key === 'Line\nBreak', 'Newline escape failed');
   assert(escObj.quote === 'He said "Hello"', 'Quote escape failed');
@@ -40,8 +40,8 @@ export default function runCerealParserTests() {
   // 5. Empty structures
   assert(Object.keys(parseCerealString(':{}') as object).length === 0, 'Empty object failed');
   assert((parseCerealString(':[]') as unknown[]).length === 0, 'Empty array failed');
-  assert((parseCerealString(':M[]') as ImmutableMap<any, any>).size === 0, 'Empty map failed');
-  assert((parseCerealString(':S[]') as ImmutableSet<any>).size === 0, 'Empty set failed');
+  assert((parseCerealString(':M[]') as ImmutableMap<unknown, unknown>).size === 0, 'Empty map failed');
+  assert((parseCerealString(':S[]') as ImmutableSet<unknown>).size === 0, 'Empty set failed');
 
   // 6. BigInts
   const bigInts = ':[ 123n, -456n, 0n ]';
@@ -68,7 +68,8 @@ export default function runCerealParserTests() {
   // 8. Tagged Messages
   // $TagName{ data... }
   const tagged = ':$User{ "id": 1, "name": "Alice" }';
-  const taggedObj = parseCerealString(tagged) as { $tag: string; $data: any };
+  type TaggedObj = { $tag: string; $data: Record<string, unknown> };
+  const taggedObj = parseCerealString(tagged) as TaggedObj;
   assert(taggedObj.$tag === 'User', 'Tagged message tag extraction failed');
   assert(taggedObj.$data.id === 1, 'Tagged message data extraction failed');
 

@@ -27,8 +27,8 @@ export function assertSupportedMapType(
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath, declaredTypeNames);
-  assertSupportedType(valueTypePath, declaredTypeNames);
+  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames);
+  assertSupportedType(valueTypePath!, declaredTypeNames);
 }
 
 export function assertSupportedSetType(
@@ -49,7 +49,7 @@ export function assertSupportedSetType(
     );
   }
 
-  const elementPath = typePath.get('typeParameters').get('params')[0];
+  const elementPath = typePath.get('typeParameters').get('params')[0]!;
   assertSupportedType(elementPath, declaredTypeNames);
 }
 

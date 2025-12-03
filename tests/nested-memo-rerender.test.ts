@@ -2,8 +2,10 @@
  * Test for nested message updates with memoPropane.
  *
  * This test simulates a React component hierarchy:
- * - OuterComponent uses usePropaneState with a nested message (OuterState containing InnerState)
- * - InnerComponent is wrapped with memoPropane and receives the inner message
+ * - OuterComponent uses usePropaneState with a nested message
+ *   (OuterState containing InnerState)
+ * - InnerComponent is wrapped with memoPropane and receives the
+ *   inner message
  *
  * We test:
  * 1. Changing unrelated outer state doesn't re-render inner component
@@ -40,8 +42,8 @@ class InnerState extends Message<{ value: string }> {
   #value: string;
 
   // Hybrid approach: parent chains and callbacks
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(props: { value: string }) {
     super(INNER_STATE_TAG, 'InnerState');
@@ -69,7 +71,11 @@ class InnerState extends Message<{ value: string }> {
   }
 
   // Hybrid approach: set up parent chain
-  public $setParentChain(key: symbol, parent: Message<DataObject>, parentKey: string | number): void {
+  public $setParentChain(
+    key: symbol,
+    parent: Message<DataObject>,
+    parentKey: string | number
+  ): void {
     this.#parentChains.set(key, {
       parent: new WeakRef(parent),
       key: parentKey,
@@ -77,7 +83,10 @@ class InnerState extends Message<{ value: string }> {
   }
 
   // Hybrid approach: set listener callback
-  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+  public [SET_UPDATE_LISTENER](
+    key: symbol,
+    callback: UpdateListenerCallback
+  ): void {
     this.#callbacks.set(key, callback);
   }
 
@@ -86,8 +95,16 @@ class InnerState extends Message<{ value: string }> {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
-      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      type WithChildFn = {
+        [WITH_CHILD]: (k: string | number, c: unknown) => unknown;
+      };
+      type PropagateFn = {
+        [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void;
+      };
+      const newParent = (parent as unknown as WithChildFn)
+        [WITH_CHILD](entry.key, newRoot);
+      (parent as unknown as PropagateFn)
+        [PROPAGATE_UPDATE](key, newParent);
     }
     // Call direct callbacks at the root level
     for (const [, callback] of this.#callbacks) {
@@ -102,8 +119,8 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   #inner: InnerState;
 
   // Hybrid approach: parent chains and callbacks
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(props: { counter: number; inner: InnerState }) {
     super(OUTER_STATE_TAG, 'OuterState');
@@ -113,8 +130,16 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
 
   protected $getPropDescriptors() {
     return [
-      { name: 'counter' as const, fieldNumber: 1, getValue: () => this.#counter },
-      { name: 'inner' as const, fieldNumber: 2, getValue: () => this.#inner },
+      {
+        name: 'counter' as const,
+        fieldNumber: 1,
+        getValue: () => this.#counter,
+      },
+      {
+        name: 'inner' as const,
+        fieldNumber: 2,
+        getValue: () => this.#inner,
+      },
     ];
   }
 
@@ -152,30 +177,46 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   ): OuterState {
     switch (key) {
       case 'inner':
-        return new OuterState({ counter: this.#counter, inner: child as InnerState });
+        return new OuterState({
+          counter: this.#counter,
+          inner: child as InnerState,
+        });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
 
   // Hybrid approach: yield all message children
-  public *[GET_MESSAGE_CHILDREN](): Iterable<[string | number, Message<DataObject>]> {
+  public *[GET_MESSAGE_CHILDREN](): Iterable<
+    [string | number, Message<DataObject>]
+  > {
     yield ['inner', this.#inner as unknown as Message<DataObject>];
   }
 
   // Hybrid approach: set up parent chain
-  public $setParentChain(key: symbol, parent: Message<DataObject>, parentKey: string | number): void {
+  public $setParentChain(
+    key: symbol,
+    parent: Message<DataObject>,
+    parentKey: string | number
+  ): void {
     this.#parentChains.set(key, {
       parent: new WeakRef(parent),
       key: parentKey,
     });
   }
 
-  // Hybrid approach: set listener callback and set up parent chain for children
-  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+  // Hybrid approach: set listener callback and set up parent chain
+  public [SET_UPDATE_LISTENER](
+    key: symbol,
+    callback: UpdateListenerCallback
+  ): void {
     this.#callbacks.set(key, callback);
-    // Set up parent chain for inner (children don't get callback, only parent chain)
-    this.#inner.$setParentChain(key, this as unknown as Message<DataObject>, 'inner');
+    // Set up parent chain for inner (no callback, only parent chain)
+    this.#inner.$setParentChain(
+      key,
+      this as unknown as Message<DataObject>,
+      'inner'
+    );
   }
 
   // Hybrid approach: propagate update
@@ -184,8 +225,16 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
 
     if (chain?.parent.deref()) {
       const parent = chain.parent.deref()!;
-      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
-      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      type WithChildFn = {
+        [WITH_CHILD]: (k: string | number, c: unknown) => unknown;
+      };
+      type PropagateFn = {
+        [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void;
+      };
+      const newParent = (parent as unknown as WithChildFn)
+        [WITH_CHILD](chain.key, replacement);
+      (parent as unknown as PropagateFn)
+        [PROPAGATE_UPDATE](key, newParent);
     } else {
       // Reached root - invoke callback
       const callback = this.#callbacks.get(key);
@@ -200,8 +249,16 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
-      (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      type WithChildFn = {
+        [WITH_CHILD]: (k: string | number, c: unknown) => unknown;
+      };
+      type PropagateFn = {
+        [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void;
+      };
+      const newParent = (parent as unknown as WithChildFn)
+        [WITH_CHILD](entry.key, newRoot);
+      (parent as unknown as PropagateFn)
+        [PROPAGATE_UPDATE](key, newParent);
     }
     // Call direct callbacks at the root level
     for (const [, callback] of this.#callbacks) {
@@ -222,12 +279,12 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
   let renderCount = 0;
 
   // Check for hybrid approach support
-  type HybridListenable = {
+  interface HybridListenable {
     [SET_UPDATE_LISTENER]: (
       key: symbol,
       callback: (val: Message<DataObject>) => void
     ) => void;
-  };
+  }
 
   const hasHybridListener = (value: S): value is S & HybridListenable => {
     return (
@@ -340,15 +397,26 @@ function testUnrelatedOuterChangeDoesNotRerenderInner() {
   const outerComponent = simulateUsePropaneState(initialOuter);
 
   // InnerComponent with memoPropane, receiving inner message as prop
-  const innerComponent = simulateMemoPropane({ inner: outerComponent.getState().inner });
+  const innerComponent = simulateMemoPropane({
+    inner: outerComponent.getState().inner,
+  });
 
-  assert(outerComponent.getRenderCount() === 0, 'Outer should have 0 re-renders initially');
-  assert(innerComponent.getRenderCount() === 1, 'Inner should have 1 render (initial)');
+  assert(
+    outerComponent.getRenderCount() === 0,
+    'Outer should have 0 re-renders initially'
+  );
+  assert(
+    innerComponent.getRenderCount() === 1,
+    'Inner should have 1 render (initial)'
+  );
 
   // Change unrelated outer state (counter)
   outerComponent.getState().setCounter(1);
 
-  assert(outerComponent.getRenderCount() === 1, 'Outer should re-render when counter changes');
+  assert(
+    outerComponent.getRenderCount() === 1,
+    'Outer should re-render when counter changes'
+  );
   assert(outerComponent.getState().counter === 1, 'Counter should be updated');
 
   // Simulate passing new props to inner component
@@ -356,7 +424,10 @@ function testUnrelatedOuterChangeDoesNotRerenderInner() {
     inner: outerComponent.getState().inner,
   });
 
-  assert(!didInnerRerender, 'Inner should NOT re-render when only counter changed');
+  assert(
+    !didInnerRerender,
+    'Inner should NOT re-render when only counter changed'
+  );
   assert(
     innerComponent.getRenderCount() === 1,
     'Inner render count should still be 1'
@@ -373,9 +444,14 @@ function testInnerChangeRerenderInner() {
   const initialOuter = new OuterState({ counter: 0, inner: initialInner });
 
   const outerComponent = simulateUsePropaneState(initialOuter);
-  const innerComponent = simulateMemoPropane({ inner: outerComponent.getState().inner });
+  const innerComponent = simulateMemoPropane({
+    inner: outerComponent.getState().inner,
+  });
 
-  assert(innerComponent.getRenderCount() === 1, 'Inner should have 1 render initially');
+  assert(
+    innerComponent.getRenderCount() === 1,
+    'Inner should have 1 render initially'
+  );
 
   // Change inner state value
   outerComponent.getState().inner.setValue('world');
@@ -429,11 +505,14 @@ function testOuterStatePersistsWhenInnerChanges() {
   );
 
   const counterAfterInnerChange = outerComponent.getState().counter;
-  console.log(`  Counter after inner change: ${counterAfterInnerChange} (expected: 42)`);
+  console.log(
+    `  Counter after inner change: ${counterAfterInnerChange} (expected: 42)`
+  );
 
   assert(
     counterAfterInnerChange === 42,
-    `Counter should STILL be 42 after inner change, but got ${counterAfterInnerChange}`
+    `Counter should STILL be 42 after inner change, `
+      + `but got ${counterAfterInnerChange}`
   );
 
   console.log('Outer state persists when inner changes: PASSED');
@@ -463,7 +542,9 @@ function testMultipleOuterChangesBeforeInnerChange() {
   assert(outerComponent.getState().counter === 30, 'Counter should be 30');
 
   const renderCountBeforeInnerChange = outerComponent.getRenderCount();
-  console.log(`  Render count before inner change: ${renderCountBeforeInnerChange}`);
+  console.log(
+    `  Render count before inner change: ${renderCountBeforeInnerChange}`
+  );
 
   // Now change inner
   outerComponent.getState().inner.setValue('changed');
@@ -494,8 +575,10 @@ function testMultipleOuterChangesBeforeInnerChange() {
  * skips re-rendering because the inner prop is structurally equal.
  *
  * Scenario:
- * 1. OuterComponent renders with state { counter: 0, inner: { value: 'hello' } }
- * 2. InnerComponent (memoPropane) receives inner prop, renders, holds reference
+ * 1. OuterComponent renders with state:
+ *    { counter: 0, inner: { value: 'hello' } }
+ * 2. InnerComponent (memoPropane) receives inner prop, renders,
+ *    holds reference
  * 3. OuterComponent changes counter to 10 (inner content unchanged)
  * 4. OuterComponent re-renders, passes new inner to InnerComponent
  * 5. memoPropane: oldInner.equals(newInner) === true → SKIP re-render
@@ -514,18 +597,25 @@ function testStaleInnerRefWhenMemoSkipsRerender() {
 
   // Step 2: InnerComponent renders and holds reference to inner
   // This simulates what happens inside a memoized component
-  const innerComponent = simulateMemoPropane({ inner: outerComponent.getState().inner });
+  const innerComponent = simulateMemoPropane({
+    inner: outerComponent.getState().inner,
+  });
 
   // The inner component holds onto its prop reference
   // (In real React, this would be via props or a ref)
-  let innerComponentHeldRef = innerComponent.getProps().inner;
+  const innerComponentHeldRef = innerComponent.getProps().inner;
 
-  console.log(`  Initial: counter=${outerComponent.getState().counter}, inner="${innerComponentHeldRef.value}"`);
+  const initCounter = outerComponent.getState().counter;
+  console.log(
+    `  Initial: counter=${initCounter}, inner="${innerComponentHeldRef.value}"`
+  );
 
   // Step 3: OuterComponent changes counter (inner content unchanged)
   outerComponent.getState().setCounter(10);
 
-  console.log(`  After setCounter(10): counter=${outerComponent.getState().counter}`);
+  console.log(
+    `  After setCounter(10): counter=${outerComponent.getState().counter}`
+  );
   assert(outerComponent.getState().counter === 10, 'Counter should be 10');
 
   // Step 4-5: OuterComponent re-renders, passes new inner to InnerComponent
@@ -533,17 +623,27 @@ function testStaleInnerRefWhenMemoSkipsRerender() {
   const newInnerProp = outerComponent.getState().inner;
   const didRerender = innerComponent.updateProps({ inner: newInnerProp });
 
-  console.log(`  oldInner.equals(newInner) = ${innerComponentHeldRef.equals(newInnerProp)}`);
+  const isEqual = innerComponentHeldRef.equals(newInnerProp);
+  console.log(`  oldInner.equals(newInner) = ${isEqual}`);
   console.log(`  memoPropane re-rendered: ${didRerender}`);
 
   // Verify memoPropane skipped re-render
-  assert(!didRerender, 'memoPropane should skip re-render (inner values equal)');
-  assert(innerComponent.getRenderCount() === 1, 'Inner should still have 1 render');
+  assert(
+    !didRerender,
+    'memoPropane should skip re-render (inner values equal)'
+  );
+  assert(
+    innerComponent.getRenderCount() === 1,
+    'Inner should still have 1 render'
+  );
 
   // Step 6: InnerComponent still has OLD reference
-  // (In real code, the component function didn't re-run, so props/refs are stale)
+  // (In real code, component didn't re-run, so props/refs are stale)
   // innerComponentHeldRef is still pointing to the old inner
-  console.log(`  InnerComponent still holds ref to inner with value="${innerComponentHeldRef.value}"`);
+  console.log(
+    `  InnerComponent still holds ref to inner `
+      + `with value="${innerComponentHeldRef.value}"`
+  );
 
   // Step 7: User interaction calls setValue on the OLD inner reference
   // This simulates a button click handler that was closed over the old props
@@ -554,7 +654,9 @@ function testStaleInnerRefWhenMemoSkipsRerender() {
   const finalCounter = outerComponent.getState().counter;
   const finalInnerValue = outerComponent.getState().inner.value;
 
-  console.log(`  Final state: counter=${finalCounter}, inner="${finalInnerValue}"`);
+  console.log(
+    `  Final state: counter=${finalCounter}, inner="${finalInnerValue}"`
+  );
 
   // Verify inner value changed
   assert(

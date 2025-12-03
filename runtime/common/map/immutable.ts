@@ -30,22 +30,14 @@ function isMessageLike(value: unknown): value is {
   );
 }
 
-const MAP_OBJECT_TAG = '[object Map]';
-const IMMUTABLE_MAP_OBJECT_TAG = '[object ImmutableMap]';
-
 function isImmutableMapLike(
   value: unknown
 ): value is ImmutableMap<unknown, unknown> {
-  return (
-    value instanceof ImmutableMap
-    || Object.prototype.toString.call(value) === IMMUTABLE_MAP_OBJECT_TAG
-  );
+  return value instanceof ImmutableMap;
 }
 
 function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
-  if (!value || typeof value !== 'object') return false;
-  const tag = Object.prototype.toString.call(value);
-  return tag === MAP_OBJECT_TAG || tag === IMMUTABLE_MAP_OBJECT_TAG;
+  return value instanceof Map || value instanceof ImmutableMap;
 }
 
 function equalKeys(a: unknown, b: unknown): boolean {
@@ -186,13 +178,13 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   readonly [Symbol.toStringTag] = 'ImmutableMap';
 
   // Hybrid approach: path tracking for equality comparisons
-  readonly #fromRoot: WeakMap<Message<DataObject>, string> = new WeakMap();
+  readonly #fromRoot = new WeakMap<Message<DataObject>, string>();
 
   // Hybrid approach: parent chains for update propagation (keyed by listener symbol)
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
 
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(
     entries?:
@@ -235,11 +227,19 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    * Propagate updates through parent chains.
    */
   private $propagateUpdates(newMap: ImmutableMap<K, V>): void {
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](entry.key, newMap);
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        entry.key, newMap
+      );
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
     // Also call direct callbacks at the root level
     for (const [, callback] of this.#callbacks) {
@@ -299,10 +299,15 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
 
     for (const [mapKey, value] of this) {
       if (isMessageLike(value) && SET_UPDATE_LISTENER in value) {
-        const msgValue = value as unknown as {
-          $setParentChain: (key: symbol, parent: unknown, parentKey: string | number) => void;
-          [SET_UPDATE_LISTENER]: (key: symbol, callback: UpdateListenerCallback) => void;
+        type ListenableFn = {
+          $setParentChain: (
+            key: symbol, parent: unknown, parentKey: string | number
+          ) => void;
+          [SET_UPDATE_LISTENER]: (
+            key: symbol, callback: UpdateListenerCallback
+          ) => void;
         };
+        const msgValue = value as unknown as ListenableFn;
         const keyStr = this.#serializeKeyForPath(mapKey);
         msgValue.$setParentChain(key, this, keyStr);
         msgValue[SET_UPDATE_LISTENER](key, callback);
@@ -324,13 +329,24 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     return this;
   }
 
-  public [PROPAGATE_UPDATE](key: symbol, replacement: ImmutableMap<K, V>): void {
+  public [PROPAGATE_UPDATE](
+    key: symbol,
+    replacement: ImmutableMap<K, V>
+  ): void {
     const chain = this.#parentChains.get(key);
 
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     if (chain?.parent.deref()) {
-      const parent = chain.parent.deref()!;
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      const parent = chain.parent.deref();
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        chain.key, replacement
+      );
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     } else {
       const callback = this.#callbacks.get(key);
       if (callback) {

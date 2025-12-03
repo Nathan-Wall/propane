@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-hole.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Hole extends Message<Hole.Data> {
   static TYPE_TAG = Symbol("Hole");
   static readonly $typeName = "Hole";
@@ -79,10 +80,10 @@ export class Hole extends Message<Hole.Data> {
   }
 }
 export namespace Hole {
-  export interface Data {
+  export type Data = {
     id: number;
     value: number;
     name: string;
-  }
+  };
   export type Value = Hole | Hole.Data;
 }

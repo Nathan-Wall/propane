@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export type DistanceUnit = 'm' | 'ft';
 export type DistanceUnitType = DistanceUnit;
 export class Distance extends Message<Distance.Data> {
@@ -58,9 +59,9 @@ export class Distance extends Message<Distance.Data> {
   }
 }
 export namespace Distance {
-  export interface Data {
+  export type Data = {
     unit: DistanceUnit;
     value: number;
-  }
+  };
   export type Value = Distance | Distance.Data;
 }

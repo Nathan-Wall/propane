@@ -77,5 +77,5 @@ export class ImmutableDate {
 }
 
 export function isImmutableDate(value: unknown): value is ImmutableDate {
-  return value instanceof ImmutableDate || Object.prototype.toString.call(value) === '[object ImmutableDate]';
+  return value instanceof ImmutableDate;
 }

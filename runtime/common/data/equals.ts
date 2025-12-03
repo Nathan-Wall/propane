@@ -1,6 +1,8 @@
 // @ts-nocheck
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ImmutableArrayBuffer } from './immutable-array-buffer.js';
+import { ImmutableMap } from '../map/immutable.js';
+import { ImmutableSet } from '../set/immutable.js';
+import { ImmutableArray } from '../array/immutable.js';
 
 
 function supportsEquals(
@@ -13,45 +15,20 @@ function supportsEquals(
   );
 }
 
-function isImmutableLike(value: unknown, tag: string): boolean {
-  return (
-    !!value
-    && typeof value === 'object'
-    && (
-      (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag] === tag
-      || Object.prototype.toString.call(value) === `[object ${tag}]`
-    )
-  );
-}
-
 function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
-  return (
-    value instanceof Map
-    || isImmutableLike(value, 'ImmutableMap')
-  );
+  return value instanceof Map || value instanceof ImmutableMap;
 }
 
 function isSetLike(value: unknown): value is ReadonlySet<unknown> {
-  return (
-    value instanceof Set
-    || isImmutableLike(value, 'ImmutableSet')
-  );
+  return value instanceof Set || value instanceof ImmutableSet;
 }
 
 function isArrayLike(value: unknown): value is ArrayLike<unknown> {
-  return Array.isArray(value) || isImmutableLike(value, 'ImmutableArray');
+  return Array.isArray(value) || value instanceof ImmutableArray;
 }
 
 function isArrayBufferLike(value: unknown): value is ArrayBuffer {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  return (
-    value instanceof ArrayBuffer
-    || Object.prototype.toString.call(value) === '[object ArrayBuffer]'
-    || Object.prototype.toString.call(value) === '[object ImmutableArrayBuffer]'
-  );
+  return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
 }
 
 function arrayBufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {

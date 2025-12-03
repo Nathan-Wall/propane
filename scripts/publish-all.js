@@ -8,7 +8,16 @@ const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'tools/babel/messages', 'cli', 'react'];
+const packages = [
+  'runtime',
+  'pms-core',
+  'pms-server',
+  'pms-client',
+  'pms-client-compiler',
+  'tools/babel/messages',
+  'cli',
+  'react',
+];
 
 // Get args
 const args = process.argv.slice(2);
@@ -161,14 +170,8 @@ for (const pkgDir of packages) {
     process.exit(1);
   }
 
-  // Publish runtime first, then babel, then cli (order matters for dependencies)
-  // We use directory names to check order/identity
-  if (
-    pkgDir === 'runtime' && !await publishPackage(pkgDir)
-    || pkgDir === 'babel/messages' && !await publishPackage(pkgDir)
-    || pkgDir === 'cli' && !await publishPackage(pkgDir)
-    || pkgDir === 'react' && !await publishPackage(pkgDir)
-  ) {
+  // Publish in order (order matters for dependencies)
+  if (!await publishPackage(pkgDir)) {
     success = false;
   }
 }

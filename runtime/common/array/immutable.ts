@@ -74,7 +74,6 @@ function hashValue(value: unknown): string {
     return `sym:${desc}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return `obj:${hashString(Object.prototype.toString.call(value))}`;
 }
 
@@ -93,13 +92,13 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   readonly [Symbol.toStringTag] = 'ImmutableArray';
 
   // Hybrid approach: path tracking for equality comparisons
-  readonly #fromRoot: WeakMap<Message<DataObject>, string> = new WeakMap();
+  readonly #fromRoot = new WeakMap<Message<DataObject>, string>();
 
   // Hybrid approach: parent chains for update propagation (keyed by listener symbol)
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
 
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(items?: Iterable<T> | ArrayLike<T>) {
     if (!items) {
@@ -114,7 +113,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       const arrayLike = items as ArrayLike<T>;
       this.#items = Array.from(
         { length: arrayLike.length },
-        (_, i) => arrayLike[i]
+        (_, i) => arrayLike[i]!
       );
     }
 
@@ -134,11 +133,19 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Propagate updates through parent chains.
    */
   private $propagateUpdates(newArray: ImmutableArray<T>): void {
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](entry.key, newArray);
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        entry.key, newArray
+      );
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
     // Also call direct callbacks at the root level
     for (const [, callback] of this.#callbacks) {
@@ -209,11 +216,16 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
       if (isMessageLike(item) && SET_UPDATE_LISTENER in item) {
-        // For Message children, set up their parent chain to point to this array
-        const msgItem = item as unknown as {
-          $setParentChain: (key: symbol, parent: unknown, parentKey: string | number) => void;
-          [SET_UPDATE_LISTENER]: (key: symbol, callback: UpdateListenerCallback) => void;
+        // For Message children, set up parent chain to point to array
+        type ListenableFn = {
+          $setParentChain: (
+            key: symbol, parent: unknown, parentKey: string | number
+          ) => void;
+          [SET_UPDATE_LISTENER]: (
+            key: symbol, callback: UpdateListenerCallback
+          ) => void;
         };
+        const msgItem = item as unknown as ListenableFn;
         msgItem.$setParentChain(key, this, i);
         // Recursively set up listener
         msgItem[SET_UPDATE_LISTENER](key, callback);
@@ -237,15 +249,26 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   /**
    * Propagate an update through the parent chain.
    */
-  public [PROPAGATE_UPDATE](key: symbol, replacement: ImmutableArray<T>): void {
+  public [PROPAGATE_UPDATE](
+    key: symbol,
+    replacement: ImmutableArray<T>
+  ): void {
     const chain = this.#parentChains.get(key);
 
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     if (chain?.parent.deref()) {
-      const parent = chain.parent.deref()!;
+      const parent = chain.parent.deref();
       // Create new parent with replacement at this position
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        chain.key, replacement
+      );
       // Continue propagation
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     } else {
       // Reached root - invoke callback
       const callback = this.#callbacks.get(key);
@@ -325,7 +348,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     thisArg?: unknown
   ): void {
     for (const [i, v] of this.#items.entries()) {
-      callbackfn.call(thisArg, v, i, this);
+      callbackfn.call(thisArg, v, i, this as unknown as readonly T[]);
     }
   }
 
@@ -416,7 +439,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     return new ImmutableArray(
       this.#items.flatMap(
          
-        (v, i) => callback.call(thisArg, v, i, this.#items) as U | readonly U[]
+        (v, i) => callback.call(thisArg, v, i, this.#items)
       )
     );
   }
@@ -477,11 +500,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   ): U | T {
     if (arguments.length >= 2) {
       return this.#items.reduce(
-        (prev, curr, i) => callbackfn(prev, curr, i, this.#items),
-        initialValue
+        (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as T,
+        initialValue as T
       );
     }
-     
+
     return this.#items.reduce(
       (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as unknown as T
     ) as unknown as U | T;
@@ -524,11 +547,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   ): U | T {
     if (arguments.length >= 2) {
       return this.#items.reduceRight(
-        (prev, curr, i) => callbackfn(prev, curr, i, this.#items),
-        initialValue
+        (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as T,
+        initialValue as T
       );
     }
-     
+
     return this.#items.reduceRight(
       (prev, curr, i) => callbackfn(prev, curr, i, this.#items) as unknown as T
     ) as unknown as U | T;
@@ -718,7 +741,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   #defineIndexProps() {
     for (let i = 0; i < this.#items.length; i += 1) {
-      (this as unknown as Record<number, T>)[i] = this.#items[i];
+      (this as unknown as Record<number, T>)[i] = this.#items[i]!;
     }
   }
 }

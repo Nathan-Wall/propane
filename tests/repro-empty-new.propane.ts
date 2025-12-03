@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static readonly $typeName = "UnionFirstNumber";
@@ -37,9 +38,9 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   }
 }
 export namespace UnionFirstNumber {
-  export interface Data {
+  export type Data = {
     val: number | string;
-  }
+  };
   export type Value = UnionFirstNumber | UnionFirstNumber.Data;
 }
 export class UnionFirstString extends Message<UnionFirstString.Data> {
@@ -78,9 +79,9 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   }
 }
 export namespace UnionFirstString {
-  export interface Data {
+  export type Data = {
     val: string | number;
-  }
+  };
   export type Value = UnionFirstString | UnionFirstString.Data;
 }
 export class OptionalField extends Message<OptionalField.Data> {
@@ -122,9 +123,9 @@ export class OptionalField extends Message<OptionalField.Data> {
   }
 }
 export namespace OptionalField {
-  export interface Data {
+  export type Data = {
     val?: string | undefined;
-  }
+  };
   export type Value = OptionalField | OptionalField.Data;
 }
 export class RequiredMessage extends Message<RequiredMessage.Data> {
@@ -153,18 +154,18 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     props.sub = subMessageValue;
     return props as RequiredMessage.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): RequiredMessage {
+  override [WITH_CHILD](key: string | number, child: unknown): RequiredMessage {
     switch (key) {
       case "sub":
         return new RequiredMessage({
-          sub: child
+          sub: child as UnionFirstNumber
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["sub", this.#sub];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["sub", this.#sub] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get sub(): UnionFirstNumber {
     return this.#sub;
@@ -176,8 +177,8 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   }
 }
 export namespace RequiredMessage {
-  export interface Data {
+  export type Data = {
     sub: UnionFirstNumber.Value;
-  }
+  };
   export type Value = RequiredMessage | RequiredMessage.Data;
 }

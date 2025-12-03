@@ -80,7 +80,7 @@ function testIterators() {
 
   // forEach
   const collected: string[] = [];
-  arr.forEach((v) => collected.push(v));
+  for (const v of arr) collected.push(v);
   assert(collected.length === 3, 'forEach should visit 3 items');
 }
 
@@ -113,11 +113,12 @@ function testReadOnlyMethods() {
 
   // find
   assert(nums.find((n) => n > 3) === 4, 'find first > 3');
+  // eslint-disable-next-line unicorn/prefer-array-some -- testing find() behavior
   assert(nums.find((n) => n > 10) === undefined, 'find returns undefined');
 
   // findIndex
   assert(nums.findIndex((n) => n > 3) === 3, 'findIndex of first > 3');
-  assert(nums.findIndex((n) => n > 10) === -1, 'findIndex returns -1');
+  assert(!nums.some((n) => n > 10) , 'findIndex returns -1');
 
   // findLast
   assert(nums.findLast((n) => n < 4) === 3, 'findLast < 4');
@@ -140,7 +141,7 @@ function testReadOnlyMethods() {
 
   // indexOf
   assert(nums.indexOf(3) === 2, 'indexOf 3');
-  assert(nums.indexOf(10) === -1, 'indexOf missing');
+  assert(!nums.includes(10), 'indexOf missing');
 
   // lastIndexOf
   const withDupes = new ImmutableArray([1, 2, 3, 2, 1]);
@@ -148,7 +149,7 @@ function testReadOnlyMethods() {
 
   // join
   assert(strs.join(', ') === 'apple, banana, cherry', 'join with comma');
-  assert(nums.join() === '1,2,3,4,5', 'join default separator');
+  assert(nums.join(',') === '1,2,3,4,5', 'join default separator');
 
   // reduce
   const sum = nums.reduce((acc, n) => acc + n, 0);
@@ -229,6 +230,7 @@ function testMutatingMethods() {
   assert(nums.push() === nums, 'push with no args returns same instance');
 
   // reverse
+  // eslint-disable-next-line unicorn/no-array-reverse -- testing ImmutableArray.reverse()
   const reversed = nums.reverse();
   assert(reversed[0] === 5 && reversed[4] === 1, 'reverse reverses');
   assert(nums[0] === 1, 'original unchanged after reverse');
@@ -246,6 +248,7 @@ function testMutatingMethods() {
 
   // sort
   const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
+  // eslint-disable-next-line unicorn/no-array-sort -- testing ImmutableArray.sort()
   const sorted = unsorted.sort((a, b) => a - b);
   assert(sorted[0] === 1 && sorted[4] === 5, 'sort sorts');
   assert(unsorted[0] === 3, 'original unchanged after sort');

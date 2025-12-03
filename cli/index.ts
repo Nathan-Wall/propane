@@ -22,19 +22,29 @@ interface PropaneConfig {
   include?: string[];
   watch?: boolean;
   outputDir?: string;
+  /** Custom import path for @propanejs/runtime in generated files. */
+  runtimeImportPath?: string;
 }
 
-function loadConfig(): PropaneConfig {
+interface LoadedConfig {
+  config: PropaneConfig;
+  configDir: string | undefined;
+}
+
+function loadConfig(): LoadedConfig {
   const configPath = path.resolve(process.cwd(), 'propane.config.json');
   if (fs.existsSync(configPath)) {
     try {
       const content = fs.readFileSync(configPath, 'utf8');
-      return JSON.parse(content) as PropaneConfig;
+      return {
+        config: JSON.parse(content) as PropaneConfig,
+        configDir: path.dirname(configPath),
+      };
     } catch (err: unknown) {
       console.error(`Warning: Failed to parse propane.config.json: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
-  return {};
+  return { config: {}, configDir: undefined };
 }
 
 for (const arg of args) {
@@ -69,7 +79,7 @@ for (const arg of args) {
 }
 
 // Load and merge config
-const config = loadConfig();
+const { config, configDir } = loadConfig();
 
 if (config.include && targets.length === 0) {
   targets.push(...config.include);
@@ -80,6 +90,9 @@ if (config.watch && !args.includes('--watch') && !args.includes('-w')) {
 if (config.outputDir) {
   outputDir = config.outputDir;
 }
+
+const runtimeImportPath = config.runtimeImportPath;
+const runtimeImportBase = configDir;
 
 function printUsage() {
   console.log(`
@@ -99,7 +112,8 @@ Configuration:
     "include": ["src"],
     "exclude": [],
     "outputDir": "dist",
-    "watch": false
+    "watch": false,
+    "runtimeImportPath": "@propanejs/runtime"
   }
 
 Examples:
@@ -142,13 +156,24 @@ function transpileFile(sourcePath: string) {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
 
   try {
+    type PluginOpts = {
+      runtimeImportPath?: string;
+      runtimeImportBase?: string;
+    };
+    const pluginOptions: PluginOpts = {};
+    if (runtimeImportPath) {
+      pluginOptions.runtimeImportPath = runtimeImportPath;
+    }
+    if (runtimeImportBase) {
+      pluginOptions.runtimeImportBase = runtimeImportBase;
+    }
     const result = transformSync(sourceCode, {
       filename: sourcePath,
       parserOpts: {
         sourceType: 'module',
         plugins: ['typescript'],
       },
-      plugins: [propanePlugin],
+      plugins: [[propanePlugin, pluginOptions]],
     });
 
     if (!result || typeof result.code !== 'string') {
@@ -181,7 +206,7 @@ function transpileFile(sourcePath: string) {
     return true;
   } catch (err: unknown) {
     const relSource = path.relative(process.cwd(), sourcePath);
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+     
     const message = err instanceof Error ? err.message : String(err);
     console.error(`✗ ${relSource}: ${message}`);
     return false;
@@ -252,7 +277,7 @@ if (watch) {
     });
 
   const shutdown = () => {
-    watcher.close();
+    void watcher.close();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);

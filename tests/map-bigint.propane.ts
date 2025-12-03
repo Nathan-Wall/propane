@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static readonly $typeName = "MapBigintKey";
@@ -9,7 +10,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   constructor(props?: MapBigintKey.Value) {
     if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG, "MapBigintKey");
-    this.#values = props ? props.values === undefined || props.values === null ? props.values : props.values instanceof ImmutableMap || Object.prototype.toString.call(props.values) === "[object ImmutableMap]" ? props.values : new ImmutableMap(props.values) : new ImmutableMap();
+    this.#values = props ? props.values === undefined || props.values === null ? new ImmutableMap() : props.values instanceof ImmutableMap ? props.values : new ImmutableMap(props.values) : new ImmutableMap();
     if (!props) MapBigintKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -23,23 +24,23 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const props = {} as Partial<MapBigintKey.Data>;
     const valuesValue = entries["values"];
     if (valuesValue === undefined) throw new Error("Missing required property \"values\".");
-    const valuesMapValue = valuesValue === undefined || valuesValue === null ? valuesValue : valuesValue instanceof ImmutableMap || Object.prototype.toString.call(valuesValue) === "[object ImmutableMap]" ? valuesValue : new ImmutableMap(valuesValue);
-    if (!((valuesMapValue instanceof ImmutableMap || Object.prototype.toString.call(valuesMapValue) === "[object ImmutableMap]" || valuesMapValue instanceof Map || Object.prototype.toString.call(valuesMapValue) === "[object Map]") && [...valuesMapValue.entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
-    props.values = valuesMapValue;
+    const valuesMapValue = valuesValue === undefined || valuesValue === null ? new ImmutableMap() : valuesValue as object instanceof ImmutableMap ? valuesValue : new ImmutableMap(valuesValue as Iterable<[unknown, unknown]>);
+    if (!((valuesMapValue instanceof ImmutableMap || valuesMapValue instanceof Map) && [...(valuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
+    props.values = valuesMapValue as ImmutableMap<bigint, string>;
     return props as MapBigintKey.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): MapBigintKey {
+  override [WITH_CHILD](key: string | number, child: unknown): MapBigintKey {
     switch (key) {
       case "values":
         return new MapBigintKey({
-          values: child
+          values: child as ImmutableMap<bigint, string>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["values", this.#values];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["values", this.#values] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get values(): ImmutableMap<bigint, string> {
     return this.#values;
@@ -57,7 +58,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   deleteValuesEntry(key: bigint): MapBigintKey {
     const valuesCurrent = this.values;
-    if (valuesCurrent === undefined || !valuesCurrent.has(key)) return this;
+    if (!valuesCurrent?.has(key)) return this;
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
@@ -73,7 +74,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     for (const [entryKey, entryValue] of valuesMapNext) {
       if (!predicate(entryValue, entryKey)) valuesMapNext.delete(entryKey);
     }
-    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
+    if (this.values === valuesMapNext as unknown || this.values?.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
     }));
@@ -91,31 +92,31 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     for (const [newKey, newValue] of valuesMappedEntries) {
       valuesMapNext.set(newKey, newValue);
     }
-    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
+    if (this.values === valuesMapNext as unknown || this.values?.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
     }));
   }
-  mergeValuesEntries(entries: Iterable<[bigint, string]> | ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
+  mergeValuesEntries(entries: ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       valuesMapNext.set(mergeKey, mergeValue);
     }
-    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
+    if (this.values === valuesMapNext as unknown || this.values?.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
     }));
   }
   setValues(value: Map<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
     return this.$update(new MapBigintKey({
-      values: value === undefined || value === null ? value : value instanceof ImmutableMap || Object.prototype.toString.call(value) === "[object ImmutableMap]" ? value : new ImmutableMap(value)
+      values: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)
     }));
   }
   setValuesEntry(key: bigint, value: string): MapBigintKey {
     const valuesCurrent = this.values;
-    if (valuesCurrent && valuesCurrent.has(key)) {
+    if (valuesCurrent?.has(key)) {
       const existing = valuesCurrent.get(key);
       if (equals(existing, value)) return this;
     }
@@ -134,15 +135,15 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const currentValue = valuesMapNext.get(key);
     const updatedValue = updater(currentValue);
     valuesMapNext.set(key, updatedValue);
-    if (this.values === valuesMapNext || this.values !== undefined && this.values.equals(valuesMapNext)) return this;
+    if (this.values === valuesMapNext as unknown || this.values?.equals(valuesMapNext)) return this;
     return this.$update(new MapBigintKey({
       values: valuesMapNext
     }));
   }
 }
 export namespace MapBigintKey {
-  export interface Data {
+  export type Data = {
     values: Map<bigint, string> | Iterable<[bigint, string]>;
-  }
+  };
   export type Value = MapBigintKey | MapBigintKey.Data;
 }

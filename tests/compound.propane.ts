@@ -2,7 +2,8 @@
 // Generated from tests/compound.propane
 import { Indexed } from './indexed.propane';
 import { User } from './user.propane';
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static readonly $typeName = "Compound_Inline";
@@ -39,9 +40,9 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   }
 }
 export namespace Compound_Inline {
-  export interface Data {
+  export type Data = {
     value: string;
-  }
+  };
   export type Value = Compound_Inline | Compound_Inline.Data;
 }
 export class Compound extends Message<Compound.Data> {
@@ -90,34 +91,34 @@ export class Compound extends Message<Compound.Data> {
     props.inline = inlineMessageValue;
     return props as Compound.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): Compound {
+  override [WITH_CHILD](key: string | number, child: unknown): Compound {
     switch (key) {
       case "user":
         return new Compound({
-          user: child,
+          user: child as User,
           indexed: this.#indexed,
           inline: this.#inline
         });
       case "indexed":
         return new Compound({
           user: this.#user,
-          indexed: child,
+          indexed: child as Indexed,
           inline: this.#inline
         });
       case "inline":
         return new Compound({
           user: this.#user,
           indexed: this.#indexed,
-          inline: child
+          inline: child as Compound_Inline
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["user", this.#user];
-    yield ["indexed", this.#indexed];
-    yield ["inline", this.#inline];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["user", this.#user] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["indexed", this.#indexed] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["inline", this.#inline] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get user(): User {
     return this.#user;
@@ -151,11 +152,11 @@ export class Compound extends Message<Compound.Data> {
   }
 }
 export namespace Compound {
-  export interface Data {
+  export type Data = {
     user: User.Value;
     indexed: Indexed.Value;
     inline: Compound_Inline.Value;
-  }
+  };
   export type Value = Compound | Compound.Data;
   export import Inline = Compound_Inline;
 }

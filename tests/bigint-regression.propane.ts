@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/bigint-regression.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
   static readonly $typeName = "Wrapper";
@@ -43,10 +44,10 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
 }
 export namespace Wrapper {
-  export interface Data {
+  export type Data = {
     payload: bigint | {
       id: bigint;
     };
-  }
+  };
   export type Value = Wrapper | Wrapper.Data;
 }

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 // Nested message types for testing memo behavior with state persistence
 export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
@@ -38,9 +39,9 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   }
 }
 export namespace InnerMessage {
-  export interface Data {
+  export type Data = {
     value: string;
-  }
+  };
   export type Value = InnerMessage | InnerMessage.Data;
 }
 export class OuterMessage extends Message<OuterMessage.Data> {
@@ -79,19 +80,19 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     props.inner = innerMessageValue;
     return props as OuterMessage.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): OuterMessage {
+  override [WITH_CHILD](key: string | number, child: unknown): OuterMessage {
     switch (key) {
       case "inner":
         return new OuterMessage({
           counter: this.#counter,
-          inner: child
+          inner: child as InnerMessage
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["inner", this.#inner];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["inner", this.#inner] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get counter(): number {
     return this.#counter;
@@ -113,9 +114,9 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   }
 }
 export namespace OuterMessage {
-  export interface Data {
+  export type Data = {
     counter: number;
     inner: InnerMessage.Value;
-  }
+  };
   export type Value = OuterMessage | OuterMessage.Data;
 }

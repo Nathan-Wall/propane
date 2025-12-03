@@ -121,6 +121,9 @@ export default defineConfig(
 
       // Allow || for boolean expressions (the rule is meant for null/undefined coalescing)
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
+
+      // Allow type aliases instead of interfaces
+      '@typescript-eslint/consistent-type-definitions': 'off',
     },
   },
 

@@ -3,7 +3,11 @@
   "compilerOptions": {
     "outDir": "../build/cli",
     "rootDir": ".",
+    "composite": true,
     "allowJs": true
   },
-  "include": ["**/*"]
+  "include": ["**/*"],
+  "references": [
+    { "path": "../tools/babel/messages" }
+  ]
 }

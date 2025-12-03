@@ -117,5 +117,5 @@ export class ImmutableUrl {
 }
 
 export function isImmutableUrl(value: unknown): value is ImmutableUrl {
-  return value instanceof ImmutableUrl || Object.prototype.toString.call(value) === '[object ImmutableUrl]';
+  return value instanceof ImmutableUrl;
 }

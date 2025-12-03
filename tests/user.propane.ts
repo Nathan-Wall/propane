@@ -3,7 +3,8 @@
 import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -88,11 +89,11 @@ export class User extends Message<User.Data> {
     props.passwordHash = passwordHashValue;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate || Object.prototype.toString.call(createdValue) === "[object Date]" || Object.prototype.toString.call(createdValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"created\".");
+    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdValue;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue instanceof Date || updatedValue instanceof ImmutableDate || Object.prototype.toString.call(updatedValue) === "[object Date]" || Object.prototype.toString.call(updatedValue) === "[object ImmutableDate]")) throw new Error("Invalid value for property \"updated\".");
+    if (!(updatedValue instanceof Date || updatedValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedValue;
     const activeValue = entries["active"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");
@@ -108,7 +109,7 @@ export class User extends Message<User.Data> {
     props.height = heightMessageValue;
     return props as User.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): User {
+  override [WITH_CHILD](key: string | number, child: unknown): User {
     switch (key) {
       case "height":
         return new User({
@@ -120,14 +121,14 @@ export class User extends Message<User.Data> {
           updated: this.#updated,
           active: this.#active,
           eyeColor: this.#eyeColor,
-          height: child
+          height: child as Distance
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["height", this.#height];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["height", this.#height] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get id(): number {
     return this.#id;
@@ -275,7 +276,7 @@ export class User extends Message<User.Data> {
   }
 }
 export namespace User {
-  export interface Data {
+  export type Data = {
     id: number;
     name: string;
     email: Email;
@@ -285,6 +286,6 @@ export namespace User {
     active: boolean;
     eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
     height: Distance.Value;
-  }
+  };
   export type Value = User | User.Data;
 }

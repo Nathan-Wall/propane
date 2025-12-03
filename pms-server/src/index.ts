@@ -14,9 +14,11 @@ export type {
   HandlerContext,
   HandlerDescriptor,
   HandlerResult,
-  HandlerResponseWithHeaders,
 } from './handler.js';
 export { isResponseWithHeaders } from './handler.js';
+
+// Response wrapper
+export { Response } from './response.propane.js';
 
 // Transport
 export type {

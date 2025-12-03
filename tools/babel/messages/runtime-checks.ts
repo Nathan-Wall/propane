@@ -70,7 +70,7 @@ export function buildRuntimeTypeCheckExpression(
     }
 
     return checks.reduce((acc, expr) =>
-      acc ? t.logicalExpression('||', acc, expr) : expr
+      acc ? t.logicalExpression('||', acc, expr!) : expr!
     );
   }
 
@@ -121,7 +121,7 @@ export function buildRuntimeTypeCheckExpression(
       const elementParam = typeNode.typeParameters?.params?.[0];
       const syntheticArray = t.tsArrayType(
         wrapImmutableType(
-          elementParam ? t.cloneNode(elementParam) : t.tsAnyKeyword()
+          elementParam ? t.cloneNode(elementParam) : t.tsUnknownKeyword()
         )
       );
       return buildArrayTypeCheckExpression(syntheticArray, valueId);
@@ -158,29 +158,11 @@ export function buildDateCheckExpression(
   );
   const instanceOfImmutableDate = t.binaryExpression(
     'instanceof',
-    valueId,
+    t.cloneNode(valueId),
     t.identifier('ImmutableDate')
   );
 
-  const objectToStringCall = buildObjectToStringCall(valueId);
-
-  const tagEqualsDate = t.binaryExpression(
-    '===',
-    objectToStringCall,
-    t.stringLiteral('[object Date]')
-  );
-
-  const tagEqualsImmutableDate = t.binaryExpression(
-    '===',
-    objectToStringCall,
-    t.stringLiteral('[object ImmutableDate]')
-  );
-
-  return t.logicalExpression(
-    '||',
-    t.logicalExpression('||', instanceOfDate, instanceOfImmutableDate),
-    t.logicalExpression('||', tagEqualsDate, tagEqualsImmutableDate)
-  );
+  return t.logicalExpression('||', instanceOfDate, instanceOfImmutableDate);
 }
 
 export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
@@ -191,29 +173,11 @@ export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
   );
   const instanceOfImmutableUrl = t.binaryExpression(
     'instanceof',
-    valueId,
+    t.cloneNode(valueId),
     t.identifier('ImmutableUrl')
   );
 
-  const objectToStringCall = buildObjectToStringCall(valueId);
-
-  const tagEqualsUrl = t.binaryExpression(
-    '===',
-    objectToStringCall,
-    t.stringLiteral('[object URL]')
-  );
-
-  const tagEqualsImmutableUrl = t.binaryExpression(
-    '===',
-    objectToStringCall,
-    t.stringLiteral('[object ImmutableUrl]')
-  );
-
-  return t.logicalExpression(
-    '||',
-    t.logicalExpression('||', instanceOfUrl, instanceOfImmutableUrl),
-    t.logicalExpression('||', tagEqualsUrl, tagEqualsImmutableUrl)
-  );
+  return t.logicalExpression('||', instanceOfUrl, instanceOfImmutableUrl);
 }
 
 export function buildArrayBufferCheckExpression(
@@ -226,33 +190,14 @@ export function buildArrayBufferCheckExpression(
   );
   const instanceOfImmutableArrayBuffer = t.binaryExpression(
     'instanceof',
-    valueId,
+    t.cloneNode(valueId),
     t.identifier('ImmutableArrayBuffer')
-  );
-
-  const tagEqualsArrayBuffer = t.binaryExpression(
-    '===',
-    buildObjectToStringCall(valueId),
-    t.stringLiteral('[object ArrayBuffer]')
-  );
-  const tagEqualsImmutableArrayBuffer = t.binaryExpression(
-    '===',
-    buildObjectToStringCall(valueId),
-    t.stringLiteral('[object ImmutableArrayBuffer]')
   );
 
   return t.logicalExpression(
     '||',
-    t.logicalExpression(
-      '||',
-      instanceOfArrayBuffer,
-      instanceOfImmutableArrayBuffer
-    ),
-    t.logicalExpression(
-      '||',
-      tagEqualsArrayBuffer,
-      tagEqualsImmutableArrayBuffer
-    )
+    instanceOfArrayBuffer,
+    instanceOfImmutableArrayBuffer
   );
 }
 
@@ -306,27 +251,12 @@ export function buildMapTypeCheckExpression(
     valueId,
     t.identifier('ImmutableMap')
   );
-  const immutableTagCheck = buildMapTagComparison(
-    valueId,
-    '[object ImmutableMap]'
-  );
-  const immutableCheck = t.logicalExpression(
-    '||',
-    immutableInstanceCheck,
-    immutableTagCheck
-  );
   const mapInstanceCheck = t.binaryExpression(
     'instanceof',
-    valueId,
+    t.cloneNode(valueId),
     t.identifier('Map')
   );
-  const mapTagCheck = buildMapTagComparison(valueId, '[object Map]');
-  const mapCheck = t.logicalExpression(
-    '||',
-    mapInstanceCheck,
-    mapTagCheck
-  );
-  const baseCheck = t.logicalExpression('||', immutableCheck, mapCheck);
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, mapInstanceCheck);
 
   const mapArgs = getMapTypeArguments(typeNode);
 
@@ -362,10 +292,22 @@ export function buildMapTypeCheckExpression(
     return baseCheck;
   }
 
+  // Cast valueId to ReadonlyMap to call .entries() - TypeScript doesn't narrow
+  // the type even after the instanceof check in the && chain
+  const valueAsMap = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(
+      t.identifier('ReadonlyMap'),
+      t.tsTypeParameterInstantiation([
+        t.tsUnknownKeyword(), t.tsUnknownKeyword()
+      ])
+    )
+  );
+
   const entriesArray = t.arrayExpression([
     t.spreadElement(
       t.callExpression(
-        t.memberExpression(valueId, t.identifier('entries')),
+        t.memberExpression(valueAsMap, t.identifier('entries')),
         []
       )
     ),
@@ -393,27 +335,12 @@ export function buildSetTypeCheckExpression(
     valueId,
     t.identifier('ImmutableSet')
   );
-  const immutableTagCheck = buildSetTagComparison(
-    valueId,
-    '[object ImmutableSet]'
-  );
-  const immutableCheck = t.logicalExpression(
-    '||',
-    immutableInstanceCheck,
-    immutableTagCheck
-  );
   const setInstanceCheck = t.binaryExpression(
     'instanceof',
-    valueId,
+    t.cloneNode(valueId),
     t.identifier('Set')
   );
-  const setTagCheck = buildSetTagComparison(valueId, '[object Set]');
-  const setCheck = t.logicalExpression(
-    '||',
-    setInstanceCheck,
-    setTagCheck
-  );
-  const baseCheck = t.logicalExpression('||', immutableCheck, setCheck);
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, setInstanceCheck);
 
   const elementType = getSetTypeArguments(typeNode);
   if (!elementType) {
@@ -432,7 +359,16 @@ export function buildSetTypeCheckExpression(
     return baseCheck;
   }
 
-  const valuesArray = t.arrayExpression([t.spreadElement(valueId)]);
+  // Cast valueId to Iterable for the spread - TypeScript doesn't narrow
+  // the type even after the instanceof check in the && chain
+  const valueAsIterable = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(
+      t.identifier('Iterable'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    )
+  );
+  const valuesArray = t.arrayExpression([t.spreadElement(valueAsIterable)]);
 
   return t.logicalExpression(
     '&&',
@@ -453,26 +389,14 @@ export function buildArrayTypeCheckExpression(
     valueId,
     t.identifier('ImmutableArray')
   );
-  const immutableTagCheck = buildSetTagComparison(
-    valueId,
-    '[object ImmutableArray]'
-  );
   const arrayInstanceCheck = t.callExpression(
     t.memberExpression(
       t.identifier('Array'),
       t.identifier('isArray')
     ),
-    [valueId]
+    [t.cloneNode(valueId)]
   );
-  const baseCheck = t.logicalExpression(
-    '||',
-    immutableInstanceCheck,
-    t.logicalExpression(
-      '||',
-      immutableTagCheck,
-      arrayInstanceCheck
-    )
-  );
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, arrayInstanceCheck);
 
   const elementId = t.identifier('element');
   const elementCheck = buildRuntimeTypeCheckExpression(
@@ -487,12 +411,22 @@ export function buildArrayTypeCheckExpression(
     return baseCheck;
   }
 
+  // Cast valueId to Iterable for the spread - TypeScript doesn't narrow
+  // the type even after the instanceof/isArray check in the && chain
+  const valueAsIterable = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(
+      t.identifier('Iterable'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    )
+  );
+
   return t.logicalExpression(
     '&&',
     baseCheck,
     t.callExpression(
       t.memberExpression(
-        t.arrayExpression([t.spreadElement(valueId)]),
+        t.arrayExpression([t.spreadElement(valueAsIterable)]),
         t.identifier('every')
       ),
       [t.arrowFunctionExpression([elementId], elementCheck)]
@@ -597,44 +531,4 @@ export function buildTypeLiteralCheckExpression(
   );
 
   return t.logicalExpression('&&', baseCheck, combinedChecks);
-}
-
-export function buildMapTagComparison(
-  valueExpr: t.Expression,
-  tag: string
-): t.Expression {
-  return t.binaryExpression(
-    '===',
-    buildObjectToStringCall(valueExpr),
-    t.stringLiteral(tag)
-  );
-}
-
-export function buildSetTagComparison(
-  valueExpr: t.Expression,
-  tag: string
-): t.Expression {
-  return t.binaryExpression(
-    '===',
-    buildObjectToStringCall(valueExpr),
-    t.stringLiteral(tag)
-  );
-}
-
-export function buildObjectToStringCall(
-  valueExpr: t.Expression
-): t.CallExpression {
-  return t.callExpression(
-    t.memberExpression(
-      t.memberExpression(
-        t.memberExpression(
-          t.identifier('Object'),
-          t.identifier('prototype')
-        ),
-        t.identifier('toString')
-      ),
-      t.identifier('call')
-    ),
-    [t.cloneNode(valueExpr)]
-  );
 }

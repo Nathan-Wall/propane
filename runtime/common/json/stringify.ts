@@ -87,31 +87,11 @@ export function normalizeForJson(value: unknown): unknown {
 function isArrayBuffer(
   value: unknown
 ): value is ArrayBuffer | ImmutableArrayBuffer {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const tag = Object.prototype.toString.call(value);
-  return (
-    value instanceof ArrayBuffer
-    || value instanceof ImmutableArrayBuffer
-    || tag === '[object ArrayBuffer]'
-    || tag === '[object ImmutableArrayBuffer]'
-  );
+  return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
 }
 
 function isUrl(value: unknown): value is URL | ImmutableUrl {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const tag = Object.prototype.toString.call(value);
-  return (
-    value instanceof URL
-    || value instanceof ImmutableUrl
-    || tag === '[object URL]'
-    || tag === '[object ImmutableUrl]'
-  );
+  return value instanceof URL || value instanceof ImmutableUrl;
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {

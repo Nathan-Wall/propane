@@ -131,10 +131,8 @@ function testSelectorOnlyUpdatesOnChange() {
   console.log('Testing selector only updates on relevant changes...');
 
   const user = new UserState({ name: 'Alice', age: 30 });
-  const { getSelectedValue, getUpdateCount, getCurrentState } = simulateSelector(
-    user,
-    (s) => s.name
-  );
+  const result = simulateSelector(user, (s) => s.name);
+  const { getSelectedValue, getUpdateCount, getCurrentState } = result;
 
   assert(getSelectedValue() === 'Alice', 'Initial name should be Alice');
   assert(getUpdateCount() === 0, 'No updates yet');
@@ -186,10 +184,8 @@ function testSelectorComputedValues() {
   console.log('Testing computed selector values...');
 
   const user = new UserState({ name: 'Alice', age: 30 });
-  const { getSelectedValue, getUpdateCount, getCurrentState } = simulateSelector(
-    user,
-    (s) => s.age >= 18
-  );
+  const result = simulateSelector(user, (s) => s.age >= 18);
+  const { getSelectedValue, getUpdateCount, getCurrentState } = result;
 
   assert(getSelectedValue() === true, 'Initial isAdult should be true');
   assert(getUpdateCount() === 0, 'No updates yet');
@@ -235,13 +231,12 @@ function testSelectorWithNonListenable() {
 function testSelectorArraySelection() {
   console.log('Testing selecting arrays with structural equality...');
 
-  // Create a state that returns arrays from selector (arrays get deep comparison)
+  // Create state that returns arrays (deep comparison for arrays)
   const user = new UserState({ name: 'Alice', age: 30 });
-  const { getSelectedValue, getUpdateCount, getCurrentState } = simulateSelector(
-    user,
-    // Return array: [name, isAdult] - arrays are compared structurally
-    (s) => [s.name, s.age >= 18] as [string, boolean]
-  );
+  // Return array: [name, isAdult] - arrays are compared structurally
+  const selector = (s: UserState) => [s.name, s.age >= 18] as const;
+  const result = simulateSelector(user, selector);
+  const { getSelectedValue, getUpdateCount, getCurrentState } = result;
 
   const initial = getSelectedValue();
   assert(initial[0] === 'Alice', 'Initial name correct');

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/prop-collision.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Foo extends Message<Foo.Data> {
   static TYPE_TAG = Symbol("Foo");
   static readonly $typeName = "Foo";
@@ -57,9 +58,9 @@ export class Foo extends Message<Foo.Data> {
   }
 }
 export namespace Foo {
-  export interface Data {
+  export type Data = {
     name: string;
     _name: string;
-  }
+  };
   export type Value = Foo | Foo.Data;
 }

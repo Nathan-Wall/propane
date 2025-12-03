@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN } from "@propanejs/runtime";
+import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
   static readonly $typeName = "Indexed";
@@ -240,7 +241,7 @@ export class Indexed extends Message<Indexed.Data> {
   }
 }
 export namespace Indexed {
-  export interface Data {
+  export type Data = {
     id: number;
     name: string;
     age: number;
@@ -249,6 +250,6 @@ export namespace Indexed {
     score: number | null;
     alias?: string | null | undefined;
     status: string;
-  }
+  };
   export type Value = Indexed | Indexed.Data;
 }

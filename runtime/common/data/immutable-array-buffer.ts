@@ -132,8 +132,5 @@ export class ImmutableArrayBuffer {
 export function isImmutableArrayBuffer(
   value: unknown
 ): value is ImmutableArrayBuffer {
-  return (
-    value instanceof ImmutableArrayBuffer
-    || Object.prototype.toString.call(value) === '[object ImmutableArrayBuffer]'
-  );
+  return value instanceof ImmutableArrayBuffer;
 }

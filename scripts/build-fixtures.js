@@ -11,6 +11,21 @@ const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
 const outDir = path.join(projectRoot, 'build', 'tests');
 
+// Load propane config for runtimeImportPath
+function loadPropaneConfig() {
+  const configPath = path.join(projectRoot, 'propane.config.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    } catch {
+      return {};
+    }
+  }
+  return {};
+}
+
+const propaneConfig = loadPropaneConfig();
+
 await cleanOutput();
 await buildAll();
 await copyTests();
@@ -30,10 +45,15 @@ async function buildAll() {
     const outPath = path.join(outDir, `${rel}.js`); // keep .propane in name for clarity
     ensureDir(path.dirname(outPath));
     const source = fs.readFileSync(file, 'utf8');
+    const pluginOptions = {};
+    if (propaneConfig.runtimeImportPath) {
+      pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
+      pluginOptions.runtimeImportBase = projectRoot;
+    }
     const { code } = transformSync(source, {
       filename: file,
       parserOpts: { sourceType: 'module', plugins: ['typescript'] },
-      plugins: [propanePlugin],
+      plugins: [[propanePlugin, pluginOptions]],
     });
 
     const rewritten = rewriteImports(code);
@@ -44,7 +64,7 @@ async function buildAll() {
         esModuleInterop: true,
         moduleResolution: ts.ModuleResolutionKind.NodeNext,
       },
-      fileName: outPath,
+      fileName: outPath.replace(/\.js$/, '.ts'),
     });
     const finalized = ensureValueExport(transpiled.outputText, source, file);
 
@@ -73,33 +93,6 @@ async function cleanOutput() {
   }
 }
 
-async function buildReact() {
-  const reactDir = path.join(projectRoot, 'react');
-  const reactOutDir = path.join(projectRoot, 'build', 'react');
-  ensureDir(reactOutDir);
-
-  const srcPath = path.join(reactDir, 'index.ts');
-  const destPath = path.join(reactOutDir, 'index.js');
-
-  const source = fs.readFileSync(srcPath, 'utf8');
-
-  // Rewrite imports
-  let rewritten = source;
-  rewritten = rewritten.replaceAll('@propanejs/runtime', '../runtime/index.js');
-
-  const transpiled = ts.transpileModule(rewritten, {
-    compilerOptions: {
-      module: ts.ModuleKind.ESNext,
-      target: ts.ScriptTarget.ES2020,
-      esModuleInterop: true,
-      moduleResolution: ts.ModuleResolutionKind.NodeNext,
-    },
-    fileName: srcPath,
-  });
-
-  fs.writeFileSync(destPath, transpiled.outputText, 'utf8');
-}
-
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
@@ -115,8 +108,13 @@ function rewriteImports(code) {
   // Rewrite relative .propane imports to point at built JS artifacts
   result = result.replaceAll(/\.propane(['"])/g, '.propane.js$1');
 
-  // Remove runtime-only type imports
-  result = result.replaceAll(/,?\s*MessagePropDescriptor/g, '');
+  // Remove runtime-only type imports (MessagePropDescriptor) from imports
+  // This regex targets: import { ..., MessagePropDescriptor, ... } from ...
+  const importRegex = /\bimport\s*\{([^}]*)\}\s*from/g;
+  result = result.replaceAll(importRegex, (match, imports) => {
+    const cleanedImports = imports.replaceAll(/,?\s*MessagePropDescriptor/g, '').replace(/^\s*,/, '').trim();
+    return `import { ${cleanedImports} } from`;
+  });
   result = result.replace(/^import\s*{\s*Brand\s*}\s*from[^;]+;\n?/m, '');
 
   // Append .js to relative imports without an explicit extension

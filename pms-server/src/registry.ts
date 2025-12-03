@@ -1,5 +1,6 @@
 import {
   type Message,
+  type DataObject,
   parseCerealString,
   isTaggedMessageData,
 } from '@propanejs/runtime';
@@ -27,8 +28,10 @@ export class HandlerRegistry {
    * Register a handler for a message type.
    * The response type is inferred from the request type's RpcRequest parameter.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  register<TRequest extends Message<any> & RpcRequest<TResponse>, TResponse extends Message<any>>(
+  register<
+    TRequest extends Message<DataObject> & RpcRequest<TResponse>,
+    TResponse extends Message<DataObject>
+  >(
     messageClass: MessageClass,
     handler: Handler<TRequest, TResponse>
   ): this {
@@ -44,7 +47,10 @@ export class HandlerRegistry {
     this.handlers.set(typeName, {
       typeName,
       messageClass,
-      handler,
+      // Cast through unknown to store in the generic registry
+      // Type safety is maintained by the register() method signature
+      handler: handler as unknown as
+        Handler<Message<DataObject>, Message<DataObject>>,
     });
 
     return this;
@@ -68,7 +74,10 @@ export class HandlerRegistry {
    * Dispatch a serialized request to the appropriate handler.
    * Returns the serialized response and any custom headers.
    */
-  async dispatch(body: string, context: HandlerContext): Promise<DispatchResult> {
+  async dispatch(
+    body: string,
+    context: HandlerContext
+  ): Promise<DispatchResult> {
     // Parse the cereal string
     const parsed = parseCerealString(body);
 
@@ -90,8 +99,9 @@ export class HandlerRegistry {
     }
 
     // Construct the request message using $fromEntries via prototype access
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const proto = descriptor.messageClass.prototype as any;
+    const proto = descriptor.messageClass.prototype as {
+      $fromEntries: (data: Record<string, unknown>) => DataObject;
+    };
     const props = proto.$fromEntries(parsed.$data);
     const request = new descriptor.messageClass(props);
 
@@ -99,13 +109,17 @@ export class HandlerRegistry {
     const result = await descriptor.handler(request, context);
 
     // Extract response and optional headers
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let response: Message<any>;
+    let response: Message<DataObject>;
     let headers: Record<string, string> | undefined;
 
     if (isResponseWithHeaders(result)) {
-      response = result.response;
-      headers = result.headers;
+      response = result.body;
+      if (result.headers) {
+        headers = {};
+        for (const [key, value] of result.headers) {
+          headers[key] = value;
+        }
+      }
     } else {
       response = result;
     }

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-object-key.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals } from "../runtime/index.js";
 export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys_Key.Data> {
   static TYPE_TAG = Symbol("MapObjectKey_ObjectKeys_Key");
   static readonly $typeName = "MapObjectKey_ObjectKeys_Key";
@@ -57,10 +58,10 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
   }
 }
 export namespace MapObjectKey_ObjectKeys_Key {
-  export interface Data {
+  export type Data = {
     id: string;
     version: number;
-  }
+  };
   export type Value = MapObjectKey_ObjectKeys_Key | MapObjectKey_ObjectKeys_Key.Data;
 }
 export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_OptionalObjectMap_Key.Data> {
@@ -99,9 +100,9 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   }
 }
 export namespace MapObjectKey_OptionalObjectMap_Key {
-  export interface Data {
+  export type Data = {
     name: string;
-  }
+  };
   export type Value = MapObjectKey_OptionalObjectMap_Key | MapObjectKey_OptionalObjectMap_Key.Data;
 }
 export class MapObjectKey extends Message<MapObjectKey.Data> {
@@ -113,7 +114,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   constructor(props?: MapObjectKey.Value) {
     if (!props && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
     super(MapObjectKey.TYPE_TAG, "MapObjectKey");
-    this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? props.objectKeys : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new ImmutableMap();
+    this.#objectKeys = props ? props.objectKeys === undefined || props.objectKeys === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.objectKeys).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])) : new ImmutableMap();
     this.#optionalObjectMap = props ? props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)])) : undefined;
     if (!props) MapObjectKey.EMPTY = this;
   }
@@ -132,35 +133,35 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     const props = {} as Partial<MapObjectKey.Data>;
     const objectKeysValue = entries["objectKeys"];
     if (objectKeysValue === undefined) throw new Error("Missing required property \"objectKeys\".");
-    const objectKeysMapValue = objectKeysValue === undefined || objectKeysValue === null ? objectKeysValue : new ImmutableMap(Array.from(objectKeysValue).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v]));
-    if (!((objectKeysMapValue instanceof ImmutableMap || Object.prototype.toString.call(objectKeysMapValue) === "[object ImmutableMap]" || objectKeysMapValue instanceof Map || Object.prototype.toString.call(objectKeysMapValue) === "[object Map]") && [...objectKeysMapValue.entries()].every(([mapKey, mapValue]) => typeof mapValue === "string"))) throw new Error("Invalid value for property \"objectKeys\".");
-    props.objectKeys = objectKeysMapValue;
+    const objectKeysMapValue = objectKeysValue === undefined || objectKeysValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(objectKeysValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v]));
+    if (!((objectKeysMapValue instanceof ImmutableMap || objectKeysMapValue instanceof Map) && [...(objectKeysMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapValue === "string"))) throw new Error("Invalid value for property \"objectKeys\".");
+    props.objectKeys = objectKeysMapValue as ImmutableMap<MapObjectKey_ObjectKeys_Key, string>;
     const optionalObjectMapValue = entries["optionalObjectMap"];
     const optionalObjectMapNormalized = optionalObjectMapValue === null ? undefined : optionalObjectMapValue;
-    const optionalObjectMapMapValue = optionalObjectMapNormalized === undefined || optionalObjectMapNormalized === null ? optionalObjectMapNormalized : new ImmutableMap(Array.from(optionalObjectMapNormalized).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)]));
-    if (optionalObjectMapMapValue !== undefined && !((optionalObjectMapMapValue instanceof ImmutableMap || Object.prototype.toString.call(optionalObjectMapMapValue) === "[object ImmutableMap]" || optionalObjectMapMapValue instanceof Map || Object.prototype.toString.call(optionalObjectMapMapValue) === "[object Map]") && [...optionalObjectMapMapValue.entries()].every(([mapKey, mapValue]) => mapValue instanceof Date || mapValue instanceof ImmutableDate || Object.prototype.toString.call(mapValue) === "[object Date]" || Object.prototype.toString.call(mapValue) === "[object ImmutableDate]"))) throw new Error("Invalid value for property \"optionalObjectMap\".");
-    props.optionalObjectMap = optionalObjectMapMapValue;
+    const optionalObjectMapMapValue = optionalObjectMapNormalized === undefined || optionalObjectMapNormalized === null ? optionalObjectMapNormalized : new ImmutableMap(Array.from(optionalObjectMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [k instanceof MapObjectKey_OptionalObjectMap_Key ? k : new MapObjectKey_OptionalObjectMap_Key(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)]));
+    if (optionalObjectMapMapValue !== undefined && !((optionalObjectMapMapValue instanceof ImmutableMap || optionalObjectMapMapValue instanceof Map) && [...(optionalObjectMapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => mapValue instanceof Date || mapValue instanceof ImmutableDate))) throw new Error("Invalid value for property \"optionalObjectMap\".");
+    props.optionalObjectMap = optionalObjectMapMapValue as ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate>;
     return props as MapObjectKey.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): MapObjectKey {
+  override [WITH_CHILD](key: string | number, child: unknown): MapObjectKey {
     switch (key) {
       case "objectKeys":
         return new MapObjectKey({
-          objectKeys: child,
+          objectKeys: child as ImmutableMap<MapObjectKey_ObjectKeys_Key, string>,
           optionalObjectMap: this.#optionalObjectMap
         });
       case "optionalObjectMap":
         return new MapObjectKey({
           objectKeys: this.#objectKeys,
-          optionalObjectMap: child
+          optionalObjectMap: child as ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["objectKeys", this.#objectKeys];
-    yield ["optionalObjectMap", this.#optionalObjectMap];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["objectKeys", this.#objectKeys] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["optionalObjectMap", this.#optionalObjectMap] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get objectKeys(): ImmutableMap<MapObjectKey_ObjectKeys_Key, string> {
     return this.#objectKeys;
@@ -194,7 +195,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   }
   deleteObjectKeysEntry(key: MapObjectKey_ObjectKeys_Key): MapObjectKey {
     const objectKeysCurrent = this.objectKeys;
-    if (objectKeysCurrent === undefined || !objectKeysCurrent.has(key)) return this;
+    if (!objectKeysCurrent?.has(key)) return this;
     const objectKeysMapSource = this.#objectKeys;
     const objectKeysMapEntries = [...objectKeysMapSource.entries()];
     const objectKeysMapNext = new Map(objectKeysMapEntries);
@@ -211,7 +212,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   }
   deleteOptionalObjectMapEntry(key: MapObjectKey_OptionalObjectMap_Key): MapObjectKey {
     const optionalObjectMapCurrent = this.optionalObjectMap;
-    if (optionalObjectMapCurrent === undefined || !optionalObjectMapCurrent.has(key)) return this;
+    if (!optionalObjectMapCurrent?.has(key)) return this;
     const optionalObjectMapMapSource = this.#optionalObjectMap;
     const optionalObjectMapMapEntries = optionalObjectMapMapSource === undefined ? [] : [...optionalObjectMapMapSource.entries()];
     const optionalObjectMapMapNext = new Map(optionalObjectMapMapEntries);
@@ -228,7 +229,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     for (const [entryKey, entryValue] of objectKeysMapNext) {
       if (!predicate(entryValue, entryKey)) objectKeysMapNext.delete(entryKey);
     }
-    if (this.objectKeys === objectKeysMapNext || this.objectKeys !== undefined && this.objectKeys.equals(objectKeysMapNext)) return this;
+    if (this.objectKeys === objectKeysMapNext as unknown || this.objectKeys?.equals(objectKeysMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: objectKeysMapNext,
       optionalObjectMap: this.#optionalObjectMap
@@ -241,7 +242,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     for (const [entryKey, entryValue] of optionalObjectMapMapNext) {
       if (!predicate(entryValue, entryKey)) optionalObjectMapMapNext.delete(entryKey);
     }
-    if (this.optionalObjectMap === optionalObjectMapMapNext || this.optionalObjectMap !== undefined && this.optionalObjectMap.equals(optionalObjectMapMapNext)) return this;
+    if (this.optionalObjectMap === optionalObjectMapMapNext as unknown || this.optionalObjectMap?.equals(optionalObjectMapMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: this.#objectKeys,
       optionalObjectMap: optionalObjectMapMapNext
@@ -260,7 +261,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     for (const [newKey, newValue] of objectKeysMappedEntries) {
       objectKeysMapNext.set(newKey, newValue);
     }
-    if (this.objectKeys === objectKeysMapNext || this.objectKeys !== undefined && this.objectKeys.equals(objectKeysMapNext)) return this;
+    if (this.objectKeys === objectKeysMapNext as unknown || this.objectKeys?.equals(objectKeysMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: objectKeysMapNext,
       optionalObjectMap: this.#optionalObjectMap
@@ -279,33 +280,33 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     for (const [newKey, newValue] of optionalObjectMapMappedEntries) {
       optionalObjectMapMapNext.set(newKey, newValue);
     }
-    if (this.optionalObjectMap === optionalObjectMapMapNext || this.optionalObjectMap !== undefined && this.optionalObjectMap.equals(optionalObjectMapMapNext)) return this;
+    if (this.optionalObjectMap === optionalObjectMapMapNext as unknown || this.optionalObjectMap?.equals(optionalObjectMapMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: this.#objectKeys,
       optionalObjectMap: optionalObjectMapMapNext
     }));
   }
-  mergeObjectKeysEntries(entries: Iterable<[MapObjectKey_ObjectKeys_Key, string]> | ImmutableMap<MapObjectKey_ObjectKeys_Key, string> | ReadonlyMap<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>): MapObjectKey {
+  mergeObjectKeysEntries(entries: ImmutableMap<MapObjectKey_ObjectKeys_Key, string> | ReadonlyMap<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>): MapObjectKey {
     const objectKeysMapSource = this.#objectKeys;
     const objectKeysMapEntries = [...objectKeysMapSource.entries()];
     const objectKeysMapNext = new Map(objectKeysMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       objectKeysMapNext.set(mergeKey, mergeValue);
     }
-    if (this.objectKeys === objectKeysMapNext || this.objectKeys !== undefined && this.objectKeys.equals(objectKeysMapNext)) return this;
+    if (this.objectKeys === objectKeysMapNext as unknown || this.objectKeys?.equals(objectKeysMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: objectKeysMapNext,
       optionalObjectMap: this.#optionalObjectMap
     }));
   }
-  mergeOptionalObjectMapEntries(entries: Iterable<[MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date]> | ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | ReadonlyMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date]>): MapObjectKey {
+  mergeOptionalObjectMapEntries(entries: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | ReadonlyMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date]>): MapObjectKey {
     const optionalObjectMapMapSource = this.#optionalObjectMap;
     const optionalObjectMapMapEntries = optionalObjectMapMapSource === undefined ? [] : [...optionalObjectMapMapSource.entries()];
     const optionalObjectMapMapNext = new Map(optionalObjectMapMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
       optionalObjectMapMapNext.set(mergeKey, mergeValue);
     }
-    if (this.optionalObjectMap === optionalObjectMapMapNext || this.optionalObjectMap !== undefined && this.optionalObjectMap.equals(optionalObjectMapMapNext)) return this;
+    if (this.optionalObjectMap === optionalObjectMapMapNext as unknown || this.optionalObjectMap?.equals(optionalObjectMapMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: this.#objectKeys,
       optionalObjectMap: optionalObjectMapMapNext
@@ -313,13 +314,13 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   }
   setObjectKeys(value: Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>): MapObjectKey {
     return this.$update(new MapObjectKey({
-      objectKeys: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])),
+      objectKeys: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof MapObjectKey_ObjectKeys_Key ? k : new MapObjectKey_ObjectKeys_Key(k), v])),
       optionalObjectMap: this.#optionalObjectMap
     }));
   }
   setObjectKeysEntry(key: MapObjectKey_ObjectKeys_Key, value: string): MapObjectKey {
     const objectKeysCurrent = this.objectKeys;
-    if (objectKeysCurrent && objectKeysCurrent.has(key)) {
+    if (objectKeysCurrent?.has(key)) {
       const existing = objectKeysCurrent.get(key);
       if (equals(existing, value)) return this;
     }
@@ -340,7 +341,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   }
   setOptionalObjectMapEntry(key: MapObjectKey_OptionalObjectMap_Key, value: ImmutableDate | Date): MapObjectKey {
     const optionalObjectMapCurrent = this.optionalObjectMap;
-    if (optionalObjectMapCurrent && optionalObjectMapCurrent.has(key)) {
+    if (optionalObjectMapCurrent?.has(key)) {
       const existing = optionalObjectMapCurrent.get(key);
       if (equals(existing, value)) return this;
     }
@@ -360,7 +361,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     const currentValue = objectKeysMapNext.get(key);
     const updatedValue = updater(currentValue);
     objectKeysMapNext.set(key, updatedValue);
-    if (this.objectKeys === objectKeysMapNext || this.objectKeys !== undefined && this.objectKeys.equals(objectKeysMapNext)) return this;
+    if (this.objectKeys === objectKeysMapNext as unknown || this.objectKeys?.equals(objectKeysMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: objectKeysMapNext,
       optionalObjectMap: this.#optionalObjectMap
@@ -373,7 +374,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     const currentValue = optionalObjectMapMapNext.get(key);
     const updatedValue = updater(currentValue);
     optionalObjectMapMapNext.set(key, updatedValue);
-    if (this.optionalObjectMap === optionalObjectMapMapNext || this.optionalObjectMap !== undefined && this.optionalObjectMap.equals(optionalObjectMapMapNext)) return this;
+    if (this.optionalObjectMap === optionalObjectMapMapNext as unknown || this.optionalObjectMap?.equals(optionalObjectMapMapNext)) return this;
     return this.$update(new MapObjectKey({
       objectKeys: this.#objectKeys,
       optionalObjectMap: optionalObjectMapMapNext
@@ -381,10 +382,10 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   }
 }
 export namespace MapObjectKey {
-  export interface Data {
+  export type Data = {
     objectKeys: Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>;
     optionalObjectMap?: Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]> | undefined;
-  }
+  };
   export type Value = MapObjectKey | MapObjectKey.Data;
   export import ObjectKeys_Key = MapObjectKey_ObjectKeys_Key;
   export import OptionalObjectMap_Key = MapObjectKey_OptionalObjectMap_Key;

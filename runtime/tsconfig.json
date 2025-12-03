@@ -3,8 +3,9 @@
   "compilerOptions": {
     "outDir": "../build/runtime",
     "rootDir": ".",
+    "composite": true,
     "declaration": true,
-    "strict": false,
+    "strict": true,
     "exactOptionalPropertyTypes": false
   },
   "include": ["**/*"]

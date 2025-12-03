@@ -1,16 +1,16 @@
 import { parseFile, parseFiles } from '../src/parser.js';
 import { generateClient } from '../src/generator.js';
-import { resolve, dirname, join } from 'node:path';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { writeFileSync, mkdirSync, rmSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { execSync } from 'node:child_process';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 // Create a temp directory for test fixtures
-const tempDir = resolve(tmpdir(), 'pms-compiler-test-' + Date.now());
+const tempDir = path.resolve(tmpdir(), 'pms-compiler-test-' + Date.now());
 mkdirSync(tempDir, { recursive: true });
 
 // Test utilities
@@ -26,7 +26,7 @@ function test(name: string, fn: () => void) {
     passed++;
   } catch (error) {
     console.error(`✗ ${name}`);
-    console.error(`  ${error}`);
+    console.error(`  ${String(error)}`);
     failed++;
   }
 }
@@ -62,8 +62,8 @@ function cleanup() {
 
 // Helper to create test files
 function createTestFile(name: string, content: string): string {
-  const filePath = resolve(tempDir, name);
-  const dir = dirname(filePath);
+  const filePath = path.resolve(tempDir, name);
+  const dir = path.dirname(filePath);
   mkdirSync(dir, { recursive: true });
   writeFileSync(filePath, content);
   return filePath;
@@ -136,7 +136,7 @@ export type ActualResponse = {
 
   const endpoints = parseFile(file);
   assertEqual(endpoints.length, 1, 'Should only find 1 RPC endpoint');
-  assertEqual(endpoints[0].requestType, 'ActualRequest');
+  assertEqual(endpoints[0]!.requestType, 'ActualRequest');
 });
 
 test('parseFile handles empty file', () => {
@@ -176,8 +176,8 @@ export type UserData = {
 
   const endpoints = parseFile(file);
   assertEqual(endpoints.length, 1);
-  assertEqual(endpoints[0].requestType, 'FetchUser');
-  assertEqual(endpoints[0].responseType, 'UserData');
+  assertEqual(endpoints[0]!.requestType, 'FetchUser');
+  assertEqual(endpoints[0]!.responseType, 'UserData');
 });
 
 test('parseFile handles multiple RPC types in one file', () => {
@@ -369,7 +369,7 @@ test('generateClient explicit className overrides file name', () => {
 test('generateClient imports types from source files', () => {
   const result = parseFiles([standardFile]);
   const code = generateClient(result, {
-    outputPath: resolve(tempDir, 'output/client.ts'),
+    outputPath: path.resolve(tempDir, 'output/client.ts'),
   });
 
   // Should import from the relative path to standard.propane
@@ -395,7 +395,7 @@ export type GetOrderRes = { '1:total': number };
 
   const result = parseFiles([file1, file2]);
   const code = generateClient(result, {
-    outputPath: resolve(tempDir, 'imports/client.ts'),
+    outputPath: path.resolve(tempDir, 'imports/client.ts'),
   });
 
   // Should have two separate import statements
@@ -440,18 +440,20 @@ test('generateClient handles empty endpoints gracefully', () => {
 
 console.log('\n--- CLI Tests ---\n');
 
-const cliPath = resolve(__dirname, '../src/cli.js');
+const cliPath = path.resolve(__dirname, '../src/cli.js');
 
-function runCli(args: string): { stdout: string; stderr: string; exitCode: number } {
+type CliResult = { stdout: string; stderr: string; exitCode: number };
+function runCli(args: string): CliResult {
   try {
     const stdout = execSync(`node ${cliPath} ${args}`, {
-      encoding: 'utf-8',
+      encoding: 'utf8',
       cwd: tempDir,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     return { stdout, stderr: '', exitCode: 0 };
   } catch (error: unknown) {
-    const execError = error as { stdout?: string; stderr?: string; status?: number };
+    type ExecErr = { stdout?: string; stderr?: string; status?: number };
+    const execError = error as ExecErr;
     return {
       stdout: execError.stdout ?? '',
       stderr: execError.stderr ?? '',
@@ -483,14 +485,14 @@ test('CLI requires output option', () => {
 });
 
 test('CLI requires input files', () => {
-  const outputFile = resolve(tempDir, 'cli-output/no-input.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/no-input.ts');
   const { stderr, exitCode } = runCli(`-o ${outputFile}`);
   assertEqual(exitCode, 1);
   assertIncludes(stderr, 'No .propane files specified');
 });
 
 test('CLI compiles single file', () => {
-  const outputFile = resolve(tempDir, 'cli-output/single.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/single.ts');
   const { stdout, exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
   assertEqual(exitCode, 0);
   assertIncludes(stdout, 'Found 2 RPC endpoint(s)');
@@ -498,26 +500,26 @@ test('CLI compiles single file', () => {
 });
 
 test('CLI uses custom class name with -n', () => {
-  const outputFile = resolve(tempDir, 'cli-output/custom-name.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/custom-name.ts');
   const { exitCode } = runCli(`-o ${outputFile} -n MyCustomClient ${standardFile}`);
   assertEqual(exitCode, 0);
 
-  const code = readFileSync(outputFile, 'utf-8');
+  const code = readFileSync(outputFile, 'utf8');
   assertIncludes(code, 'export class MyCustomClient');
 });
 
 test('CLI generates websocket client with -w', () => {
-  const outputFile = resolve(tempDir, 'cli-output/ws-client.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/ws-client.ts');
   const { exitCode } = runCli(`-o ${outputFile} -w ${standardFile}`);
   assertEqual(exitCode, 0);
 
-  const code = readFileSync(outputFile, 'utf-8');
+  const code = readFileSync(outputFile, 'utf8');
   assertIncludes(code, 'PmwsClient');
 });
 
 test('CLI scans directory with -d', () => {
   // Create a subdirectory with propane files
-  const subDir = resolve(tempDir, 'cli-dir-scan');
+  const subDir = path.resolve(tempDir, 'cli-dir-scan');
   mkdirSync(subDir, { recursive: true });
 
   createTestFile('cli-dir-scan/a.propane', `
@@ -532,31 +534,31 @@ export type ReqB = { '1:x': string } & RpcRequest<ResB>;
 export type ResB = { '1:y': string };
 `);
 
-  const outputFile = resolve(tempDir, 'cli-output/from-dir.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/from-dir.ts');
   const { stdout, exitCode } = runCli(`-d ${subDir} -o ${outputFile}`);
   assertEqual(exitCode, 0);
   assertIncludes(stdout, 'Found 2 RPC endpoint(s)');
 });
 
 test('CLI handles directory with no propane files', () => {
-  const emptyDir = resolve(tempDir, 'cli-empty-dir');
+  const emptyDir = path.resolve(tempDir, 'cli-empty-dir');
   mkdirSync(emptyDir, { recursive: true });
 
-  const outputFile = resolve(tempDir, 'cli-output/from-empty.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/from-empty.ts');
   const { stderr, exitCode } = runCli(`-d ${emptyDir} -o ${outputFile}`);
   assertEqual(exitCode, 1);
   assertIncludes(stderr, 'No .propane files specified');
 });
 
 test('CLI handles non-existent directory', () => {
-  const outputFile = resolve(tempDir, 'cli-output/nonexistent.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/nonexistent.ts');
   const { stderr, exitCode } = runCli(`-d /nonexistent/path -o ${outputFile}`);
   assertEqual(exitCode, 1);
   assertIncludes(stderr, 'not found');
 });
 
 test('CLI handles non-existent file', () => {
-  const outputFile = resolve(tempDir, 'cli-output/nonexistent.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/nonexistent.ts');
   const { stderr, exitCode } = runCli(`-o ${outputFile} /nonexistent/file.propane`);
   assertEqual(exitCode, 1);
   assertIncludes(stderr, 'not found');
@@ -567,14 +569,14 @@ test('CLI handles file with no RPC types', () => {
 export type NotAnRpc = { '1:value': string };
 `);
 
-  const outputFile = resolve(tempDir, 'cli-output/no-rpc.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/no-rpc.ts');
   const { stderr, exitCode } = runCli(`-o ${outputFile} ${noRpcFile}`);
   assertEqual(exitCode, 1);
   assertIncludes(stderr, 'No RPC endpoints found');
 });
 
 test('CLI creates output directory if needed', () => {
-  const outputFile = resolve(tempDir, 'cli-output/deep/nested/dir/client.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/deep/nested/dir/client.ts');
   const { exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
   assertEqual(exitCode, 0);
 
@@ -582,11 +584,11 @@ test('CLI creates output directory if needed', () => {
 });
 
 test('CLI derives class name from output file by default', () => {
-  const outputFile = resolve(tempDir, 'cli-output/my-api-client.ts');
+  const outputFile = path.resolve(tempDir, 'cli-output/my-api-client.ts');
   const { exitCode } = runCli(`-o ${outputFile} ${standardFile}`);
   assertEqual(exitCode, 0);
 
-  const code = readFileSync(outputFile, 'utf-8');
+  const code = readFileSync(outputFile, 'utf8');
   assertIncludes(code, 'export class MyApiClient');
 });
 

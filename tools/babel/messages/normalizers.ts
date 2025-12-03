@@ -1,12 +1,11 @@
 import * as t from '@babel/types';
-import {
-  buildMapTagComparison,
-  buildSetTagComparison,
-} from './runtime-checks.js';
 
 export function buildImmutableMapExpression(
-  valueExpr: t.Expression
+  valueExpr: t.Expression,
+  options: { castToAny?: boolean; allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { castToAny = false, allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -17,22 +16,42 @@ export function buildImmutableMapExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const immutableCheck = t.logicalExpression(
-    '||',
-    t.binaryExpression(
-      'instanceof',
-      t.cloneNode(valueExpr),
-      t.identifier('ImmutableMap')
-    ),
-    buildMapTagComparison(valueExpr, '[object ImmutableMap]')
+  // When castToAny is true (in $fromEntries), values are 'unknown' and need
+  // an 'as object' cast for instanceof to work
+  const instanceofLhs = castToAny
+    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
+    : t.cloneNode(valueExpr);
+  const immutableCheck = t.binaryExpression(
+    'instanceof',
+    instanceofLhs,
+    t.identifier('ImmutableMap')
   );
 
+  // When castToAny is true, cast the value to Iterable for the ImmutableMap constructor
+  // This is needed in $fromEntries where values are typed as 'unknown'
+  const constructorArg = castToAny
+    ? t.tsAsExpression(
+      t.cloneNode(valueExpr),
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([
+          t.tsTupleType([t.tsUnknownKeyword(), t.tsUnknownKeyword()])
+        ])
+      )
+    )
+    : t.cloneNode(valueExpr);
+
   const buildNewImmutableMap = () =>
-    t.newExpression(t.identifier('ImmutableMap'), [t.cloneNode(valueExpr)]);
+    t.newExpression(t.identifier('ImmutableMap'), [constructorArg]);
+
+  // For required properties (allowUndefined=false), use empty map instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableMap'), []);
 
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     t.conditionalExpression(
       immutableCheck,
       t.cloneNode(valueExpr),
@@ -42,8 +61,11 @@ export function buildImmutableMapExpression(
 }
 
 export function buildImmutableArrayExpression(
-  valueExpr: t.Expression
+  valueExpr: t.Expression,
+  options: { castToAny?: boolean; allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { castToAny = false, allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -54,18 +76,28 @@ export function buildImmutableArrayExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
+  // When castToAny is true (in $fromEntries), values are 'unknown' and need
+  // an 'as object' cast for instanceof to work
+  const instanceofLhs = castToAny
+    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
+    : t.cloneNode(valueExpr);
   const immutableCheck = t.binaryExpression(
     'instanceof',
-    t.cloneNode(valueExpr),
+    instanceofLhs,
     t.identifier('ImmutableArray')
   );
 
   const toImmutable = () =>
     t.newExpression(t.identifier('ImmutableArray'), [t.cloneNode(valueExpr)]);
 
+  // For required properties (allowUndefined=false), use empty array instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableArray'), []);
+
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     t.conditionalExpression(
       immutableCheck,
       t.cloneNode(valueExpr),
@@ -75,8 +107,11 @@ export function buildImmutableArrayExpression(
 }
 
 export function buildImmutableSetExpression(
-  valueExpr: t.Expression
+  valueExpr: t.Expression,
+  options: { castToAny?: boolean; allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { castToAny = false, allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -87,22 +122,28 @@ export function buildImmutableSetExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const immutableCheck = t.logicalExpression(
-    '||',
-    t.binaryExpression(
-      'instanceof',
-      t.cloneNode(valueExpr),
-      t.identifier('ImmutableSet')
-    ),
-    buildSetTagComparison(valueExpr, '[object ImmutableSet]')
+  // When castToAny is true (in $fromEntries), values are 'unknown' and need
+  // an 'as object' cast for instanceof to work
+  const instanceofLhs = castToAny
+    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
+    : t.cloneNode(valueExpr);
+  const immutableCheck = t.binaryExpression(
+    'instanceof',
+    instanceofLhs,
+    t.identifier('ImmutableSet')
   );
 
   const buildNewImmutableSet = () =>
     t.newExpression(t.identifier('ImmutableSet'), [t.cloneNode(valueExpr)]);
 
+  // For required properties (allowUndefined=false), use empty set instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableSet'), []);
+
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     t.conditionalExpression(
       immutableCheck,
       t.cloneNode(valueExpr),
@@ -306,8 +347,11 @@ export function buildMessageNormalizationExpression(
 
 export function buildImmutableArrayOfMessagesExpression(
   valueExpr: t.Expression,
-  messageTypeName: string
+  messageTypeName: string,
+  options: { allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -348,17 +392,25 @@ export function buildImmutableArrayOfMessagesExpression(
     [mapCall]
   );
 
+  // For required properties (allowUndefined=false), use empty array instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableArray'), []);
+
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     newImmutable
   );
 }
 
 export function buildImmutableSetOfMessagesExpression(
   valueExpr: t.Expression,
-  messageTypeName: string
+  messageTypeName: string,
+  options: { allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -399,17 +451,25 @@ export function buildImmutableSetOfMessagesExpression(
     [mapCall]
   );
 
+  // For required properties (allowUndefined=false), use empty set instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableSet'), []);
+
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     newImmutable
   );
 }
 
 export function buildImmutableMapOfMessagesExpression(
   valueExpr: t.Expression,
-  messageTypeName: string
+  messageTypeName: string,
+  options: { allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -453,9 +513,14 @@ export function buildImmutableMapOfMessagesExpression(
     [mapCall]
   );
 
+  // For required properties (allowUndefined=false), use empty map instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableMap'), []);
+
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     newImmutable
   );
 }
@@ -472,8 +537,11 @@ export interface MapConversionInfo {
 
 export function buildImmutableMapWithConversionsExpression(
   valueExpr: t.Expression,
-  conversions: MapConversionInfo
+  conversions: MapConversionInfo,
+  options: { castToAny?: boolean; allowUndefined?: boolean } = {}
 ): t.Expression {
+  const { castToAny = false, allowUndefined = true } = options;
+
   const nilCheck = t.logicalExpression(
     '||',
     t.binaryExpression(
@@ -484,14 +552,15 @@ export function buildImmutableMapWithConversionsExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  const immutableCheck = t.logicalExpression(
-    '||',
-    t.binaryExpression(
-      'instanceof',
-      t.cloneNode(valueExpr),
-      t.identifier('ImmutableMap')
-    ),
-    buildMapTagComparison(valueExpr, '[object ImmutableMap]')
+  // When castToAny is true (in $fromEntries), values are 'unknown' and need
+  // an 'as object' cast for instanceof to work
+  const instanceofLhs = castToAny
+    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
+    : t.cloneNode(valueExpr);
+  const immutableCheck = t.binaryExpression(
+    'instanceof',
+    instanceofLhs,
+    t.identifier('ImmutableMap')
   );
 
   // Build the key conversion expression
@@ -607,25 +676,54 @@ export function buildImmutableMapWithConversionsExpression(
     || conversions.valueIsUrl
     || conversions.valueIsMessage;
 
+  // When castToAny is true, cast the value to Iterable for the ImmutableMap constructor
+  const constructorArg = castToAny
+    ? t.tsAsExpression(
+      t.cloneNode(valueExpr),
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([
+          t.tsTupleType([t.tsUnknownKeyword(), t.tsUnknownKeyword()])
+        ])
+      )
+    )
+    : t.cloneNode(valueExpr);
+
+  // For required properties (allowUndefined=false), use empty map instead of preserving nil
+  const nilResult = allowUndefined
+    ? t.cloneNode(valueExpr)
+    : t.newExpression(t.identifier('ImmutableMap'), []);
+
   if (!needsConversion) {
     return t.conditionalExpression(
       nilCheck,
-      t.cloneNode(valueExpr),
+      nilResult,
       t.conditionalExpression(
         immutableCheck,
         t.cloneNode(valueExpr),
         t.newExpression(
           t.identifier('ImmutableMap'),
-          [t.cloneNode(valueExpr)]
+          [constructorArg]
         )
       )
     );
   }
 
   // Build: Array.from(value).map(([k, v]) => [keyConversion, valueConversion])
+  const arrayFromArg = castToAny
+    ? t.tsAsExpression(
+      t.cloneNode(valueExpr),
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([
+          t.tsTupleType([t.tsUnknownKeyword(), t.tsUnknownKeyword()])
+        ])
+      )
+    )
+    : t.cloneNode(valueExpr);
   const arrayFrom = t.callExpression(
     t.memberExpression(t.identifier('Array'), t.identifier('from')),
-    [t.cloneNode(valueExpr)]
+    [arrayFromArg]
   );
   const mapCall = t.callExpression(
     t.memberExpression(arrayFrom, t.identifier('map')),
@@ -644,7 +742,7 @@ export function buildImmutableMapWithConversionsExpression(
 
   return t.conditionalExpression(
     nilCheck,
-    t.cloneNode(valueExpr),
+    nilResult,
     newImmutableMap
   );
 }

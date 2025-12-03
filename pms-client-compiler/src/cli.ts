@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { parseArgs } from 'node:util';
-import { resolve, join, dirname } from 'node:path';
+import path from 'node:path';
 import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import chokidar from 'chokidar';
 import { parseFiles } from './parser.js';
@@ -30,7 +30,7 @@ interface PropaneConfig {
 }
 
 function loadConfig(): PmsConfig | null {
-  const configPath = resolve(process.cwd(), 'propane.config.json');
+  const configPath = path.resolve(process.cwd(), 'propane.config.json');
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf8');
@@ -88,7 +88,7 @@ function findPropaneFiles(dir: string): string[] {
   function scan(currentDir: string) {
     const entries = readdirSync(currentDir);
     for (const entry of entries) {
-      const fullPath = join(currentDir, entry);
+      const fullPath = path.join(currentDir, entry);
       const stat = statSync(fullPath);
 
       if (stat.isDirectory()) {
@@ -124,7 +124,12 @@ function parseCliArgs(): CliOptions | null {
 
     const config = loadConfig();
 
-    const output = values.output ? resolve(values.output) : (config?.output ? resolve(config.output) : undefined);
+    let output: string | undefined;
+    if (values.output) {
+      output = path.resolve(values.output);
+    } else if (config?.output) {
+      output = path.resolve(config.output);
+    }
 
     if (!output) {
       console.error('Error: Output file path is required (-o, --output) or in propane.config.json');
@@ -132,12 +137,12 @@ function parseCliArgs(): CliOptions | null {
       return null;
     }
 
-    const positionalFiles: string[] = positionals.map((f) => resolve(f));
+    const positionalFiles: string[] = positionals.map((f) => path.resolve(f));
     let files: string[] = [...positionalFiles];
     const dir = values.dir || config?.inputDir;
 
     if (dir) {
-      const dirPath = resolve(dir);
+      const dirPath = path.resolve(dir);
       if (!existsSync(dirPath)) {
         console.error(`Error: Directory not found: ${dirPath}`);
         return null;
@@ -172,7 +177,7 @@ function parseCliArgs(): CliOptions | null {
  * Compile .propane files and generate the client.
  * Returns true on success, false on error.
  */
-function compile(options: CliOptions, verbose: boolean = true): boolean {
+function compile(options: CliOptions, verbose = true): boolean {
   // Verify all files exist
   for (const file of options.files) {
     if (!existsSync(file)) {
@@ -209,13 +214,13 @@ function compile(options: CliOptions, verbose: boolean = true): boolean {
   });
 
   // Ensure output directory exists
-  const outputDir = resolve(options.output, '..');
+  const outputDir = path.resolve(options.output, '..');
   if (!existsSync(outputDir)) {
     mkdirSync(outputDir, { recursive: true });
   }
 
   // Write output
-  writeFileSync(options.output, clientCode, 'utf-8');
+  writeFileSync(options.output, clientCode, 'utf8');
 
   if (verbose) {
     console.log(`\nGenerated: ${options.output}`);
@@ -245,7 +250,7 @@ function watchFiles(options: CliOptions): void {
 
       // Re-scan directory if using -d option to pick up new files
       if (options.dir) {
-        const dirPath = resolve(options.dir);
+        const dirPath = path.resolve(options.dir);
         const dirFiles = findPropaneFiles(dirPath);
         options.files = [...options.positionalFiles, ...dirFiles];
       }
@@ -259,7 +264,7 @@ function watchFiles(options: CliOptions): void {
 
   const pathsToWatch: string[] = [];
   if (options.dir) {
-    pathsToWatch.push(resolve(options.dir));
+    pathsToWatch.push(path.resolve(options.dir));
   }
   // Also watch the specific files in the list (chokidar handles redundancies)
   pathsToWatch.push(...options.files);
@@ -277,7 +282,7 @@ function watchFiles(options: CliOptions): void {
     });
 
   const shutdown = () => {
-    watcher.close();
+    void watcher.close();
     process.exit(0);
   };
   process.on('SIGINT', shutdown);

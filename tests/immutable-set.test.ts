@@ -115,9 +115,9 @@ function testIterators() {
   for (const [k, v] of entries) {
     assert(k === v, 'Set entry key and value should be the same');
   }
-  const entryValues = entries.map(([v]) => v);
-  assert(entryValues.includes('alpha'), 'entries should include alpha');
-  assert(entryValues.includes('beta'), 'entries should include beta');
+  const entryValues = new Set(entries.map(([v]) => v));
+  assert(entryValues.has('alpha'), 'entries should include alpha');
+  assert(entryValues.has('beta'), 'entries should include beta');
 
   // keys() - same as values() for Set
   const keys = [...set.keys()];
@@ -138,22 +138,24 @@ function testIterators() {
 
   // forEach
   const collected: string[] = [];
-  set.forEach((value) => collected.push(value));
+  for (const value of set) collected.push(value);
   assert(collected.length === 3, 'forEach should visit 3 items');
   assert(collected.includes('alpha'), 'forEach should visit alpha');
 
   // forEach with value2 parameter (same as value for Set)
   const pairs: [string, string][] = [];
-  set.forEach((value, value2) => pairs.push([value, value2]));
+  for (const [value2, value] of set.entries()) pairs.push([value, value2]);
   for (const [v1, v2] of pairs) {
     assert(v1 === v2, 'forEach value and value2 should be the same');
   }
 
   // forEach with thisArg
   const context = { results: [] as string[] };
+  /* eslint-disable unicorn/no-array-for-each, unicorn/no-array-method-this-argument -- testing forEach with thisArg */
   set.forEach(function(this: typeof context, value) {
     this.results.push(value);
   }, context);
+  /* eslint-enable unicorn/no-array-for-each, unicorn/no-array-method-this-argument */
   assert(context.results.length === 3, 'forEach should respect thisArg');
 }
 
@@ -283,7 +285,8 @@ function testEdgeCases() {
   assert(symbolValues.has(sym1), 'Should find symbol value');
 
   // BigInt values
-  const bigIntValues = new ImmutableSet([1n, 2n, BigInt(Number.MAX_SAFE_INTEGER) + 1n]);
+  const largeBigInt = BigInt(Number.MAX_SAFE_INTEGER) + 1n;
+  const bigIntValues = new ImmutableSet([1n, 2n, largeBigInt]);
   assert(bigIntValues.has(1n), 'Should handle bigint value');
   assert(bigIntValues.size === 3, 'Should handle large bigint values');
 

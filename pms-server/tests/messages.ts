@@ -53,6 +53,7 @@ export interface EchoResponseData {
 
 export class EchoResponse extends Message<EchoResponseData> {
   static readonly TYPE_TAG = Symbol('EchoResponse');
+  static readonly $typeName = 'EchoResponse';
 
   #echo: string;
   #timestamp: number;

@@ -107,6 +107,49 @@ function getConstructorFieldName(paramName: string): string {
 }
 
 /**
+ * Build a type reference that includes type parameters if the type is generic.
+ * E.g., for Response<T>, returns TSTypeReference to "Response<T>" not just "Response"
+ */
+function buildGenericTypeReference(
+  typeName: string,
+  typeParameters: TypeParameter[]
+): t.TSTypeReference {
+  if (typeParameters.length === 0) {
+    return t.tsTypeReference(t.identifier(typeName));
+  }
+
+  const typeArgs = t.tsTypeParameterInstantiation(
+    typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
+  );
+
+  return t.tsTypeReference(t.identifier(typeName), typeArgs);
+}
+
+/**
+ * Build a qualified type reference (e.g., TypeName.Data<T>)
+ */
+function buildGenericQualifiedTypeReference(
+  typeName: string,
+  qualifier: string,
+  typeParameters: TypeParameter[]
+): t.TSTypeReference {
+  const qualifiedName = t.tsQualifiedName(
+    t.identifier(typeName),
+    t.identifier(qualifier)
+  );
+
+  if (typeParameters.length === 0) {
+    return t.tsTypeReference(qualifiedName);
+  }
+
+  const typeArgs = t.tsTypeParameterInstantiation(
+    typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
+  );
+
+  return t.tsTypeReference(qualifiedName, typeArgs);
+}
+
+/**
  * Build the class type parameters for a generic message.
  * E.g., Container<T extends Message<any>> becomes:
  * t.tsTypeParameterDeclaration([t.tsTypeParameter('T', constraint, null)])
@@ -226,7 +269,7 @@ function buildTypeNameExpression(
   // First quasi: "TypeName<"
   quasis.push(t.templateElement({ raw: `${typeName}<`, cooked: `${typeName}<` }, false));
 
-  typeParameters.forEach((param, index) => {
+  for (const [index, param] of typeParameters.entries()) {
     const fieldName = getConstructorFieldName(param.name);
     // Expression: tClass.$typeName
     expressions.push(
@@ -242,7 +285,7 @@ function buildTypeNameExpression(
       { raw: isLast ? '>' : ',', cooked: isLast ? '>' : ',' },
       isLast
     ));
-  });
+  }
 
   return t.templateLiteral(quasis, expressions);
 }
@@ -252,11 +295,15 @@ function buildTypeNameExpression(
  */
 function buildBindMethod(
   typeName: string,
-  typeParameters: TypeParameter[]
+  typeParameters: TypeParameter[],
+  state: PluginStateFlags
 ): t.ClassMethod | null {
   if (typeParameters.length === 0) {
     return null;
   }
+
+  // We need parseCerealString for the deserialize implementation
+  state.usesParseCerealString = true;
 
   // Build type parameters for the static method
   const methodTypeParams = buildClassTypeParameters(typeParameters);
@@ -289,7 +336,9 @@ function buildBindMethod(
   );
 
   const constructorArgs = [
-    ...typeParameters.map((param) => t.identifier(getConstructorFieldName(param.name))),
+    ...typeParameters.map(
+      (param) => t.identifier(getConstructorFieldName(param.name))
+    ),
     t.identifier('props')
   ];
 
@@ -313,33 +362,102 @@ function buildBindMethod(
     t.variableDeclarator(t.identifier('boundCtor'), boundCtorCast)
   ]);
 
-  // boundCtor.deserialize = (data: string) => TypeName.deserialize(tClass, ..., data);
-  const deserializeParams = [
-    ...typeParameters.map((param) => t.identifier(getConstructorFieldName(param.name))),
-    t.identifier('data')
-  ];
+  // Build deserialize function that properly handles generic types:
+  // boundCtor.deserialize = (data: string) => {
+  //   const payload = parseCerealString(data);
+  //   const proto = TypeName.prototype as TypeName<any>;
+  //   const props = proto.$fromEntries(payload as Record<string, unknown>);
+  //   return new TypeName(tClass, props as TypeName.Data<T>);
+  // };
   const dataParam = t.identifier('data');
   dataParam.typeAnnotation = t.tsTypeAnnotation(t.tsStringKeyword());
+
+  // const payload = parseCerealString(data);
+  const payloadDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier('payload'),
+      t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])
+    )
+  ]);
+
+  // const proto = TypeName.prototype;
+  const protoDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier('proto'),
+      t.memberExpression(t.identifier(typeName), t.identifier('prototype'))
+    )
+  ]);
+
+  // const props = proto.$fromEntries(payload as Record<string, unknown>);
+  const propsDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier('props'),
+      t.callExpression(
+        t.memberExpression(t.identifier('proto'), t.identifier('$fromEntries')),
+        [
+          t.tsAsExpression(
+            t.identifier('payload'),
+            t.tsTypeReference(
+              t.identifier('Record'),
+              t.tsTypeParameterInstantiation([
+                t.tsStringKeyword(),
+                t.tsUnknownKeyword()
+              ])
+            )
+          )
+        ]
+      )
+    )
+  ]);
+
+  // return new TypeName(tClass, props as TypeName.Data<T>);
+  const deserializeReturn = t.returnStatement(
+    t.newExpression(t.identifier(typeName), [
+      ...typeParameters.map(
+        (param) => t.identifier(getConstructorFieldName(param.name))
+      ),
+      t.tsAsExpression(
+        t.identifier('props'),
+        t.tsTypeReference(
+          t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
+          t.tsTypeParameterInstantiation(returnTypeParams)
+        )
+      )
+    ])
+  );
+
+  const deserializeBody = t.blockStatement([
+    payloadDecl,
+    protoDecl,
+    propsDecl,
+    deserializeReturn
+  ]);
 
   const deserializeAssign = t.expressionStatement(
     t.assignmentExpression(
       '=',
       t.memberExpression(t.identifier('boundCtor'), t.identifier('deserialize')),
-      t.arrowFunctionExpression(
-        [dataParam],
-        t.callExpression(
-          t.memberExpression(t.identifier(typeName), t.identifier('deserialize')),
-          deserializeParams
-        )
-      )
+      t.arrowFunctionExpression([dataParam], deserializeBody)
     )
   );
 
-  // boundCtor.$typeName = `TypeName<${tClass.$typeName}>`;
+  // (boundCtor as { $typeName: string }).$typeName = `TypeName<${tClass.$typeName}>`;
+  // Cast to bypass readonly constraint on $typeName
   const typeNameAssign = t.expressionStatement(
     t.assignmentExpression(
       '=',
-      t.memberExpression(t.identifier('boundCtor'), t.identifier('$typeName')),
+      t.memberExpression(
+        t.tsAsExpression(
+          t.identifier('boundCtor'),
+          t.tsTypeLiteral([
+            t.tsPropertySignature(
+              t.identifier('$typeName'),
+              t.tsTypeAnnotation(t.tsStringKeyword())
+            )
+          ])
+        ),
+        t.identifier('$typeName')
+      ),
       buildTypeNameExpression(typeName, typeParameters)
     )
   );
@@ -364,6 +482,9 @@ function buildBindMethod(
   );
   bindMethod.typeParameters = methodTypeParams;
   bindMethod.returnType = t.tsTypeAnnotation(returnType);
+  // Add override modifier - needed because Function.prototype.bind exists
+  // and noImplicitOverride is enabled
+  bindMethod.override = true;
 
   return bindMethod;
 }
@@ -392,18 +513,18 @@ export function buildClassFromProperties(
   typeParameters: TypeParameter[] = []
 ): t.ClassDeclaration {
   const isGeneric = typeParameters.length > 0;
+  if (isGeneric) {
+    state.usesDataObject = true;
+    state.hasGenericTypes = true;
+  }
   const backingFields: t.ClassPrivateProperty[] = [];
   const getters: t.ClassMethod[] = [];
   const propDescriptors = properties.map((prop) => ({
     ...prop,
     privateName: t.privateName(t.identifier(prop.name)),
   }));
-  const propsTypeRef = t.tsTypeReference(
-    t.tsQualifiedName(t.identifier(typeName), t.identifier('Data'))
-  );
-  const valueTypeRef = t.tsTypeReference(
-    t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
-  );
+  const propsTypeRef = buildGenericQualifiedTypeReference(typeName, 'Data', typeParameters);
+  const valueTypeRef = buildGenericQualifiedTypeReference(typeName, 'Value', typeParameters);
 
   for (const prop of propDescriptors) {
     const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
@@ -478,14 +599,20 @@ export function buildClassFromProperties(
     let valueExpr: t.Expression = t.cloneNode(propsAccess);
 
     if (prop.isArray) {
-      const elementTypeName = getTypeName(prop.arrayElementType);
+      const elementTypeName = prop.arrayElementType
+        ? getTypeName(prop.arrayElementType)
+        : null;
       valueExpr =
         elementTypeName && declaredMessageTypeNames.has(elementTypeName)
           ? buildImmutableArrayOfMessagesExpression(
             propsAccess,
-            elementTypeName
+            elementTypeName,
+            { allowUndefined: Boolean(prop.optional) }
           )
-          : buildImmutableArrayExpression(propsAccess);
+          : buildImmutableArrayExpression(
+            propsAccess,
+            { allowUndefined: Boolean(prop.optional) }
+          );
     } else if (prop.isMap) {
       const conversions = getMapConversionInfo(
         prop,
@@ -494,18 +621,28 @@ export function buildClassFromProperties(
       valueExpr = needsMapConversions(conversions)
         ? buildImmutableMapWithConversionsExpression(
           propsAccess,
-          conversions
+          conversions,
+          { allowUndefined: Boolean(prop.optional) }
         )
-        : buildImmutableMapExpression(propsAccess);
+        : buildImmutableMapExpression(
+          propsAccess,
+          { allowUndefined: Boolean(prop.optional) }
+        );
     } else if (prop.isSet) {
-      const elementTypeName = getTypeName(prop.setElementType);
+      const elementTypeName = prop.setElementType
+        ? getTypeName(prop.setElementType)
+        : null;
       valueExpr =
         elementTypeName && declaredMessageTypeNames.has(elementTypeName)
           ? buildImmutableSetOfMessagesExpression(
             propsAccess,
-            elementTypeName
+            elementTypeName,
+            { allowUndefined: Boolean(prop.optional) }
           )
-          : buildImmutableSetExpression(propsAccess);
+          : buildImmutableSetExpression(
+            propsAccess,
+            { allowUndefined: Boolean(prop.optional) }
+          );
     } else if (prop.isDateType) {
       valueExpr = buildImmutableDateNormalizationExpression(
         valueExpr,
@@ -546,30 +683,32 @@ export function buildClassFromProperties(
     // For generic type parameters, use the stored constructor ref for default value
     let defaultValue: t.Expression;
     if (prop.isGenericParam && prop.genericParamName) {
-      // Use the stored constructor reference: new this.#tClass()
-      // Pass undefined (no args) so the inner class uses its EMPTY instance
+      // Use the stored constructor reference: new this.#tClass(undefined)
+      // Pass undefined explicitly so the inner class uses its EMPTY instance
       const fieldName = getConstructorFieldName(prop.genericParamName);
       defaultValue = t.newExpression(
         t.memberExpression(
           t.thisExpression(),
           t.privateName(t.identifier(fieldName))
         ),
-        []
+        [t.identifier('undefined')]
       );
     } else {
       defaultValue = getDefaultValue(prop);
     }
+    const assignedExpr: t.Expression = t.conditionalExpression(
+      t.identifier('props'),
+      valueExpr,
+      defaultValue
+    );
+
     const assignment = t.assignmentExpression(
       '=',
       t.memberExpression(
         t.thisExpression(),
         t.cloneNode(prop.privateName)
       ),
-      t.conditionalExpression(
-        t.identifier('props'),
-        valueExpr,
-        defaultValue
-      )
+      assignedExpr
     );
 
     return t.expressionStatement(assignment);
@@ -663,6 +802,7 @@ export function buildClassFromProperties(
   if (!isGeneric) {
     staticFields.push(buildStaticTypeName(typeName));
     // Add EMPTY memoization field (only for non-generic)
+    // eslint-disable-next-line unicorn/prefer-single-call -- conditional pushes
     staticFields.push(
       t.classProperty(
         t.identifier('EMPTY'),
@@ -696,7 +836,9 @@ export function buildClassFromProperties(
   );
   const deleteMethods = propDescriptors
     .filter((prop) => prop.optional)
-    .map((prop) => buildDeleteMethod(typeName, propDescriptors, prop, typeParameters));
+    .map((prop) => buildDeleteMethod(
+      typeName, propDescriptors, prop, typeParameters
+    ));
   const arrayMethods = buildArrayMutatorMethods(
     typeName,
     propDescriptors,
@@ -717,11 +859,12 @@ export function buildClassFromProperties(
   const withChildMethod = buildWithChildMethod(
     typeName,
     propDescriptors,
-    declaredMessageTypeNames
+    declaredMessageTypeNames,
+    typeParameters
   );
   const getMessageChildrenMethod = buildGetMessageChildrenMethod(
     propDescriptors,
-    declaredMessageTypeNames
+    state
   );
 
   const classBodyMembers = [
@@ -742,7 +885,7 @@ export function buildClassFromProperties(
 
   // Add bind() method for generic messages
   if (isGeneric) {
-    const bindMethod = buildBindMethod(typeName, typeParameters);
+    const bindMethod = buildBindMethod(typeName, typeParameters, state);
     if (bindMethod) {
       classBodyMembers.push(bindMethod);
     }
@@ -969,12 +1112,18 @@ function buildFromEntriesMethod(
         prop,
         declaredMessageTypeNames
       );
+      // In $fromEntries, values are typed as 'unknown', so we need to cast to 'any'
+      // for the ImmutableMap constructor
       const mapExpr = needsMapConversions(conversions)
         ? buildImmutableMapWithConversionsExpression(
           checkedValueId as t.Expression,
-          conversions
+          conversions,
+          { castToAny: true, allowUndefined: Boolean(prop.optional) }
         )
-        : buildImmutableMapExpression(checkedValueId as t.Expression);
+        : buildImmutableMapExpression(
+          checkedValueId as t.Expression,
+          { castToAny: true, allowUndefined: Boolean(prop.optional) }
+        );
       statements.push(
         t.variableDeclaration('const', [
           t.variableDeclarator(mapValueId, mapExpr),
@@ -987,7 +1136,10 @@ function buildFromEntriesMethod(
         t.variableDeclaration('const', [
           t.variableDeclarator(
             setValueId,
-            buildImmutableSetExpression(checkedValueId as t.Expression)
+            buildImmutableSetExpression(
+              checkedValueId as t.Expression,
+              { castToAny: true, allowUndefined: Boolean(prop.optional) }
+            )
           ),
         ])
       );
@@ -998,7 +1150,10 @@ function buildFromEntriesMethod(
         t.variableDeclaration('const', [
           t.variableDeclarator(
             arrayValueId,
-            buildImmutableArrayExpression(checkedValueId as t.Expression)
+            buildImmutableArrayExpression(
+              checkedValueId as t.Expression,
+              { castToAny: true, allowUndefined: Boolean(prop.optional) }
+            )
           ),
         ])
       );
@@ -1082,12 +1237,28 @@ function buildFromEntriesMethod(
       );
     }
 
+    // For generic type parameters, cast the value to the type parameter
+    // For Map/Set/Array properties from unknown entries, cast to the field type to satisfy TypeScript
+    let assignedValue: t.Expression = checkedValueId as t.Expression;
+    if (prop.isGenericParam && prop.genericParamName) {
+      assignedValue = t.tsAsExpression(
+        checkedValueId as t.Expression,
+        t.tsTypeReference(t.identifier(prop.genericParamName))
+      );
+    } else if (prop.isMap || prop.isSet || prop.isArray) {
+      // Values from Record<string, unknown> need to be cast to the field type for assignment
+      assignedValue = t.tsAsExpression(
+        checkedValueId as t.Expression,
+        t.cloneNode(prop.typeAnnotation)
+      );
+    }
+
     statements.push(
       t.expressionStatement(
         t.assignmentExpression(
           '=',
           t.memberExpression(propsId, t.identifier(prop.name)),
-          checkedValueId as t.Expression
+          assignedValue
         )
       )
     );
@@ -1187,7 +1358,7 @@ function buildTaggedMessageUnionHandler(
   let innerIf: t.IfStatement | null = null;
 
   for (let i = messageTypes.length - 1; i >= 0; i -= 1) {
-    const msgType = messageTypes[i];
+    const msgType = messageTypes[i]!;
     const tagCheck = t.binaryExpression(
       '===',
       t.memberExpression(sourceExpr, t.identifier('$tag')),
@@ -1276,11 +1447,18 @@ function buildSetterMethod(
     setterValueExpr = needsMapConversions(conversions)
       ? buildImmutableMapWithConversionsExpression(
         setterValueExpr,
-        conversions
+        conversions,
+        { allowUndefined: Boolean(targetProp.optional) }
       )
-      : buildImmutableMapExpression(setterValueExpr);
+      : buildImmutableMapExpression(
+        setterValueExpr,
+        { allowUndefined: Boolean(targetProp.optional) }
+      );
   } else if (targetProp.isSet) {
-    setterValueExpr = buildImmutableSetExpression(setterValueExpr);
+    setterValueExpr = buildImmutableSetExpression(
+      setterValueExpr,
+      { allowUndefined: Boolean(targetProp.optional) }
+    );
   }
 
   if (targetProp.isMessageType && targetProp.messageTypeName) {
@@ -1315,13 +1493,19 @@ function buildSetterMethod(
   }
   constructorArgs.push(propsObject);
 
+  // For generic types, cast to 'this' to satisfy polymorphic return type
+  let newExpr: t.Expression = t.newExpression(
+    t.identifier(typeName), constructorArgs
+  );
+  if (typeParameters.length > 0) {
+    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
+  }
+
   const body = t.blockStatement([
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
-        [
-          t.newExpression(t.identifier(typeName), constructorArgs),
-        ]
+        [newExpr]
       )
     ),
   ]);
@@ -1334,7 +1518,7 @@ function buildSetterMethod(
     body
   );
   method.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -1367,13 +1551,19 @@ function buildDeleteMethod(
   }
   constructorArgs.push(propsObject);
 
+  // For generic types, cast to 'this' to satisfy polymorphic return type
+  let newExpr: t.Expression = t.newExpression(
+    t.identifier(typeName), constructorArgs
+  );
+  if (typeParameters.length > 0) {
+    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
+  }
+
   const body = t.blockStatement([
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
-        [
-          t.newExpression(t.identifier(typeName), constructorArgs),
-        ]
+        [newExpr]
       )
     ),
   ]);
@@ -1381,7 +1571,7 @@ function buildDeleteMethod(
   const methodName = `delete${capitalize(targetProp.name)}`;
   const method = t.classMethod('method', t.identifier(methodName), [], body);
   method.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -1527,18 +1717,22 @@ function buildArrayMutatorMethods(
 function buildArrayValuesRestParam(prop: PropDescriptor): t.RestElement {
   const valuesId = t.identifier('values');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
-  valuesId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(elementType))
-  );
+  if (elementType) {
+    valuesId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsArrayType(t.cloneNode(elementType))
+    );
+  }
   return t.restElement(valuesId);
 }
 
 function buildFillParams(prop: PropDescriptor): t.Identifier[] {
   const valueId = t.identifier('value');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
-  valueId.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(elementType)
-  );
+  if (elementType) {
+    valueId.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(elementType)
+    );
+  }
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
   startId.optional = true;
@@ -1568,13 +1762,17 @@ function buildSortMethod(
   const compareId = t.identifier('compareFn');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
   const firstParam = t.identifier('a');
-  firstParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(elementType)
-  );
+  if (elementType) {
+    firstParam.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(elementType)
+    );
+  }
   const secondParam = t.identifier('b');
-  secondParam.typeAnnotation = t.tsTypeAnnotation(
-    t.cloneNode(elementType)
-  );
+  if (elementType) {
+    secondParam.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(elementType)
+    );
+  }
   const compareType = t.tsFunctionType(
     null,
     [firstParam, secondParam],
@@ -1615,9 +1813,11 @@ function buildSpliceMethod(
   deleteCountId.optional = true;
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
   const itemsId = t.identifier('items');
-  itemsId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsArrayType(t.cloneNode(elementType))
-  );
+  if (elementType) {
+    itemsId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsArrayType(t.cloneNode(elementType))
+    );
+  }
   const itemsParam = t.restElement(itemsId);
 
   return buildArrayMutationMethod(
@@ -1744,6 +1944,14 @@ function buildArrayMutationMethod(
     )
   );
 
+  // For generic types, cast to 'this' to satisfy polymorphic return type
+  let newExpr: t.Expression = t.newExpression(
+    t.identifier(typeName), constructorArgs
+  );
+  if (typeParameters.length > 0) {
+    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
+  }
+
   const bodyStatements = [
     ...preludeStatements,
     ...statements,
@@ -1751,9 +1959,7 @@ function buildArrayMutationMethod(
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
-        [
-          t.newExpression(t.identifier(typeName), constructorArgs),
-        ]
+        [newExpr]
       )
     ),
   ];
@@ -1765,7 +1971,7 @@ function buildArrayMutationMethod(
     t.blockStatement(bodyStatements)
   );
   method.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -2367,7 +2573,17 @@ function buildMapMutationMethod(
       );
     }
   }
-  constructorArgs.push(buildPropsObjectExpression(propDescriptors, prop, nextRef()));
+  constructorArgs.push(
+    buildPropsObjectExpression(propDescriptors, prop, nextRef())
+  );
+
+  // For generic types, cast to 'this' to satisfy polymorphic return type
+  let newExpr: t.Expression = t.newExpression(
+    t.identifier(typeName), constructorArgs
+  );
+  if (typeParameters.length > 0) {
+    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
+  }
 
   const bodyStatements = [
     ...prelude,
@@ -2377,9 +2593,7 @@ function buildMapMutationMethod(
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
-        [
-          t.newExpression(t.identifier(typeName), constructorArgs),
-        ]
+        [newExpr]
       )
     ),
   ];
@@ -2391,7 +2605,7 @@ function buildMapMutationMethod(
     t.blockStatement(bodyStatements)
   );
   method.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -2497,6 +2711,14 @@ function buildSetMutationMethod(
     )
   );
 
+  // For generic types, cast to 'this' to satisfy polymorphic return type
+  let newExpr: t.Expression = t.newExpression(
+    t.identifier(typeName), constructorArgs
+  );
+  if (typeParameters.length > 0) {
+    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
+  }
+
   const bodyStatements = [
     ...statements,
     ...mutations,
@@ -2504,9 +2726,7 @@ function buildSetMutationMethod(
     t.returnStatement(
       t.callExpression(
         t.memberExpression(t.thisExpression(), t.identifier('$update')),
-        [
-          t.newExpression(t.identifier(typeName), constructorArgs),
-        ]
+        [newExpr]
       )
     ),
   ];
@@ -2518,7 +2738,7 @@ function buildSetMutationMethod(
     t.blockStatement(bodyStatements)
   );
   method.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -2573,22 +2793,23 @@ function buildNoopGuard(
   currentExpr: t.Expression,
   nextExpr: t.Expression
 ): t.IfStatement {
+  // Cast nextExpr to 'unknown' for the reference equality check because
+  // currentExpr may be ImmutableMap and nextExpr may be Map
   const sameRef = t.binaryExpression(
     '===',
     t.cloneNode(currentExpr),
-    t.cloneNode(nextExpr)
+    t.tsAsExpression(t.cloneNode(nextExpr), t.tsUnknownKeyword())
   );
-  const equalsCall = t.logicalExpression(
-    '&&',
-    t.binaryExpression(
-      '!==',
+  // Use optional chaining: currentExpr?.equals(nextExpr)
+  const equalsCall = t.optionalCallExpression(
+    t.optionalMemberExpression(
       t.cloneNode(currentExpr),
-      t.identifier('undefined')
+      t.identifier('equals'),
+      false,
+      true
     ),
-    t.callExpression(
-      t.memberExpression(t.cloneNode(currentExpr), t.identifier('equals')),
-      [t.cloneNode(nextExpr)]
-    )
+    [t.cloneNode(nextExpr)],
+    false
   );
   return t.ifStatement(
     t.logicalExpression('||', sameRef, equalsCall),
@@ -2600,12 +2821,14 @@ function buildSetEntryOptions(prop: PropDescriptor) {
   const currentId = t.identifier(`${prop.name}Current`);
   const existingId = t.identifier('existing');
   const valueId = t.identifier('value');
-  const hasKey = t.callExpression(
-    t.memberExpression(currentId, t.identifier('has')),
-    [t.identifier('key')]
+  // Use optional chaining: currentId?.has(key)
+  const optionalHasKey = t.optionalCallExpression(
+    t.optionalMemberExpression(currentId, t.identifier('has'), false, true),
+    [t.identifier('key')],
+    false
   );
   const getExisting = t.callExpression(
-    t.memberExpression(currentId, t.identifier('get')),
+    t.memberExpression(t.cloneNode(currentId), t.identifier('get')),
     [t.identifier('key')]
   );
   const equalsCall = t.callExpression(
@@ -2621,11 +2844,7 @@ function buildSetEntryOptions(prop: PropDescriptor) {
       ),
     ]),
     t.ifStatement(
-      t.logicalExpression(
-        '&&',
-        currentId,
-        hasKey
-      ),
+      optionalHasKey,
       t.blockStatement([
         t.variableDeclaration('const', [
           t.variableDeclarator(existingId, getExisting),
@@ -2640,9 +2859,11 @@ function buildSetEntryOptions(prop: PropDescriptor) {
 
 function buildDeleteEntryOptions(prop: PropDescriptor) {
   const currentId = t.identifier(`${prop.name}Current`);
-  const hasKey = t.callExpression(
-    t.memberExpression(currentId, t.identifier('has')),
-    [t.identifier('key')]
+  // Use optional chaining: currentId?.has(key)
+  const optionalHasKey = t.optionalCallExpression(
+    t.optionalMemberExpression(currentId, t.identifier('has'), false, true),
+    [t.identifier('key')],
+    false
   );
   const prelude = [
     t.variableDeclaration('const', [
@@ -2652,11 +2873,7 @@ function buildDeleteEntryOptions(prop: PropDescriptor) {
       ),
     ]),
     t.ifStatement(
-      t.logicalExpression(
-        '||',
-        t.binaryExpression('===', currentId, t.identifier('undefined')),
-        t.unaryExpression('!', hasKey)
-      ),
+      t.unaryExpression('!', optionalHasKey),
       t.returnStatement(t.thisExpression())
     ),
   ];
@@ -2691,7 +2908,7 @@ function cloneMapKeyType(prop: PropDescriptor): t.TSType {
   }
   return prop.mapKeyType
     ? wrapImmutableType(t.cloneNode(prop.mapKeyType))
-    : t.tsAnyKeyword();
+    : t.tsUnknownKeyword();
 }
 
 function cloneMapValueType(prop: PropDescriptor): t.TSType {
@@ -2700,7 +2917,7 @@ function cloneMapValueType(prop: PropDescriptor): t.TSType {
   }
   return prop.mapValueType
     ? wrapImmutableType(t.cloneNode(prop.mapValueType))
-    : t.tsAnyKeyword();
+    : t.tsUnknownKeyword();
 }
 
 function cloneSetElementType(prop: PropDescriptor): t.TSType {
@@ -2709,7 +2926,7 @@ function cloneSetElementType(prop: PropDescriptor): t.TSType {
   }
   return prop.setElementType
     ? wrapImmutableType(t.cloneNode(prop.setElementType))
-    : t.tsAnyKeyword();
+    : t.tsUnknownKeyword();
 }
 
 function buildMapSetParams(prop: PropDescriptor): t.Identifier[] {
@@ -2730,23 +2947,14 @@ function buildMapMergeParams(prop: PropDescriptor): t.Identifier[] {
   const entriesId = t.identifier('entries');
   const keyType = cloneMapKeyType(prop);
   const valueType = cloneMapValueType(prop);
-  const tupleType = t.tsTupleType([keyType, valueType]);
-  const iterableType = t.tsTypeReference(
-    t.identifier('Iterable'),
-    t.tsTypeParameterInstantiation([tupleType])
-  );
+  // buildInputAcceptingMutable already includes Iterable<[K, V]> in the union
   const mapInputUnion = buildInputAcceptingMutable(
     t.tsTypeReference(
       t.identifier('ImmutableMap'),
       t.tsTypeParameterInstantiation([keyType, valueType])
     )
   );
-  entriesId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsUnionType([
-      iterableType,
-      mapInputUnion,
-    ])
-  );
+  entriesId.typeAnnotation = t.tsTypeAnnotation(mapInputUnion);
   return [entriesId];
 }
 
@@ -2819,13 +3027,15 @@ function buildSetFilterParams(unused_prop: PropDescriptor): t.Identifier[] {
 function buildSetMapParams(prop: PropDescriptor): t.Identifier[] {
   const mapperId = t.identifier('mapper');
   const valueId = t.identifier('value');
-  mapperId.typeAnnotation = t.tsTypeAnnotation(
-    t.tsFunctionType(
-      null,
-      [t.identifier(valueId.name)],
-      t.tsTypeAnnotation(t.cloneNode(prop.setElementType))
-    )
-  );
+  if (prop.setElementType) {
+    mapperId.typeAnnotation = t.tsTypeAnnotation(
+      t.tsFunctionType(
+        null,
+        [t.identifier(valueId.name)],
+        t.tsTypeAnnotation(t.cloneNode(prop.setElementType))
+      )
+    );
+  }
   return [mapperId];
 }
 
@@ -2898,7 +3108,8 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
 function buildWithChildMethod(
   typeName: string,
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod | null {
   // Find all message-type children (including collections with messages)
   const messageChildren = propDescriptors.filter(
@@ -2924,21 +3135,47 @@ function buildWithChildMethod(
   // Build switch cases for each child property
   const switchCases: t.SwitchCase[] = messageChildren.map((prop) => {
     // Create new instance with this property replaced
+    // Cast child to the property's actual type
     const propsObject = t.objectExpression(
       propDescriptors.map((p) =>
         t.objectProperty(
           t.identifier(p.name),
           p === prop
-            ? t.cloneNode(childId)
-            : t.memberExpression(t.thisExpression(), t.cloneNode(p.privateName))
+            ? t.tsAsExpression(
+              t.cloneNode(childId), t.cloneNode(p.typeAnnotation)
+            )
+            : t.memberExpression(
+              t.thisExpression(), t.cloneNode(p.privateName)
+            )
         )
       )
     );
 
+    // Build constructor args with class refs for generics
+    const constructorArgs: t.Expression[] = [];
+    if (typeParameters.length > 0) {
+      for (const param of typeParameters) {
+        const fieldName = getConstructorFieldName(param.name);
+        constructorArgs.push(
+          t.memberExpression(
+            t.thisExpression(),
+            t.privateName(t.identifier(fieldName))
+          )
+        );
+      }
+    }
+    constructorArgs.push(propsObject);
+
+    // For generic types, cast to 'this' to satisfy polymorphic return
+    let returnExpr: t.Expression = t.newExpression(
+      t.identifier(typeName), constructorArgs
+    );
+    if (typeParameters.length > 0) {
+      returnExpr = t.tsAsExpression(returnExpr, t.tsThisType());
+    }
+
     return t.switchCase(t.stringLiteral(prop.name), [
-      t.returnStatement(
-        t.newExpression(t.identifier(typeName), [propsObject])
-      ),
+      t.returnStatement(returnExpr),
     ]);
   });
 
@@ -2963,20 +3200,6 @@ function buildWithChildMethod(
     t.switchStatement(t.cloneNode(keyId), switchCases),
   ]);
 
-  // Create method with computed property name for symbol
-  const method = t.classMethod(
-    'method',
-    t.memberExpression(
-      t.identifier('Symbol'),
-      t.identifier('for')
-    ),
-    [keyId, childId],
-    body,
-    true // computed = true
-  );
-
-  // Actually, we need to use the imported symbol. Let's use a different approach.
-  // We'll create a method with an identifier and add a comment
   const withChildMethod = t.classMethod(
     'method',
     t.identifier('[WITH_CHILD]'),
@@ -2985,8 +3208,12 @@ function buildWithChildMethod(
   );
   withChildMethod.computed = true;
   withChildMethod.key = t.identifier('WITH_CHILD');
+  withChildMethod.override = true; // Override base class method
+  // For generic types, use 'this' return type to match base class polymorphism
   withChildMethod.returnType = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(typeName))
+    typeParameters.length > 0
+      ? t.tsThisType()
+      : buildGenericTypeReference(typeName, typeParameters)
   );
 
   return withChildMethod;
@@ -2998,7 +3225,7 @@ function buildWithChildMethod(
  */
 function buildGetMessageChildrenMethod(
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
-  declaredMessageTypeNames: Set<string>
+  state: PluginStateFlags
 ): t.ClassMethod | null {
   // Find all message-type children (including collections with messages)
   const messageChildren = propDescriptors.filter(
@@ -3013,14 +3240,51 @@ function buildGetMessageChildrenMethod(
     return null;
   }
 
+  // Mark that we need type-only imports for the yield type union
+  // Use separate flags so these don't become value imports when only needed as types
+  state.usesDataObject = true;
+  state.needsImmutableArrayType = true;
+  state.needsImmutableMapType = true;
+  state.needsImmutableSetType = true;
+
   // Build yield statements for each child
+  // Use union type matching base class return type instead of 'any'
+  const childValueType = t.tsUnionType([
+    t.tsTypeReference(
+      t.identifier('Message'),
+      t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier('DataObject'))])
+    ),
+    t.tsTypeReference(
+      t.identifier('ImmutableArray'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    ),
+    t.tsTypeReference(
+      t.identifier('ImmutableMap'),
+      t.tsTypeParameterInstantiation([
+        t.tsUnknownKeyword(), t.tsUnknownKeyword()
+      ])
+    ),
+    t.tsTypeReference(
+      t.identifier('ImmutableSet'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    ),
+  ]);
+
   const yieldStatements = messageChildren.map((prop) =>
     t.expressionStatement(
       t.yieldExpression(
-        t.arrayExpression([
-          t.stringLiteral(prop.name),
-          t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName)),
-        ])
+        t.tsAsExpression(
+          t.arrayExpression([
+            t.stringLiteral(prop.name),
+            t.memberExpression(
+              t.thisExpression(), t.cloneNode(prop.privateName)
+            ),
+          ]),
+          t.tsTupleType([
+            t.tsStringKeyword(),
+            childValueType
+          ])
+        )
       )
     )
   );
@@ -3035,6 +3299,7 @@ function buildGetMessageChildrenMethod(
   );
   method.computed = true;
   method.generator = true;
+  method.override = true; // Override base class method
 
   return method;
 }

@@ -3,9 +3,13 @@
   "compilerOptions": {
     "outDir": "../build/react",
     "rootDir": ".",
+    "composite": true,
     "declaration": true,
-    "strict": false,
+    "strict": true,
     "exactOptionalPropertyTypes": false
   },
-  "include": ["**/*"]
+  "include": ["**/*"],
+  "references": [
+    { "path": "../runtime" }
+  ]
 }

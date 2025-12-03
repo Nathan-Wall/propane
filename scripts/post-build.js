@@ -40,11 +40,7 @@ for (const pkgDir of packages) {
       for (const k in pkgJson.bin) {
         const originalPath = pkgJson.bin[k];
         // Map src/cli.ts -> src/cli.js for packages with src/
-        if (packagesWithSrc.has(pkgDir) && originalPath.startsWith('src/')) {
-          pkgJson.bin[k] = originalPath.replace(/\.ts$/, '.js');
-        } else {
-          pkgJson.bin[k] = 'index.js';
-        }
+        pkgJson.bin[k] = packagesWithSrc.has(pkgDir) && originalPath.startsWith('src/') ? originalPath.replace(/\.ts$/, '.js') : 'index.js';
       }
     }
   }

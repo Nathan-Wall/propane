@@ -2,7 +2,7 @@ import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import type { PropaneState } from './plugin.js';
 
-export const MESSAGE_SOURCE = '@propanejs/runtime';
+export const DEFAULT_RUNTIME_SOURCE = '@propanejs/runtime';
 
 export function ensureBaseImport(
   programPath: NodePath<t.Program>,
@@ -22,14 +22,28 @@ export function ensureBaseImport(
               : false
         )
     );
+  const runtimeSource = state.runtimeImportPath;
+
+  // Check if the source already has imports from the default runtime path
+  // and rewrite them to use the configured path
+  if (runtimeSource !== DEFAULT_RUNTIME_SOURCE) {
+    for (const stmt of program.body) {
+      if (
+        t.isImportDeclaration(stmt)
+        && stmt.source.value === DEFAULT_RUNTIME_SOURCE
+      ) {
+        stmt.source.value = runtimeSource;
+      }
+    }
+  }
+
   const existingImport = program.body.find(
     (stmt): stmt is t.ImportDeclaration =>
       t.isImportDeclaration(stmt)
-      && stmt.source.value === MESSAGE_SOURCE
+      && stmt.source.value === runtimeSource
   );
   const requiredSpecifiers = [
     'Message',
-    'MessagePropDescriptor',
     // Hybrid approach symbols
     'WITH_CHILD',
     'GET_MESSAGE_CHILDREN',
@@ -58,37 +72,81 @@ export function ensureBaseImport(
   if (state.usesTaggedMessageData) {
     requiredSpecifiers.push('isTaggedMessageData');
   }
-  // MessageConstructor is a type-only import - add a separate type import if needed
+  if (state.usesParseCerealString && !hasImportBinding('parseCerealString')) {
+    requiredSpecifiers.push('parseCerealString');
+  }
+  // MessageConstructor, MessagePropDescriptor, DataValue, and DataObject are type-only imports
+  const typeOnlyImports: string[] = ['MessagePropDescriptor'];
   if (state.usesMessageConstructor && !hasImportBinding('MessageConstructor')) {
+    typeOnlyImports.push('MessageConstructor');
+  }
+  if (state.usesDataValue && !hasImportBinding('DataValue')) {
+    typeOnlyImports.push('DataValue');
+  }
+  if (state.usesDataObject && !hasImportBinding('DataObject')) {
+    typeOnlyImports.push('DataObject');
+  }
+  // Add ImmutableArray/Set/Map as type imports when only needed for type annotations
+  // (not as values for instantiation)
+  if (
+    state.needsImmutableArrayType
+    && !state.usesImmutableArray
+    && !hasImportBinding('ImmutableArray')
+  ) {
+    typeOnlyImports.push('ImmutableArray');
+  }
+  if (
+    state.needsImmutableSetType
+    && !state.usesImmutableSet
+    && !hasImportBinding('ImmutableSet')
+  ) {
+    typeOnlyImports.push('ImmutableSet');
+  }
+  if (
+    state.needsImmutableMapType
+    && !state.usesImmutableMap
+    && !hasImportBinding('ImmutableMap')
+  ) {
+    typeOnlyImports.push('ImmutableMap');
+  }
+
+  if (typeOnlyImports.length > 0) {
     // Check if type import already exists
     const existingTypeImport = program.body.find(
       (stmt): stmt is t.ImportDeclaration =>
         t.isImportDeclaration(stmt)
-        && stmt.source.value === MESSAGE_SOURCE
+        && stmt.source.value === runtimeSource
         && stmt.importKind === 'type'
     );
 
     if (existingTypeImport) {
       // Add to existing type import
+      type ImportSpec = t.ImportSpecifier;
+      const isImportSpec = (s: t.Node): s is ImportSpec =>
+        t.isImportSpecifier(s);
       const existingSpecifiers = new Set(
         existingTypeImport.specifiers
-          .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
+          .filter(isImportSpec)
           .map((spec) =>
             t.isIdentifier(spec.imported)
               ? spec.imported.name
               : spec.imported.value
           )
       );
-      if (!existingSpecifiers.has('MessageConstructor')) {
-        existingTypeImport.specifiers.push(
-          t.importSpecifier(t.identifier('MessageConstructor'), t.identifier('MessageConstructor'))
-        );
+      for (const name of typeOnlyImports) {
+        if (!existingSpecifiers.has(name)) {
+          existingTypeImport.specifiers.push(
+            t.importSpecifier(t.identifier(name), t.identifier(name))
+          );
+        }
       }
     } else {
       // Create new type-only import
       const typeImportDecl = t.importDeclaration(
-        [t.importSpecifier(t.identifier('MessageConstructor'), t.identifier('MessageConstructor'))],
-        t.stringLiteral(MESSAGE_SOURCE)
+        typeOnlyImports.map((name) =>
+          t.importSpecifier(t.identifier(name), t.identifier(name))
+        ),
+        t.stringLiteral(runtimeSource)
       );
       typeImportDecl.importKind = 'type';
 
@@ -128,7 +186,7 @@ export function ensureBaseImport(
     requiredSpecifiers.map((name) =>
       t.importSpecifier(t.identifier(name), t.identifier(name))
     ),
-    t.stringLiteral(MESSAGE_SOURCE)
+    t.stringLiteral(runtimeSource)
   );
 
   const insertionIndex = program.body.findIndex(

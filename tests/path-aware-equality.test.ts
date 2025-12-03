@@ -77,10 +77,10 @@ function testPathRegistrationDistinguishesSiblings() {
   const root = new OuterMessage({ counter: 0, inner: inner1 });
 
   // Manually register paths (simulating what should happen automatically)
-  type Registerable = {
+  interface Registerable {
     [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
     [FROM_ROOT]: (root: Message<DataObject>) => string | undefined;
-  };
+  }
 
   // Register inner1 at path "inner"
   (inner1 as unknown as Registerable)[REGISTER_PATH](
@@ -138,9 +138,9 @@ function testEqualsFromRootWithoutRegistration() {
   const inner2 = new InnerMessage({ value: 'hello' });
   const root = new OuterMessage({ counter: 0, inner: inner1 });
 
-  type PathAware = {
+  interface PathAware {
     [EQUALS_FROM_ROOT]: (root: unknown, other: unknown) => boolean;
-  };
+  }
 
   // Without REGISTER_PATH being called, equalsFromRoot falls back to content equality
   const areEqualFromRoot = (inner1 as unknown as PathAware)[EQUALS_FROM_ROOT](
@@ -173,13 +173,13 @@ function testEqualsFromRootWithRegistration() {
   const inner2 = new InnerMessage({ value: 'hello' });
   const root = new OuterMessage({ counter: 0, inner: inner1 });
 
-  type Registerable = {
+  interface Registerable {
     [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
-  };
+  }
 
-  type PathAware = {
+  interface PathAware {
     [EQUALS_FROM_ROOT]: (root: unknown, other: unknown) => boolean;
-  };
+  }
 
   // Manually register paths
   (inner1 as unknown as Registerable)[REGISTER_PATH](
@@ -232,13 +232,13 @@ function testMemoPropaneWithIdenticalSiblings() {
   console.log('Testing: memoPropane with identical siblings (simulated usePropaneState)...');
 
   // Simulate the memoPropane equality check (from react/index.ts)
-  type PathAware = {
+  interface PathAware {
     [EQUALS_FROM_ROOT]: (root: unknown, other: unknown) => boolean;
-  };
+  }
 
-  type Registerable = {
+  interface Registerable {
     [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
-  };
+  }
 
   function isEqualsFromRootCapable(value: unknown): value is PathAware {
     return (

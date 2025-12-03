@@ -22,8 +22,8 @@ class TestMessage {
   #value: string;
 
   // Hybrid approach: parent chains and callbacks
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(props: { value: string }) {
     this.#value = props.value;
@@ -44,8 +44,10 @@ class TestMessage {
     return next;
   }
 
-  // Hybrid approach: set up parent chain (parent can be Message or ImmutableArray)
-  public $setParentChain(key: symbol, parent: object, parentKey: string | number): void {
+  // Hybrid: set up parent chain (parent can be Message/ImmutableArray)
+  public $setParentChain(
+    key: symbol, parent: object, parentKey: string | number
+  ): void {
     this.#parentChains.set(key, {
       parent: new WeakRef(parent),
       key: parentKey,
@@ -53,7 +55,9 @@ class TestMessage {
   }
 
   // Hybrid approach: set listener callback
-  public [SET_UPDATE_LISTENER](key: symbol, callback: UpdateListenerCallback): void {
+  public [SET_UPDATE_LISTENER](
+    key: symbol, callback: UpdateListenerCallback
+  ): void {
     this.#callbacks.set(key, callback);
   }
 
@@ -66,8 +70,18 @@ class TestMessage {
       for (const [key, entry] of this.#parentChains) {
         const parent = entry.parent.deref();
         if (!parent) continue;
-        const newParent = (parent as unknown as { [WITH_CHILD]: (k: string | number, c: unknown) => unknown })[WITH_CHILD](entry.key, newRoot);
-        (parent as unknown as { [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+        type WithChildFn = {
+          [WITH_CHILD]: (k: string | number, c: unknown) => unknown;
+        };
+        type PropagateFn = {
+          [PROPAGATE_UPDATE]: (k: symbol, r: unknown) => void;
+        };
+        const newParent = (parent as unknown as WithChildFn)[WITH_CHILD](
+          entry.key, newRoot
+        );
+        (parent as unknown as PropagateFn)[PROPAGATE_UPDATE](
+          key, newParent
+        );
       }
     } else {
       // No parent chains - this is a root-level item, call callbacks directly
@@ -96,7 +110,11 @@ function testArrayDeepUpdate() {
 
   // Named listener function for re-subscription
   const setupListener = (arr: ImmutableArray<TestMessage>) => {
-    type Listenable = { [SET_UPDATE_LISTENER]: (key: symbol, cb: (val: unknown) => void) => void };
+    interface Listenable {
+      [SET_UPDATE_LISTENER]: (
+        key: symbol, cb: (val: unknown) => void
+      ) => void;
+    }
     (arr as unknown as Listenable)[SET_UPDATE_LISTENER](
       REACT_LISTENER_KEY,
       (newArray) => {

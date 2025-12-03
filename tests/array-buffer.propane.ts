@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/array-buffer.propane
-import { Message, MessagePropDescriptor, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "@propanejs/runtime";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "../runtime/index.js";
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
   static readonly $typeName = "ArrayBufferMessage";
@@ -15,7 +16,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     this.#id = props ? props.id : 0;
     this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer(props.data) : new ImmutableArrayBuffer();
     this.#extra = props ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra) : new ImmutableArrayBuffer(props.extra) : undefined;
-    this.#chunks = props ? props.chunks === undefined || props.chunks === null ? props.chunks : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : new ImmutableArray();
+    this.#chunks = props ? props.chunks === undefined || props.chunks === null ? new ImmutableArray() : props.chunks instanceof ImmutableArray ? props.chunks : new ImmutableArray(props.chunks) : new ImmutableArray();
     if (!props) ArrayBufferMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
@@ -46,35 +47,35 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     const dataValue = entries["2"] === undefined ? entries["data"] : entries["2"];
     if (dataValue === undefined) throw new Error("Missing required property \"data\".");
     const dataArrayBufferValue = dataValue instanceof ImmutableArrayBuffer ? dataValue : ArrayBuffer.isView(dataValue) ? new ImmutableArrayBuffer(dataValue) : new ImmutableArrayBuffer(dataValue);
-    if (!(dataArrayBufferValue instanceof ArrayBuffer || dataArrayBufferValue instanceof ImmutableArrayBuffer || Object.prototype.toString.call(dataArrayBufferValue) === "[object ArrayBuffer]" || Object.prototype.toString.call(dataArrayBufferValue) === "[object ImmutableArrayBuffer]")) throw new Error("Invalid value for property \"data\".");
+    if (!(dataArrayBufferValue instanceof ArrayBuffer || dataArrayBufferValue instanceof ImmutableArrayBuffer)) throw new Error("Invalid value for property \"data\".");
     props.data = dataArrayBufferValue;
     const extraValue = entries["3"] === undefined ? entries["extra"] : entries["3"];
     const extraNormalized = extraValue === null ? undefined : extraValue;
     const extraArrayBufferValue = extraNormalized === undefined ? undefined : extraNormalized instanceof ImmutableArrayBuffer ? extraNormalized : ArrayBuffer.isView(extraNormalized) ? new ImmutableArrayBuffer(extraNormalized) : new ImmutableArrayBuffer(extraNormalized);
-    if (extraArrayBufferValue !== undefined && !(extraArrayBufferValue instanceof ArrayBuffer || extraArrayBufferValue instanceof ImmutableArrayBuffer || Object.prototype.toString.call(extraArrayBufferValue) === "[object ArrayBuffer]" || Object.prototype.toString.call(extraArrayBufferValue) === "[object ImmutableArrayBuffer]")) throw new Error("Invalid value for property \"extra\".");
+    if (extraArrayBufferValue !== undefined && !(extraArrayBufferValue instanceof ArrayBuffer || extraArrayBufferValue instanceof ImmutableArrayBuffer)) throw new Error("Invalid value for property \"extra\".");
     props.extra = extraArrayBufferValue;
     const chunksValue = entries["4"] === undefined ? entries["chunks"] : entries["4"];
     if (chunksValue === undefined) throw new Error("Missing required property \"chunks\".");
-    const chunksArrayValue = chunksValue === undefined || chunksValue === null ? chunksValue : chunksValue instanceof ImmutableArray ? chunksValue : new ImmutableArray(chunksValue);
-    if (!((chunksArrayValue instanceof ImmutableArray || Object.prototype.toString.call(chunksArrayValue) === "[object ImmutableArray]" || Array.isArray(chunksArrayValue)) && [...chunksArrayValue].every(element => element instanceof ArrayBuffer || element instanceof ImmutableArrayBuffer || Object.prototype.toString.call(element) === "[object ArrayBuffer]" || Object.prototype.toString.call(element) === "[object ImmutableArrayBuffer]"))) throw new Error("Invalid value for property \"chunks\".");
-    props.chunks = chunksArrayValue;
+    const chunksArrayValue = chunksValue === undefined || chunksValue === null ? new ImmutableArray() : chunksValue as object instanceof ImmutableArray ? chunksValue : new ImmutableArray(chunksValue);
+    if (!((chunksArrayValue instanceof ImmutableArray || Array.isArray(chunksArrayValue)) && [...(chunksArrayValue as Iterable<unknown>)].every(element => element instanceof ArrayBuffer || element instanceof ImmutableArrayBuffer))) throw new Error("Invalid value for property \"chunks\".");
+    props.chunks = chunksArrayValue as ImmutableArray<ImmutableArrayBuffer>;
     return props as ArrayBufferMessage.Data;
   }
-  [WITH_CHILD](key: string | number, child: unknown): ArrayBufferMessage {
+  override [WITH_CHILD](key: string | number, child: unknown): ArrayBufferMessage {
     switch (key) {
       case "chunks":
         return new ArrayBufferMessage({
           id: this.#id,
           data: this.#data,
           extra: this.#extra,
-          chunks: child
+          chunks: child as ImmutableArray<ImmutableArrayBuffer>
         });
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
-  *[GET_MESSAGE_CHILDREN]() {
-    yield ["chunks", this.#chunks];
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["chunks", this.#chunks] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get id(): number {
     return this.#id;
@@ -230,11 +231,11 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   }
 }
 export namespace ArrayBufferMessage {
-  export interface Data {
+  export type Data = {
     id: number;
     data: ImmutableArrayBuffer | ArrayBuffer;
     extra?: ImmutableArrayBuffer | ArrayBuffer | undefined;
     chunks: ArrayBuffer[] | Iterable<ArrayBuffer>;
-  }
+  };
   export type Value = ArrayBufferMessage | ArrayBufferMessage.Data;
 }

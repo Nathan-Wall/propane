@@ -1,7 +1,6 @@
 {
   "name": "@propanejs/pms-client",
   "version": "0.0.0",
-  "private": true,
   "type": "module",
   "main": "../build/pms-client/src/index.js",
   "types": "../build/pms-client/src/index.d.ts",

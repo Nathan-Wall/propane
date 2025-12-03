@@ -30,6 +30,13 @@ export interface PluginStateFlags {
   usesTaggedMessageData: boolean;
   usesListeners: boolean;
   usesMessageConstructor: boolean;
+  usesParseCerealString: boolean;
+  usesDataObject: boolean;
+  hasGenericTypes: boolean;
+  // Type-only import flags for GET_MESSAGE_CHILDREN yield type
+  needsImmutableArrayType: boolean;
+  needsImmutableSetType: boolean;
+  needsImmutableMapType: boolean;
 }
 
 /**
@@ -153,7 +160,7 @@ function getGenericParamInfo(
     return null;
   }
   const paramIndex = typeParameters.findIndex((p) => p.name === typeName.name);
-  if (paramIndex >= 0) {
+  if (paramIndex !== -1) {
     return { name: typeName.name, index: paramIndex };
   }
   return null;
@@ -633,7 +640,7 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
   }
 
   if (t.isTSUnionType(typeNode) && typeNode.types.length > 0) {
-    return getDefaultValueForType(typeNode.types[0]);
+    return getDefaultValueForType(typeNode.types[0]!);
   }
 
   if (t.isTSTypeReference(typeNode)) {
@@ -712,10 +719,10 @@ export function wrapImmutableType(
       const params = node.typeParameters?.params ?? [];
       const [key, value] = [
         wrapImmutableType(
-          params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()
+          params[0] ? t.cloneNode(params[0]) : t.tsUnknownKeyword()
         ),
         wrapImmutableType(
-          params[1] ? t.cloneNode(params[1]) : t.tsAnyKeyword()
+          params[1] ? t.cloneNode(params[1]) : t.tsUnknownKeyword()
         ),
       ];
       return t.tsTypeReference(
@@ -730,7 +737,7 @@ export function wrapImmutableType(
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
         wrapImmutableType(
-          params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()
+          params[0] ? t.cloneNode(params[0]) : t.tsUnknownKeyword()
         ),
       ];
       return t.tsTypeReference(
@@ -745,7 +752,7 @@ export function wrapImmutableType(
       const params = node.typeParameters?.params ?? [];
       const [elem] = [
         wrapImmutableType(
-          params[0] ? t.cloneNode(params[0]) : t.tsAnyKeyword()
+          params[0] ? t.cloneNode(params[0]) : t.tsUnknownKeyword()
         ),
       ];
       return t.tsTypeReference(
@@ -831,7 +838,7 @@ export function buildInputAcceptingMutable(
       const elem = buildInputAcceptingMutable(
         node.typeParameters?.params?.[0]
           ? t.cloneNode(node.typeParameters.params[0])
-          : t.tsAnyKeyword()
+          : t.tsUnknownKeyword()
       );
       return t.tsUnionType([
         t.tsTypeReference(
@@ -856,7 +863,7 @@ export function buildInputAcceptingMutable(
       const elem = buildInputAcceptingMutable(
         node.typeParameters?.params?.[0]
           ? t.cloneNode(node.typeParameters.params[0])
-          : t.tsAnyKeyword()
+          : t.tsUnknownKeyword()
       );
       return t.tsUnionType([
         t.tsTypeReference(
@@ -880,10 +887,10 @@ export function buildInputAcceptingMutable(
       || name === 'ImmutableMap') {
       const keyParam = node.typeParameters?.params?.[0]
         ? t.cloneNode(node.typeParameters.params[0])
-        : t.tsAnyKeyword();
+        : t.tsUnknownKeyword();
       const valueParam = node.typeParameters?.params?.[1]
         ? t.cloneNode(node.typeParameters.params[1])
-        : t.tsAnyKeyword();
+        : t.tsUnknownKeyword();
       const key = buildInputAcceptingMutable(keyParam);
       const value = buildInputAcceptingMutable(valueParam);
       const tupleType = t.tsTupleType([key, value]);

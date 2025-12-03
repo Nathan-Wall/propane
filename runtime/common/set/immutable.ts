@@ -81,7 +81,6 @@ function hashValue(value: unknown): string {
     return `sym:${desc}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   return `obj:${hashString(Object.prototype.toString.call(value))}`;
 }
 
@@ -92,13 +91,13 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   readonly [Symbol.toStringTag] = 'ImmutableSet';
 
   // Hybrid approach: path tracking for equality comparisons
-  readonly #fromRoot: WeakMap<Message<DataObject>, string> = new WeakMap();
+  readonly #fromRoot = new WeakMap<Message<DataObject>, string>();
 
   // Hybrid approach: parent chains for update propagation (keyed by listener symbol)
-  readonly #parentChains: Map<symbol, ParentChainEntry> = new Map();
+  readonly #parentChains = new Map<symbol, ParentChainEntry>();
 
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
-  readonly #callbacks: Map<symbol, UpdateListenerCallback> = new Map();
+  readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[]) {
     this.#buckets = new Map();
@@ -147,11 +146,19 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
    * Propagate updates through parent chains.
    */
   private $propagateUpdates(newSet: ImmutableSet<T>): void {
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](entry.key, newSet);
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        entry.key, newSet
+      );
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
     // Also call direct callbacks at the root level
     for (const [, callback] of this.#callbacks) {
@@ -207,10 +214,15 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     let index = 0;
     for (const value of this) {
       if (isMessageLike(value) && SET_UPDATE_LISTENER in value) {
-        const msgValue = value as unknown as {
-          $setParentChain: (key: symbol, parent: unknown, parentKey: string | number) => void;
-          [SET_UPDATE_LISTENER]: (key: symbol, callback: UpdateListenerCallback) => void;
+        type ListenableFn = {
+          $setParentChain: (
+            key: symbol, parent: unknown, parentKey: string | number
+          ) => void;
+          [SET_UPDATE_LISTENER]: (
+            key: symbol, callback: UpdateListenerCallback
+          ) => void;
         };
+        const msgValue = value as unknown as ListenableFn;
         msgValue.$setParentChain(key, this, index);
         msgValue[SET_UPDATE_LISTENER](key, callback);
       }
@@ -236,13 +248,24 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     return new ImmutableSet(values);
   }
 
-  public [PROPAGATE_UPDATE](key: symbol, replacement: ImmutableSet<T>): void {
+  public [PROPAGATE_UPDATE](
+    key: symbol,
+    replacement: ImmutableSet<T>
+  ): void {
     const chain = this.#parentChains.get(key);
 
+    type WithChildFn = {
+      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+    };
+    type PropagateFn = {
+      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
+    };
     if (chain?.parent.deref()) {
-      const parent = chain.parent.deref()!;
-      const newParent = (parent as { [WITH_CHILD]: (key: string | number, child: unknown) => unknown })[WITH_CHILD](chain.key, replacement);
-      (parent as { [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void })[PROPAGATE_UPDATE](key, newParent);
+      const parent = chain.parent.deref();
+      const newParent = (parent as WithChildFn)[WITH_CHILD](
+        chain.key, replacement
+      );
+      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     } else {
       const callback = this.#callbacks.get(key);
       if (callback) {

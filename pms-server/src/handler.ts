@@ -1,5 +1,6 @@
-import type { Message } from '@propanejs/runtime';
+import type { Message, DataObject } from '@propanejs/runtime';
 import type { MessageClass } from '@propanejs/pms-core';
+import { Response } from './response.propane.js';
 
 /**
  * Context passed to every handler.
@@ -14,33 +15,18 @@ export interface HandlerContext {
 }
 
 /**
- * Extended response with custom headers.
+ * Handler result - either a simple response message or a Response wrapper with headers.
  */
-export interface HandlerResponseWithHeaders<TResponse> {
-  /** The response message */
-  readonly response: TResponse;
-  /** Custom headers to include in the HTTP response */
-  readonly headers: Record<string, string>;
-}
+export type HandlerResult<TResponse extends Message<DataObject>> =
+  TResponse | Response<TResponse>;
 
 /**
- * Handler result - either a simple response or a response with headers.
+ * Type guard to check if result is a Response wrapper with headers.
  */
-export type HandlerResult<TResponse> = TResponse | HandlerResponseWithHeaders<TResponse>;
-
-/**
- * Type guard to check if result includes headers.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isResponseWithHeaders<T extends Message<any>>(
+export function isResponseWithHeaders<T extends Message<DataObject>>(
   result: HandlerResult<T>
-): result is HandlerResponseWithHeaders<T> {
-  return (
-    result !== null &&
-    typeof result === 'object' &&
-    'response' in result &&
-    'headers' in result
-  );
+): result is Response<T> {
+  return result instanceof Response;
 }
 
 /**
@@ -49,9 +35,9 @@ export function isResponseWithHeaders<T extends Message<any>>(
  *
  * Handlers can return either:
  * - A response message directly
- * - An object with `response` and `headers` for custom HTTP headers
+ * - A Response wrapper with custom HTTP headers
  */
-export type Handler<TRequest, TResponse> = (
+export type Handler<TRequest, TResponse extends Message<DataObject>> = (
   request: TRequest,
   context: HandlerContext
 ) => Promise<HandlerResult<TResponse>> | HandlerResult<TResponse>;
@@ -59,9 +45,11 @@ export type Handler<TRequest, TResponse> = (
 /**
  * Internal descriptor for a registered handler.
  */
-export interface HandlerDescriptor {
+export interface HandlerDescriptor<
+  In extends Message<DataObject> = Message<DataObject>,
+  Out extends Message<DataObject> = Message<DataObject>,
+> {
   readonly typeName: string;
   readonly messageClass: MessageClass;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly handler: Handler<any, any>;
+  readonly handler: Handler<In, Out>;
 }

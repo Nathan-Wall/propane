@@ -1,10 +1,18 @@
+import path from 'node:path';
 import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { pathTransform } from './utils.js';
 import { registerTypeAlias } from './validation.js';
-import { ensureBaseImport } from './base-import.js';
+import { ensureBaseImport, DEFAULT_RUNTIME_SOURCE } from './base-import.js';
 import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup.js';
 import { buildDeclarations, GENERATED_ALIAS } from './declarations.js';
+
+export interface PropanePluginOptions {
+  /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
+  runtimeImportPath?: string;
+  /** Base directory for resolving runtimeImportPath (typically the config file directory). */
+  runtimeImportBase?: string;
+}
 
 export interface PropaneState {
   usesPropaneBase: boolean;
@@ -18,7 +26,58 @@ export interface PropaneState {
   usesTaggedMessageData: boolean;
   usesListeners: boolean;
   usesMessageConstructor: boolean;
+  usesDataValue: boolean;
+  usesParseCerealString: boolean;
+  usesDataObject: boolean;
+  hasGenericTypes: boolean;
+  // Type-only import flags for GET_MESSAGE_CHILDREN yield type
+  needsImmutableArrayType: boolean;
+  needsImmutableSetType: boolean;
+  needsImmutableMapType: boolean;
+  runtimeImportPath: string;
   file?: { opts?: { filename?: string | null } };
+  opts?: PropanePluginOptions;
+}
+
+/**
+ * Computes the runtime import path for the current file.
+ * If runtimeImportBase is provided, computes the relative path from
+ * the file being compiled to the runtime target.
+ */
+function computeRuntimeImportPath(state: PropaneState): string {
+  const configuredPath = state.opts?.runtimeImportPath;
+  const basePath = state.opts?.runtimeImportBase;
+  const filename = state.file?.opts?.filename;
+
+  // If no custom path configured, use default
+  if (!configuredPath) {
+    return DEFAULT_RUNTIME_SOURCE;
+  }
+
+  // If it's a package name (doesn't start with . or /), use as-is
+  if (!configuredPath.startsWith('.') && !configuredPath.startsWith('/')) {
+    return configuredPath;
+  }
+
+  // If no base path or filename, can't compute relative - use as-is
+  if (!basePath || !filename) {
+    return configuredPath;
+  }
+
+  // Compute absolute path to the runtime from the base directory
+  const absoluteRuntimePath = path.resolve(basePath, configuredPath);
+
+  // Compute relative path from the file's directory to the runtime
+  const fileDir = path.dirname(filename);
+  let relativePath = path.relative(fileDir, absoluteRuntimePath);
+
+  // Ensure the path starts with ./ or ../
+  if (!relativePath.startsWith('.')) {
+    relativePath = './' + relativePath;
+  }
+
+  // Normalize to forward slashes for consistency
+  return relativePath.replaceAll('\\', '/');
 }
 
 export default function propanePlugin() {
@@ -43,6 +102,14 @@ export default function propanePlugin() {
           state.usesTaggedMessageData = false;
           state.usesListeners = false;
           state.usesMessageConstructor = false;
+          state.usesDataValue = false;
+          state.usesParseCerealString = false;
+          state.usesDataObject = false;
+          state.hasGenericTypes = false;
+          state.needsImmutableArrayType = false;
+          state.needsImmutableSetType = false;
+          state.needsImmutableMapType = false;
+          state.runtimeImportPath = computeRuntimeImportPath(state);
 
           const fileOpts = state.file?.opts ?? {};
           const filename = fileOpts.filename ?? '';
@@ -57,12 +124,27 @@ export default function propanePlugin() {
 
           if (!existing) {
             path.addComment('leading', ` ${commentText}`, true);
-            path.addComment('leading', ' eslint-disable @typescript-eslint/no-namespace', false);
           }
         },
         exit(path: NodePath<t.Program>, state: PropaneState) {
           if (state.usesPropaneBase) {
             ensureBaseImport(path, state);
+          }
+
+          // Add eslint-disable comment based on what was encountered
+          // Generic types need no-explicit-any for Message<any> constraints
+          const eslintDisables = ['@typescript-eslint/no-namespace'];
+          if (state.hasGenericTypes) {
+            eslintDisables.push('@typescript-eslint/no-explicit-any');
+          }
+
+          const eslintComment = ` eslint-disable ${eslintDisables.join(',')}`;
+          const hasEslintComment = (path.node.leadingComments ?? []).some(
+            (comment) => comment.value.includes('eslint-disable')
+          );
+
+          if (!hasEslintComment) {
+            path.addComment('leading', eslintComment, false);
           }
         },
       },

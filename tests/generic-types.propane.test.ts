@@ -141,7 +141,9 @@ export default function runGenericTypesTests() {
     const innerItem = new Item({ id: 1, name: 'nested' });
     const innerContainer = new Container(Item, { inner: innerItem });
     const BoundContainer = Container.bind(Item);
-    const outerContainer = new Container(BoundContainer, { inner: innerContainer });
+    const outerContainer = new Container(
+      BoundContainer, { inner: innerContainer }
+    );
 
     assert(outerContainer.inner.inner.id === 1, 'Nested inner.inner.id');
     assert(outerContainer.$typeName === 'Container<Container<Item>>', 'Nested outer $typeName');

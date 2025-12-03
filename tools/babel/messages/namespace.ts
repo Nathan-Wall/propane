@@ -1,12 +1,41 @@
 import * as t from '@babel/types';
-import type { PropDescriptor, TypeParameter } from './properties.js';
+import type { PropDescriptor } from './properties.js';
+
+/**
+ * Fixes type parameters to ensure Message constraints have the required type argument.
+ * Transforms `T extends Message` to `T extends Message<any>`.
+ */
+function fixTypeParameterConstraints(
+  typeParams: t.TSTypeParameterDeclaration | null | undefined
+): t.TSTypeParameterDeclaration | null {
+  if (!typeParams) return null;
+
+  const fixedParams = typeParams.params.map((param) => {
+    const clonedParam = t.cloneNode(param);
+    // Check if constraint is just 'Message' (without type arguments)
+    if (
+      clonedParam.constraint
+      && t.isTSTypeReference(clonedParam.constraint)
+      && t.isIdentifier(clonedParam.constraint.typeName)
+      && clonedParam.constraint.typeName.name === 'Message'
+      && !clonedParam.constraint.typeParameters
+    ) {
+      // Add <any> type argument
+      clonedParam.constraint.typeParameters = t.tsTypeParameterInstantiation([
+        t.tsAnyKeyword()
+      ]);
+    }
+    return clonedParam;
+  });
+
+  return t.tsTypeParameterDeclaration(fixedParams);
+}
 
 export function buildTypeNamespace(
   typeAlias: t.TSTypeAliasDeclaration,
   properties: PropDescriptor[],
   exported: boolean,
-  generatedTypeNames: string[] = [],
-  _typeParameters: TypeParameter[] = []
+  generatedTypeNames: string[] = []
 ): t.ExportNamedDeclaration | t.TSModuleDeclaration {
   const namespaceId = t.identifier(typeAlias.id.name);
   const typeId = t.identifier('Data');
@@ -37,23 +66,35 @@ export function buildTypeNamespace(
 
   const literalClone = t.tsTypeLiteral(literalMembers);
 
-  const typeDecl = t.tsInterfaceDeclaration(
+  // Use type alias instead of interface - type aliases are "closed" and satisfy
+  // DataObject without needing an explicit index signature, unlike interfaces
+  // which are "open" and require [key: string]: any for generic types
+  const typeDecl = t.tsTypeAliasDeclaration(
     typeId,
-    typeAlias.typeParameters ? t.cloneNode(typeAlias.typeParameters) : null,
-    null,
-    t.tsInterfaceBody(literalClone.members)
+    fixTypeParameterConstraints(typeAlias.typeParameters),
+    literalClone
   );
 
   const exportedTypeDecl = t.exportNamedDeclaration(typeDecl, []);
   exportedTypeDecl.exportKind = 'type';
 
+  // Build type arguments from type parameters (e.g., <T> becomes <T>)
+  const typeArgs = typeAlias.typeParameters
+    ? t.tsTypeParameterInstantiation(
+        typeAlias.typeParameters.params.map((param) =>
+          t.tsTypeReference(t.identifier(param.name))
+        )
+      )
+    : null;
+
   const typeUnionDecl = t.tsTypeAliasDeclaration(
     t.identifier('Value'),
-    null,
+    fixTypeParameterConstraints(typeAlias.typeParameters),
     t.tsUnionType([
-      t.tsTypeReference(t.identifier(typeAlias.id.name)),
+      t.tsTypeReference(t.identifier(typeAlias.id.name), typeArgs),
       t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data'))
+        t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data')),
+        typeArgs ? t.cloneNode(typeArgs) : null
       ),
     ])
   );

@@ -38,7 +38,7 @@ function testStaleInnerReferenceFromMemo() {
   console.log('Testing: stale inner reference from memoPropane skip...');
 
   // Track all state updates
-  const stateHistory: Array<{ counter: number; innerValue: string }> = [];
+  const stateHistory: { counter: number; innerValue: string }[] = [];
 
   // Step 1: Create initial state
   const inner = new InnerMessage({ value: 'hello' });
@@ -46,12 +46,12 @@ function testStaleInnerReferenceFromMemo() {
 
   // Simulate usePropaneState subscription using hybrid approach (SET_UPDATE_LISTENER)
   // This uses back-pointer chains instead of accumulating listeners
-  type HybridListenable = {
+  interface HybridListenable {
     [SET_UPDATE_LISTENER]: (
       key: symbol,
       callback: (val: Message<DataObject>) => void
     ) => void;
-  };
+  }
 
   let currentState = outer;
 

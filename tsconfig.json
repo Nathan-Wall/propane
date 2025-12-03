@@ -14,7 +14,7 @@
     "outDir": "./build",
     "rootDir": ".",
     "declaration": true,
-    "strict": false,
+    "strict": true,
     "exactOptionalPropertyTypes": false,
     "paths": {
       "@propanejs/babel-messages": ["tools/babel/messages/index.ts"],
