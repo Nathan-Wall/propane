@@ -1,2 +1,3 @@
 // Some types can't be serialized.
+// @message
 export type Fail = Function;

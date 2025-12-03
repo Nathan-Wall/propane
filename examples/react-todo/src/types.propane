@@ -1,9 +1,11 @@
+// @message
 export type Todo = {
   id: string;
   text: string;
   completed: boolean;
 }
 
+// @message
 export type AppState = {
   todos: Todo[];
   filter: 'all' | 'active' | 'completed';

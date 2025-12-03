@@ -1,3 +1,4 @@
+// @message
 export type UrlMessage = {
   '1:id': number;
   '2:primary': URL;

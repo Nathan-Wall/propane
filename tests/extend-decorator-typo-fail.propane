@@ -1,0 +1,5 @@
+// @message
+// @extends('./foo.ext.ts')
+export type TypoDecorator = {
+  '1:value': string;
+};

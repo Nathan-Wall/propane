@@ -2,6 +2,7 @@ import { Distance } from './distance.propane';
 import { Email } from './email.propane';
 import { Hash } from './hash.propane';
 
+// @message
 export type User = {
   '1:id': number;
   '2:name': string;

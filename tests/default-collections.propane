@@ -3,6 +3,7 @@ import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
 
 // Test message with non-optional collection fields to verify defaults
+// @message
 export type DefaultCollections = {
   arr: ImmutableArray<number>;
   map: ImmutableMap<string, number>;

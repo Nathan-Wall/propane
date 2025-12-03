@@ -1,0 +1,5 @@
+// @extend without @message should fail
+// @extend('./extend-basic.ext.ts')
+export type InvalidExtend = {
+  '1:id': number;
+};

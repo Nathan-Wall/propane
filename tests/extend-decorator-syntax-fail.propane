@@ -1,0 +1,4 @@
+// @message @extend
+export type BadExtendSyntax = {
+  '1:value': string;
+};

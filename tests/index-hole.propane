@@ -1,3 +1,4 @@
+// @message
 export type Hole = {
   '1:id': number;
   '3:value': number;

@@ -1,13 +1,16 @@
+// @message
 export type Cat = {
   '1:name': string;
   '2:meows': boolean;
 };
 
+// @message
 export type Dog = {
   '1:name': string;
   '2:barks': boolean;
 };
 
+// @message
 export type PetOwner = {
   '1:ownerName': string;
   '2:pet': Cat | Dog;

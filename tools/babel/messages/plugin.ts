@@ -1,17 +1,27 @@
 import path from 'node:path';
-import type * as t from '@babel/types';
+import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
-import { pathTransform } from './utils.js';
+import { pathTransform, computeRelativePath } from './utils.js';
 import { registerTypeAlias } from './validation.js';
 import { ensureBaseImport, DEFAULT_RUNTIME_SOURCE } from './base-import.js';
 import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup.js';
-import { buildDeclarations, GENERATED_ALIAS } from './declarations.js';
+import { buildDeclarations, GENERATED_ALIAS, IMPLICIT_MESSAGE } from './declarations.js';
+import { levenshteinDistance } from '../../../common/strings/levenshtein.js';
 
 export interface PropanePluginOptions {
   /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
   runtimeImportPath?: string;
   /** Base directory for resolving runtimeImportPath (typically the config file directory). */
   runtimeImportBase?: string;
+  /** Path aliases for resolving @extend paths (mirrors tsconfig paths). */
+  paths?: Record<string, string[]>;
+  /** Base directory for resolving paths (typically the project root). */
+  baseUrl?: string;
+}
+
+export interface ExtendInfo {
+  /** The path to the extension file, e.g., './messages.ext.ts' */
+  path: string;
 }
 
 export interface PropaneState {
@@ -37,6 +47,8 @@ export interface PropaneState {
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null } };
   opts?: PropanePluginOptions;
+  /** Map of type name to extension info for types with @extend decorator */
+  extendedTypes: Map<string, ExtendInfo>;
 }
 
 /**
@@ -80,6 +92,270 @@ function computeRuntimeImportPath(state: PropaneState): string {
   return relativePath.replaceAll('\\', '/');
 }
 
+/** Known decorators for suggestion matching */
+const KNOWN_DECORATORS = ['extend', 'message'];
+
+/** Maximum edit distance for suggesting a decorator correction */
+const MAX_SUGGESTION_DISTANCE = 3;
+
+/**
+ * Pattern to match a decorator at the start of a comment.
+ * Captures the decorator name and optional arguments.
+ */
+const DECORATOR_PATTERN = /^\s*@(\w+)(.*)$/;
+
+/**
+ * Pattern to match @extend decorator with path argument.
+ * Captures the path in single or double quotes.
+ * Allows @message before @extend on the same line.
+ */
+const EXTEND_PATTERN = /^(?:@message\s+)?@extend\s*\(\s*['"]([^'"]+)['"]\s*\)\s*$/;
+
+/**
+ * Pattern to match @message decorator.
+ * Matches @message at start of content, optionally followed by whitespace and more decorators.
+ * Must not be followed by word characters (to avoid matching @messageOther).
+ */
+const MESSAGE_PATTERN = /(?:^|\s)@message(?:\s|$)/;
+
+/**
+ * Check if a comment line starts with a decorator (@ at line start).
+ */
+function isDecoratorLine(line: string): boolean {
+  return /^\s*\*?\s*@\w/.test(line);
+}
+
+/**
+ * Extract decorator name from a comment line.
+ */
+function extractDecoratorName(line: string): string | null {
+  const match = line.match(/^\s*\*?\s*@(\w+)/);
+  return match ? match[1]! : null;
+}
+
+/**
+ * Find the closest known decorator to an unknown one.
+ */
+function findClosestDecorator(unknown: string): string | null {
+  let closest: string | null = null;
+  let minDistance = Infinity;
+
+  for (const known of KNOWN_DECORATORS) {
+    const distance = levenshteinDistance(unknown.toLowerCase(), known.toLowerCase());
+    if (distance <= MAX_SUGGESTION_DISTANCE && distance < minDistance) {
+      minDistance = distance;
+      closest = known;
+    }
+  }
+
+  return closest;
+}
+
+/**
+ * Check if comments contain the @message decorator.
+ * @message can appear alone or on the same line as @extend.
+ */
+function hasMessageDecorator(
+  commentSourcePath: NodePath<t.Node>
+): boolean {
+  const comments = commentSourcePath.node.leadingComments ?? [];
+
+  for (const comment of comments) {
+    const lines = comment.type === 'CommentLine'
+      ? [comment.value]
+      : comment.value.split('\n');
+
+    for (const line of lines) {
+      // Strip leading comment markers (* for block comments)
+      const cleanLine = line.replace(/^\s*\*?\s*/, '');
+
+      // Check if @message appears in this line
+      if (MESSAGE_PATTERN.test(cleanLine)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Resolve an extension path, handling path aliases if configured.
+ */
+function resolveExtensionPath(
+  extPath: string,
+  sourceFilename: string,
+  opts?: PropanePluginOptions
+): string {
+  let resolvedPath = extPath;
+
+  // Handle path aliases (e.g., '@/' -> './src/')
+  if (opts?.paths && opts?.baseUrl) {
+    for (const [alias, targets] of Object.entries(opts.paths)) {
+      const aliasPattern = alias.replace('*', '');
+      if (extPath.startsWith(aliasPattern) && targets[0]) {
+        const target = targets[0].replace('*', '');
+        const remainder = extPath.slice(aliasPattern.length);
+        // Compute relative path from source file to resolved target
+        resolvedPath = computeRelativePath(
+          sourceFilename,
+          path.join(opts.baseUrl, target, remainder)
+        );
+        break;
+      }
+    }
+  }
+
+  // Convert .ts/.tsx to .js for the import
+  return resolvedPath.replace(/\.tsx?$/, '.js');
+}
+
+/**
+ * Extract @extend decorator info from leading comments of a type alias.
+ * Throws descriptive errors for malformed or unknown decorators.
+ *
+ * @param typeAliasPath - The path to the TSTypeAliasDeclaration
+ * @param commentSourcePath - The path to get comments from (may be parent export)
+ * @param hasMessage - Whether the @message decorator is present
+ * @param opts - Plugin options
+ */
+function extractExtendDecorator(
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
+  commentSourcePath: NodePath<t.Node>,
+  hasMessage: boolean,
+  opts?: PropanePluginOptions
+): ExtendInfo | null {
+  const comments = commentSourcePath.node.leadingComments ?? [];
+  const extendInfos: { comment: t.Comment; path: string }[] = [];
+  const sourceFilename = typeAliasPath.hub?.file?.opts?.filename ?? '';
+
+  for (const comment of comments) {
+    const lines = comment.type === 'CommentLine'
+      ? [comment.value]
+      : comment.value.split('\n');
+
+    for (const line of lines) {
+      // Check if this line starts with a decorator
+      if (!isDecoratorLine(line)) {
+        continue;
+      }
+
+      const cleanLine = line.replace(/^\s*\*?\s*/, '');
+
+      // Check if the line contains @extend (possibly after @message on same line)
+      const hasExtendOnLine = /@extend(?!\w)/.test(cleanLine);
+
+      if (hasExtendOnLine) {
+        // Parse the full @extend decorator
+        const extendMatch = cleanLine.match(EXTEND_PATTERN);
+
+        if (!extendMatch) {
+          // Check for specific syntax errors
+          if (/^(?:@message\s+)?@extend\s*$/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@extend decorator requires parentheses with a file path.\n\n'
+              + 'Add the path to your extension file in parentheses, e.g.:\n'
+              + "  // @message @extend('./foo.ext.ts')"
+            );
+          }
+          if (/^(?:@message\s+)?@extend\s*\(\s*\)\s*$/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@extend decorator requires a file path argument.\n\n'
+              + 'Provide the path to your extension file, e.g.:\n'
+              + "  // @message @extend('./foo.ext.ts')"
+            );
+          }
+          if (/^(?:@message\s+)?@extend\s*\([^)]*$/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@extend decorator has unclosed parentheses.\n\n'
+              + 'Add the closing parenthesis:\n'
+              + "  // @message @extend('./foo.ext.ts')"
+            );
+          }
+          if (/^(?:@message\s+)?@extend\s*\([^)]+\)\s*\S/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              'Unexpected content after @extend decorator.\n\n'
+              + 'Remove the extra content after the closing parenthesis, '
+              + 'or move it to a separate comment.'
+            );
+          }
+          throw typeAliasPath.buildCodeFrameError(
+            'Invalid @extend decorator syntax.\n\n'
+            + "Expected: // @message @extend('./path/to/extension.ts')"
+          );
+        }
+
+        const extPath = extendMatch[1]!;
+        const resolvedPath = resolveExtensionPath(extPath, sourceFilename, opts);
+        extendInfos.push({ comment, path: resolvedPath });
+      } else {
+        // No @extend on this line - check for unknown decorators
+        // Find all decorator names on this line
+        const decoratorMatches = cleanLine.matchAll(/@(\w+)/g);
+        for (const match of decoratorMatches) {
+          const decoratorName = match[1]!;
+          // Skip known decorators
+          if (decoratorName.toLowerCase() === 'message') {
+            continue;
+          }
+          if (decoratorName.toLowerCase() === 'extend') {
+            continue; // Already handled above
+          }
+          // Unknown decorator - check if it might be a typo
+          const suggestion = findClosestDecorator(decoratorName);
+          if (suggestion) {
+            throw typeAliasPath.buildCodeFrameError(
+              `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
+              + `Use '@${suggestion}' to extend this type with custom methods:\n`
+              + `  // @message @${suggestion}('./foo.ext.ts')`
+            );
+          } else {
+            throw typeAliasPath.buildCodeFrameError(
+              `Unknown decorator '@${decoratorName}'.`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Check for multiple @extend decorators
+  if (extendInfos.length > 1) {
+    throw typeAliasPath.buildCodeFrameError(
+      'Multiple @extend decorators are not allowed on a single type.\n\n'
+      + 'Each type can only be extended by one file. Remove one of the @extend decorators,\n'
+      + 'or combine your extensions into a single file.'
+    );
+  }
+
+  // Validate that @extend requires @message
+  if (extendInfos.length > 0 && !hasMessage) {
+    throw typeAliasPath.buildCodeFrameError(
+      '@extend decorator requires @message decorator.\n\n'
+      + 'Add @message to the type definition:\n'
+      + "  // @message @extend('./foo.ext.ts')\n"
+      + '  export type Foo = { ... };\n\n'
+      + 'Or on separate lines:\n'
+      + '  // @message\n'
+      + "  // @extend('./foo.ext.ts')\n"
+      + '  export type Foo = { ... };'
+    );
+  }
+
+  return extendInfos.length > 0 ? { path: extendInfos[0]!.path } : null;
+}
+
+/**
+ * Build a re-export statement for an extended type.
+ */
+function buildReexportStatement(typeName: string, extPath: string): t.ExportNamedDeclaration {
+  return t.exportNamedDeclaration(
+    null,
+    [t.exportSpecifier(t.identifier(typeName), t.identifier(typeName))],
+    t.stringLiteral(extPath)
+  );
+}
+
 export default function propanePlugin() {
   const declaredTypeNames = new Set<string>();
   const declaredMessageTypeNames = new Set<string>();
@@ -110,6 +386,7 @@ export default function propanePlugin() {
           state.needsImmutableSetType = false;
           state.needsImmutableMapType = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
+          state.extendedTypes = new Map();
 
           const fileOpts = state.file?.opts ?? {};
           const filename = fileOpts.filename ?? '';
@@ -130,6 +407,11 @@ export default function propanePlugin() {
           if (state.usesPropaneBase) {
             ensureBaseImport(path, state);
           }
+
+          // Note: We don't generate re-exports for extended types because it causes
+          // circular dependency issues with ES modules. Users should import the
+          // extended class directly from the extension file instead.
+          // Example: import { Person } from './person.ext.ts'
 
           // Add eslint-disable comment based on what was encountered
           // Generic types need no-explicit-any for Message<any> constraints
@@ -172,7 +454,31 @@ export default function propanePlugin() {
           return;
         }
 
+        // Register the type alias for reference tracking (even if not @message)
         registerTypeAlias(declarationPath.node, declaredTypeNames);
+
+        // Check for @message decorator or implicit message flag (for generated inline types)
+        // For exported types, comments are on the export declaration, not the type alias
+        const isImplicitMessage = (declarationPath.node as t.TSTypeAliasDeclaration & {
+          [IMPLICIT_MESSAGE]?: boolean;
+        })[IMPLICIT_MESSAGE];
+        const hasMessage = isImplicitMessage || hasMessageDecorator(path);
+
+        // If no @message decorator, skip transformation but still validate decorators
+        if (!hasMessage) {
+          // Still extract @extend to validate it's not used without @message
+          extractExtendDecorator(declarationPath, path, false, state.opts);
+          return;
+        }
+
+        // Extract @extend decorator if present
+        const extendInfo = extractExtendDecorator(declarationPath, path, true, state.opts);
+        const typeName = declarationPath.node.id.name;
+
+        // Track extended types for re-export generation
+        if (extendInfo) {
+          state.extendedTypes.set(typeName, extendInfo);
+        }
 
         const replacement = buildDeclarations(declarationPath, {
           exported: true,
@@ -180,6 +486,7 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           getMessageReferenceName,
+          extendInfo: extendInfo ?? undefined,
         });
 
         if (replacement) {
@@ -203,7 +510,31 @@ export default function propanePlugin() {
           return;
         }
 
+        // Register the type alias for reference tracking (even if not @message)
         registerTypeAlias(path.node, declaredTypeNames);
+
+        // Check for @message decorator or implicit message flag (for generated inline types)
+        // For non-exported types, comments are directly on the type alias
+        const isImplicitMessage = (path.node as t.TSTypeAliasDeclaration & {
+          [IMPLICIT_MESSAGE]?: boolean;
+        })[IMPLICIT_MESSAGE];
+        const hasMessage = isImplicitMessage || hasMessageDecorator(path);
+
+        // If no @message decorator, skip transformation but still validate decorators
+        if (!hasMessage) {
+          // Still extract @extend to validate it's not used without @message
+          extractExtendDecorator(path, path, false, state.opts);
+          return;
+        }
+
+        // Extract @extend decorator if present
+        const extendInfo = extractExtendDecorator(path, path, true, state.opts);
+        const typeName = path.node.id.name;
+
+        // Track extended types for re-export generation
+        if (extendInfo) {
+          state.extendedTypes.set(typeName, extendInfo);
+        }
 
         const replacement = buildDeclarations(path, {
           exported: false,
@@ -211,6 +542,7 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           getMessageReferenceName,
+          extendInfo: extendInfo ?? undefined,
         });
 
         if (replacement) {

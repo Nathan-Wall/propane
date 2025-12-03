@@ -21,6 +21,7 @@ npm i @propanejs/pms-server @propanejs/pms-client
 **Define a type** in `person.propane`:
 
 ```typescript
+// @message
 export type Person = {
   id: number;
   name: string;

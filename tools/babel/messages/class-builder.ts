@@ -291,6 +291,25 @@ function buildTypeNameExpression(
 }
 
 /**
+ * Build a new expression using this.constructor to support class extension.
+ * Generates: new (this.constructor as typeof TypeName)(...args)
+ * This pattern ensures that extended classes create instances of the
+ * extended class rather than the base class.
+ */
+function buildThisConstructorNewExpression(
+  typeName: string,
+  constructorArgs: t.Expression[]
+): t.NewExpression {
+  // (this.constructor as typeof TypeName)
+  const castConstructor = t.tsAsExpression(
+    t.memberExpression(t.thisExpression(), t.identifier('constructor')),
+    t.tsTypeQuery(t.identifier(typeName))
+  );
+
+  return t.newExpression(castConstructor, constructorArgs);
+}
+
+/**
  * Build the static bind() method for generic messages.
  */
 function buildBindMethod(
@@ -510,8 +529,11 @@ export function buildClassFromProperties(
   properties: PropDescriptor[],
   declaredMessageTypeNames: Set<string>,
   state: PluginStateFlags,
-  typeParameters: TypeParameter[] = []
+  typeParameters: TypeParameter[] = [],
+  isExtended: boolean = false
 ): t.ClassDeclaration {
+  // Use $Base suffix for extended types
+  const className = isExtended ? `${typeName}$Base` : typeName;
   const isGeneric = typeParameters.length > 0;
   if (isGeneric) {
     state.usesDataObject = true;
@@ -716,14 +738,15 @@ export function buildClassFromProperties(
 
   // Generic messages don't support memoization (EMPTY instance)
   // because they require constructor parameters
+  // Use className for internal static references (handles $Base suffix for extended types)
   const memoizationCheck = isGeneric ? null : t.ifStatement(
     t.logicalExpression(
       '&&',
       t.unaryExpression('!', t.identifier('props')),
-      t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      t.memberExpression(t.identifier(className), t.identifier('EMPTY'))
     ),
     t.returnStatement(
-      t.memberExpression(t.identifier(typeName), t.identifier('EMPTY'))
+      t.memberExpression(t.identifier(className), t.identifier('EMPTY'))
     )
   );
 
@@ -732,7 +755,7 @@ export function buildClassFromProperties(
     t.expressionStatement(
       t.assignmentExpression(
         '=',
-        t.memberExpression(t.identifier(typeName), t.identifier('EMPTY')),
+        t.memberExpression(t.identifier(className), t.identifier('EMPTY')),
         t.thisExpression()
       )
     )
@@ -753,11 +776,12 @@ export function buildClassFromProperties(
   }
 
   // Add super() call with appropriate $typeName
+  // Use className for TYPE_TAG reference (handles $Base suffix for extended types)
   constructorBody.push(
     t.expressionStatement(
       t.callExpression(t.super(), [
         t.memberExpression(
-          t.identifier(typeName),
+          t.identifier(className),
           t.identifier('TYPE_TAG')
         ),
         buildTypeNameExpression(typeName, typeParameters),
@@ -909,7 +933,7 @@ export function buildClassFromProperties(
   const classBody = t.classBody(classBodyMembers);
 
   const classDecl = t.classDeclaration(
-    t.identifier(typeName),
+    t.identifier(className),
     t.identifier('Message'),
     classBody,
     []
@@ -1493,9 +1517,9 @@ function buildSetterMethod(
   }
   constructorArgs.push(propsObject);
 
-  // For generic types, cast to 'this' to satisfy polymorphic return type
-  let newExpr: t.Expression = t.newExpression(
-    t.identifier(typeName), constructorArgs
+  // Use this.constructor pattern to support class extension
+  let newExpr: t.Expression = buildThisConstructorNewExpression(
+    typeName, constructorArgs
   );
   if (typeParameters.length > 0) {
     newExpr = t.tsAsExpression(newExpr, t.tsThisType());
@@ -1551,9 +1575,9 @@ function buildDeleteMethod(
   }
   constructorArgs.push(propsObject);
 
-  // For generic types, cast to 'this' to satisfy polymorphic return type
-  let newExpr: t.Expression = t.newExpression(
-    t.identifier(typeName), constructorArgs
+  // Use this.constructor pattern to support class extension
+  let newExpr: t.Expression = buildThisConstructorNewExpression(
+    typeName, constructorArgs
   );
   if (typeParameters.length > 0) {
     newExpr = t.tsAsExpression(newExpr, t.tsThisType());
@@ -1944,9 +1968,9 @@ function buildArrayMutationMethod(
     )
   );
 
-  // For generic types, cast to 'this' to satisfy polymorphic return type
-  let newExpr: t.Expression = t.newExpression(
-    t.identifier(typeName), constructorArgs
+  // Use this.constructor pattern to support class extension
+  let newExpr: t.Expression = buildThisConstructorNewExpression(
+    typeName, constructorArgs
   );
   if (typeParameters.length > 0) {
     newExpr = t.tsAsExpression(newExpr, t.tsThisType());
@@ -2577,9 +2601,9 @@ function buildMapMutationMethod(
     buildPropsObjectExpression(propDescriptors, prop, nextRef())
   );
 
-  // For generic types, cast to 'this' to satisfy polymorphic return type
-  let newExpr: t.Expression = t.newExpression(
-    t.identifier(typeName), constructorArgs
+  // Use this.constructor pattern to support class extension
+  let newExpr: t.Expression = buildThisConstructorNewExpression(
+    typeName, constructorArgs
   );
   if (typeParameters.length > 0) {
     newExpr = t.tsAsExpression(newExpr, t.tsThisType());
@@ -2711,9 +2735,9 @@ function buildSetMutationMethod(
     )
   );
 
-  // For generic types, cast to 'this' to satisfy polymorphic return type
-  let newExpr: t.Expression = t.newExpression(
-    t.identifier(typeName), constructorArgs
+  // Use this.constructor pattern to support class extension
+  let newExpr: t.Expression = buildThisConstructorNewExpression(
+    typeName, constructorArgs
   );
   if (typeParameters.length > 0) {
     newExpr = t.tsAsExpression(newExpr, t.tsThisType());
@@ -3166,9 +3190,9 @@ function buildWithChildMethod(
     }
     constructorArgs.push(propsObject);
 
-    // For generic types, cast to 'this' to satisfy polymorphic return
-    let returnExpr: t.Expression = t.newExpression(
-      t.identifier(typeName), constructorArgs
+    // Use this.constructor pattern to support class extension
+    let returnExpr: t.Expression = buildThisConstructorNewExpression(
+      typeName, constructorArgs
     );
     if (typeParameters.length > 0) {
       returnExpr = t.tsAsExpression(returnExpr, t.tsThisType());

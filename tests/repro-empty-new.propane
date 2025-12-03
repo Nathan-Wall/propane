@@ -1,15 +1,19 @@
+// @message
 export type UnionFirstNumber = {
   val: number | string;
 }
 
+// @message
 export type UnionFirstString = {
   val: string | number;
 }
 
+// @message
 export type OptionalField = {
   val?: string;
 }
 
+// @message
 export type RequiredMessage = {
   sub: UnionFirstNumber;
 }

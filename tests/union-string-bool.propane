@@ -1,3 +1,4 @@
+// @message
 export type UnionStringBool = {
   '1:value': string | boolean;
   '2:optional'?: string | boolean;

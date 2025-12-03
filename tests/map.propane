@@ -1,3 +1,4 @@
+// @message
 export type MapMessage = {
   '1:labels': Map<string | number, number>;
   '2:metadata'?: Map<string, { value: string }>;

@@ -1,4 +1,5 @@
 // This should fail because 'equals' is a reserved name
+// @message
 export type BadMessage = {
   '1:equals': boolean;
 };

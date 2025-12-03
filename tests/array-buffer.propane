@@ -1,3 +1,4 @@
+// @message
 export type ArrayBufferMessage = {
   '1:id': number;
   '2:data': ArrayBuffer;

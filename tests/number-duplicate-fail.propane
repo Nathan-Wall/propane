@@ -1,3 +1,4 @@
+// @message
 export type NumberDuplicateFail = {
   '1:first': string;
   '1:second': string;

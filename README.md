@@ -20,6 +20,7 @@ working with immutable instances
 **Define a type** in `person.propane`:
 
 ```typescript
+// @message
 export type Person = {
   id: number;
   name: string;

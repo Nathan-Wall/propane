@@ -1,7 +1,9 @@
+// @message
 export type StringFirst = {
   '1:value': string | number;
 };
 
+// @message
 export type NumberFirst = {
   '1:value': number | string;
 };

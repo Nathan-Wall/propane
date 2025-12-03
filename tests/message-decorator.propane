@@ -1,0 +1,19 @@
+// Tests that @message decorator controls which types get transformed
+
+// @message
+export type TransformedMessage = {
+  '1:id': number;
+  '2:name': string;
+};
+
+// No decorator - should NOT be transpiled, remains a type alias
+export type RegularType = 'active' | 'inactive' | 'pending';
+
+// No decorator - should NOT be transpiled
+export type RegularAlias = number;
+
+// No decorator - object type without @message stays as-is
+export type RegularObject = {
+  id: number;
+  name: string;
+};

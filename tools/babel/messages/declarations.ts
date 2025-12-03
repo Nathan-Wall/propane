@@ -4,7 +4,7 @@ import { assertSupportedTopLevelType, assertSupportedType } from './validation.j
 import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
 import { buildClassFromProperties } from './class-builder.js';
-import type { PropaneState } from './plugin.js';
+import type { PropaneState, ExtendInfo } from './plugin.js';
 
 /**
  * Extract and validate type parameters from a TSTypeParameterDeclaration.
@@ -72,6 +72,7 @@ function getQualifiedName(typeName: t.TSQualifiedName): string {
 }
 
 export const GENERATED_ALIAS = Symbol('PropaneGeneratedTypeAlias');
+export const IMPLICIT_MESSAGE = Symbol('PropaneImplicitMessage');
 
 interface BuildDeclarationsOptions {
   exported: boolean;
@@ -79,6 +80,8 @@ interface BuildDeclarationsOptions {
   declaredTypeNames: Set<string>;
   declaredMessageTypeNames: Set<string>;
   getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null;
+  /** Extension info if this type has an @extend decorator */
+  extendInfo?: ExtendInfo;
 }
 
 export function buildDeclarations(
@@ -88,7 +91,8 @@ export function buildDeclarations(
     state,
     declaredTypeNames,
     declaredMessageTypeNames,
-    getMessageReferenceName
+    getMessageReferenceName,
+    extendInfo
   }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -174,17 +178,23 @@ export function buildDeclarations(
     exported,
     generatedTypeNames
   );
+  const isExtended = extendInfo !== undefined;
   const classDecl = buildClassFromProperties(
     typeAlias.id.name,
     properties,
     declaredMessageTypeNames,
     state,
-    typeParameters
+    typeParameters,
+    isExtended
   );
 
   state.usesPropaneBase = true;
 
   const generatedStatements: t.Statement[] = generatedTypes.map((alias) => {
+    // Mark as implicit message so the visitor bypasses @message check
+    (alias as t.TSTypeAliasDeclaration & {
+      [IMPLICIT_MESSAGE]?: boolean;
+    })[IMPLICIT_MESSAGE] = true;
     const exportedAlias = t.exportNamedDeclaration(alias, []);
     (exportedAlias as t.ExportNamedDeclaration & { exportKind?: string }).exportKind = 'type';
     return exported ? exportedAlias : alias;

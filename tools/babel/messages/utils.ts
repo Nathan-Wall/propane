@@ -14,3 +14,20 @@ export function pathTransform(filename: string): string {
     : filename;
   return normalized.split(path.sep).join('/');
 }
+
+/**
+ * Compute a relative path from a source file to a target file.
+ * Ensures the result starts with './' or '../'.
+ */
+export function computeRelativePath(fromFile: string, toFile: string): string {
+  const fromDir = path.dirname(fromFile);
+  let relativePath = path.relative(fromDir, toFile);
+
+  // Ensure path starts with ./ or ../
+  if (!relativePath.startsWith('.')) {
+    relativePath = './' + relativePath;
+  }
+
+  // Normalize to forward slashes
+  return relativePath.replaceAll('\\', '/');
+}

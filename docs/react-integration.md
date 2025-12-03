@@ -69,11 +69,13 @@ When you modify a nested message or collection, parent components re-render:
 
 ```typescript
 // types.propane
+// @message
 export type GameState = {
   '1:history': BoardState[];
   '2:currentMove': number;
 };
 
+// @message
 export type BoardState = {
   '1:cells': Cell[];
 };

@@ -1,0 +1,5 @@
+// @message
+// @deprecated
+export type UnknownDecorator = {
+  '1:value': string;
+};

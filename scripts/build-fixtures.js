@@ -141,11 +141,13 @@ function rewriteImports(code) {
   // Handle case without trailing slash just in case
   result = result.split('../../runtime').join('../runtime');
   result = result.split('../../common').join('../runtime/common');
-  
-  // Regex backup
+
+  // Regex backup - only rewrite ../../common (2+ levels) not ../common (1 level)
+  // ../common/ refers to build/common/ (standalone utilities like levenshtein)
+  // ../../common/ refers to runtime/common/ (runtime utilities)
   result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+runtime\//g, "from $1../runtime/");
-  result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+common\//g, "from $1../runtime/common/");
-  
+  result = result.replaceAll(/from\s+(['"])(?:\.\.\/){2,}common\//g, "from $1../runtime/common/");
+
   return result;
 }
 
@@ -189,6 +191,26 @@ async function copyTests() {
     });
     fs.writeFileSync(destPath, transpiled.outputText, 'utf8');
   }
+
+  // Transpile extension files (*.ext.ts) used by @extend decorator
+  const extFiles = findExtensionFiles(testsDir);
+  for (const file of extFiles) {
+    const rel = path.relative(testsDir, file);
+    const dest = path.join(outDir, rel.replace(/\.ts$/, '.js'));
+    ensureDir(path.dirname(dest));
+    const source = fs.readFileSync(file, 'utf8');
+    const rewritten = rewriteTestImports(source);
+    const transpiled = ts.transpileModule(rewritten, {
+      compilerOptions: {
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ES2020,
+        esModuleInterop: true,
+        moduleResolution: ts.ModuleResolutionKind.NodeNext,
+      },
+      fileName: file,
+    });
+    fs.writeFileSync(dest, transpiled.outputText, 'utf8');
+  }
 }
 
 function rewriteTestImports(content) {
@@ -206,9 +228,11 @@ function rewriteTestImports(content) {
   result = result.split('../react/index.ts').join('../react/index.js');
   result = result.split('../react/').join('../react/');
 
-  // Regex backup
+  // Regex backup - only rewrite ../../common (2+ levels) not ../common (1 level)
+  // ../common/ refers to build/common/ (standalone utilities like levenshtein)
+  // ../../common/ refers to runtime/common/ (runtime utilities)
   result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+runtime\//g, "from $1../runtime/");
-  result = result.replaceAll(/from\s+(['"])(?:\.\.\/)+common\//g, "from $1../runtime/common/");
+  result = result.replaceAll(/from\s+(['"])(?:\.\.\/){2,}common\//g, "from $1../runtime/common/");
 
   result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
@@ -230,6 +254,21 @@ function findTestFiles(dir) {
     if (entry.isDirectory()) {
       files.push(...findTestFiles(full));
     } else if (entry.isFile() && /\.test\.(t|j)s$/.test(entry.name)) {
+      files.push(full);
+    }
+  }
+  return files;
+}
+
+function findExtensionFiles(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.') || entry.name === 'tmp') continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...findExtensionFiles(full));
+    } else if (entry.isFile() && /\.ext\.ts$/.test(entry.name)) {
       files.push(full);
     }
   }

@@ -1,3 +1,4 @@
+// @message
 export type ToJson = {
   '1:map': Map<string, number>;
   '2:imap': Map<string, number>;

@@ -1,3 +1,4 @@
+// @message
 export type MapArrayKey = {
   arrayValues: Map<string[], number>;
   numberArrayMap: Map<number[], string>;

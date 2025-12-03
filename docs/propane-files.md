@@ -3,6 +3,7 @@
 ## Basic Syntax
 
 ```typescript
+// @message
 export type User = {
   id: number;
   name: string;
@@ -21,6 +22,7 @@ as the project develops. This also enables compact serialization for smaller
 message sizes.
 
 ```typescript
+// @message
 export type User = {
   '1:id': number;
   '2:name': string;
@@ -50,11 +52,13 @@ export type User = {
 ## Nested Messages
 
 ```typescript
+// @message
 export type Address = {
   '1:street': string;
   '2:city': string;
 };
 
+// @message
 export type Person = {
   '1:name': string;
   '2:address': Address;
@@ -66,6 +70,7 @@ export type Person = {
 Inline object types are auto-generated as nested classes:
 
 ```typescript
+// @message
 export type Order = {
   '1:item': { name: string; price: number };
 };
@@ -76,6 +81,7 @@ Generates class accessible as `Order.Item`.
 ## Collections
 
 ```typescript
+// @message
 export type Team = {
   '1:members': string[];                    // Array
   '2:scores': Map<string, number>;          // Map
@@ -112,6 +118,7 @@ team = team.deleteTags('important');
 Maps support complex keys with structural equality:
 
 ```typescript
+// @message
 export type Cache = {
   data: Map<Date, string>;                // Date keys
   coords: Map<[number, number], string>;  // Tuple keys

@@ -1,6 +1,7 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
 
+// @message
 export type ImmutableArraySet = {
   arr: ImmutableArray<number>;
   set: ImmutableSet<string>;

@@ -1,3 +1,4 @@
+// @message
 export type SetMessage = {
   '1:tags': Set<string>;
   '2:ids'?: ReadonlySet<number>;

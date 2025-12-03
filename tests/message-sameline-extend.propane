@@ -1,0 +1,6 @@
+// Test same-line syntax: @message @extend('...')
+// @message @extend('./message-sameline-extend.ext.ts')
+export type SameLineExtend = {
+  '1:firstName': string;
+  '2:lastName': string;
+};
