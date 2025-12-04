@@ -41,6 +41,7 @@ You can also watch for changes:
 
 ```bash
 npx propanec src/models --watch
+```
 
 ## Configuration File (`propane.config.json`)
 
@@ -62,8 +63,6 @@ When `propanec` is run without arguments, it will automatically look for `propan
 *   **`include`**: An array of file paths or directories to compile. Similar to providing positional arguments to `propanec`. (e.g., `["src/models"]`)
 *   **`outputDir`**: A string specifying the root directory where generated `.pmsg.ts` files should be placed. The original directory structure of the source files will be preserved within this output directory. (e.g., `"dist/generated"`)
 *   **`watch`**: A boolean. If `true`, `propanec` will run in watch mode, regenerating files when changes are detected. Equivalent to `--watch` CLI flag.
-
-```
 
 **Use the generated class**:
 

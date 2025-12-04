@@ -3,9 +3,9 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import type { HttpTransport } from '@propanejs/pms-server';
-import { PmsServer, HandlerError, Response } from '@propanejs/pms-server';
-import { PmsClient } from '@propanejs/pms-client';
+import type { HttpTransport } from '../../pms-server';
+import { PmsServer, HandlerError, Response } from '../../pms-server';
+import { PmsClient } from '../../pms-client';
 import {
   EchoRequest,
   EchoResponse,
@@ -152,7 +152,7 @@ describe('PMS Server', () => {
   it('supports Response with custom headers', async () => {
     const server = new PmsServer();
     server.handle(EchoRequest, (req: EchoRequest) => {
-      return new Response({
+      return new Response(EchoResponse, {
         body: new EchoResponse({ echo: req.message, timestamp: 42 }),
         headers: new Map([['X-Custom-Header', 'test-value'], ['Set-Cookie', 'session=abc123']])
       });

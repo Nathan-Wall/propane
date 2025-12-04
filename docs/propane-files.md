@@ -1,5 +1,28 @@
 # Writing Propane Files
 
+## The @message Decorator
+
+Types in `.pmsg` files must be marked with `// @message` to be transformed into
+runtime classes. This is required for all message types:
+
+```typescript
+// @message
+export type User = {
+  id: number;
+  name: string;
+};
+```
+
+Types without `@message` are left as plain TypeScript type aliases:
+
+```typescript
+// No @message - remains a type alias
+export type UserId = number;
+
+// Union types without @message are also left as-is
+export type Status = 'active' | 'inactive';
+```
+
 ## Basic Syntax
 
 ```typescript
@@ -140,3 +163,76 @@ Using these names will result in a compilation error.
 
 Additionally, `$` is not an allowed character in Propane field names.
 
+## Extending Generated Classes
+
+Use `@extend` to add custom methods and computed properties to generated classes.
+This lets you keep business logic alongside your data definitions.
+
+### Creating an Extension
+
+1. Add `@extend` to your type definition pointing to an extension file:
+
+```typescript
+// person.pmsg
+// @message @extend('./person.pmsg.ext.ts')
+export type Person = {
+  '1:firstName': string;
+  '2:lastName': string;
+  '3:age': number;
+};
+```
+
+2. Create the extension file that extends the generated base class:
+
+```typescript
+// person.pmsg.ext.ts
+import { Person$Base } from './person.pmsg.ts';
+
+export class Person extends Person$Base {
+  get fullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
+
+  get isAdult(): boolean {
+    return this.age >= 18;
+  }
+
+  greet(): string {
+    return `Hello, ${this.fullName}!`;
+  }
+}
+```
+
+### How It Works
+
+When `@extend` is used:
+- The generated file exports `Person$Base` instead of `Person`
+- Your extension file exports `Person`, extending `Person$Base`
+- All base functionality (setters, serialization, equality) is inherited
+- Your custom methods and getters are available on the final class
+
+### Using Extended Classes
+
+```typescript
+import { Person } from './person.pmsg.ext.js';
+
+const person = new Person({
+  firstName: 'Alice',
+  lastName: 'Smith',
+  age: 25,
+});
+
+console.log(person.fullName);   // "Alice Smith"
+console.log(person.isAdult);    // true
+console.log(person.greet());    // "Hello, Alice Smith!"
+
+// All base methods still work
+const older = person.setAge(30);
+console.log(older.serialize());
+```
+
+### Rules
+
+- Only one `@extend` decorator is allowed per type
+- The extension file must export a class with the same name as the type
+- The extension class must extend the `$Base` class from the generated file
