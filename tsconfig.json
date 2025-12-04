@@ -42,7 +42,7 @@
     "types/**/*.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "**/*.propane"
+    "**/*.pmsg"
   ],
   "exclude": [
     "node_modules",

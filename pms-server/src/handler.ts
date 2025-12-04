@@ -1,6 +1,6 @@
 import type { Message, DataObject } from '@propanejs/runtime';
 import type { MessageClass } from '@propanejs/pms-core';
-import { Response } from './response.propane.js';
+import { Response } from './response.pmsg.js';
 
 /**
  * Context passed to every handler.
@@ -17,13 +17,15 @@ export interface HandlerContext {
 /**
  * Handler result - either a simple response message or a Response wrapper with headers.
  */
-export type HandlerResult<TResponse extends Message<DataObject>> =
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type HandlerResult<TResponse extends Message<any>> =
   TResponse | Response<TResponse>;
 
 /**
  * Type guard to check if result is a Response wrapper with headers.
  */
-export function isResponseWithHeaders<T extends Message<DataObject>>(
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isResponseWithHeaders<T extends Message<any>>(
   result: HandlerResult<T>
 ): result is Response<T> {
   return result instanceof Response;
@@ -37,7 +39,8 @@ export function isResponseWithHeaders<T extends Message<DataObject>>(
  * - A response message directly
  * - A Response wrapper with custom HTTP headers
  */
-export type Handler<TRequest, TResponse extends Message<DataObject>> = (
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Handler<TRequest, TResponse extends Message<any>> = (
   request: TRequest,
   context: HandlerContext
 ) => Promise<HandlerResult<TResponse>> | HandlerResult<TResponse>;
@@ -46,8 +49,10 @@ export type Handler<TRequest, TResponse extends Message<DataObject>> = (
  * Internal descriptor for a registered handler.
  */
 export interface HandlerDescriptor<
-  In extends Message<DataObject> = Message<DataObject>,
-  Out extends Message<DataObject> = Message<DataObject>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  In extends Message<any> = Message<DataObject>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Out extends Message<any> = Message<DataObject>,
 > {
   readonly typeName: string;
   readonly messageClass: MessageClass;

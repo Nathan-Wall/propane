@@ -9,7 +9,7 @@
 import React, { useRef, useEffect } from 'react';
 import TestRenderer, { act } from 'react-test-renderer';
 import { usePropaneState, memoPropane, update } from '../react/index.ts';
-import { InnerMessage, OuterMessage } from './nested-memo-state.propane.ts';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
 import { assert } from './assert.ts';
 
 // Track render counts

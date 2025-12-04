@@ -10,7 +10,7 @@ compile-time type safety between requests and responses.
 - **Automatic Routing** - Handlers are dispatched based on message type
 - **Efficient Serialization** - Uses Propane's built-in serialization
 - **Multiple Transports** - HTTP and WebSocket support
-- **Client Code Generation** - Generate typed client methods from .propane files
+- **Client Code Generation** - Generate typed client methods from .pmsg files
 - **Isomorphic Client** - Works in both browser and Node.js (18+)
 - **Minimal Dependencies** - Server uses raw Node.js (no Express/Fastify)
 
@@ -29,11 +29,11 @@ npm i -D @propanejs/pms-client-compiler
 
 ## Defining Messages
 
-Define request/response pairs in `.propane` files. Requests implement
+Define request/response pairs in `.pmsg` files. Requests implement
 `RpcRequest<TResponse>` to link them to their response type:
 
 ```typescript
-// messages.propane
+// messages.pmsg
 import { RpcRequest } from '@propanejs/pms-core';
 
 export type GetUser = {
@@ -67,7 +67,7 @@ import {
   GetUserResponse,
   CreateUser,
   CreateUserResponse,
-} from './messages.propane.js';
+} from './messages.pmsg.js';
 
 const server = new PmsServer();
 
@@ -134,7 +134,7 @@ import {
   GetUserResponse,
   CreateUser,
   CreateUserResponse,
-} from './messages.propane.js';
+} from './messages.pmsg.js';
 
 const client = new PmsClient({ baseUrl: 'http://localhost:8080' });
 
@@ -165,11 +165,11 @@ Install the compiler as a dev dependency:
 npm i -D @propanejs/pms-client-compiler
 ```
 
-Generate a client from your `.propane` files:
+Generate a client from your `.pmsg` files:
 
 ```bash
 # From specific files
-npx pmscc -o src/generated/api-client.ts src/messages/*.propane
+npx pmscc -o src/generated/api-client.ts src/messages/*.pmsg
 
 # From a directory (recursive)
 npx pmscc -d src/messages -o src/generated/api-client.ts
@@ -205,7 +205,7 @@ When `pmscc` is run without arguments, it will automatically load these settings
 
 ### Configuration Options (under the `pms` key):
 
-*   **`inputDir`**: A string specifying a directory to search for `.propane` files. Equivalent to `-d, --dir`.
+*   **`inputDir`**: A string specifying a directory to search for `.pmsg` files. Equivalent to `-d, --dir`.
 *   **`output`**: A string specifying the output file path for the generated client. Equivalent to `-o, --output`.
 *   **`className`**: A string for the generated client class name. Equivalent to `-n, --name`.
 *   **`websocket`**: A boolean. If `true`, generates a WebSocket client. Equivalent to `-w, --websocket`.
@@ -216,7 +216,7 @@ When `pmscc` is run without arguments, it will automatically load these settings
 Given these message definitions:
 
 ```typescript
-// messages.propane
+// messages.pmsg
 export type GetUser = {
   '1:id': number;
 } & RpcRequest<GetUserResponse>;
@@ -233,7 +233,7 @@ The compiler generates a client class with a `getUser` method.
 
 ```typescript
 import { ApiClient } from './generated/api-client.js';
-import { GetUser } from './messages.propane.js';
+import { GetUser } from './messages.pmsg.js';
 
 // Pass PmsClient options directly to the generated client
 const api = new ApiClient({ baseUrl: 'http://localhost:8080' });
@@ -251,7 +251,7 @@ const user2 = await api.getUser(new GetUser({ id: 456 }));
 | Option | Description |
 |--------|-------------|
 | `-o, --output <path>` | Output file path (required) |
-| `-d, --dir <path>` | Directory to search for .propane files |
+| `-d, --dir <path>` | Directory to search for .pmsg files |
 | `-n, --name <name>` | Generated class name (default: derived from output file) |
 | `-w, --websocket` | Generate WebSocket client (PmwsClient) instead of HTTP |
 | `-W, --watch` | Watch for changes and regenerate automatically |
@@ -264,7 +264,7 @@ The default class name is derived from the output file name:
 
 ### Watch Mode
 
-Use `-W` or `--watch` to continuously monitor `.propane` files for changes and
+Use `-W` or `--watch` to continuously monitor `.pmsg` files for changes and
 automatically regenerate the client. This is useful during development:
 
 ```bash

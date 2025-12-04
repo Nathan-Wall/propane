@@ -40,7 +40,7 @@ function collectPropaneFiles(targetPath) {
       .flatMap((entry) => collectPropaneFiles(path.join(targetPath, entry)));
   }
 
-  if (stats.isFile() && targetPath.endsWith('.propane')) {
+  if (stats.isFile() && targetPath.endsWith('.pmsg')) {
     return [targetPath];
   }
 
@@ -74,7 +74,7 @@ function transpileFile(sourcePath) {
     throw new Error(`Failed to transpile ${sourcePath}`);
   }
 
-  const outputPath = sourcePath.replace(/\.propane$/, '.propane.ts');
+  const outputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.ts');
   const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
   fs.writeFileSync(outputPath, code, 'utf8');
   console.log(`Transpiled ${path.relative(process.cwd(), sourcePath)} -> ${path.relative(process.cwd(), outputPath)}`);
@@ -87,7 +87,7 @@ const propaneFiles = [
 ];
 
 if (!propaneFiles.length) {
-  console.error('No .propane files found for the provided paths.');
+  console.error('No .pmsg files found for the provided paths.');
   process.exit(1);
 }
 

@@ -17,7 +17,7 @@ working with immutable instances
 
 ## Quick Example
 
-**Define a type** in `person.propane`:
+**Define a type** in `person.pmsg`:
 
 ```typescript
 // @message
@@ -31,7 +31,7 @@ export type Person = {
 **Use the generated class**:
 
 ```typescript
-import { Person } from './person.propane.js';
+import { Person } from './person.pmsg.js';
 
 // Create
 const alice = new Person({
@@ -74,7 +74,7 @@ npm i @propanejs/pms-server @propanejs/pms-client
 npx propanec src/models
 ```
 
-This compiles all `.propane` files to `.propane.ts` files.
+This compiles all `.pmsg` files to `.pmsg.ts` files.
 
 You can also watch for changes:
 
@@ -94,7 +94,7 @@ npx propanec src/models --watch
 | Package | Description |
 |---------|-------------|
 | `@propanejs/runtime` | Core runtime classes (Message, ImmutableArray, etc.) |
-| `@propanejs/cli` | CLI for compiling `.propane` files |
+| `@propanejs/cli` | CLI for compiling `.pmsg` files |
 | `@propanejs/react` | React hooks and utilities |
 | `@propanejs/pms-core` | PMS shared types and errors |
 | `@propanejs/pms-server` | PMS RPC server |

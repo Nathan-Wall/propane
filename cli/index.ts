@@ -98,7 +98,7 @@ function printUsage() {
   console.log(`
 Usage: propanec [options] <file-or-directory> [more paths...]
 
-Compile .propane files to TypeScript.
+Compile .pmsg files to TypeScript.
 
 Options:
   -w, --watch    Watch for changes and recompile
@@ -118,7 +118,7 @@ Configuration:
 
 Examples:
   propanec src/models
-  propanec src/models/user.propane
+  propanec src/models/user.pmsg
   propanec src --watch
 `);
 }
@@ -145,7 +145,7 @@ function collectPropaneFiles(targetPath: string): string[] {
       .flatMap((entry) => collectPropaneFiles(path.join(resolved, entry)));
   }
 
-  if (stats.isFile() && resolved.endsWith('.propane')) {
+  if (stats.isFile() && resolved.endsWith('.pmsg')) {
     return [resolved];
   }
 
@@ -183,14 +183,14 @@ function transpileFile(sourcePath: string) {
     let outputPath: string;
     if (outputDir) {
       const relativePath = path.relative(process.cwd(), sourcePath);
-      outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.propane$/, '.propane.ts');
+      outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.pmsg$/, '.pmsg.ts');
 
       const dir = path.dirname(outputPath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
     } else {
-      outputPath = sourcePath.replace(/\.propane$/, '.propane.ts');
+      outputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.ts');
     }
 
     const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
@@ -219,7 +219,7 @@ function compileAll() {
   )];
 
   if (!propaneFiles.length) {
-    console.error('No .propane files found.');
+    console.error('No .pmsg files found.');
     return false;
   }
 
@@ -248,24 +248,24 @@ if (watch) {
     })
     .on('ready', () => console.log('Initial scan complete. Watching for changes...'))
     .on('add', (filePath) => {
-      if (filePath.endsWith('.propane')) {
+      if (filePath.endsWith('.pmsg')) {
         transpileFile(filePath);
       }
     })
     .on('change', (filePath) => {
-      if (filePath.endsWith('.propane')) {
+      if (filePath.endsWith('.pmsg')) {
         transpileFile(filePath);
       }
     })
     .on('unlink', (filePath) => {
-      // Optional: Delete the generated .propane.ts file if the original .propane file is deleted
-      if (filePath.endsWith('.propane')) {
+      // Optional: Delete the generated .pmsg.ts file if the original .pmsg file is deleted
+      if (filePath.endsWith('.pmsg')) {
         let outputPath: string;
         if (outputDir) {
           const relativePath = path.relative(process.cwd(), filePath);
-          outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.propane$/, '.propane.ts');
+          outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.pmsg$/, '.pmsg.ts');
         } else {
-          outputPath = filePath.replace(/\.propane$/, '.propane.ts');
+          outputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
         }
 
         if (fs.existsSync(outputPath)) {

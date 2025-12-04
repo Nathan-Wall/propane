@@ -25,7 +25,7 @@ import {
 import type { Message, DataObject } from '../runtime/message.ts';
 
 // Import Babel-generated types for testing
-import { InnerMessage, OuterMessage } from './nested-memo-state.propane.ts';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
 
 export default function runPathAwareEqualityTests() {
   testIdenticalSiblingsAreContentEqual();

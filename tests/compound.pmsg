@@ -1,0 +1,9 @@
+import {Indexed} from './indexed.pmsg';
+import {User} from './user.pmsg';
+
+// @message
+export type Compound = {
+  '1:user': User,
+  '2:indexed': Indexed,
+  '3:inline': {value: string},
+};

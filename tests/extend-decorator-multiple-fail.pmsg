@@ -1,0 +1,6 @@
+// @message
+// @extend('./foo.pmsg.ext.ts')
+// @extend('./bar.pmsg.ext.ts')
+export type MultipleExtend = {
+  '1:value': string;
+};

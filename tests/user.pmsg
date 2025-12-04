@@ -1,0 +1,16 @@
+import { Distance } from './distance.pmsg';
+import { Email } from './email.pmsg';
+import { Hash } from './hash.pmsg';
+
+// @message
+export type User = {
+  '1:id': number;
+  '2:name': string;
+  '3:email': Email;
+  '4:passwordHash': Hash;
+  created: Date;
+  updated: Date;
+  active: boolean;
+  eyeColor: 'blue'|'green'|'brown'|'hazel';
+  height: Distance;
+};

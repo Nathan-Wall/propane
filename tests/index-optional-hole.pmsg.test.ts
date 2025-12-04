@@ -1,0 +1,45 @@
+import { assert } from './assert.ts';
+import { OptionalHole } from './index-optional-hole.pmsg.ts';
+
+export default function runOptionalHoleTests() {
+
+  const optionalHole = new OptionalHole({
+    id: 7,
+    created: new Date(Date.UTC(1892, 0, 3)),
+    name: 'Optional',
+  });
+  const optionalHoleSerialized = optionalHole.serialize();
+  const expectedOptionalSerialization = ':{7,D"1892-01-03T00:00:00.000Z",4:Optional}';
+  assert(
+    optionalHoleSerialized === expectedOptionalSerialization,
+    'Optional field omission should force explicit index on next property.'
+  );
+  const optionalHoleCereal = optionalHole.cerealize();
+  assert(optionalHoleCereal.note === undefined, 'Optional undefined should stay omitted.');
+
+  const optionalHoleWithNote = new OptionalHole({
+    id: 9,
+    created: new Date(Date.UTC(1892, 0, 3)),
+    name: 'Optional',
+    note: 'HELLO',
+  });
+  const optionalHoleWithNoteSerialized = optionalHoleWithNote.serialize();
+  const expectedOptionalWithNote = ':{9,D"1892-01-03T00:00:00.000Z",HELLO,Optional}';
+  assert(
+    optionalHoleWithNoteSerialized === expectedOptionalWithNote,
+    'Present optional field should include its index and keep later implicit.'
+  );
+  const optionalHoleDeleted = optionalHoleWithNote.deleteNote();
+  const expectedOptionalDeleted = ':{9,D"1892-01-03T00:00:00.000Z",4:Optional}';
+  assert(
+    optionalHoleDeleted.serialize() === expectedOptionalDeleted,
+    'deleteNote should clear optional field and reintroduce index gap.'
+  );
+  const optionalHoleHydrated = OptionalHole.deserialize(optionalHoleSerialized);
+  assert(optionalHoleHydrated.cerealize().name === 'Optional', 'Optional hole deserialize failed.');
+  const optionalHoleWithNoteHydrated = OptionalHole.deserialize(
+    optionalHoleWithNoteSerialized
+  );
+  const optionalHoleWithNoteCereal = optionalHoleWithNoteHydrated.cerealize();
+  assert(optionalHoleWithNoteCereal.note === 'HELLO', 'Optional field lost during serialization.');
+}

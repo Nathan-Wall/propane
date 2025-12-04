@@ -1,5 +1,5 @@
 import { usePropaneState, update } from '@propanejs/react';
-import { GameState, BoardState, Cell } from './types.propane.ts';
+import { GameState, BoardState, Cell } from './types.pmsg.ts';
 
 // Calculate winner from cells array
 function calculateWinner(cells: readonly Cell[]): Cell {

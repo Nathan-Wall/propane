@@ -1,7 +1,7 @@
 {
   "name": "@propanejs/pms-client-compiler",
   "version": "0.0.0",
-  "description": "Compiler for generating typed PMS clients from .propane files",
+  "description": "Compiler for generating typed PMS clients from .pmsg files",
   "type": "module",
   "main": "src/index.js",
   "bin": {

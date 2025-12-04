@@ -14,7 +14,7 @@ Use `usePropaneState` to manage Propane messages as React state:
 
 ```typescript
 import { usePropaneState, update } from '@propanejs/react';
-import { AppState } from './types.propane.ts';
+import { AppState } from './types.pmsg.ts';
 
 function App() {
   const [state] = usePropaneState<AppState>(
@@ -68,7 +68,7 @@ Changes to nested objects automatically propagate through the state tree.
 When you modify a nested message or collection, parent components re-render:
 
 ```typescript
-// types.propane
+// types.pmsg
 // @message
 export type GameState = {
   '1:history': BoardState[];
@@ -100,7 +100,7 @@ The component only re-renders when the selected value changes (using structural 
 
 ```typescript
 import { usePropaneState, usePropaneSelector, update } from '@propanejs/react';
-import { AppState } from './types.propane.ts';
+import { AppState } from './types.pmsg.ts';
 
 function UserName() {
   const [state] = usePropaneState<AppState>(initialState);
@@ -486,7 +486,7 @@ needing to anticipate every possible mutation.
 
 ```typescript
 import { usePropaneState, usePropaneSelector, update, memoPropane } from '@propanejs/react';
-import { GameState, BoardState } from './types.propane.ts';
+import { GameState, BoardState } from './types.pmsg.ts';
 
 const Square = memoPropane(({ value, onClick }: SquareProps) => (
   <button onClick={onClick}>{value}</button>

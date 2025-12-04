@@ -47,10 +47,10 @@ function printUsage(): void {
   console.log(`
 Usage: pmscc [options] [files...]
 
-Generate a typed PMS client from .propane files.
+Generate a typed PMS client from .pmsg files.
 
 Options:
-  -d, --dir <path>      Directory to search for .propane files
+  -d, --dir <path>      Directory to search for .pmsg files
   -o, --output <path>   Output file path (required)
   -n, --name <name>     Generated class name (default: derived from output file)
   -w, --websocket       Generate WebSocket client instead of HTTP
@@ -69,9 +69,9 @@ Configuration:
 
 Examples:
   # Compile to api-client.ts -> generates class ApiClient
-  pmscc -o src/generated/api-client.ts src/messages/*.propane
+  pmscc -o src/generated/api-client.ts src/messages/*.pmsg
 
-  # Compile all .propane files in a directory
+  # Compile all .pmsg files in a directory
   pmscc -d src/messages -o src/generated/api-client.ts
 
   # Watch mode - regenerate on changes
@@ -93,7 +93,7 @@ function findPropaneFiles(dir: string): string[] {
 
       if (stat.isDirectory()) {
         scan(fullPath);
-      } else if (entry.endsWith('.propane')) {
+      } else if (entry.endsWith('.pmsg')) {
         files.push(fullPath);
       }
     }
@@ -151,7 +151,7 @@ function parseCliArgs(): CliOptions | null {
     }
 
     if (files.length === 0) {
-      console.error('Error: No .propane files specified');
+      console.error('Error: No .pmsg files specified');
       console.error('Use -d to specify a directory or provide file paths as arguments');
       return null;
     }
@@ -174,7 +174,7 @@ function parseCliArgs(): CliOptions | null {
 }
 
 /**
- * Compile .propane files and generate the client.
+ * Compile .pmsg files and generate the client.
  * Returns true on success, false on error.
  */
 function compile(options: CliOptions, verbose = true): boolean {
@@ -187,7 +187,7 @@ function compile(options: CliOptions, verbose = true): boolean {
   }
 
   if (verbose) {
-    console.log(`Parsing ${options.files.length} .propane file(s)...`);
+    console.log(`Parsing ${options.files.length} .pmsg file(s)...`);
   }
 
   // Parse files
@@ -276,7 +276,7 @@ function watchFiles(options: CliOptions): void {
       ignoreInitial: true,
     })
     .on('all', (event, filePath) => {
-      if (filePath.endsWith('.propane')) {
+      if (filePath.endsWith('.pmsg')) {
         triggerRecompile(filePath);
       }
     });

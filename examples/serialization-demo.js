@@ -7,7 +7,7 @@
  * Run with: node examples/serialization-demo.js
  */
 
-import { Cat, Dog, PetOwner } from '../build/tests/message-union.propane.js';
+import { Cat, Dog, PetOwner } from '../build/tests/message-union.pmsg.js';
 
 console.log('='.repeat(60));
 console.log('Propane Serialization Demo');

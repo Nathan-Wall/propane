@@ -1,6 +1,0 @@
-// @message @extend('./extend-basic.ext.ts')
-export type Person = {
-  '1:firstName': string;
-  '2:lastName': string;
-  '3:age': number;
-};

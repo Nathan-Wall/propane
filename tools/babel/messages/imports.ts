@@ -21,7 +21,7 @@ export function resolveImportPath(
 
   const candidates = [
     basePath,
-    `${basePath}.propane`,
+    `${basePath}.pmsg`,
   ];
 
   for (const candidate of candidates) {

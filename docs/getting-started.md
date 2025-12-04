@@ -18,7 +18,7 @@ npm i @propanejs/pms-server @propanejs/pms-client
 
 ## Quick Example
 
-**Define a type** in `person.propane`:
+**Define a type** in `person.pmsg`:
 
 ```typescript
 // @message
@@ -35,7 +35,7 @@ export type Person = {
 npx propanec src/models
 ```
 
-This compiles all `.propane` files to `.propane.ts` files.
+This compiles all `.pmsg` files to `.pmsg.ts` files.
 
 You can also watch for changes:
 
@@ -60,7 +60,7 @@ When `propanec` is run without arguments, it will automatically look for `propan
 ### Configuration Options:
 
 *   **`include`**: An array of file paths or directories to compile. Similar to providing positional arguments to `propanec`. (e.g., `["src/models"]`)
-*   **`outputDir`**: A string specifying the root directory where generated `.propane.ts` files should be placed. The original directory structure of the source files will be preserved within this output directory. (e.g., `"dist/generated"`)
+*   **`outputDir`**: A string specifying the root directory where generated `.pmsg.ts` files should be placed. The original directory structure of the source files will be preserved within this output directory. (e.g., `"dist/generated"`)
 *   **`watch`**: A boolean. If `true`, `propanec` will run in watch mode, regenerating files when changes are detected. Equivalent to `--watch` CLI flag.
 
 ```
@@ -68,7 +68,7 @@ When `propanec` is run without arguments, it will automatically look for `propan
 **Use the generated class**:
 
 ```typescript
-import { Person } from './person.propane.js';
+import { Person } from './person.pmsg.js';
 
 // Create
 const alice = new Person({
@@ -91,8 +91,8 @@ console.log(updated.equals(restored));  // true
 
 ## File Naming
 
-- Source: `person.propane`
-- Generated: `person.propane.ts` (or `.js` after TypeScript compilation)
+- Source: `person.pmsg`
+- Generated: `person.pmsg.ts` (or `.js` after TypeScript compilation)
 
 ## Generated API
 

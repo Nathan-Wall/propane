@@ -1,6 +1,6 @@
 /**
  * Test message classes for PMS integration tests.
- * In a real application, these would be generated from .propane files.
+ * In a real application, these would be generated from .pmsg files.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

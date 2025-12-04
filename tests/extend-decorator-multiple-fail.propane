@@ -1,6 +1,0 @@
-// @message
-// @extend('./foo.ext.ts')
-// @extend('./bar.ext.ts')
-export type MultipleExtend = {
-  '1:value': string;
-};

@@ -18,7 +18,7 @@ export type {
 export { isResponseWithHeaders } from './handler.js';
 
 // Response wrapper
-export { Response } from './response.propane.js';
+export { Response } from './response.pmsg.js';
 
 // Transport
 export type {

@@ -35,14 +35,14 @@ async function buildAll() {
   ensureDir(outDir);
   ensurePackageTypeModule(outDir);
 
-  const failPattern = /(?:^|[.-])fail.propane$/i;
+  const failPattern = /(?:^|[.-])fail.pmsg$/i;
 
   for (const file of files) {
     if (failPattern.test(path.basename(file))) {
       continue; // fixtures expected to fail compile
     }
-    const rel = path.relative(testsDir, file); // e.g., index-hole.propane
-    const outPath = path.join(outDir, `${rel}.js`); // keep .propane in name for clarity
+    const rel = path.relative(testsDir, file); // e.g., index-hole.pmsg
+    const outPath = path.join(outDir, `${rel}.js`); // keep .pmsg in name for clarity
     ensureDir(path.dirname(outPath));
     const source = fs.readFileSync(file, 'utf8');
     const pluginOptions = {};
@@ -80,7 +80,7 @@ function findPropaneFiles(dir) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       found.push(...findPropaneFiles(full));
-    } else if (entry.isFile() && entry.name.endsWith('.propane')) {
+    } else if (entry.isFile() && entry.name.endsWith('.pmsg')) {
       found.push(full);
     }
   }
@@ -105,8 +105,8 @@ function ensurePackageTypeModule(dir) {
 
 function rewriteImports(code) {
   let result = code;
-  // Rewrite relative .propane imports to point at built JS artifacts
-  result = result.replaceAll(/\.propane(['"])/g, '.propane.js$1');
+  // Rewrite relative .pmsg imports to point at built JS artifacts
+  result = result.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
 
   // Remove runtime-only type imports (MessagePropDescriptor) from imports
   // This regex targets: import { ..., MessagePropDescriptor, ... } from ...
@@ -118,11 +118,11 @@ function rewriteImports(code) {
   result = result.replace(/^import\s*{\s*Brand\s*}\s*from[^;]+;\n?/m, '');
 
   // Append .js to relative imports without an explicit extension
-  // (excluding the .propane.js ones we just set)
+  // (excluding the .pmsg.js ones we just set)
   result = result.replaceAll(
     /(from\s+['"])(\.\.{1,2}\/[^'"][^'"]*)(['"])/g,
     (match, p1, p2, p3) => {
-      if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.propane.js')) {
+      if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.pmsg.js')) {
         return match;
       }
       return `${p1}${p2}.js${p3}`;
@@ -215,8 +215,8 @@ async function copyTests() {
 
 function rewriteTestImports(content) {
   let result = content.replaceAll('./tmp/', './');
-  result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.ts['"]/g, "from './$1.js'");
-  result = result.replaceAll(/from ['"]\.\/(.+?\.propane)\.js['"]/g, "from './$1.js'");
+  result = result.replaceAll(/from ['"]\.\/(.+?\.pmsg)\.ts['"]/g, "from './$1.js'");
+  result = result.replaceAll(/from ['"]\.\/(.+?\.pmsg)\.js['"]/g, "from './$1.js'");
 
   // Fix relative paths for build/ structure
   // Explicitly handle the pattern seen in tests using string replacement
@@ -279,7 +279,7 @@ function ensureValueExport(outputText, source, filePath) {
   const trimmed = outputText.trim();
   if (trimmed === 'export {};') {
     const nameMatch = source.match(/export\s+type\s+([A-Za-z0-9_]+)/);
-    const name = nameMatch ? nameMatch[1] : path.basename(filePath, '.propane');
+    const name = nameMatch ? nameMatch[1] : path.basename(filePath, '.pmsg');
     return `// Auto-generated value shim for type-only module\nexport const ${name} = Symbol('${name}');\n`;
   }
   return outputText;

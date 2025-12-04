@@ -170,7 +170,7 @@ function loadPropaneModule({
 
     if (id.startsWith('.')) {
       const resolved = path.resolve(dir, id);
-      const withExt = resolved.endsWith('.propane') ? resolved : `${resolved}.propane`;
+      const withExt = resolved.endsWith('.pmsg') ? resolved : `${resolved}.pmsg`;
       if (fs.existsSync(withExt)) {
         return loadPropaneModule({
           projectRoot,

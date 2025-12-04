@@ -25,7 +25,7 @@ let standardFile: string;
 describe('PMS Client Compiler', () => {
   before(() => {
     mkdirSync(tempDir, { recursive: true });
-    standardFile = createTestFile('standard.propane', `
+    standardFile = createTestFile('standard.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 
 export type GetUserRequest = {
@@ -71,7 +71,7 @@ export type CreateUserResponse = {
     });
 
     it('ignores non-RPC types', () => {
-      const file = createTestFile('non-rpc.propane', `
+      const file = createTestFile('non-rpc.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 
 export type RegularType = {
@@ -93,13 +93,13 @@ export type ActualResponse = {
     });
 
     it('handles empty file', () => {
-      const file = createTestFile('empty.propane', '');
+      const file = createTestFile('empty.pmsg', '');
       const endpoints = parseFile(file);
       assert.strictEqual(endpoints.length, 0);
     });
 
     it('handles file with no RPC types', () => {
-      const file = createTestFile('no-rpc.propane', `
+      const file = createTestFile('no-rpc.pmsg', `
 export type User = {
   '1:id': number;
   '2:name': string;
@@ -110,7 +110,7 @@ export type User = {
     });
 
     it('handles types without Request suffix', () => {
-      const file = createTestFile('no-suffix.propane', `
+      const file = createTestFile('no-suffix.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 
 export type FetchUser = {
@@ -129,7 +129,7 @@ export type UserData = {
     });
 
     it('handles multiple RPC types in one file', () => {
-      const file = createTestFile('many-rpcs.propane', `
+      const file = createTestFile('many-rpcs.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 
 export type Req1 = { '1:a': number } & RpcRequest<Res1>;
@@ -147,13 +147,13 @@ export type Res3 = { '1:f': boolean };
     });
 
     it('aggregates results from multiple files', () => {
-      const file1 = createTestFile('multi/file1.propane', `
+      const file1 = createTestFile('multi/file1.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type ReqA = { '1:a': number } & RpcRequest<ResA>;
 export type ResA = { '1:b': number };
 `);
 
-      const file2 = createTestFile('multi/file2.propane', `
+      const file2 = createTestFile('multi/file2.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type ReqB = { '1:c': string } & RpcRequest<ResB>;
 export type ResB = { '1:d': string };
@@ -265,17 +265,17 @@ export type ResB = { '1:d': string };
 
       assert.ok(code.includes('GetUserRequest'), 'Should import GetUserRequest');
       assert.ok(code.includes('GetUserResponse'), 'Should import GetUserResponse');
-      assert.ok(code.includes('.propane.js'), 'Should use .propane.js extension');
+      assert.ok(code.includes('.pmsg.js'), 'Should use .pmsg.js extension');
     });
 
     it('groups imports by source file', () => {
-      const file1 = createTestFile('imports/users.propane', `
+      const file1 = createTestFile('imports/users.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type GetUserReq = { '1:id': number } & RpcRequest<GetUserRes>;
 export type GetUserRes = { '1:name': string };
 `);
 
-      const file2 = createTestFile('imports/orders.propane', `
+      const file2 = createTestFile('imports/orders.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type GetOrderReq = { '1:id': number } & RpcRequest<GetOrderRes>;
 export type GetOrderRes = { '1:total': number };
@@ -286,8 +286,8 @@ export type GetOrderRes = { '1:total': number };
         outputPath: path.resolve(tempDir, 'imports/client.ts'),
       });
 
-      assert.ok(code.includes("from './users.propane.js'"));
-      assert.ok(code.includes("from './orders.propane.js'"));
+      assert.ok(code.includes("from './users.pmsg.js'"));
+      assert.ok(code.includes("from './orders.pmsg.js'"));
     });
 
     it('includes JSDoc comments', () => {
@@ -366,7 +366,7 @@ export type GetOrderRes = { '1:total': number };
       const outputFile = path.resolve(tempDir, 'cli-output/no-input.ts');
       const { stderr, exitCode } = runCli(`-o ${outputFile}`);
       assert.strictEqual(exitCode, 1);
-      assert.ok(stderr.includes('No .propane files specified'));
+      assert.ok(stderr.includes('No .pmsg files specified'));
     });
 
     it('compiles single file', () => {
@@ -399,13 +399,13 @@ export type GetOrderRes = { '1:total': number };
       const subDir = path.resolve(tempDir, 'cli-dir-scan');
       mkdirSync(subDir, { recursive: true });
 
-      createTestFile('cli-dir-scan/a.propane', `
+      createTestFile('cli-dir-scan/a.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type ReqA = { '1:x': number } & RpcRequest<ResA>;
 export type ResA = { '1:y': number };
 `);
 
-      createTestFile('cli-dir-scan/b.propane', `
+      createTestFile('cli-dir-scan/b.pmsg', `
 import { RpcRequest } from '@propanejs/pms-core';
 export type ReqB = { '1:x': string } & RpcRequest<ResB>;
 export type ResB = { '1:y': string };
@@ -424,7 +424,7 @@ export type ResB = { '1:y': string };
       const outputFile = path.resolve(tempDir, 'cli-output/from-empty.ts');
       const { stderr, exitCode } = runCli(`-d ${emptyDir} -o ${outputFile}`);
       assert.strictEqual(exitCode, 1);
-      assert.ok(stderr.includes('No .propane files specified'));
+      assert.ok(stderr.includes('No .pmsg files specified'));
     });
 
     it('handles non-existent directory', () => {
@@ -436,13 +436,13 @@ export type ResB = { '1:y': string };
 
     it('handles non-existent file', () => {
       const outputFile = path.resolve(tempDir, 'cli-output/nonexistent.ts');
-      const { stderr, exitCode } = runCli(`-o ${outputFile} /nonexistent/file.propane`);
+      const { stderr, exitCode } = runCli(`-o ${outputFile} /nonexistent/file.pmsg`);
       assert.strictEqual(exitCode, 1);
       assert.ok(stderr.includes('not found'));
     });
 
     it('handles file with no RPC types', () => {
-      const noRpcFile = createTestFile('cli-no-rpc.propane', `
+      const noRpcFile = createTestFile('cli-no-rpc.pmsg', `
 export type NotAnRpc = { '1:value': string };
 `);
 

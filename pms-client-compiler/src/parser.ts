@@ -2,7 +2,7 @@ import ts from 'typescript';
 import { readFileSync } from 'node:fs';
 
 /**
- * Represents an RPC endpoint extracted from a .propane file.
+ * Represents an RPC endpoint extracted from a .pmsg file.
  */
 export interface RpcEndpoint {
   /** The request type name (e.g., "GetUser") */
@@ -14,7 +14,7 @@ export interface RpcEndpoint {
 }
 
 /**
- * Result of parsing .propane files.
+ * Result of parsing .pmsg files.
  */
 export interface ParseResult {
   /** All RPC endpoints found */
@@ -24,7 +24,7 @@ export interface ParseResult {
 }
 
 /**
- * Parse a .propane file and extract RPC request/response pairs.
+ * Parse a .pmsg file and extract RPC request/response pairs.
  *
  * Looks for type aliases that intersect with RpcRequest<TResponse>:
  * ```
@@ -104,7 +104,7 @@ function getTypeName(name: ts.EntityName): string {
 }
 
 /**
- * Parse multiple .propane files and aggregate results.
+ * Parse multiple .pmsg files and aggregate results.
  */
 export function parseFiles(filePaths: string[]): ParseResult {
   const endpoints: RpcEndpoint[] = [];

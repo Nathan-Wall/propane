@@ -7,7 +7,7 @@
  */
 
 import { assert } from './assert.ts';
-import { InnerMessage, OuterMessage } from './nested-memo-state.propane.ts';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
 import {
   SET_UPDATE_LISTENER,
   REACT_LISTENER_KEY,

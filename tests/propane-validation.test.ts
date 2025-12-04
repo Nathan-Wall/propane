@@ -1,6 +1,6 @@
 /**
- * Tests that validate .propane files transform correctly (or fail as expected).
- * Files ending in -fail.propane are expected to fail transformation.
+ * Tests that validate .pmsg files transform correctly (or fail as expected).
+ * Files ending in -fail.pmsg are expected to fail transformation.
  *
  * Note: This test runs from build/tests/ but validates source files in tests/
  */
@@ -31,7 +31,7 @@ function findPropaneFiles(dir: string): string[] {
       continue;
     }
 
-    if (entry.isFile() && entry.name.endsWith('.propane')) {
+    if (entry.isFile() && entry.name.endsWith('.pmsg')) {
       files.push(fullPath);
     }
   }
@@ -44,7 +44,7 @@ const propaneFiles = findPropaneFiles(testsDir);
 describe('Propane file validation', () => {
   for (const filePath of propaneFiles) {
     const relativeName = path.relative(testsDir, filePath);
-    const baseName = path.basename(filePath, '.propane');
+    const baseName = path.basename(filePath, '.pmsg');
     const expectError = failPattern.test(baseName);
 
     if (expectError) {

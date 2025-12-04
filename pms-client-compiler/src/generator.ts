@@ -52,8 +52,8 @@ function getImportPath(outputPath: string, sourcePath: string): string {
     relativePath = './' + relativePath;
   }
 
-  // Change .propane to .propane.js for the compiled output
-  if (relativePath.endsWith('.propane')) {
+  // Change .pmsg to .pmsg.js for the compiled output
+  if (relativePath.endsWith('.pmsg')) {
     relativePath += '.js';
   }
 

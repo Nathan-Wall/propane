@@ -151,10 +151,8 @@ describe('PMS Server', () => {
 
   it('supports Response with custom headers', async () => {
     const server = new PmsServer();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    (server as any).handle(EchoRequest, (req: EchoRequest) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument
-      return new Response(EchoResponse as any, {
+    server.handle(EchoRequest, (req: EchoRequest) => {
+      return new Response({
         body: new EchoResponse({ echo: req.message, timestamp: 42 }),
         headers: new Map([['X-Custom-Header', 'test-value'], ['Set-Cookie', 'session=abc123']])
       });
