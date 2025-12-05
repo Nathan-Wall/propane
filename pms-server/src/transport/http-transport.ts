@@ -240,9 +240,11 @@ export class HttpTransport implements Transport {
 
   async start(handler: TransportHandler): Promise<void> {
     return new Promise((resolve, reject) => {
+      /* eslint-disable unicorn/consistent-function-scoping -- closure */
       const asyncHandler = async (
         req: IncomingMessage, res: ServerResponse
       ) => {
+        /* eslint-enable unicorn/consistent-function-scoping */
         const requestOrigin = req.headers.origin;
 
         // Handle CORS preflight
@@ -341,6 +343,8 @@ export class HttpTransport implements Transport {
   async stop(): Promise<void> {
     return new Promise((resolve) => {
       if (this.server) {
+        // Close all existing connections immediately to allow clean shutdown
+        this.server.closeAllConnections();
         this.server.close(() => resolve());
       } else {
         resolve();

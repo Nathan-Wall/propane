@@ -82,4 +82,5 @@ out/
 # Custom
 CLAUDE.md
 tmp/
+.gitattributes
 

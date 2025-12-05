@@ -32,7 +32,7 @@ export class StringFirst extends Message<StringFirst.Data> {
   get value(): string | number {
     return this.#value;
   }
-  setValue(value: string | number): StringFirst {
+  setValue(value: string | number) {
     return this.$update(new (this.constructor as typeof StringFirst)({
       value: value
     }));
@@ -73,7 +73,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   get value(): number | string {
     return this.#value;
   }
-  setValue(value: number | string): NumberFirst {
+  setValue(value: number | string) {
     return this.$update(new (this.constructor as typeof NumberFirst)({
       value: value
     }));

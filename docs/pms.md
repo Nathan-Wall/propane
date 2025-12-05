@@ -102,7 +102,8 @@ process.on('SIGTERM', () => server.close());
 ### Returning Custom Headers
 
 Handlers can return custom HTTP headers (e.g., for cookies) by wrapping the
-response in a `Response` object:
+response in a `Response` object. The Response constructor takes the response
+class as the first argument:
 
 ```typescript
 import { Response } from '@propanejs/pms-server';
@@ -111,7 +112,7 @@ server.handle(Login, async (req) => {
   const session = await createSession(req.username, req.password);
 
   // Return response with Set-Cookie header
-  return new Response({
+  return new Response(LoginResponse, {
     body: new LoginResponse({ success: true, userId: session.userId }),
     headers: new Map([
       ['Set-Cookie', `session=${session.token}; HttpOnly; Secure; SameSite=Strict; Path=/`],

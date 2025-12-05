@@ -315,6 +315,7 @@ function buildThisConstructorNewExpression(
 function buildBindMethod(
   typeName: string,
   typeParameters: TypeParameter[],
+  properties: PropDescriptor[],
   state: PluginStateFlags
 ): t.ClassMethod | null {
   if (typeParameters.length === 0) {
@@ -344,8 +345,11 @@ function buildBindMethod(
     ])
   );
 
-  // Build the bound constructor function
-  // const boundCtor = function(props: TypeName.Data<T>) { return new TypeName(tClass, props); }
+  // Build the bound constructor function that reconstructs generic type parameter fields
+  // const boundCtor = function(props: TypeName.Data<T>) {
+  //   const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+  //   return new TypeName(tClass, { ...props, inner });
+  // }
   const propsParam = t.identifier('props');
   propsParam.typeAnnotation = t.tsTypeAnnotation(
     t.tsTypeReference(
@@ -354,39 +358,109 @@ function buildBindMethod(
     )
   );
 
-  const constructorArgs = [
-    ...typeParameters.map(
+  // Find properties that are generic type parameters
+  const genericProps = properties.filter(
+    (prop) => prop.isGenericParam && prop.genericParamName
+  );
+
+  // Build reconstruction statements for each generic property
+  const reconstructionStatements: t.Statement[] = [];
+  const reconstructedPropNames: string[] = [];
+
+  for (const prop of genericProps) {
+    const propName = prop.name;
+    const paramName = prop.genericParamName!;
+    const tClassName = getConstructorFieldName(paramName);
+    reconstructedPropNames.push(propName);
+
+    // const propName = props.propName instanceof tClass
+    //   ? props.propName
+    //   : new tClass(props.propName as any);
+    // For optional fields:
+    // const propName = props.propName === undefined
+    //   ? undefined
+    //   : props.propName instanceof tClass
+    //     ? props.propName
+    //     : new tClass(props.propName as any);
+
+    const propAccess = t.memberExpression(t.identifier('props'), t.identifier(propName));
+    const instanceofCheck = t.binaryExpression(
+      'instanceof',
+      t.cloneNode(propAccess),
+      t.identifier(tClassName)
+    );
+    const constructCall = t.newExpression(
+      t.identifier(tClassName),
+      [t.tsAsExpression(t.cloneNode(propAccess), t.tsAnyKeyword())]
+    );
+    const reconstructExpr = t.conditionalExpression(
+      instanceofCheck,
+      t.cloneNode(propAccess),
+      constructCall
+    );
+
+    // For optional fields, check for undefined first
+    const finalExpr: t.Expression = prop.optional
+      ? t.conditionalExpression(
+          t.binaryExpression(
+            '===', t.cloneNode(propAccess), t.identifier('undefined')
+          ),
+          t.identifier('undefined'),
+          reconstructExpr
+        )
+      : reconstructExpr;
+
+    reconstructionStatements.push(
+      t.variableDeclaration('const', [
+        t.variableDeclarator(t.identifier(propName), finalExpr)
+      ])
+    );
+  }
+
+  // Build the constructor call with reconstructed props
+  const constructorArgs: t.Expression[] = 
+    typeParameters.map(
       (param) => t.identifier(getConstructorFieldName(param.name))
-    ),
-    t.identifier('props')
-  ];
+    )
+  ;
+
+  let propsArg: t.Expression;
+  // eslint-disable-next-line unicorn/prefer-ternary -- complex expression
+  if (reconstructedPropNames.length > 0) {
+    // { ...props, propName1, propName2, ... }
+    propsArg = t.objectExpression([
+      t.spreadElement(t.identifier('props')),
+      ...reconstructedPropNames.map((name) => t.objectProperty(
+        t.identifier(name),
+        t.identifier(name),
+        false,
+        true // shorthand
+      ))
+    ]);
+  } else {
+    propsArg = t.identifier('props');
+  }
+  constructorArgs.push(propsArg);
+
+  const boundCtorBody = t.blockStatement([
+    ...reconstructionStatements,
+    t.returnStatement(t.newExpression(t.identifier(typeName), constructorArgs))
+  ]);
 
   const boundCtorFn = t.functionExpression(
     null,
     [propsParam],
-    t.blockStatement([
-      t.returnStatement(
-        t.newExpression(t.identifier(typeName), constructorArgs)
-      )
-    ])
-  );
-
-  // Cast to MessageConstructor
-  const boundCtorCast = t.tsAsExpression(
-    t.tsAsExpression(boundCtorFn, t.tsUnknownKeyword()),
-    returnType
+    boundCtorBody
   );
 
   const boundCtorDecl = t.variableDeclaration('const', [
-    t.variableDeclarator(t.identifier('boundCtor'), boundCtorCast)
+    t.variableDeclarator(t.identifier('boundCtor'), boundCtorFn)
   ]);
 
-  // Build deserialize function that properly handles generic types:
+  // Build deserialize function that parses and calls boundCtor:
   // boundCtor.deserialize = (data: string) => {
   //   const payload = parseCerealString(data);
-  //   const proto = TypeName.prototype as TypeName<any>;
-  //   const props = proto.$fromEntries(payload as Record<string, unknown>);
-  //   return new TypeName(tClass, props as TypeName.Data<T>);
+  //   return boundCtor(payload as TypeName.Data<T>);
   // };
   const dataParam = t.identifier('data');
   dataParam.typeAnnotation = t.tsTypeAnnotation(t.tsStringKeyword());
@@ -399,44 +473,11 @@ function buildBindMethod(
     )
   ]);
 
-  // const proto = TypeName.prototype;
-  const protoDecl = t.variableDeclaration('const', [
-    t.variableDeclarator(
-      t.identifier('proto'),
-      t.memberExpression(t.identifier(typeName), t.identifier('prototype'))
-    )
-  ]);
-
-  // const props = proto.$fromEntries(payload as Record<string, unknown>);
-  const propsDecl = t.variableDeclaration('const', [
-    t.variableDeclarator(
-      t.identifier('props'),
-      t.callExpression(
-        t.memberExpression(t.identifier('proto'), t.identifier('$fromEntries')),
-        [
-          t.tsAsExpression(
-            t.identifier('payload'),
-            t.tsTypeReference(
-              t.identifier('Record'),
-              t.tsTypeParameterInstantiation([
-                t.tsStringKeyword(),
-                t.tsUnknownKeyword()
-              ])
-            )
-          )
-        ]
-      )
-    )
-  ]);
-
-  // return new TypeName(tClass, props as TypeName.Data<T>);
+  // return boundCtor(payload as TypeName.Data<T>);
   const deserializeReturn = t.returnStatement(
-    t.newExpression(t.identifier(typeName), [
-      ...typeParameters.map(
-        (param) => t.identifier(getConstructorFieldName(param.name))
-      ),
+    t.callExpression(t.identifier('boundCtor'), [
       t.tsAsExpression(
-        t.identifier('props'),
+        t.identifier('payload'),
         t.tsTypeReference(
           t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
           t.tsTypeParameterInstantiation(returnTypeParams)
@@ -447,8 +488,6 @@ function buildBindMethod(
 
   const deserializeBody = t.blockStatement([
     payloadDecl,
-    protoDecl,
-    propsDecl,
     deserializeReturn
   ]);
 
@@ -460,23 +499,11 @@ function buildBindMethod(
     )
   );
 
-  // (boundCtor as { $typeName: string }).$typeName = `TypeName<${tClass.$typeName}>`;
-  // Cast to bypass readonly constraint on $typeName
+  // boundCtor.$typeName = `TypeName<${tClass.$typeName}>`;
   const typeNameAssign = t.expressionStatement(
     t.assignmentExpression(
       '=',
-      t.memberExpression(
-        t.tsAsExpression(
-          t.identifier('boundCtor'),
-          t.tsTypeLiteral([
-            t.tsPropertySignature(
-              t.identifier('$typeName'),
-              t.tsTypeAnnotation(t.tsStringKeyword())
-            )
-          ])
-        ),
-        t.identifier('$typeName')
-      ),
+      t.memberExpression(t.identifier('boundCtor'), t.identifier('$typeName')),
       buildTypeNameExpression(typeName, typeParameters)
     )
   );
@@ -509,6 +536,183 @@ function buildBindMethod(
 }
 
 /**
+ * Build the static deserialize() method override for generic messages.
+ * This allows direct deserialization without using bind():
+ *   Container.deserialize(Item, data) instead of Container.bind(Item).deserialize(data)
+ */
+function buildGenericDeserializeMethod(
+  typeName: string,
+  typeParameters: TypeParameter[],
+  properties: PropDescriptor[],
+  state: PluginStateFlags
+): t.ClassMethod | null {
+  if (typeParameters.length === 0) {
+    return null;
+  }
+
+  state.usesParseCerealString = true;
+
+  // Build type parameters for the method: <T extends Message<any>, U extends Message<any>, ...>
+  const methodTypeParams = buildClassTypeParameters(typeParameters);
+
+  // Build parameters: tClass: MessageConstructor<T>, ..., data: string
+  const typeClassParams = buildConstructorClassParams(typeParameters);
+  const dataParam = t.identifier('data');
+  dataParam.typeAnnotation = t.tsTypeAnnotation(t.tsStringKeyword());
+  const params = [...typeClassParams, dataParam];
+
+  // Return type: TypeName<T, U, ...>
+  const returnTypeParams = typeParameters.map((param) =>
+    t.tsTypeReference(t.identifier(param.name))
+  );
+  const returnType = t.tsTypeReference(
+    t.identifier(typeName),
+    t.tsTypeParameterInstantiation(returnTypeParams)
+  );
+
+  // const payload = parseCerealString(data);
+  const payloadDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      t.identifier('payload'),
+      t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])
+    )
+  ]);
+
+  // Build reconstruction for each generic property field
+  // const inner = new tClass(payload["1"] ?? payload["inner"]);
+  const genericProps = properties.filter(
+    (prop) => prop.isGenericParam && prop.genericParamName
+  );
+  const reconstructionStatements: t.Statement[] = [];
+  const reconstructedPropNames: string[] = [];
+
+  for (const prop of genericProps) {
+    const propName = prop.name;
+    const paramName = prop.genericParamName!;
+    const tClassName = getConstructorFieldName(paramName);
+    reconstructedPropNames.push(propName);
+
+    // payload["1"] ?? payload["inner"]
+    // Use field number if available, otherwise just use name
+    const payloadAccess = prop.fieldNumber === null
+      ? t.memberExpression(
+          t.identifier('payload'),
+          t.stringLiteral(propName),
+          true
+        )
+      : t.logicalExpression(
+          '??',
+          t.memberExpression(
+            t.identifier('payload'),
+            t.stringLiteral(String(prop.fieldNumber)),
+            true
+          ),
+          t.memberExpression(
+            t.identifier('payload'),
+            t.stringLiteral(propName),
+            true
+          )
+        );
+
+    let constructExpr: t.Expression = t.newExpression(
+      t.identifier(tClassName),
+      [payloadAccess]
+    );
+
+    // For optional fields, check for undefined
+    if (prop.optional) {
+      const rawVarName = `${propName}Raw`;
+      // const innerRaw = payload["1"] ?? payload["inner"];
+      reconstructionStatements.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(rawVarName), payloadAccess)
+        ])
+      );
+      // const inner = innerRaw !== undefined ? new tClass(innerRaw) : undefined;
+      constructExpr = t.conditionalExpression(
+        t.binaryExpression('!==', t.identifier(rawVarName), t.identifier('undefined')),
+        t.newExpression(t.identifier(tClassName), [t.identifier(rawVarName)]),
+        t.identifier('undefined')
+      );
+      reconstructionStatements.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(propName), constructExpr)
+        ])
+      );
+    } else {
+      reconstructionStatements.push(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(propName), constructExpr)
+        ])
+      );
+    }
+  }
+
+  // Build the constructor call
+  // return new TypeName(tClass, uClass, { ...payload, inner, other });
+  const constructorArgs: t.Expression[] = typeParameters.map(
+    (param) => t.identifier(getConstructorFieldName(param.name))
+  );
+
+  // Build props object with reconstructed fields
+  let propsArg: t.Expression;
+  // eslint-disable-next-line unicorn/prefer-ternary -- complex expression
+  if (reconstructedPropNames.length > 0) {
+    propsArg = t.objectExpression([
+      t.spreadElement(
+        t.tsAsExpression(
+          t.identifier('payload'),
+          t.tsTypeReference(
+            t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
+            t.tsTypeParameterInstantiation(returnTypeParams)
+          )
+        )
+      ),
+      ...reconstructedPropNames.map((name) => t.objectProperty(
+        t.identifier(name),
+        t.identifier(name),
+        false,
+        true // shorthand
+      ))
+    ]);
+  } else {
+    propsArg = t.tsAsExpression(
+      t.identifier('payload'),
+      t.tsTypeReference(
+        t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
+        t.tsTypeParameterInstantiation(returnTypeParams)
+      )
+    );
+  }
+  constructorArgs.push(propsArg);
+
+  const returnStmt = t.returnStatement(
+    t.newExpression(t.identifier(typeName), constructorArgs)
+  );
+
+  const methodBody = t.blockStatement([
+    payloadDecl,
+    ...reconstructionStatements,
+    returnStmt
+  ]);
+
+  const method = t.classMethod(
+    'method',
+    t.identifier('deserialize'),
+    params,
+    methodBody,
+    false,
+    true // static
+  );
+  method.typeParameters = methodTypeParams;
+  method.returnType = t.tsTypeAnnotation(returnType);
+  // Override the base Message.deserialize
+  method.override = true;
+
+  return method;
+}
+
+/**
  * Build the static $typeName property for non-generic messages.
  */
 function buildStaticTypeName(typeName: string): t.ClassProperty {
@@ -530,7 +734,7 @@ export function buildClassFromProperties(
   declaredMessageTypeNames: Set<string>,
   state: PluginStateFlags,
   typeParameters: TypeParameter[] = [],
-  isExtended: boolean = false
+  isExtended = false
 ): t.ClassDeclaration {
   // Use $Base suffix for extended types
   const className = isExtended ? `${typeName}$Base` : typeName;
@@ -907,11 +1111,19 @@ export function buildClassFromProperties(
     classBodyMembers.push(getMessageChildrenMethod);
   }
 
-  // Add bind() method for generic messages
+  // Add bind() and deserialize() methods for generic messages
   if (isGeneric) {
-    const bindMethod = buildBindMethod(typeName, typeParameters, state);
+    const bindMethod = buildBindMethod(
+      typeName, typeParameters, properties, state
+    );
     if (bindMethod) {
       classBodyMembers.push(bindMethod);
+    }
+    const deserializeMethod = buildGenericDeserializeMethod(
+      typeName, typeParameters, properties, state
+    );
+    if (deserializeMethod) {
+      classBodyMembers.push(deserializeMethod);
     }
   }
 
@@ -1517,13 +1729,12 @@ function buildSetterMethod(
   }
   constructorArgs.push(propsObject);
 
-  // Use this.constructor pattern to support class extension
-  let newExpr: t.Expression = buildThisConstructorNewExpression(
-    typeName, constructorArgs
-  );
-  if (typeParameters.length > 0) {
-    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
-  }
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
+      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.tsThisType()
+    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
   const body = t.blockStatement([
     t.returnStatement(
@@ -1540,9 +1751,6 @@ function buildSetterMethod(
     t.identifier(methodName),
     [valueId],
     body
-  );
-  method.returnType = t.tsTypeAnnotation(
-    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -1575,13 +1783,12 @@ function buildDeleteMethod(
   }
   constructorArgs.push(propsObject);
 
-  // Use this.constructor pattern to support class extension
-  let newExpr: t.Expression = buildThisConstructorNewExpression(
-    typeName, constructorArgs
-  );
-  if (typeParameters.length > 0) {
-    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
-  }
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
+      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.tsThisType()
+    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
   const body = t.blockStatement([
     t.returnStatement(
@@ -1594,9 +1801,6 @@ function buildDeleteMethod(
 
   const methodName = `delete${capitalize(targetProp.name)}`;
   const method = t.classMethod('method', t.identifier(methodName), [], body);
-  method.returnType = t.tsTypeAnnotation(
-    buildGenericTypeReference(typeName, typeParameters)
-  );
   return method;
 }
 
@@ -1968,13 +2172,12 @@ function buildArrayMutationMethod(
     )
   );
 
-  // Use this.constructor pattern to support class extension
-  let newExpr: t.Expression = buildThisConstructorNewExpression(
-    typeName, constructorArgs
-  );
-  if (typeParameters.length > 0) {
-    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
-  }
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
+      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.tsThisType()
+    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
   const bodyStatements = [
     ...preludeStatements,
@@ -1993,9 +2196,6 @@ function buildArrayMutationMethod(
     t.identifier(methodName),
     params,
     t.blockStatement(bodyStatements)
-  );
-  method.returnType = t.tsTypeAnnotation(
-    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -2601,13 +2801,12 @@ function buildMapMutationMethod(
     buildPropsObjectExpression(propDescriptors, prop, nextRef())
   );
 
-  // Use this.constructor pattern to support class extension
-  let newExpr: t.Expression = buildThisConstructorNewExpression(
-    typeName, constructorArgs
-  );
-  if (typeParameters.length > 0) {
-    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
-  }
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
+      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.tsThisType()
+    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
   const bodyStatements = [
     ...prelude,
@@ -2627,9 +2826,6 @@ function buildMapMutationMethod(
     t.identifier(methodName),
     params,
     t.blockStatement(bodyStatements)
-  );
-  method.returnType = t.tsTypeAnnotation(
-    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -2735,13 +2931,12 @@ function buildSetMutationMethod(
     )
   );
 
-  // Use this.constructor pattern to support class extension
-  let newExpr: t.Expression = buildThisConstructorNewExpression(
-    typeName, constructorArgs
-  );
-  if (typeParameters.length > 0) {
-    newExpr = t.tsAsExpression(newExpr, t.tsThisType());
-  }
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
+      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.tsThisType()
+    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
   const bodyStatements = [
     ...statements,
@@ -2760,9 +2955,6 @@ function buildSetMutationMethod(
     t.identifier(methodName),
     params,
     t.blockStatement(bodyStatements)
-  );
-  method.returnType = t.tsTypeAnnotation(
-    buildGenericTypeReference(typeName, typeParameters)
   );
   return method;
 }
@@ -3190,13 +3382,13 @@ function buildWithChildMethod(
     }
     constructorArgs.push(propsObject);
 
-    // Use this.constructor pattern to support class extension
-    let returnExpr: t.Expression = buildThisConstructorNewExpression(
-      typeName, constructorArgs
-    );
-    if (typeParameters.length > 0) {
-      returnExpr = t.tsAsExpression(returnExpr, t.tsThisType());
-    }
+    // For generic messages, use direct construction: new TypeName(...)
+    // For non-generic messages, use this.constructor pattern
+    const returnExpr: t.Expression =
+      typeParameters.length > 0 ? t.tsAsExpression(
+        t.newExpression(t.identifier(typeName), constructorArgs),
+        t.tsThisType()
+      ) : buildThisConstructorNewExpression(typeName, constructorArgs);
 
     return t.switchCase(t.stringLiteral(prop.name), [
       t.returnStatement(returnExpr),

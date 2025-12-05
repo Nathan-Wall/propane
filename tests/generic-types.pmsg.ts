@@ -49,13 +49,13 @@ export class Item extends Message<Item.Data> {
   get name(): string {
     return this.#name;
   }
-  setId(value: number): Item {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof Item)({
       id: value,
       name: this.#name
     }));
   }
-  setName(value: string): Item {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Item)({
       id: this.#id,
       name: value
@@ -95,24 +95,32 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
   }
   static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): MessageConstructor<Container<T>> {
     const boundCtor = function (props: Container.Data<T>) {
-      return new Container(tClass, props);
-    } as unknown as MessageConstructor<Container<T>>;
+      const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+      return new Container(tClass, {
+        ...props,
+        inner
+      });
+    };
     boundCtor.deserialize = (data: string) => {
       const payload = parseCerealString(data);
-      const proto = Container.prototype;
-      const props = proto.$fromEntries(payload as Record<string, unknown>);
-      return new Container(tClass, props as Container.Data<T>);
+      return boundCtor(payload as Container.Data<T>);
     };
-    (boundCtor as {
-      $typeName: string;
-    }).$typeName = `Container<${tClass.$typeName}>`;
+    boundCtor.$typeName = `Container<${tClass.$typeName}>`;
     return boundCtor;
+  }
+  static override deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string): Container<T> {
+    const payload = parseCerealString(data);
+    const inner = new tClass(payload["1"] ?? payload["inner"]);
+    return new Container(tClass, {
+      ...(payload as Container.Data<T>),
+      inner
+    });
   }
   get inner(): T {
     return this.#inner;
   }
-  setInner(value: T): Container<T> {
-    return this.$update(new (this.constructor as typeof Container)(this.#tClass, {
+  setInner(value: T) {
+    return this.$update(new Container(this.#tClass, {
       inner: value
     }) as this);
   }
@@ -149,27 +157,36 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
   }
   static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): MessageConstructor<Optional<T>> {
     const boundCtor = function (props: Optional.Data<T>) {
-      return new Optional(tClass, props);
-    } as unknown as MessageConstructor<Optional<T>>;
+      const value = props.value === undefined ? undefined : props.value instanceof tClass ? props.value : new tClass(props.value as any);
+      return new Optional(tClass, {
+        ...props,
+        value
+      });
+    };
     boundCtor.deserialize = (data: string) => {
       const payload = parseCerealString(data);
-      const proto = Optional.prototype;
-      const props = proto.$fromEntries(payload as Record<string, unknown>);
-      return new Optional(tClass, props as Optional.Data<T>);
+      return boundCtor(payload as Optional.Data<T>);
     };
-    (boundCtor as {
-      $typeName: string;
-    }).$typeName = `Optional<${tClass.$typeName}>`;
+    boundCtor.$typeName = `Optional<${tClass.$typeName}>`;
     return boundCtor;
+  }
+  static override deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string): Optional<T> {
+    const payload = parseCerealString(data);
+    const valueRaw = payload["1"] ?? payload["value"];
+    const value = valueRaw !== undefined ? new tClass(valueRaw) : undefined;
+    return new Optional(tClass, {
+      ...(payload as Optional.Data<T>),
+      value
+    });
   }
   get value(): T {
     return this.#value;
   }
-  deleteValue(): Optional<T> {
-    return this.$update(new (this.constructor as typeof Optional)(this.#tClass, {}) as this);
+  deleteValue() {
+    return this.$update(new Optional(this.#tClass, {}) as this);
   }
-  setValue(value: T): Optional<T> {
-    return this.$update(new (this.constructor as typeof Optional)(this.#tClass, {
+  setValue(value: T) {
+    return this.$update(new Optional(this.#tClass, {
       value: value
     }) as this);
   }
@@ -217,18 +234,30 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
   }
   static override bind<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>): MessageConstructor<Pair<T, U>> {
     const boundCtor = function (props: Pair.Data<T, U>) {
-      return new Pair(tClass, uClass, props);
-    } as unknown as MessageConstructor<Pair<T, U>>;
+      const first = props.first instanceof tClass ? props.first : new tClass(props.first as any);
+      const second = props.second instanceof uClass ? props.second : new uClass(props.second as any);
+      return new Pair(tClass, uClass, {
+        ...props,
+        first,
+        second
+      });
+    };
     boundCtor.deserialize = (data: string) => {
       const payload = parseCerealString(data);
-      const proto = Pair.prototype;
-      const props = proto.$fromEntries(payload as Record<string, unknown>);
-      return new Pair(tClass, uClass, props as Pair.Data<T, U>);
+      return boundCtor(payload as Pair.Data<T, U>);
     };
-    (boundCtor as {
-      $typeName: string;
-    }).$typeName = `Pair<${tClass.$typeName},${uClass.$typeName}>`;
+    boundCtor.$typeName = `Pair<${tClass.$typeName},${uClass.$typeName}>`;
     return boundCtor;
+  }
+  static override deserialize<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string): Pair<T, U> {
+    const payload = parseCerealString(data);
+    const first = new tClass(payload["1"] ?? payload["first"]);
+    const second = new uClass(payload["2"] ?? payload["second"]);
+    return new Pair(tClass, uClass, {
+      ...(payload as Pair.Data<T, U>),
+      first,
+      second
+    });
   }
   get first(): T {
     return this.#first;
@@ -236,14 +265,14 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
   get second(): U {
     return this.#second;
   }
-  setFirst(value: T): Pair<T, U> {
-    return this.$update(new (this.constructor as typeof Pair)(this.#tClass, this.#uClass, {
+  setFirst(value: T) {
+    return this.$update(new Pair(this.#tClass, this.#uClass, {
       first: value,
       second: this.#second
     }) as this);
   }
-  setSecond(value: U): Pair<T, U> {
-    return this.$update(new (this.constructor as typeof Pair)(this.#tClass, this.#uClass, {
+  setSecond(value: U) {
+    return this.$update(new Pair(this.#tClass, this.#uClass, {
       first: this.#first,
       second: value
     }) as this);
@@ -286,7 +315,7 @@ export class Parent extends Message<Parent.Data> {
   get name(): string {
     return this.#name;
   }
-  setName(value: string): Parent {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Parent)({
       name: value
     }));

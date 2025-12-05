@@ -45,13 +45,13 @@ export class Foo extends Message<Foo.Data> {
   get _name(): string {
     return this.#_name;
   }
-  setName(value: string): Foo {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Foo)({
       name: value,
       _name: this.#_name
     }));
   }
-  set_name(value: string): Foo {
+  set_name(value: string) {
     return this.$update(new (this.constructor as typeof Foo)({
       name: this.#name,
       _name: value

@@ -58,21 +58,21 @@ export class Person$Base extends Message<Person.Data> {
   get age(): number {
     return this.#age;
   }
-  setAge(value: number): Person {
+  setAge(value: number) {
     return this.$update(new (this.constructor as typeof Person)({
       firstName: this.#firstName,
       lastName: this.#lastName,
       age: value
     }));
   }
-  setFirstName(value: string): Person {
+  setFirstName(value: string) {
     return this.$update(new (this.constructor as typeof Person)({
       firstName: value,
       lastName: this.#lastName,
       age: this.#age
     }));
   }
-  setLastName(value: string): Person {
+  setLastName(value: string) {
     return this.$update(new (this.constructor as typeof Person)({
       firstName: this.#firstName,
       lastName: value,

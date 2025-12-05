@@ -41,6 +41,7 @@ function testConstruction() {
   assert(fromImmutable.get('b') === 2, 'Should get value from ImmutableMap source');
 
   // From iterable
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- test helper
   function* entries(): Generator<[string, number]> {
     yield ['p', 100];
     yield ['q', 200];

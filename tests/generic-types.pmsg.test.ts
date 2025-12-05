@@ -125,6 +125,101 @@ export default function runGenericTypesTests() {
     console.log('[PASS] Serialization works for generic messages');
   }
 
+  // Test 12b: Deserialization of generic messages via bind()
+  {
+    const original = new Container(Item, { inner: new Item({ id: 42, name: 'deserialize-test' }) });
+    const serialized = original.serialize();
+
+    const BoundContainer = Container.bind(Item);
+    const deserialized = BoundContainer.deserialize(serialized);
+
+    // Values are accessible
+    assert(deserialized.inner.id === 42, 'Deserialized inner.id');
+    assert(deserialized.inner.name === 'deserialize-test', 'Deserialized inner.name');
+
+    // Inner should be a proper Item instance
+    assert(deserialized.inner instanceof Item, 'Deserialized inner is Item instance');
+    assert(original.equals(deserialized), 'Original equals deserialized');
+
+    console.log('[PASS] Deserialization of generic messages via bind()');
+  }
+
+  // Test 12c: Deserialization via static deserialize with type class parameter
+  {
+    const original = new Container(Item, { inner: new Item({ id: 99, name: 'static-deserialize' }) });
+    const serialized = original.serialize();
+
+    // Use static deserialize with type class parameter
+    const deserialized = Container.deserialize(Item, serialized);
+
+    assert(deserialized.inner.id === 99, 'Static deserialize inner.id');
+    assert(deserialized.inner.name === 'static-deserialize', 'Static deserialize inner.name');
+    assert(deserialized.inner instanceof Item, 'Static deserialize inner is Item instance');
+    assert(original.equals(deserialized), 'Static deserialize equals original');
+
+    console.log('[PASS] Static Container.deserialize(Item, data)');
+  }
+
+  // Test 12d: Pair deserialization via static deserialize with multiple type classes
+  {
+    const original = new Pair(Item, Parent, {
+      first: new Item({ id: 1, name: 'first' }),
+      second: new Parent({ name: 'second' })
+    });
+    const serialized = original.serialize();
+
+    const deserialized = Pair.deserialize(Item, Parent, serialized);
+
+    assert(deserialized.first.id === 1, 'Pair deserialize first.id');
+    assert(deserialized.first instanceof Item, 'Pair deserialize first is Item');
+    assert(deserialized.second.name === 'second', 'Pair deserialize second.name');
+    assert(deserialized.second instanceof Parent, 'Pair deserialize second is Parent');
+    assert(original.equals(deserialized), 'Pair deserialize equals original');
+
+    console.log('[PASS] Static Pair.deserialize(Item, Parent, data)');
+  }
+
+  // Test 12e: Optional deserialization with value
+  {
+    const original = new Optional(Item, { value: new Item({ id: 7, name: 'optional-value' }) });
+    const serialized = original.serialize();
+
+    const deserialized = Optional.deserialize(Item, serialized);
+
+    assert(deserialized.value !== undefined, 'Optional deserialize has value');
+    assert(deserialized.value?.id === 7, 'Optional deserialize value.id');
+    assert(deserialized.value instanceof Item, 'Optional deserialize value is Item');
+    assert(original.equals(deserialized), 'Optional deserialize equals original');
+
+    console.log('[PASS] Static Optional.deserialize(Item, data) with value');
+  }
+
+  // Test 12f: Optional deserialization without value
+  {
+    const original = new Optional(Item, {});
+    const serialized = original.serialize();
+
+    const deserialized = Optional.deserialize(Item, serialized);
+
+    assert(deserialized.value === undefined, 'Optional deserialize value is undefined');
+    assert(original.equals(deserialized), 'Optional deserialize equals original (empty)');
+
+    console.log('[PASS] Static Optional.deserialize(Item, data) without value');
+  }
+
+  // Test 12g: Bound constructor with raw object data
+  {
+    const BoundContainer = Container.bind(Item);
+    // Pass raw object data instead of Item instance
+    const container = BoundContainer({ inner: { id: 55, name: 'raw-object' } as Item });
+
+    assert(container.inner.id === 55, 'Bound constructor raw object inner.id');
+    assert(container.inner.name === 'raw-object', 'Bound constructor raw object inner.name');
+    assert(container.inner instanceof Item, 'Bound constructor reconstructs Item from raw object');
+
+    console.log('[PASS] Bound constructor with raw object data');
+  }
+
   // Test 13: Equality works for generic messages
   {
     const a = new Container(Item, { inner: new Item({ id: 1, name: 'test' }) });

@@ -186,7 +186,7 @@ export default defineConfig(
   // 8) Disable type-aware linting for test files (they rely on transpiled outputs)
   {
     name: 'overrides/tests-no-type-check',
-    files: ['tests/**/*.ts'],
+    files: ['tests/**/*.ts', 'pms-server/tests/**/*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     rules: {
       '@typescript-eslint/consistent-type-imports': 'off',
@@ -204,7 +204,7 @@ export default defineConfig(
   // 9) Suppress "Unused eslint-disable directive" for generated propane files
   {
     name: 'overrides/generated-propane-files',
-    files: ['**/*.propane.ts'],
+    files: ['**/*.pmsg.ts'],
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
     },
@@ -238,5 +238,13 @@ export default defineConfig(
     },
   },
 
+  // 12) Test files: node:test describe/it return promises handled by test runner
+  {
+    name: 'overrides/test-files',
+    files: ['**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+    },
+  },
 );
 

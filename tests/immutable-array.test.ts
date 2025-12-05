@@ -273,6 +273,7 @@ describe('ImmutableArray', () => {
 
     it('reverse() returns reversed copy', () => {
       const nums = new ImmutableArray([1, 2, 3, 4, 5]);
+      // eslint-disable-next-line unicorn/no-array-reverse -- testing ImmutableArray.reverse
       const reversed = nums.reverse();
       assert.deepStrictEqual([...reversed], [5, 4, 3, 2, 1]);
       assert.strictEqual(nums[0], 1, 'original unchanged');
@@ -296,6 +297,7 @@ describe('ImmutableArray', () => {
 
     it('sort() returns sorted copy', () => {
       const unsorted = new ImmutableArray([3, 1, 4, 1, 5]);
+      // eslint-disable-next-line unicorn/no-array-sort -- testing ImmutableArray.sort
       const sorted = unsorted.sort((a, b) => a - b);
       assert.deepStrictEqual([...sorted], [1, 1, 3, 4, 5]);
       assert.strictEqual(unsorted[0], 3, 'original unchanged');

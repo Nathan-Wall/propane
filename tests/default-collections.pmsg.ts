@@ -95,7 +95,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
   get set(): ImmutableSet<string> {
     return this.#set;
   }
-  addAllSet(values: Iterable<string>): DefaultCollections {
+  addAllSet(values: Iterable<string>) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -109,7 +109,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  addSet(value: string): DefaultCollections {
+  addSet(value: string) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -121,7 +121,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  clearMap(): DefaultCollections {
+  clearMap() {
     const mapCurrent = this.map;
     if (mapCurrent === undefined || mapCurrent.size === 0) return this;
     const mapMapSource = this.#map;
@@ -134,7 +134,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  clearSet(): DefaultCollections {
+  clearSet() {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -146,7 +146,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  copyWithinArr(target: number, start: number, end?: number): DefaultCollections {
+  copyWithinArr(target: number, start: number, end?: number) {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.copyWithin(target, start, end);
@@ -156,7 +156,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  deleteAllSet(values: Iterable<string>): DefaultCollections {
+  deleteAllSet(values: Iterable<string>) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -170,7 +170,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  deleteMapEntry(key: string): DefaultCollections {
+  deleteMapEntry(key: string) {
     const mapCurrent = this.map;
     if (!mapCurrent?.has(key)) return this;
     const mapMapSource = this.#map;
@@ -183,7 +183,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  deleteSet(value: string): DefaultCollections {
+  deleteSet(value: string) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -195,7 +195,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  fillArr(value: number, start?: number, end?: number): DefaultCollections {
+  fillArr(value: number, start?: number, end?: number) {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.fill(value, start, end);
@@ -205,7 +205,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  filterMapEntries(predicate: (value: number, key: string) => boolean): DefaultCollections {
+  filterMapEntries(predicate: (value: number, key: string) => boolean) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -219,7 +219,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  filterSet(predicate: (value) => boolean): DefaultCollections {
+  filterSet(predicate: (value) => boolean) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -238,7 +238,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  mapMapEntries(mapper: (value: number, key: string) => [string, number]): DefaultCollections {
+  mapMapEntries(mapper: (value: number, key: string) => [string, number]) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -258,7 +258,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  mapSet(mapper: (value) => string): DefaultCollections {
+  mapSet(mapper: (value) => string) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);
@@ -278,7 +278,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: setSetNext
     }));
   }
-  mergeMapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): DefaultCollections {
+  mergeMapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -292,7 +292,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  popArr(): DefaultCollections {
+  popArr() {
     if ((this.arr ?? []).length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
@@ -303,7 +303,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  pushArr(...values): DefaultCollections {
+  pushArr(...values) {
     if (values.length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray, ...values];
@@ -313,7 +313,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  reverseArr(): DefaultCollections {
+  reverseArr() {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.reverse();
@@ -323,21 +323,21 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  setArr(value: number[] | Iterable<number>): DefaultCollections {
+  setArr(value: number[] | Iterable<number>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
       arr: value,
       map: this.#map,
       set: this.#set
     }));
   }
-  setMap(value: Map<string, number> | Iterable<[string, number]>): DefaultCollections {
+  setMap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
       arr: this.#arr,
       map: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value),
       set: this.#set
     }));
   }
-  setMapEntry(key: string, value: number): DefaultCollections {
+  setMapEntry(key: string, value: number) {
     const mapCurrent = this.map;
     if (mapCurrent?.has(key)) {
       const existing = mapCurrent.get(key);
@@ -353,14 +353,14 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  setSet(value: Set<string> | Iterable<string>): DefaultCollections {
+  setSet(value: Set<string> | Iterable<string>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
       arr: this.#arr,
       map: this.#map,
       set: value === undefined || value === null ? new ImmutableSet() : value instanceof ImmutableSet ? value : new ImmutableSet(value)
     }));
   }
-  shiftArr(): DefaultCollections {
+  shiftArr() {
     if ((this.arr ?? []).length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
@@ -371,7 +371,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  sortArr(compareFn?: (a: number, b: number) => number): DefaultCollections {
+  sortArr(compareFn?: (a: number, b: number) => number) {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.sort(compareFn);
@@ -381,7 +381,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  spliceArr(start: number, deleteCount?: number, ...items): DefaultCollections {
+  spliceArr(start: number, deleteCount?: number, ...items) {
     const arrArray = this.#arr;
     const arrNext = [...arrArray];
     arrNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -391,7 +391,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  unshiftArr(...values): DefaultCollections {
+  unshiftArr(...values) {
     if (values.length === 0) return this;
     const arrArray = this.#arr;
     const arrNext = [...values, ...arrArray];
@@ -401,7 +401,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): DefaultCollections {
+  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -415,7 +415,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       set: this.#set
     }));
   }
-  updateSet(updater: (current: ImmutableSet<string>) => Iterable<string>): DefaultCollections {
+  updateSet(updater: (current: ImmutableSet<string>) => Iterable<string>) {
     const setSetSource = this.set ?? [];
     const setSetEntries = [...setSetSource];
     const setSetNext = new Set(setSetEntries);

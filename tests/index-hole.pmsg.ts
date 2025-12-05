@@ -58,21 +58,21 @@ export class Hole extends Message<Hole.Data> {
   get name(): string {
     return this.#name;
   }
-  setId(value: number): Hole {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof Hole)({
       id: value,
       value: this.#value,
       name: this.#name
     }));
   }
-  setName(value: string): Hole {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Hole)({
       id: this.#id,
       value: this.#value,
       name: value
     }));
   }
-  setValue(value: number): Hole {
+  setValue(value: number) {
     return this.$update(new (this.constructor as typeof Hole)({
       id: this.#id,
       value: value,

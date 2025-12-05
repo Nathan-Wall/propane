@@ -38,7 +38,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   setPayload(value: Date | {
     d: Date;
-  }): Wrapper {
+  }) {
     return this.$update(new (this.constructor as typeof Wrapper)({
       payload: value
     }));

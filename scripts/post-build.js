@@ -10,6 +10,20 @@ const distDir = path.join(projectRoot, 'dist');
 
 const packages = ['runtime', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'tools/babel/messages', 'cli', 'react'];
 
+// 0. Fix tsc-alias incorrect transformation of 'react' import
+// tsc-alias transforms 'react' to a relative path to @types/react, but at runtime
+// we need the actual 'react' package from node_modules
+const reactIndexPath = path.join(buildDir, 'react', 'index.js');
+if (fs.existsSync(reactIndexPath)) {
+  let content = fs.readFileSync(reactIndexPath, 'utf8');
+  // Replace any relative path to @types/react with bare 'react' specifier
+  content = content.replaceAll(
+    /from ['"]\.\.\/.*node_modules\/@types\/react['"]/g,
+    "from 'react'"
+  );
+  fs.writeFileSync(reactIndexPath, content);
+}
+
 // Packages with src/ subdirectory have different output structure
 const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client', 'pms-client-compiler']);
 

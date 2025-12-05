@@ -1,3 +1,5 @@
+import { ensure } from '../common/assert/index.js';
+import { emsg } from '../common/strings/msg/index.js';
 import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
@@ -46,6 +48,7 @@ export type DataValue =
   | TaggedMessageData
   | DataObject
   | DataArray
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | Message<any>;
 export type DataArray = DataValue[];
 export interface DataObject {
@@ -95,9 +98,13 @@ export interface MessagePropDescriptor<T extends object> {
  * Uses Message<any> constraint to allow generic types like Response<T>
  * where T extends Message<any>.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface MessageConstructor<T extends Message<any>> {
-  new (props: unknown): T;
+ 
+export interface MessageConstructor<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  T extends Message<any>,
+  A extends unknown[]
+> {
+  new (...args: A): T;
   deserialize(data: string): T;
   readonly $typeName: string;
 }
@@ -532,10 +539,13 @@ export abstract class Message<T extends DataObject> {
   static deserialize<T extends DataObject>(
     this: InternalMessageConstructor<T>,
     message: string
-  ): Message<T> {
-    const payload = parseCerealString(message);
+  ) {
+    const payload = ensure.simpleObject(
+      parseCerealString(message),
+      emsg`Expected an object when deserializing: ${message}`,
+    );
     const proto = this.prototype;
-    const props = proto.$fromEntries(payload as Record<string, unknown>);
+    const props = proto.$fromEntries(payload);
     return new this(props);
   }
 
@@ -580,7 +590,7 @@ class CerealParser {
     this.length = source.length;
   }
 
-  parse(): unknown {
+  parse() {
     this.skipWhitespace();
     if (this.cursor >= this.length) {
       throw new Error('Unexpected end of input.');
@@ -593,7 +603,7 @@ class CerealParser {
     return value;
   }
 
-  private parseValue(): unknown {
+  private parseValue() {
     this.skipWhitespace();
     if (this.cursor >= this.length) {
       throw new Error('Unexpected end of input.');
@@ -659,6 +669,7 @@ class CerealParser {
       if (this.match(':')) {
         // It was a key. Verify it's a valid key type (String or Number).
         if (typeof token !== 'string' && typeof token !== 'number') {
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
           throw new TypeError(`Invalid object key: ${String(token)}`);
         }
         const key = String(token);
@@ -838,7 +849,7 @@ class CerealParser {
     return this.source.slice(start, this.cursor).trim();
   }
 
-  private parsePrimitiveOrBareString(): unknown {
+  private parsePrimitiveOrBareString() {
     const start = this.cursor;
     // Read until delimiter
     while (this.cursor < this.length) {

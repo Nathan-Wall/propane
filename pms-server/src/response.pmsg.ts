@@ -13,19 +13,25 @@
  * });
  * ```
  */
+import { ensure } from '../../common/assert/index.js';
+import { emsg } from '../../common/strings/msg/index.js';
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString } from "../../runtime/index.js";
 
 // @message
 import type { MessagePropDescriptor, MessageConstructor, DataObject, ImmutableArray, ImmutableSet } from "../../runtime/index.js";
-export class Response<T extends Message<any>> extends Message<Response.Data<T>> {
+export class Response<
+  T extends Message<any>,
+  A extends unknown[] = unknown[],
+  TConstructor extends MessageConstructor<T, A> = MessageConstructor<T, A>
+> extends Message<Response.Data<T>> {
   static TYPE_TAG = Symbol("Response");
   #body: T;
   #headers: ImmutableMap<string, string> | undefined;
-  #tClass: MessageConstructor<T>;
-  constructor(tClass: MessageConstructor<T>, props?: Response.Value<T>) {
+  #tClass: TConstructor;
+  constructor(tClass: TConstructor, props?: Response.Value<T, A>) {
     super(Response.TYPE_TAG, `Response<${tClass.$typeName}>`);
     this.#tClass = tClass;
-    this.#body = props ? props.body : new this.#tClass(undefined);
+    this.#body = props ? props.body : new this.#tClass(...[] as unknown as A);
     this.#headers = props ? props.headers === undefined || props.headers === null ? props.headers : props.headers instanceof ImmutableMap ? props.headers : new ImmutableMap(props.headers) : undefined;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Response.Data<T>>[] {
@@ -54,7 +60,7 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
       case "headers":
-        return new (this.constructor as typeof Response)(this.#tClass, {
+        return new Response(this.#tClass, {
           body: this.#body,
           headers: child as ImmutableMap<string, string>
         }) as this;
@@ -65,19 +71,29 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
   override *[GET_MESSAGE_CHILDREN]() {
     yield ["headers", this.#headers] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): MessageConstructor<Response<T>> {
+  static override bind<
+    T extends Message<any>,
+    A extends unknown[] = unknown[],
+    TConstructor extends MessageConstructor<T, A> = MessageConstructor<T, A>
+  >(
+    tClass: TConstructor,
+  ) {
     const boundCtor = function (props: Response.Data<T>) {
-      return new Response(tClass, props);
-    } as unknown as MessageConstructor<Response<T>>;
-    boundCtor.deserialize = (data: string) => {
-      const payload = parseCerealString(data);
-      const proto = Response.prototype;
-      const props = proto.$fromEntries(payload as Record<string, unknown>);
-      return new Response(tClass, props as Response.Data<T>);
+      return new Response<T, A>(tClass, props);
     };
-    (boundCtor as {
-      $typeName: string;
-    }).$typeName = `Response<${tClass.$typeName}>`;
+    boundCtor.deserialize = (data: string) => {
+      const payload = ensure.simpleObject(
+        parseCerealString(data),
+        emsg`Expected an object when deserializing: ${data}`,
+      );
+      const proto = Response.prototype;
+      const props = proto.$fromEntries(payload);
+      return new Response<T, A>(
+        tClass,
+        props,
+      );
+    };
+    boundCtor.$typeName = `Response<${tClass.$typeName}>`;
     return boundCtor;
   }
   get body(): T {
@@ -86,36 +102,36 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
   get headers(): ImmutableMap<string, string> | undefined {
     return this.#headers;
   }
-  clearHeaders(): Response<T> {
+  clearHeaders() {
     const headersCurrent = this.headers;
     if (headersCurrent === undefined || headersCurrent.size === 0) return this;
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
     headersMapNext.clear();
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  deleteHeaders(): Response<T> {
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+  deleteHeaders() {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body
     }) as this);
   }
-  deleteHeadersEntry(key: string): Response<T> {
+  deleteHeadersEntry(key: string) {
     const headersCurrent = this.headers;
     if (!headersCurrent?.has(key)) return this;
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
     headersMapNext.delete(key);
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  filterHeadersEntries(predicate: (value: string, key: string) => boolean): Response<T> {
+  filterHeadersEntries(predicate: (value: string, key: string) => boolean) {
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
@@ -123,12 +139,12 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
       if (!predicate(entryValue, entryKey)) headersMapNext.delete(entryKey);
     }
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  mapHeadersEntries(mapper: (value: string, key: string) => [string, string]): Response<T> {
+  mapHeadersEntries(mapper: (value: string, key: string) => [string, string]) {
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
@@ -142,12 +158,12 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
       headersMapNext.set(newKey, newValue);
     }
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  mergeHeadersEntries(entries: ImmutableMap<string, string> | ReadonlyMap<string, string> | Iterable<[string, string]>): Response<T> {
+  mergeHeadersEntries(entries: ImmutableMap<string, string> | ReadonlyMap<string, string> | Iterable<[string, string]>) {
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
@@ -155,24 +171,24 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
       headersMapNext.set(mergeKey, mergeValue);
     }
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  setBody(value: T): Response<T> {
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+  setBody(value: T) {
+    return this.$update(new Response(this.#tClass, {
       body: value,
       headers: this.#headers
     }) as this);
   }
-  setHeaders(value: Map<string, string> | Iterable<[string, string]>): Response<T> {
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+  setHeaders(value: Map<string, string> | Iterable<[string, string]>) {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)
     }) as this);
   }
-  setHeadersEntry(key: string, value: string): Response<T> {
+  setHeadersEntry(key: string, value: string) {
     const headersCurrent = this.headers;
     if (headersCurrent?.has(key)) {
       const existing = headersCurrent.get(key);
@@ -182,12 +198,12 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
     headersMapNext.set(key, value);
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
   }
-  updateHeadersEntry(key: string, updater: (currentValue: string | undefined) => string): Response<T> {
+  updateHeadersEntry(key: string, updater: (currentValue: string | undefined) => string) {
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
@@ -195,7 +211,7 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
     const updatedValue = updater(currentValue);
     headersMapNext.set(key, updatedValue);
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
-    return this.$update(new (this.constructor as typeof Response)(this.#tClass, {
+    return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext
     }) as this);
@@ -206,5 +222,8 @@ export namespace Response {
     body: T;
     headers?: Map<string, string> | Iterable<[string, string]> | undefined;
   };
-  export type Value<T extends Message<any>> = Response<T> | Response.Data<T>;
+  export type Value<
+    T extends Message<any>,
+    A extends unknown[],
+  > = Response<T, A> | Response.Data<T>;
 }

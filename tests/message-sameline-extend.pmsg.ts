@@ -46,13 +46,13 @@ export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   get lastName(): string {
     return this.#lastName;
   }
-  setFirstName(value: string): SameLineExtend {
+  setFirstName(value: string) {
     return this.$update(new (this.constructor as typeof SameLineExtend)({
       firstName: value,
       lastName: this.#lastName
     }));
   }
-  setLastName(value: string): SameLineExtend {
+  setLastName(value: string) {
     return this.$update(new (this.constructor as typeof SameLineExtend)({
       firstName: this.#firstName,
       lastName: value

@@ -88,7 +88,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   get links(): ImmutableArray<ImmutableUrl> {
     return this.#links;
   }
-  copyWithinLinks(target: number, start: number, end?: number): UrlMessage {
+  copyWithinLinks(target: number, start: number, end?: number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.copyWithin(target, start, end);
@@ -99,14 +99,14 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  deleteSecondary(): UrlMessage {
+  deleteSecondary() {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary,
       links: this.#links
     }));
   }
-  fillLinks(value: URL, start?: number, end?: number): UrlMessage {
+  fillLinks(value: URL, start?: number, end?: number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.fill(value, start, end);
@@ -117,7 +117,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  popLinks(): UrlMessage {
+  popLinks() {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
@@ -129,7 +129,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  pushLinks(...values): UrlMessage {
+  pushLinks(...values) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray, ...values];
@@ -140,7 +140,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  reverseLinks(): UrlMessage {
+  reverseLinks() {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.reverse();
@@ -151,7 +151,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  setId(value: number): UrlMessage {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: value,
       primary: this.#primary,
@@ -159,7 +159,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: this.#links
     }));
   }
-  setLinks(value: URL[] | Iterable<URL>): UrlMessage {
+  setLinks(value: URL[] | Iterable<URL>) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary,
@@ -167,7 +167,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: value
     }));
   }
-  setPrimary(value: ImmutableUrl | URL): UrlMessage {
+  setPrimary(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: value,
@@ -175,7 +175,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: this.#links
     }));
   }
-  setSecondary(value: ImmutableUrl | URL): UrlMessage {
+  setSecondary(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary,
@@ -183,7 +183,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: this.#links
     }));
   }
-  shiftLinks(): UrlMessage {
+  shiftLinks() {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
@@ -195,7 +195,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  sortLinks(compareFn?: (a: URL, b: URL) => number): UrlMessage {
+  sortLinks(compareFn?: (a: URL, b: URL) => number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.sort(compareFn);
@@ -206,7 +206,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  spliceLinks(start: number, deleteCount?: number, ...items): UrlMessage {
+  spliceLinks(start: number, deleteCount?: number, ...items) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -217,7 +217,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext
     }));
   }
-  unshiftLinks(...values): UrlMessage {
+  unshiftLinks(...values) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...values, ...linksArray];

@@ -68,7 +68,7 @@ export class Unions extends Message<Unions.Data> {
   } {
     return this.#metadata;
   }
-  setEmail(value: Email | null): Unions {
+  setEmail(value: Email | null) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username,
       email: value,
@@ -79,14 +79,14 @@ export class Unions extends Message<Unions.Data> {
     created: Date;
   } | {
     updated: Date;
-  }): Unions {
+  }) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username,
       email: this.#email,
       metadata: value
     }));
   }
-  setUsername(value: string | null): Unions {
+  setUsername(value: string | null) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: value,
       email: this.#email,

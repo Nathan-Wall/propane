@@ -11,6 +11,11 @@ const projectRoot = path.resolve(__dirname, '..');
 const testsDir = path.join(projectRoot, 'tests');
 const outDir = path.join(projectRoot, 'build', 'tests');
 
+// Additional directories containing .pmsg files and tests that need compilation
+const additionalTestDirs = [
+  { src: path.join(projectRoot, 'pms-server/tests'), out: path.join(projectRoot, 'build/pms-server/tests') },
+];
+
 // Load propane config for runtimeImportPath
 function loadPropaneConfig() {
   const configPath = path.join(projectRoot, 'propane.config.json');
@@ -28,6 +33,7 @@ const propaneConfig = loadPropaneConfig();
 
 await cleanOutput();
 await buildAll();
+await buildAdditionalTestDirs();
 await copyTests();
 
 async function buildAll() {
@@ -70,6 +76,110 @@ async function buildAll() {
 
     fs.writeFileSync(outPath, finalized, 'utf8');
   }
+}
+
+async function buildAdditionalTestDirs() {
+  for (const { src, out } of additionalTestDirs) {
+    if (!fs.existsSync(src)) continue;
+
+    ensureDir(out);
+
+    // Compile .pmsg files
+    const pmsgFiles = findPropaneFiles(src);
+    const failPattern = /(?:^|[.-])fail.pmsg$/i;
+
+    for (const file of pmsgFiles) {
+      if (failPattern.test(path.basename(file))) {
+        continue;
+      }
+      const rel = path.relative(src, file);
+      const outPath = path.join(out, `${rel}.js`);
+      ensureDir(path.dirname(outPath));
+      const source = fs.readFileSync(file, 'utf8');
+      const pluginOptions = {};
+      if (propaneConfig.runtimeImportPath) {
+        pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
+        pluginOptions.runtimeImportBase = projectRoot;
+      }
+      const { code } = transformSync(source, {
+        filename: file,
+        parserOpts: { sourceType: 'module', plugins: ['typescript'] },
+        plugins: [[propanePlugin, pluginOptions]],
+      });
+
+      // Rewrite imports for additional test directories
+      let rewritten = code;
+      // Rewrite relative .pmsg imports
+      rewritten = rewritten.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
+      // Handle @propanejs/runtime package imports - convert to relative path
+      rewritten = rewritten.replaceAll('@propanejs/runtime', '../../runtime/index.js');
+
+      const transpiled = ts.transpileModule(rewritten, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ES2020,
+          esModuleInterop: true,
+          moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        },
+        fileName: outPath.replace(/\.js$/, '.ts'),
+      });
+      const finalized = ensureValueExport(transpiled.outputText, source, file);
+
+      fs.writeFileSync(outPath, finalized, 'utf8');
+    }
+
+    // Compile .test.ts files
+    const testFiles = findTestFilesInDir(src);
+    for (const file of testFiles) {
+      const rel = path.relative(src, file);
+      const dest = path.join(out, rel.replace(/\.ts$/, '.js'));
+      ensureDir(path.dirname(dest));
+      const source = fs.readFileSync(file, 'utf8');
+      const rewritten = rewriteAdditionalTestImports(source);
+      const transpiled = ts.transpileModule(rewritten, {
+        compilerOptions: {
+          module: ts.ModuleKind.ESNext,
+          target: ts.ScriptTarget.ES2020,
+          esModuleInterop: true,
+          moduleResolution: ts.ModuleResolutionKind.NodeNext,
+        },
+        fileName: file,
+      });
+      fs.writeFileSync(dest, transpiled.outputText, 'utf8');
+    }
+  }
+}
+
+function findTestFilesInDir(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...findTestFilesInDir(full));
+    } else if (entry.isFile() && /\.test\.(t|j)s$/.test(entry.name)) {
+      files.push(full);
+    }
+  }
+  return files;
+}
+
+function rewriteAdditionalTestImports(content) {
+  let result = content;
+
+  // Rewrite .pmsg imports to .pmsg.js
+  result = result.replaceAll(/from ['"](\.\/[^'"]+)\.pmsg['"]/g, "from '$1.pmsg.js'");
+
+  // Rewrite @propanejs/* package imports to relative paths for build/pms-server/tests/
+  result = result.replaceAll('@propanejs/pms-server', '../../pms-server/src/index.js');
+  result = result.replaceAll('@propanejs/pms-client', '../../pms-client/src/index.js');
+  result = result.replaceAll('@propanejs/runtime', '../../runtime/index.js');
+
+  // generic .ts -> .js for relative imports
+  result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
+
+  return result;
 }
 
 function findPropaneFiles(dir) {

@@ -159,7 +159,7 @@ export class User extends Message<User.Data> {
   get height(): Distance {
     return this.#height;
   }
-  setActive(value: boolean): User {
+  setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -172,7 +172,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setCreated(value: ImmutableDate | Date): User {
+  setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -185,7 +185,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setEmail(value: Email): User {
+  setEmail(value: Email) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -198,7 +198,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel'): User {
+  setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel') {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -211,7 +211,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setHeight(value: Distance.Value): User {
+  setHeight(value: Distance.Value) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -224,7 +224,7 @@ export class User extends Message<User.Data> {
       height: value instanceof Distance ? value : new Distance(value)
     }));
   }
-  setId(value: number): User {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof User)({
       id: value,
       name: this.#name,
@@ -237,7 +237,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setName(value: string): User {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: value,
@@ -250,7 +250,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setPasswordHash(value: Hash): User {
+  setPasswordHash(value: Hash) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -263,7 +263,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setUpdated(value: ImmutableDate | Date): User {
+  setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,

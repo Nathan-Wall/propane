@@ -90,7 +90,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   get chunks(): ImmutableArray<ImmutableArrayBuffer> {
     return this.#chunks;
   }
-  copyWithinChunks(target: number, start: number, end?: number): ArrayBufferMessage {
+  copyWithinChunks(target: number, start: number, end?: number) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.copyWithin(target, start, end);
@@ -101,14 +101,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  deleteExtra(): ArrayBufferMessage {
+  deleteExtra() {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data,
       chunks: this.#chunks
     }));
   }
-  fillChunks(value: ArrayBuffer, start?: number, end?: number): ArrayBufferMessage {
+  fillChunks(value: ArrayBuffer, start?: number, end?: number) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.fill(value, start, end);
@@ -119,7 +119,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  popChunks(): ArrayBufferMessage {
+  popChunks() {
     if ((this.chunks ?? []).length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
@@ -131,7 +131,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  pushChunks(...values): ArrayBufferMessage {
+  pushChunks(...values) {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray, ...values];
@@ -142,7 +142,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  reverseChunks(): ArrayBufferMessage {
+  reverseChunks() {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.reverse();
@@ -153,7 +153,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>): ArrayBufferMessage {
+  setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data,
@@ -161,7 +161,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: value
     }));
   }
-  setData(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
+  setData(value: ImmutableArrayBuffer | ArrayBuffer) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: value,
@@ -169,7 +169,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: this.#chunks
     }));
   }
-  setExtra(value: ImmutableArrayBuffer | ArrayBuffer): ArrayBufferMessage {
+  setExtra(value: ImmutableArrayBuffer | ArrayBuffer) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data,
@@ -177,7 +177,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: this.#chunks
     }));
   }
-  setId(value: number): ArrayBufferMessage {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: value,
       data: this.#data,
@@ -185,7 +185,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: this.#chunks
     }));
   }
-  shiftChunks(): ArrayBufferMessage {
+  shiftChunks() {
     if ((this.chunks ?? []).length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
@@ -197,7 +197,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number): ArrayBufferMessage {
+  sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.sort(compareFn);
@@ -208,7 +208,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  spliceChunks(start: number, deleteCount?: number, ...items): ArrayBufferMessage {
+  spliceChunks(start: number, deleteCount?: number, ...items) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -219,7 +219,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext
     }));
   }
-  unshiftChunks(...values): ArrayBufferMessage {
+  unshiftChunks(...values) {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...values, ...chunksArray];

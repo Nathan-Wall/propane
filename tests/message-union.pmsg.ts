@@ -45,13 +45,13 @@ export class Cat extends Message<Cat.Data> {
   get meows(): boolean {
     return this.#meows;
   }
-  setMeows(value: boolean): Cat {
+  setMeows(value: boolean) {
     return this.$update(new (this.constructor as typeof Cat)({
       name: this.#name,
       meows: value
     }));
   }
-  setName(value: string): Cat {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Cat)({
       name: value,
       meows: this.#meows
@@ -107,13 +107,13 @@ export class Dog extends Message<Dog.Data> {
   get barks(): boolean {
     return this.#barks;
   }
-  setBarks(value: boolean): Dog {
+  setBarks(value: boolean) {
     return this.$update(new (this.constructor as typeof Dog)({
       name: this.#name,
       barks: value
     }));
   }
-  setName(value: string): Dog {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Dog)({
       name: value,
       barks: this.#barks
@@ -202,27 +202,27 @@ export class PetOwner extends Message<PetOwner.Data> {
   get optionalPet(): Cat | Dog {
     return this.#optionalPet;
   }
-  deleteOptionalPet(): PetOwner {
+  deleteOptionalPet() {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
       pet: this.#pet
     }));
   }
-  setOptionalPet(value: Cat | Dog): PetOwner {
+  setOptionalPet(value: Cat | Dog) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
       pet: this.#pet,
       optionalPet: value
     }));
   }
-  setOwnerName(value: string): PetOwner {
+  setOwnerName(value: string) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: value,
       pet: this.#pet,
       optionalPet: this.#optionalPet
     }));
   }
-  setPet(value: Cat | Dog): PetOwner {
+  setPet(value: Cat | Dog) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
       pet: value,

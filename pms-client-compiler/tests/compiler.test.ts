@@ -324,7 +324,8 @@ export type GetOrderRes = { '1:total': number };
   describe('CLI', () => {
     const cliPath = path.resolve(import.meta.dirname, '../src/cli.js');
 
-    function runCli(args: string): { stdout: string; stderr: string; exitCode: number } {
+    type CliResult = { stdout: string; stderr: string; exitCode: number };
+    function runCli(args: string): CliResult {
       try {
         const stdout = execSync(`node ${cliPath} ${args}`, {
           encoding: 'utf8',

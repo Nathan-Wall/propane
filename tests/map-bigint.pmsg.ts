@@ -46,7 +46,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   get values(): ImmutableMap<bigint, string> {
     return this.#values;
   }
-  clearValues(): MapBigintKey {
+  clearValues() {
     const valuesCurrent = this.values;
     if (valuesCurrent === undefined || valuesCurrent.size === 0) return this;
     const valuesMapSource = this.#values;
@@ -57,7 +57,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  deleteValuesEntry(key: bigint): MapBigintKey {
+  deleteValuesEntry(key: bigint) {
     const valuesCurrent = this.values;
     if (!valuesCurrent?.has(key)) return this;
     const valuesMapSource = this.#values;
@@ -68,7 +68,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  filterValuesEntries(predicate: (value: string, key: bigint) => boolean): MapBigintKey {
+  filterValuesEntries(predicate: (value: string, key: bigint) => boolean) {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
@@ -80,7 +80,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  mapValuesEntries(mapper: (value: string, key: bigint) => [bigint, string]): MapBigintKey {
+  mapValuesEntries(mapper: (value: string, key: bigint) => [bigint, string]) {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
@@ -98,7 +98,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  mergeValuesEntries(entries: ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
+  mergeValuesEntries(entries: ImmutableMap<bigint, string> | ReadonlyMap<bigint, string> | Iterable<[bigint, string]>) {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);
@@ -110,12 +110,12 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  setValues(value: Map<bigint, string> | Iterable<[bigint, string]>): MapBigintKey {
+  setValues(value: Map<bigint, string> | Iterable<[bigint, string]>) {
     return this.$update(new (this.constructor as typeof MapBigintKey)({
       values: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)
     }));
   }
-  setValuesEntry(key: bigint, value: string): MapBigintKey {
+  setValuesEntry(key: bigint, value: string) {
     const valuesCurrent = this.values;
     if (valuesCurrent?.has(key)) {
       const existing = valuesCurrent.get(key);
@@ -129,7 +129,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
       values: valuesMapNext
     }));
   }
-  updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string): MapBigintKey {
+  updateValuesEntry(key: bigint, updater: (currentValue: string | undefined) => string) {
     const valuesMapSource = this.#values;
     const valuesMapEntries = [...valuesMapSource.entries()];
     const valuesMapNext = new Map(valuesMapEntries);

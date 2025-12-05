@@ -35,7 +35,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   get value(): string {
     return this.#value;
   }
-  setValue(value: string): Compound_Inline {
+  setValue(value: string) {
     return this.$update(new (this.constructor as typeof Compound_Inline)({
       value: value
     }));
@@ -131,21 +131,21 @@ export class Compound extends Message<Compound.Data> {
   get inline(): Compound_Inline {
     return this.#inline;
   }
-  setIndexed(value: Indexed.Value): Compound {
+  setIndexed(value: Indexed.Value) {
     return this.$update(new (this.constructor as typeof Compound)({
       user: this.#user,
       indexed: value instanceof Indexed ? value : new Indexed(value),
       inline: this.#inline
     }));
   }
-  setInline(value: Compound_Inline.Value): Compound {
+  setInline(value: Compound_Inline.Value) {
     return this.$update(new (this.constructor as typeof Compound)({
       user: this.#user,
       indexed: this.#indexed,
       inline: value instanceof Compound_Inline ? value : new Compound_Inline(value)
     }));
   }
-  setUser(value: User.Value): Compound {
+  setUser(value: User.Value) {
     return this.$update(new (this.constructor as typeof Compound)({
       user: value instanceof User ? value : new User(value),
       indexed: this.#indexed,

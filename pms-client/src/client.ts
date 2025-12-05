@@ -74,6 +74,7 @@ export class PmsClient {
         headers: {
           'Content-Type': 'application/x-propane-cereal',
           'X-PMS-Request': '1',
+          'Connection': 'close',
         },
         body,
         signal: controller.signal,

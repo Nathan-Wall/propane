@@ -33,7 +33,7 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   get value(): string {
     return this.#value;
   }
-  setValue(value: string): InnerMessage {
+  setValue(value: string) {
     return this.$update(new (this.constructor as typeof InnerMessage)({
       value: value
     }));
@@ -101,13 +101,13 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   get inner(): InnerMessage {
     return this.#inner;
   }
-  setCounter(value: number): OuterMessage {
+  setCounter(value: number) {
     return this.$update(new (this.constructor as typeof OuterMessage)({
       counter: value,
       inner: this.#inner
     }));
   }
-  setInner(value: InnerMessage.Value): OuterMessage {
+  setInner(value: InnerMessage.Value) {
     return this.$update(new (this.constructor as typeof OuterMessage)({
       counter: this.#counter,
       inner: value instanceof InnerMessage ? value : new InnerMessage(value)

@@ -37,6 +37,7 @@ function testConstruction() {
   assert(fromImmutable.has(2), 'Should have value from ImmutableSet source');
 
   // From iterable (generator)
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- test helper
   function* values(): Generator<number> {
     yield 10;
     yield 20;

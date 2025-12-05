@@ -46,13 +46,13 @@ export class Distance extends Message<Distance.Data> {
   get value(): number {
     return this.#value;
   }
-  setUnit(value: DistanceUnit): Distance {
+  setUnit(value: DistanceUnit) {
     return this.$update(new (this.constructor as typeof Distance)({
       unit: value,
       value: this.#value
     }));
   }
-  setValue(value: number): Distance {
+  setValue(value: number) {
     return this.$update(new (this.constructor as typeof Distance)({
       unit: this.#unit,
       value: value

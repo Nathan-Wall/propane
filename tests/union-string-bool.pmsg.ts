@@ -45,18 +45,18 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   get optional(): string | boolean {
     return this.#optional;
   }
-  deleteOptional(): UnionStringBool {
+  deleteOptional() {
     return this.$update(new (this.constructor as typeof UnionStringBool)({
       value: this.#value
     }));
   }
-  setOptional(value: string | boolean): UnionStringBool {
+  setOptional(value: string | boolean) {
     return this.$update(new (this.constructor as typeof UnionStringBool)({
       value: this.#value,
       optional: value
     }));
   }
-  setValue(value: string | boolean): UnionStringBool {
+  setValue(value: string | boolean) {
     return this.$update(new (this.constructor as typeof UnionStringBool)({
       value: value,
       optional: this.#optional

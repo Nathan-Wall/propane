@@ -46,13 +46,13 @@ export class TransformedMessage extends Message<TransformedMessage.Data> {
   get name(): string {
     return this.#name;
   }
-  setId(value: number): TransformedMessage {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof TransformedMessage)({
       id: value,
       name: this.#name
     }));
   }
-  setName(value: string): TransformedMessage {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof TransformedMessage)({
       id: this.#id,
       name: value
@@ -114,13 +114,13 @@ export class RegularObject extends Message<RegularObject.Data> {
   get name(): string {
     return this.#name;
   }
-  setId(value: number): RegularObject {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof RegularObject)({
       id: value,
       name: this.#name
     }));
   }
-  setName(value: string): RegularObject {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof RegularObject)({
       id: this.#id,
       name: value

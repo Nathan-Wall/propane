@@ -122,7 +122,7 @@ export class Indexed extends Message<Indexed.Data> {
   get status(): string {
     return this.#status;
   }
-  deleteAlias(): Indexed {
+  deleteAlias() {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -133,7 +133,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  deleteNickname(): Indexed {
+  deleteNickname() {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -144,7 +144,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setActive(value: boolean): Indexed {
+  setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -156,7 +156,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setAge(value: number): Indexed {
+  setAge(value: number) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -168,7 +168,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setAlias(value: string | null): Indexed {
+  setAlias(value: string | null) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -180,7 +180,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setId(value: number): Indexed {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: value,
       name: this.#name,
@@ -192,7 +192,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setName(value: string): Indexed {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: value,
@@ -204,7 +204,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setNickname(value: string): Indexed {
+  setNickname(value: string) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -216,7 +216,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setScore(value: number | null): Indexed {
+  setScore(value: number | null) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,
@@ -228,7 +228,7 @@ export class Indexed extends Message<Indexed.Data> {
       status: this.#status
     }));
   }
-  setStatus(value: string): Indexed {
+  setStatus(value: string) {
     return this.$update(new (this.constructor as typeof Indexed)({
       id: this.#id,
       name: this.#name,

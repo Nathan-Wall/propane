@@ -23,6 +23,7 @@ const WS_OPEN = 1;
 // Get WebSocket constructor - browser native or ws package
 let WebSocketImpl: new (url: string) => WebSocketLike;
 
+// eslint-disable-next-line unicorn/prefer-ternary -- comments explain logic
 if (typeof WebSocket === 'undefined') {
   // Node.js environment - will be set on first use
   WebSocketImpl = null as unknown as new (url: string) => WebSocketLike;

@@ -1,0 +1,21 @@
+// @message
+export type EchoRequest = {
+  message: string,
+};
+
+// @message
+export type EchoResponse = {
+  echo: string,
+  timestamp: number,
+};
+
+// @message
+export type AddRequest = {
+  a: number,
+  b: number,
+};
+
+// @message
+export type AddResponse = {
+  sum: number,
+};

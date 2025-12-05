@@ -1,5 +1,5 @@
 import path from 'node:path';
-import * as t from '@babel/types';
+import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { pathTransform, computeRelativePath } from './utils.js';
 import { registerTypeAlias } from './validation.js';
@@ -99,17 +99,12 @@ const KNOWN_DECORATORS = ['extend', 'message'];
 const MAX_SUGGESTION_DISTANCE = 3;
 
 /**
- * Pattern to match a decorator at the start of a comment.
- * Captures the decorator name and optional arguments.
- */
-const DECORATOR_PATTERN = /^\s*@(\w+)(.*)$/;
-
-/**
  * Pattern to match @extend decorator with path argument.
  * Captures the path in single or double quotes.
  * Allows @message before @extend on the same line.
  */
-const EXTEND_PATTERN = /^(?:@message\s+)?@extend\s*\(\s*['"]([^'"]+)['"]\s*\)\s*$/;
+const EXTEND_PATTERN =
+  /^(?:@message\s+)?@extend\s*\(\s*['"]([^'"]+)['"]\s*\)\s*$/;
 
 /**
  * Pattern to match @message decorator.
@@ -126,14 +121,6 @@ function isDecoratorLine(line: string): boolean {
 }
 
 /**
- * Extract decorator name from a comment line.
- */
-function extractDecoratorName(line: string): string | null {
-  const match = line.match(/^\s*\*?\s*@(\w+)/);
-  return match ? match[1]! : null;
-}
-
-/**
  * Find the closest known decorator to an unknown one.
  */
 function findClosestDecorator(unknown: string): string | null {
@@ -141,7 +128,9 @@ function findClosestDecorator(unknown: string): string | null {
   let minDistance = Infinity;
 
   for (const known of KNOWN_DECORATORS) {
-    const distance = levenshteinDistance(unknown.toLowerCase(), known.toLowerCase());
+    const distance = levenshteinDistance(
+      unknown.toLowerCase(), known.toLowerCase()
+    );
     if (distance <= MAX_SUGGESTION_DISTANCE && distance < minDistance) {
       minDistance = distance;
       closest = known;
@@ -227,7 +216,8 @@ function extractExtendDecorator(
 ): ExtendInfo | null {
   const comments = commentSourcePath.node.leadingComments ?? [];
   const extendInfos: { comment: t.Comment; path: string }[] = [];
-  const sourceFilename = typeAliasPath.hub?.file?.opts?.filename ?? '';
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const sourceFilename = (typeAliasPath.hub?.file?.opts?.filename ?? '') as string;
 
   for (const comment of comments) {
     const lines = comment.type === 'CommentLine'
@@ -247,7 +237,7 @@ function extractExtendDecorator(
 
       if (hasExtendOnLine) {
         // Parse the full @extend decorator
-        const extendMatch = cleanLine.match(EXTEND_PATTERN);
+        const extendMatch = EXTEND_PATTERN.exec(cleanLine);
 
         if (!extendMatch) {
           // Check for specific syntax errors
@@ -286,7 +276,9 @@ function extractExtendDecorator(
         }
 
         const extPath = extendMatch[1]!;
-        const resolvedPath = resolveExtensionPath(extPath, sourceFilename, opts);
+        const resolvedPath = resolveExtensionPath(
+          extPath, sourceFilename, opts
+        );
         extendInfos.push({ comment, path: resolvedPath });
       } else {
         // No @extend on this line - check for unknown decorators
@@ -303,17 +295,14 @@ function extractExtendDecorator(
           }
           // Unknown decorator - check if it might be a typo
           const suggestion = findClosestDecorator(decoratorName);
-          if (suggestion) {
-            throw typeAliasPath.buildCodeFrameError(
+          const error = suggestion ? typeAliasPath.buildCodeFrameError(
               `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
               + `Use '@${suggestion}' to extend this type with custom methods:\n`
               + `  // @message @${suggestion}('./foo.ext.ts')`
-            );
-          } else {
-            throw typeAliasPath.buildCodeFrameError(
+            ) : typeAliasPath.buildCodeFrameError(
               `Unknown decorator '@${decoratorName}'.`
             );
-          }
+          throw error;
         }
       }
     }
@@ -343,17 +332,6 @@ function extractExtendDecorator(
   }
 
   return extendInfos.length > 0 ? { path: extendInfos[0]!.path } : null;
-}
-
-/**
- * Build a re-export statement for an extended type.
- */
-function buildReexportStatement(typeName: string, extPath: string): t.ExportNamedDeclaration {
-  return t.exportNamedDeclaration(
-    null,
-    [t.exportSpecifier(t.identifier(typeName), t.identifier(typeName))],
-    t.stringLiteral(extPath)
-  );
 }
 
 export default function propanePlugin() {
@@ -457,22 +435,28 @@ export default function propanePlugin() {
         // Register the type alias for reference tracking (even if not @message)
         registerTypeAlias(declarationPath.node, declaredTypeNames);
 
-        // Check for @message decorator or implicit message flag (for generated inline types)
-        // For exported types, comments are on the export declaration, not the type alias
-        const isImplicitMessage = (declarationPath.node as t.TSTypeAliasDeclaration & {
+        // Check for @message decorator or implicit message flag
+        // For exported types, comments are on the export declaration
+        type ImplicitNode = t.TSTypeAliasDeclaration & {
           [IMPLICIT_MESSAGE]?: boolean;
-        })[IMPLICIT_MESSAGE];
+        };
+        const isImplicitMessage =
+          (declarationPath.node as ImplicitNode)[IMPLICIT_MESSAGE];
         const hasMessage = isImplicitMessage || hasMessageDecorator(path);
 
         // If no @message decorator, skip transformation but still validate decorators
         if (!hasMessage) {
           // Still extract @extend to validate it's not used without @message
-          extractExtendDecorator(declarationPath, path, false, state.opts);
+          extractExtendDecorator(
+            declarationPath, path, false, state.opts
+          );
           return;
         }
 
         // Extract @extend decorator if present
-        const extendInfo = extractExtendDecorator(declarationPath, path, true, state.opts);
+        const extendInfo = extractExtendDecorator(
+          declarationPath, path, true, state.opts
+        );
         const typeName = declarationPath.node.id.name;
 
         // Track extended types for re-export generation

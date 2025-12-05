@@ -10,7 +10,7 @@ import {
   EchoResponse,
   AddRequest,
   AddResponse,
-} from './messages.js';
+} from './messages.pmsg';
 
 describe('PMWS Server', () => {
   it('can be created with WebSocket transport', async () => {

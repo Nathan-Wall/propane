@@ -97,7 +97,7 @@ export class Primitives extends Message<Primitives.Data> {
   get missing(): undefined {
     return this.#missing;
   }
-  setCount(value: number): Primitives {
+  setCount(value: number) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: this.#flag,
       count: value,
@@ -107,7 +107,7 @@ export class Primitives extends Message<Primitives.Data> {
       missing: this.#missing
     }));
   }
-  setEmpty(value: null): Primitives {
+  setEmpty(value: null) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: this.#flag,
       count: this.#count,
@@ -117,7 +117,7 @@ export class Primitives extends Message<Primitives.Data> {
       missing: this.#missing
     }));
   }
-  setFlag(value: boolean): Primitives {
+  setFlag(value: boolean) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: value,
       count: this.#count,
@@ -127,7 +127,7 @@ export class Primitives extends Message<Primitives.Data> {
       missing: this.#missing
     }));
   }
-  setLabel(value: string): Primitives {
+  setLabel(value: string) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: this.#flag,
       count: this.#count,
@@ -137,7 +137,7 @@ export class Primitives extends Message<Primitives.Data> {
       missing: this.#missing
     }));
   }
-  setMissing(value: undefined): Primitives {
+  setMissing(value: undefined) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: this.#flag,
       count: this.#count,
@@ -147,7 +147,7 @@ export class Primitives extends Message<Primitives.Data> {
       missing: value
     }));
   }
-  setSize(value: bigint): Primitives {
+  setSize(value: bigint) {
     return this.$update(new (this.constructor as typeof Primitives)({
       flag: this.#flag,
       count: this.#count,

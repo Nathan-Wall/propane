@@ -328,6 +328,7 @@ function simulateMemoPropane<P extends object>(
   let currentProps = initialProps;
   let renderCount = 1; // Initial render
 
+  // eslint-disable-next-line unicorn/consistent-function-scoping -- test helper
   const shallowEqual = (objA: unknown, objB: unknown): boolean => {
     if (Object.is(objA, objB)) {
       return true;

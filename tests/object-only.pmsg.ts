@@ -71,7 +71,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   get active(): boolean {
     return this.#active;
   }
-  setActive(value: boolean): ObjectOnly {
+  setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof ObjectOnly)({
       id: this.#id,
       name: this.#name,
@@ -79,7 +79,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       active: value
     }));
   }
-  setAge(value: number): ObjectOnly {
+  setAge(value: number) {
     return this.$update(new (this.constructor as typeof ObjectOnly)({
       id: this.#id,
       name: this.#name,
@@ -87,7 +87,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       active: this.#active
     }));
   }
-  setId(value: number): ObjectOnly {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof ObjectOnly)({
       id: value,
       name: this.#name,
@@ -95,7 +95,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
       active: this.#active
     }));
   }
-  setName(value: string): ObjectOnly {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof ObjectOnly)({
       id: this.#id,
       name: value,

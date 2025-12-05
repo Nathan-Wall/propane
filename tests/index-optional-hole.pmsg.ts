@@ -71,14 +71,14 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   get name(): string {
     return this.#name;
   }
-  deleteNote(): OptionalHole {
+  deleteNote() {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
       created: this.#created,
       name: this.#name
     }));
   }
-  setCreated(value: ImmutableDate | Date): OptionalHole {
+  setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
       created: value,
@@ -86,7 +86,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: this.#name
     }));
   }
-  setId(value: number): OptionalHole {
+  setId(value: number) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: value,
       created: this.#created,
@@ -94,7 +94,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: this.#name
     }));
   }
-  setName(value: string): OptionalHole {
+  setName(value: string) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
       created: this.#created,
@@ -102,7 +102,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       name: value
     }));
   }
-  setNote(value: string): OptionalHole {
+  setNote(value: string) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
       created: this.#created,

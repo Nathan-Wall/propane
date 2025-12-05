@@ -32,7 +32,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   get val(): number | string {
     return this.#val;
   }
-  setVal(value: number | string): UnionFirstNumber {
+  setVal(value: number | string) {
     return this.$update(new (this.constructor as typeof UnionFirstNumber)({
       val: value
     }));
@@ -73,7 +73,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   get val(): string | number {
     return this.#val;
   }
-  setVal(value: string | number): UnionFirstString {
+  setVal(value: string | number) {
     return this.$update(new (this.constructor as typeof UnionFirstString)({
       val: value
     }));
@@ -114,10 +114,10 @@ export class OptionalField extends Message<OptionalField.Data> {
   get val(): string {
     return this.#val;
   }
-  deleteVal(): OptionalField {
+  deleteVal() {
     return this.$update(new (this.constructor as typeof OptionalField)({}));
   }
-  setVal(value: string): OptionalField {
+  setVal(value: string) {
     return this.$update(new (this.constructor as typeof OptionalField)({
       val: value
     }));
@@ -171,7 +171,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   get sub(): UnionFirstNumber {
     return this.#sub;
   }
-  setSub(value: UnionFirstNumber.Value): RequiredMessage {
+  setSub(value: UnionFirstNumber.Value) {
     return this.$update(new (this.constructor as typeof RequiredMessage)({
       sub: value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value)
     }));

@@ -90,7 +90,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   get imap(): ImmutableMap<string, ImmutableDate> {
     return this.#imap;
   }
-  clearImap(): ToJson_Nested {
+  clearImap() {
     const imapCurrent = this.imap;
     if (imapCurrent === undefined || imapCurrent.size === 0) return this;
     const imapMapSource = this.#imap;
@@ -103,7 +103,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  clearMap(): ToJson_Nested {
+  clearMap() {
     const mapCurrent = this.map;
     if (mapCurrent === undefined || mapCurrent.size === 0) return this;
     const mapMapSource = this.#map;
@@ -116,7 +116,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  copyWithinArray(target: number, start: number, end?: number): ToJson_Nested {
+  copyWithinArray(target: number, start: number, end?: number) {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.copyWithin(target, start, end);
@@ -126,7 +126,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  deleteImapEntry(key: string): ToJson_Nested {
+  deleteImapEntry(key: string) {
     const imapCurrent = this.imap;
     if (!imapCurrent?.has(key)) return this;
     const imapMapSource = this.#imap;
@@ -139,7 +139,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  deleteMapEntry(key: string): ToJson_Nested {
+  deleteMapEntry(key: string) {
     const mapCurrent = this.map;
     if (!mapCurrent?.has(key)) return this;
     const mapMapSource = this.#map;
@@ -152,7 +152,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  fillArray(value: number | undefined, start?: number, end?: number): ToJson_Nested {
+  fillArray(value: number | undefined, start?: number, end?: number) {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.fill(value, start, end);
@@ -162,7 +162,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  filterImapEntries(predicate: (value: ImmutableDate | Date, key: string) => boolean): ToJson_Nested {
+  filterImapEntries(predicate: (value: ImmutableDate | Date, key: string) => boolean) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -176,7 +176,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  filterMapEntries(predicate: (value: bigint, key: string) => boolean): ToJson_Nested {
+  filterMapEntries(predicate: (value: bigint, key: string) => boolean) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -190,7 +190,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  mapImapEntries(mapper: (value: ImmutableDate | Date, key: string) => [string, ImmutableDate | Date]): ToJson_Nested {
+  mapImapEntries(mapper: (value: ImmutableDate | Date, key: string) => [string, ImmutableDate | Date]) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -210,7 +210,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  mapMapEntries(mapper: (value: bigint, key: string) => [string, bigint]): ToJson_Nested {
+  mapMapEntries(mapper: (value: bigint, key: string) => [string, bigint]) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -230,7 +230,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  mergeImapEntries(entries: ImmutableMap<string, ImmutableDate | Date> | ReadonlyMap<string, ImmutableDate | Date> | Iterable<[string, ImmutableDate | Date]>): ToJson_Nested {
+  mergeImapEntries(entries: ImmutableMap<string, ImmutableDate | Date> | ReadonlyMap<string, ImmutableDate | Date> | Iterable<[string, ImmutableDate | Date]>) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -244,7 +244,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  mergeMapEntries(entries: ImmutableMap<string, bigint> | ReadonlyMap<string, bigint> | Iterable<[string, bigint]>): ToJson_Nested {
+  mergeMapEntries(entries: ImmutableMap<string, bigint> | ReadonlyMap<string, bigint> | Iterable<[string, bigint]>) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -258,7 +258,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  popArray(): ToJson_Nested {
+  popArray() {
     if ((this.array ?? []).length === 0) return this;
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
@@ -269,7 +269,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  pushArray(...values): ToJson_Nested {
+  pushArray(...values) {
     if (values.length === 0) return this;
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray, ...values];
@@ -279,7 +279,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  reverseArray(): ToJson_Nested {
+  reverseArray() {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.reverse();
@@ -289,21 +289,21 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  setArray(value: (number | undefined)[] | Iterable<(number | undefined)>): ToJson_Nested {
+  setArray(value: (number | undefined)[] | Iterable<(number | undefined)>) {
     return this.$update(new (this.constructor as typeof ToJson_Nested)({
       array: value,
       map: this.#map,
       imap: this.#imap
     }));
   }
-  setImap(value: Map<string, Date> | Iterable<[string, Date]>): ToJson_Nested {
+  setImap(value: Map<string, Date> | Iterable<[string, Date]>) {
     return this.$update(new (this.constructor as typeof ToJson_Nested)({
       array: this.#array,
       map: this.#map,
       imap: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k, v instanceof ImmutableDate ? v : new ImmutableDate(v)]))
     }));
   }
-  setImapEntry(key: string, value: ImmutableDate | Date): ToJson_Nested {
+  setImapEntry(key: string, value: ImmutableDate | Date) {
     const imapCurrent = this.imap;
     if (imapCurrent?.has(key)) {
       const existing = imapCurrent.get(key);
@@ -319,14 +319,14 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  setMap(value: Map<string, bigint> | Iterable<[string, bigint]>): ToJson_Nested {
+  setMap(value: Map<string, bigint> | Iterable<[string, bigint]>) {
     return this.$update(new (this.constructor as typeof ToJson_Nested)({
       array: this.#array,
       map: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value),
       imap: this.#imap
     }));
   }
-  setMapEntry(key: string, value: bigint): ToJson_Nested {
+  setMapEntry(key: string, value: bigint) {
     const mapCurrent = this.map;
     if (mapCurrent?.has(key)) {
       const existing = mapCurrent.get(key);
@@ -342,7 +342,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  shiftArray(): ToJson_Nested {
+  shiftArray() {
     if ((this.array ?? []).length === 0) return this;
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
@@ -353,7 +353,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  sortArray(compareFn?: (a: number | undefined, b: number | undefined) => number): ToJson_Nested {
+  sortArray(compareFn?: (a: number | undefined, b: number | undefined) => number) {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.sort(compareFn);
@@ -363,7 +363,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  spliceArray(start: number, deleteCount?: number, ...items): ToJson_Nested {
+  spliceArray(start: number, deleteCount?: number, ...items) {
     const arrayArray = this.#array;
     const arrayNext = [...arrayArray];
     arrayNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -373,7 +373,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  unshiftArray(...values): ToJson_Nested {
+  unshiftArray(...values) {
     if (values.length === 0) return this;
     const arrayArray = this.#array;
     const arrayNext = [...values, ...arrayArray];
@@ -383,7 +383,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: this.#imap
     }));
   }
-  updateImapEntry(key: string, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date): ToJson_Nested {
+  updateImapEntry(key: string, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -397,7 +397,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       imap: imapMapNext
     }));
   }
-  updateMapEntry(key: string, updater: (currentValue: bigint | undefined) => bigint): ToJson_Nested {
+  updateMapEntry(key: string, updater: (currentValue: bigint | undefined) => bigint) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -570,7 +570,7 @@ export class ToJson extends Message<ToJson.Data> {
   get nested(): ToJson_Nested {
     return this.#nested;
   }
-  clearImap(): ToJson {
+  clearImap() {
     const imapCurrent = this.imap;
     if (imapCurrent === undefined || imapCurrent.size === 0) return this;
     const imapMapSource = this.#imap;
@@ -587,7 +587,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  clearMap(): ToJson {
+  clearMap() {
     const mapCurrent = this.map;
     if (mapCurrent === undefined || mapCurrent.size === 0) return this;
     const mapMapSource = this.#map;
@@ -604,7 +604,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  deleteImapEntry(key: string): ToJson {
+  deleteImapEntry(key: string) {
     const imapCurrent = this.imap;
     if (!imapCurrent?.has(key)) return this;
     const imapMapSource = this.#imap;
@@ -621,7 +621,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  deleteMapEntry(key: string): ToJson {
+  deleteMapEntry(key: string) {
     const mapCurrent = this.map;
     if (!mapCurrent?.has(key)) return this;
     const mapMapSource = this.#map;
@@ -638,7 +638,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  deleteOptional(): ToJson {
+  deleteOptional() {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -648,7 +648,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  filterImapEntries(predicate: (value: number, key: string) => boolean): ToJson {
+  filterImapEntries(predicate: (value: number, key: string) => boolean) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -666,7 +666,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  filterMapEntries(predicate: (value: number, key: string) => boolean): ToJson {
+  filterMapEntries(predicate: (value: number, key: string) => boolean) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -684,7 +684,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  mapImapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
+  mapImapEntries(mapper: (value: number, key: string) => [string, number]) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -708,7 +708,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  mapMapEntries(mapper: (value: number, key: string) => [string, number]): ToJson {
+  mapMapEntries(mapper: (value: number, key: string) => [string, number]) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -732,7 +732,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  mergeImapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
+  mergeImapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -750,7 +750,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  mergeMapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>): ToJson {
+  mergeMapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);
@@ -768,7 +768,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setBig(value: bigint): ToJson {
+  setBig(value: bigint) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -779,7 +779,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setDate(value: ImmutableDate | Date): ToJson {
+  setDate(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -790,7 +790,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setImap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
+  setImap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value),
@@ -801,7 +801,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setImapEntry(key: string, value: number): ToJson {
+  setImapEntry(key: string, value: number) {
     const imapCurrent = this.imap;
     if (imapCurrent?.has(key)) {
       const existing = imapCurrent.get(key);
@@ -821,7 +821,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setMap(value: Map<string, number> | Iterable<[string, number]>): ToJson {
+  setMap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value),
       imap: this.#imap,
@@ -832,7 +832,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setMapEntry(key: string, value: number): ToJson {
+  setMapEntry(key: string, value: number) {
     const mapCurrent = this.map;
     if (mapCurrent?.has(key)) {
       const existing = mapCurrent.get(key);
@@ -852,7 +852,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setNested(value: ToJson_Nested.Value): ToJson {
+  setNested(value: ToJson_Nested.Value) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -863,7 +863,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: value instanceof ToJson_Nested ? value : new ToJson_Nested(value)
     }));
   }
-  setNonFinite(value: number): ToJson {
+  setNonFinite(value: number) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -874,7 +874,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  setOptional(value: string): ToJson {
+  setOptional(value: string) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map,
       imap: this.#imap,
@@ -885,7 +885,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  updateImapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
+  updateImapEntry(key: string, updater: (currentValue: number | undefined) => number) {
     const imapMapSource = this.#imap;
     const imapMapEntries = [...imapMapSource.entries()];
     const imapMapNext = new Map(imapMapEntries);
@@ -903,7 +903,7 @@ export class ToJson extends Message<ToJson.Data> {
       nested: this.#nested
     }));
   }
-  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number): ToJson {
+  updateMapEntry(key: string, updater: (currentValue: number | undefined) => number) {
     const mapMapSource = this.#map;
     const mapMapEntries = [...mapMapSource.entries()];
     const mapMapNext = new Map(mapMapEntries);

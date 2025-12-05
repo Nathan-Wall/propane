@@ -90,7 +90,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
   get optionalArrayMap(): ImmutableMap<ImmutableArray<boolean>, ImmutableDate> | undefined {
     return this.#optionalArrayMap;
   }
-  clearArrayValues(): MapArrayKey {
+  clearArrayValues() {
     const arrayValuesCurrent = this.arrayValues;
     if (arrayValuesCurrent === undefined || arrayValuesCurrent.size === 0) return this;
     const arrayValuesMapSource = this.#arrayValues;
@@ -103,7 +103,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  clearNumberArrayMap(): MapArrayKey {
+  clearNumberArrayMap() {
     const numberArrayMapCurrent = this.numberArrayMap;
     if (numberArrayMapCurrent === undefined || numberArrayMapCurrent.size === 0) return this;
     const numberArrayMapMapSource = this.#numberArrayMap;
@@ -116,7 +116,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  clearOptionalArrayMap(): MapArrayKey {
+  clearOptionalArrayMap() {
     const optionalArrayMapCurrent = this.optionalArrayMap;
     if (optionalArrayMapCurrent === undefined || optionalArrayMapCurrent.size === 0) return this;
     const optionalArrayMapMapSource = this.#optionalArrayMap;
@@ -129,7 +129,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  deleteArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>): MapArrayKey {
+  deleteArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>) {
     const arrayValuesCurrent = this.arrayValues;
     if (!arrayValuesCurrent?.has(key)) return this;
     const arrayValuesMapSource = this.#arrayValues;
@@ -142,7 +142,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  deleteNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>): MapArrayKey {
+  deleteNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>) {
     const numberArrayMapCurrent = this.numberArrayMap;
     if (!numberArrayMapCurrent?.has(key)) return this;
     const numberArrayMapMapSource = this.#numberArrayMap;
@@ -155,13 +155,13 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  deleteOptionalArrayMap(): MapArrayKey {
+  deleteOptionalArrayMap() {
     return this.$update(new (this.constructor as typeof MapArrayKey)({
       arrayValues: this.#arrayValues,
       numberArrayMap: this.#numberArrayMap
     }));
   }
-  deleteOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>): MapArrayKey {
+  deleteOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>) {
     const optionalArrayMapCurrent = this.optionalArrayMap;
     if (!optionalArrayMapCurrent?.has(key)) return this;
     const optionalArrayMapMapSource = this.#optionalArrayMap;
@@ -174,7 +174,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  filterArrayValuesEntries(predicate: (value: number, key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>) => boolean): MapArrayKey {
+  filterArrayValuesEntries(predicate: (value: number, key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>) => boolean) {
     const arrayValuesMapSource = this.#arrayValues;
     const arrayValuesMapEntries = [...arrayValuesMapSource.entries()];
     const arrayValuesMapNext = new Map(arrayValuesMapEntries);
@@ -188,7 +188,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  filterNumberArrayMapEntries(predicate: (value: string, key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>) => boolean): MapArrayKey {
+  filterNumberArrayMapEntries(predicate: (value: string, key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>) => boolean) {
     const numberArrayMapMapSource = this.#numberArrayMap;
     const numberArrayMapMapEntries = [...numberArrayMapMapSource.entries()];
     const numberArrayMapMapNext = new Map(numberArrayMapMapEntries);
@@ -202,7 +202,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  filterOptionalArrayMapEntries(predicate: (value: ImmutableDate | Date, key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>) => boolean): MapArrayKey {
+  filterOptionalArrayMapEntries(predicate: (value: ImmutableDate | Date, key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>) => boolean) {
     const optionalArrayMapMapSource = this.#optionalArrayMap;
     const optionalArrayMapMapEntries = optionalArrayMapMapSource === undefined ? [] : [...optionalArrayMapMapSource.entries()];
     const optionalArrayMapMapNext = new Map(optionalArrayMapMapEntries);
@@ -216,7 +216,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  mapArrayValuesEntries(mapper: (value: number, key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>) => [ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number]): MapArrayKey {
+  mapArrayValuesEntries(mapper: (value: number, key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>) => [ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number]) {
     const arrayValuesMapSource = this.#arrayValues;
     const arrayValuesMapEntries = [...arrayValuesMapSource.entries()];
     const arrayValuesMapNext = new Map(arrayValuesMapEntries);
@@ -236,7 +236,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  mapNumberArrayMapEntries(mapper: (value: string, key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>) => [ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string]): MapArrayKey {
+  mapNumberArrayMapEntries(mapper: (value: string, key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>) => [ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string]) {
     const numberArrayMapMapSource = this.#numberArrayMap;
     const numberArrayMapMapEntries = [...numberArrayMapMapSource.entries()];
     const numberArrayMapMapNext = new Map(numberArrayMapMapEntries);
@@ -256,7 +256,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  mapOptionalArrayMapEntries(mapper: (value: ImmutableDate | Date, key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>) => [ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date]): MapArrayKey {
+  mapOptionalArrayMapEntries(mapper: (value: ImmutableDate | Date, key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>) => [ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date]) {
     const optionalArrayMapMapSource = this.#optionalArrayMap;
     const optionalArrayMapMapEntries = optionalArrayMapMapSource === undefined ? [] : [...optionalArrayMapMapSource.entries()];
     const optionalArrayMapMapNext = new Map(optionalArrayMapMapEntries);
@@ -276,7 +276,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  mergeArrayValuesEntries(entries: ImmutableMap<ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number> | ReadonlyMap<ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number> | Iterable<[ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number]>): MapArrayKey {
+  mergeArrayValuesEntries(entries: ImmutableMap<ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number> | ReadonlyMap<ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number> | Iterable<[ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, number]>) {
     const arrayValuesMapSource = this.#arrayValues;
     const arrayValuesMapEntries = [...arrayValuesMapSource.entries()];
     const arrayValuesMapNext = new Map(arrayValuesMapEntries);
@@ -290,7 +290,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  mergeNumberArrayMapEntries(entries: ImmutableMap<ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string> | ReadonlyMap<ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string> | Iterable<[ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string]>): MapArrayKey {
+  mergeNumberArrayMapEntries(entries: ImmutableMap<ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string> | ReadonlyMap<ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string> | Iterable<[ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, string]>) {
     const numberArrayMapMapSource = this.#numberArrayMap;
     const numberArrayMapMapEntries = [...numberArrayMapMapSource.entries()];
     const numberArrayMapMapNext = new Map(numberArrayMapMapEntries);
@@ -304,7 +304,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  mergeOptionalArrayMapEntries(entries: ImmutableMap<ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date> | ReadonlyMap<ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date> | Iterable<[ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date]>): MapArrayKey {
+  mergeOptionalArrayMapEntries(entries: ImmutableMap<ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date> | ReadonlyMap<ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date> | Iterable<[ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, ImmutableDate | Date]>) {
     const optionalArrayMapMapSource = this.#optionalArrayMap;
     const optionalArrayMapMapEntries = optionalArrayMapMapSource === undefined ? [] : [...optionalArrayMapMapSource.entries()];
     const optionalArrayMapMapNext = new Map(optionalArrayMapMapEntries);
@@ -318,14 +318,14 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  setArrayValues(value: Map<string[], number> | Iterable<[string[], number]>): MapArrayKey {
+  setArrayValues(value: Map<string[], number> | Iterable<[string[], number]>) {
     return this.$update(new (this.constructor as typeof MapArrayKey)({
       arrayValues: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])),
       numberArrayMap: this.#numberArrayMap,
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  setArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, value: number): MapArrayKey {
+  setArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, value: number) {
     const arrayValuesCurrent = this.arrayValues;
     if (arrayValuesCurrent?.has(key)) {
       const existing = arrayValuesCurrent.get(key);
@@ -341,14 +341,14 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  setNumberArrayMap(value: Map<number[], string> | Iterable<[number[], string]>): MapArrayKey {
+  setNumberArrayMap(value: Map<number[], string> | Iterable<[number[], string]>) {
     return this.$update(new (this.constructor as typeof MapArrayKey)({
       arrayValues: this.#arrayValues,
       numberArrayMap: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v])),
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  setNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, value: string): MapArrayKey {
+  setNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, value: string) {
     const numberArrayMapCurrent = this.numberArrayMap;
     if (numberArrayMapCurrent?.has(key)) {
       const existing = numberArrayMapCurrent.get(key);
@@ -364,14 +364,14 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  setOptionalArrayMap(value: Map<boolean[], Date> | Iterable<[boolean[], Date]>): MapArrayKey {
+  setOptionalArrayMap(value: Map<boolean[], Date> | Iterable<[boolean[], Date]>) {
     return this.$update(new (this.constructor as typeof MapArrayKey)({
       arrayValues: this.#arrayValues,
       numberArrayMap: this.#numberArrayMap,
       optionalArrayMap: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableArray ? k : new ImmutableArray(k), v instanceof ImmutableDate ? v : new ImmutableDate(v)]))
     }));
   }
-  setOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, value: ImmutableDate | Date): MapArrayKey {
+  setOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, value: ImmutableDate | Date) {
     const optionalArrayMapCurrent = this.optionalArrayMap;
     if (optionalArrayMapCurrent?.has(key)) {
       const existing = optionalArrayMapCurrent.get(key);
@@ -387,7 +387,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: optionalArrayMapMapNext
     }));
   }
-  updateArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, updater: (currentValue: number | undefined) => number): MapArrayKey {
+  updateArrayValuesEntry(key: ImmutableArray<string> | ReadonlyArray<string> | Iterable<string>, updater: (currentValue: number | undefined) => number) {
     const arrayValuesMapSource = this.#arrayValues;
     const arrayValuesMapEntries = [...arrayValuesMapSource.entries()];
     const arrayValuesMapNext = new Map(arrayValuesMapEntries);
@@ -401,7 +401,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  updateNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, updater: (currentValue: string | undefined) => string): MapArrayKey {
+  updateNumberArrayMapEntry(key: ImmutableArray<number> | ReadonlyArray<number> | Iterable<number>, updater: (currentValue: string | undefined) => string) {
     const numberArrayMapMapSource = this.#numberArrayMap;
     const numberArrayMapMapEntries = [...numberArrayMapMapSource.entries()];
     const numberArrayMapMapNext = new Map(numberArrayMapMapEntries);
@@ -415,7 +415,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       optionalArrayMap: this.#optionalArrayMap
     }));
   }
-  updateOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date): MapArrayKey {
+  updateOptionalArrayMapEntry(key: ImmutableArray<boolean> | ReadonlyArray<boolean> | Iterable<boolean>, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date) {
     const optionalArrayMapMapSource = this.#optionalArrayMap;
     const optionalArrayMapMapEntries = optionalArrayMapMapSource === undefined ? [] : [...optionalArrayMapMapSource.entries()];
     const optionalArrayMapMapNext = new Map(optionalArrayMapMapEntries);
