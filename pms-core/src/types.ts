@@ -1,31 +1,14 @@
-import type { Message } from '@/runtime/index.js';
+import type { Message, DataObject } from '@/runtime/index.js';
 
 /**
- * Marker interface for RPC requests.
- * The ResponseType parameter links request to response at the type level.
- *
- * @example
- * ```typescript
- * export type GetUserRequest = {
- *   '1:id': number;
- * } & RpcRequest<GetUserResponse>;
- * ```
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RpcRequest<TResponse extends Message<any>> {
-  /** Phantom type field - exists only at compile time */
-  readonly __responseType?: TResponse;
-}
-
-/**
- * Wrapper type for RPC endpoints in .pmsg files.
- * Links a request payload to its response type.
+ * Endpoint type for .pmsg source files.
+ * Links a payload shape to a response message type.
  *
  * Used with the @message decorator to define RPC endpoints:
  *
  * @example
  * ```typescript
- * import { Endpoint } from '@propanejs/core';
+ * import { Endpoint } from '@propanejs/pms-core';
  *
  * // @message
  * export type GetUser = Endpoint<{
@@ -39,23 +22,43 @@ export interface RpcRequest<TResponse extends Message<any>> {
  * };
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface Endpoint<TPayload, TResponse extends Message<any>> {
-  /** Phantom type field for payload - exists only at compile time */
-  readonly __payloadType?: TPayload;
-  /** Phantom type field for response - exists only at compile time */
-  readonly __responseType?: TResponse;
-}
+export type Endpoint<
+  Payload extends DataObject,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Response extends Message<any>,
+> = Message<Payload> & { readonly __responseType?: Response };
 
 /**
- * Extract the response type from a request type.
+ * Endpoint message type for runtime API signatures.
+ * Represents a message instance that has a linked response type.
+ *
+ * Used internally for self-documenting API signatures in pms-client and pms-server.
  *
  * @example
  * ```typescript
- * type Response = ResponseOf<GetUserRequest>; // GetUserResponse
+ * async request<Payload extends Message<any>, Response extends Message<any>>(
+ *   request: EndpointMessage<Payload, Response>,
+ *   responseClass: MessageClass<Response>
+ * ): Promise<Response>
  * ```
  */
-export type ResponseOf<T> = T extends RpcRequest<infer R> ? R : never;
+export type EndpointMessage<
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Payload extends Message<any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Response extends Message<any>,
+> = Payload & { readonly __responseType?: Response };
+
+/**
+ * Extract the response type from an endpoint message.
+ *
+ * @example
+ * ```typescript
+ * type Response = ResponseOf<GetUser>; // GetUserResponse
+ * ```
+ */
+export type ResponseOf<T> =
+  T extends { readonly __responseType?: infer R } ? R : never;
 
 /**
  * Constraint for message classes that can be used in the RPC system.

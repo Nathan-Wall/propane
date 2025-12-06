@@ -4,7 +4,7 @@ import {
   parseCerealString,
   isTaggedMessageData,
 } from '@/runtime/index.js';
-import { type MessageClass, type RpcRequest, HandlerError } from '@/pms-core/src/index.js';
+import { type MessageClass, type EndpointMessage, HandlerError } from '@/pms-core/src/index.js';
 import { type Handler, type HandlerDescriptor, type HandlerContext, isResponseWithHeaders } from './handler.js';
 
 /**
@@ -26,10 +26,10 @@ export class HandlerRegistry {
 
   /**
    * Register a handler for a message type.
-   * The response type is inferred from the request type's RpcRequest parameter.
+   * The response type is inferred from the request type's EndpointMessage parameter.
    */
   register<
-    TRequest extends Message<DataObject> & RpcRequest<TResponse>,
+    TRequest extends EndpointMessage<Message<DataObject>, TResponse>,
     TResponse extends Message<DataObject>
   >(
     messageClass: MessageClass,

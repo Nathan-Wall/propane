@@ -728,13 +728,25 @@ function buildStaticTypeName(typeName: string): t.ClassProperty {
   return prop;
 }
 
+/**
+ * Information about an Endpoint wrapper type.
+ * Used to generate the __responseType phantom field on endpoint classes.
+ */
+export interface WrapperInfo {
+  /** The wrapper type name (e.g., 'Endpoint') */
+  wrapperName: string;
+  /** The response type reference (e.g., 'GetUserResponse') */
+  responseTypeName: string;
+}
+
 export function buildClassFromProperties(
   typeName: string,
   properties: PropDescriptor[],
   declaredMessageTypeNames: Set<string>,
   state: PluginStateFlags,
   typeParameters: TypeParameter[] = [],
-  isExtended = false
+  isExtended = false,
+  wrapperInfo?: WrapperInfo
 ): t.ClassDeclaration {
   // Use $Base suffix for extended types
   const className = isExtended ? `${typeName}$Base` : typeName;
@@ -1125,6 +1137,23 @@ export function buildClassFromProperties(
     if (deserializeMethod) {
       classBodyMembers.push(deserializeMethod);
     }
+  }
+
+  // Add __responseType phantom field for Endpoint types
+  if (wrapperInfo) {
+    const responseTypeField = t.classProperty(
+      t.identifier('__responseType'),
+      undefined, // no initializer
+      t.tsTypeAnnotation(
+        t.tsUnionType([
+          t.tsTypeReference(t.identifier(wrapperInfo.responseTypeName)),
+          t.tsUndefinedKeyword()
+        ])
+      )
+    );
+    responseTypeField.readonly = true;
+    responseTypeField.declare = true; // Makes it a declaration only (no runtime code)
+    classBodyMembers.push(responseTypeField);
   }
 
   classBodyMembers.push(...getters,

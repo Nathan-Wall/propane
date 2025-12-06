@@ -1,7 +1,7 @@
 import type { Message } from '@/runtime/index.js';
 import {
   type MessageClass,
-  type RpcRequest,
+  type EndpointMessage,
   HandlerError,
   ERROR_STATUS_MAP,
   type ProtocolError,
@@ -36,7 +36,7 @@ export class PmsServer {
 
   /**
    * Register a handler for a request type.
-   * The response type is inferred from the request type's RpcRequest parameter.
+   * The response type is inferred from the request type's EndpointMessage parameter.
    *
    * @param requestType - The message class for the request
    * @param handler - Function that handles the request and returns a response
@@ -44,7 +44,7 @@ export class PmsServer {
    */
   handle<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TRequest extends Message<any> & RpcRequest<TResponse>,
+    TRequest extends EndpointMessage<Message<any>, TResponse>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     TResponse extends Message<any>
   >(

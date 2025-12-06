@@ -3,7 +3,7 @@ import {
   parseCerealString,
   isTaggedMessageData,
 } from '@/runtime/index.js';
-import type { MessageClass, RpcRequest } from '@/pms-core/src/index.js';
+import type { MessageClass, EndpointMessage } from '@/pms-core/src/index.js';
 
 export interface PmsClientOptions {
   /** Base URL of the PMS server */
@@ -57,7 +57,7 @@ export class PmsClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async request<TResponse extends Message<any>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: Message<any> & RpcRequest<TResponse>,
+    request: EndpointMessage<Message<any>, TResponse>,
     responseClass: MessageClass<TResponse>
   ): Promise<TResponse> {
     // Serialize request with type tag

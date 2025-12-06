@@ -3,8 +3,44 @@ import type { NodePath } from '@babel/traverse';
 import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
 import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
-import { buildClassFromProperties } from './class-builder.js';
+import { buildClassFromProperties, type WrapperInfo } from './class-builder.js';
 import type { PropaneState, ExtendInfo } from './plugin.js';
+
+/**
+ * Extract wrapper info from a type reference if it's an Endpoint type.
+ *
+ * Detects patterns like:
+ *   Endpoint<{ '1:id': number }, GetUserResponse>
+ *
+ * @param typePath - The path to the type annotation
+ * @returns WrapperInfo if this is an Endpoint wrapper, null otherwise
+ */
+function extractWrapperInfo(
+  typePath: NodePath<t.TSType>
+): WrapperInfo | null {
+  if (!typePath.isTSTypeReference()) return null;
+
+  const typeName = typePath.node.typeName;
+  if (!t.isIdentifier(typeName)) return null;
+  if (typeName.name !== 'Endpoint') return null;
+
+  const typeArgs = typePath.node.typeParameters?.params;
+  if (typeArgs?.length !== 2) return null;
+
+  // First arg must be a type literal (the payload)
+  const payloadType = typeArgs[0];
+  if (!t.isTSTypeLiteral(payloadType)) return null;
+
+  // Second arg must be a type reference (the response)
+  const responseType = typeArgs[1];
+  if (!t.isTSTypeReference(responseType)) return null;
+  if (!t.isIdentifier(responseType.typeName)) return null;
+
+  return {
+    wrapperName: 'Endpoint',
+    responseTypeName: responseType.typeName.name,
+  };
+}
 
 /**
  * Extract and validate type parameters from a TSTypeParameterDeclaration.
@@ -105,7 +141,25 @@ export function buildDeclarations(
 
   const typeLiteralPath = typeAliasPath.get('typeAnnotation');
 
-  if (!typeLiteralPath.isTSTypeLiteral()) {
+  // Check for Endpoint wrapper: Endpoint<{ ... }, ResponseType>
+  let wrapperInfo: WrapperInfo | undefined;
+  let actualTypeLiteralPath: NodePath<t.TSType> = typeLiteralPath;
+
+  if (typeLiteralPath.isTSTypeReference()) {
+    wrapperInfo = extractWrapperInfo(typeLiteralPath) ?? undefined;
+    if (wrapperInfo) {
+      // Get the payload type literal from the first type argument
+      const typeParamsPath = typeLiteralPath.get('typeParameters');
+      if (!Array.isArray(typeParamsPath) && typeParamsPath.node) {
+        const paramsPath = typeParamsPath.get('params');
+        if (Array.isArray(paramsPath) && paramsPath.length > 0) {
+          actualTypeLiteralPath = paramsPath[0]!;
+        }
+      }
+    }
+  }
+
+  if (!actualTypeLiteralPath.isTSTypeLiteral()) {
     assertSupportedTopLevelType(typeLiteralPath);
     insertPrimitiveTypeAlias(typeAliasPath, exported);
     return null;
@@ -138,7 +192,7 @@ export function buildDeclarations(
   };
 
   const generatedTypes: t.TSTypeAliasDeclaration[] = [];
-  const memberPaths = typeLiteralPath.get('members').filter(
+  const memberPaths = actualTypeLiteralPath.get('members').filter(
     (m): m is NodePath<t.TSPropertySignature> => m.isTSPropertySignature()
   );
   const properties = extractProperties(
@@ -185,7 +239,8 @@ export function buildDeclarations(
     declaredMessageTypeNames,
     state,
     typeParameters,
-    isExtended
+    isExtended,
+    wrapperInfo
   );
 
   state.usesPropaneBase = true;

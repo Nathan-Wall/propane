@@ -3,7 +3,7 @@ import {
   parseCerealString,
   isTaggedMessageData,
 } from '@/runtime/index.js';
-import type { MessageClass, RpcRequest } from '@/pms-core/src/index.js';
+import type { MessageClass, EndpointMessage } from '@/pms-core/src/index.js';
 
 // WebSocket implementation - use native browser WebSocket or ws package for Node.js
 interface WebSocketLike {
@@ -280,7 +280,7 @@ export class PmwsClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async request<TResponse extends Message<any>>(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: Message<any> & RpcRequest<TResponse>,
+    request: EndpointMessage<Message<any>, TResponse>,
     responseClass: MessageClass<TResponse>
   ): Promise<TResponse> {
     // Ensure connected

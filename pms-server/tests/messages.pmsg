@@ -1,7 +1,9 @@
+import { Endpoint } from '@propanejs/pms-core';
+
 // @message
-export type EchoRequest = {
+export type EchoRequest = Endpoint<{
   message: string,
-};
+}, EchoResponse>;
 
 // @message
 export type EchoResponse = {
@@ -10,10 +12,10 @@ export type EchoResponse = {
 };
 
 // @message
-export type AddRequest = {
+export type AddRequest = Endpoint<{
   a: number,
   b: number,
-};
+}, AddResponse>;
 
 // @message
 export type AddResponse = {

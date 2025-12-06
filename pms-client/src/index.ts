@@ -1,6 +1,7 @@
 // Re-export core types for convenience
 export type {
-  RpcRequest,
+  Endpoint,
+  EndpointMessage,
   ResponseOf,
   MessageClass,
 } from '@/pms-core/src/index.js';

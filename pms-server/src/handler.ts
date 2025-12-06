@@ -33,7 +33,7 @@ export function isResponseWithHeaders<T extends Message<any>>(
 
 /**
  * Handler function type.
- * The response type is inferred from the request's RpcRequest type parameter.
+ * The response type is inferred from the request's EndpointMessage type parameter.
  *
  * Handlers can return either:
  * - A response message directly
