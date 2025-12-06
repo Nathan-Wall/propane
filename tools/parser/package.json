@@ -1,0 +1,16 @@
+{
+  "name": "@propanejs/parser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.26.0",
+    "@babel/types": "^7.26.0"
+  },
+  "license": "ISC"
+}

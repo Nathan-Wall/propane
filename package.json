@@ -8,6 +8,7 @@
     "pms-server",
     "pms-client",
     "tools/babel/messages",
+    "tools/parser",
     "cli",
     "react",
     "examples/react-todo"

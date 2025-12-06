@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../build/tools/parser",
+    "rootDir": ".",
+    "composite": true,
+    "declaration": true,
+    "strict": true,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["**/*"]
+}
