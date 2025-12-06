@@ -171,10 +171,10 @@ function rewriteAdditionalTestImports(content) {
   // Rewrite .pmsg imports to .pmsg.js
   result = result.replaceAll(/from ['"](\.\/[^'"]+)\.pmsg['"]/g, "from '$1.pmsg.js'");
 
-  // Rewrite @propanejs/* package imports to relative paths for build/pms-server/tests/
-  result = result.replaceAll('@propanejs/pms-server', '../../pms-server/src/index.js');
-  result = result.replaceAll('@propanejs/pms-client', '../../pms-client/src/index.js');
-  result = result.replaceAll('@propanejs/runtime', '../../runtime/index.js');
+  // Rewrite @/* root imports to relative paths for build/pms-server/tests/
+  result = result.replaceAll('@/pms-server/src/index.js', '../../pms-server/src/index.js');
+  result = result.replaceAll('@/pms-client/src/index.js', '../../pms-client/src/index.js');
+  result = result.replaceAll('@/runtime/index.js', '../../runtime/index.js');
 
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
@@ -348,6 +348,9 @@ function rewriteTestImports(content) {
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
   result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
   result = result.replaceAll(/from ['"](\.\.\/tools\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
+
+  // Rewrite @/* root imports to relative paths for build/tests/
+  result = result.replaceAll('@/tools/babel/messages/index.js', '../tools/babel/messages/index.js');
 
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');

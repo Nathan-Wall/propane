@@ -3,7 +3,7 @@ export type {
   RpcRequest,
   ResponseOf,
   MessageClass,
-} from '@propanejs/pms-core';
+} from '@/pms-core/src/index.js';
 
 // HTTP Client
 export { PmsClient, PmsProtocolError } from './client.js';

@@ -1,4 +1,4 @@
-import type { Message } from '@propanejs/runtime';
+import type { Message } from '@/runtime/index.js';
 
 /**
  * Marker interface for RPC requests.

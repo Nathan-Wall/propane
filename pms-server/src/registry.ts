@@ -3,8 +3,8 @@ import {
   type DataObject,
   parseCerealString,
   isTaggedMessageData,
-} from '@propanejs/runtime';
-import { type MessageClass, type RpcRequest, HandlerError } from '@propanejs/pms-core';
+} from '@/runtime/index.js';
+import { type MessageClass, type RpcRequest, HandlerError } from '@/pms-core/src/index.js';
 import { type Handler, type HandlerDescriptor, type HandlerContext, isResponseWithHeaders } from './handler.js';
 
 /**

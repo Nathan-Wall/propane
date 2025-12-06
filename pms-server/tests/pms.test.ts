@@ -3,9 +3,9 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import type { HttpTransport } from '@propanejs/pms-server';
-import { PmsServer, HandlerError, Response } from '@propanejs/pms-server';
-import { PmsClient } from '@propanejs/pms-client';
+import type { HttpTransport } from '@/pms-server/src/index.js';
+import { PmsServer, HandlerError, Response } from '@/pms-server/src/index.js';
+import { PmsClient } from '@/pms-client/src/index.js';
 import {
   EchoRequest,
   EchoResponse,

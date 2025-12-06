@@ -5,8 +5,8 @@ export type {
   MessageClass,
   ProtocolErrorCode,
   ProtocolError,
-} from '@propanejs/pms-core';
-export { HandlerError, ERROR_STATUS_MAP } from '@propanejs/pms-core';
+} from '@/pms-core/src/index.js';
+export { HandlerError, ERROR_STATUS_MAP } from '@/pms-core/src/index.js';
 
 // Handler types
 export type {

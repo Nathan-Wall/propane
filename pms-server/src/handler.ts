@@ -1,5 +1,5 @@
-import type { Message, DataObject } from '@propanejs/runtime';
-import type { MessageClass } from '@propanejs/pms-core';
+import type { Message, DataObject } from '@/runtime/index.js';
+import type { MessageClass } from '@/pms-core/src/index.js';
 import { Response } from './response.pmsg.js';
 
 /**

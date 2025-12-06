@@ -2,8 +2,8 @@ import {
   type Message,
   parseCerealString,
   isTaggedMessageData,
-} from '@propanejs/runtime';
-import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
+} from '@/runtime/index.js';
+import type { MessageClass, RpcRequest } from '@/pms-core/src/index.js';
 
 // WebSocket implementation - use native browser WebSocket or ws package for Node.js
 interface WebSocketLike {

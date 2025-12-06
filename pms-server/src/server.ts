@@ -1,11 +1,11 @@
-import type { Message } from '@propanejs/runtime';
+import type { Message } from '@/runtime/index.js';
 import {
   type MessageClass,
   type RpcRequest,
   HandlerError,
   ERROR_STATUS_MAP,
   type ProtocolError,
-} from '@propanejs/pms-core';
+} from '@/pms-core/src/index.js';
 import { HandlerRegistry } from './registry.js';
 import { HttpTransport } from './transport/http-transport.js';
 import type { Transport, TransportResponse } from './transport/transport.js';

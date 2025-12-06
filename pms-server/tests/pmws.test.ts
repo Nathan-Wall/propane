@@ -3,8 +3,8 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { PmsServer, HandlerError, WsTransport } from '@propanejs/pms-server';
-import { PmwsClient, PmwsConnectionError } from '@propanejs/pms-client';
+import { PmsServer, HandlerError, WsTransport } from '@/pms-server/src/index.js';
+import { PmwsClient, PmwsConnectionError } from '@/pms-client/src/index.js';
 import {
   EchoRequest,
   EchoResponse,

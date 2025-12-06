@@ -8,14 +8,14 @@ import React, {
   useContext,
 } from 'react';
 import type { Dispatch, SetStateAction, ComponentType, ReactNode } from 'react';
-import type { Message, DataObject } from '@propanejs/runtime';
+import type { Message, DataObject } from '@/runtime/index.js';
 import {
   equals,
   SET_UPDATE_LISTENER,
   REGISTER_PATH,
   EQUALS_FROM_ROOT,
   REACT_LISTENER_KEY,
-} from '@propanejs/runtime';
+} from '@/runtime/index.js';
 
 // Tracks whether we're inside an update() callback
 let updateDepth = 0;

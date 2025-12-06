@@ -18,25 +18,7 @@
     "exactOptionalPropertyTypes": false,
     "paths": {
       "react": ["node_modules/@types/react"],
-      "@/*": ["./*"],
-      "@propanejs/babel-messages": ["tools/babel/messages/index.ts"],
-      "@propanejs/parser": ["tools/parser/index.ts"],
-      "@propanejs/runtime": ["runtime/index.ts"],
-      "@propanejs/pms-core": ["pms-core/src/index.ts"],
-      "@propanejs/pms-server": ["pms-server/src/index.ts"],
-      "@propanejs/pms-client": ["pms-client/src/index.ts"],
-      "@propanejs/pms-client-compiler": ["pms-client-compiler/src/index.ts"],
-      "@propanejs/cli": ["cli/index.ts"],
-      "@propanejs/react": ["react/index.ts"],
-      "@propanejs/babel-messages/*": ["tools/babel/messages/*"],
-      "@propanejs/parser/*": ["tools/parser/*"],
-      "@propanejs/runtime/*": ["runtime/*"],
-      "@propanejs/pms-core/*": ["pms-core/src/*"],
-      "@propanejs/pms-server/*": ["pms-server/src/*"],
-      "@propanejs/pms-client/*": ["pms-client/src/*"],
-      "@propanejs/pms-client-compiler/*": ["pms-client-compiler/src/*"],
-      "@propanejs/cli/*": ["cli/*"],
-      "@propanejs/react/*": ["react/*"]
+      "@/*": ["./*"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true

@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
-import propanePlugin from '@propanejs/babel-messages';
+import propanePlugin from '@/tools/babel/messages/index.js';
 import chokidar from 'chokidar';
 
 const __filename = fileURLToPath(import.meta.url);

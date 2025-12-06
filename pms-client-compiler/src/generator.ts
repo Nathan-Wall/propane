@@ -1,6 +1,11 @@
 import path from 'node:path';
 import type { RpcEndpoint, ParseResult } from './parser.js';
 
+/**
+ * Default import path for @propanejs/pms-client in generated code.
+ */
+export const DEFAULT_CLIENT_SOURCE = '@propanejs/pms-client';
+
 export interface GeneratorOptions {
   /** Name of the generated client class. Default: derived from output file name */
   className?: string;
@@ -8,6 +13,11 @@ export interface GeneratorOptions {
   websocket?: boolean;
   /** Output file path (used for calculating relative imports and default class name) */
   outputPath: string;
+  /**
+   * Custom import path for @propanejs/pms-client in generated files.
+   * Defaults to '@propanejs/pms-client'.
+   */
+  clientImportPath?: string;
 }
 
 /**
@@ -87,9 +97,10 @@ export function generateClient(
     ?? fileNameToClassName(options.outputPath);
   const clientType = options.websocket ? 'PmwsClient' : 'PmsClient';
   const optionsType = options.websocket ? 'PmwsClientOptions' : 'PmsClientOptions';
+  const clientSource = options.clientImportPath ?? DEFAULT_CLIENT_SOURCE;
   const clientImport = options.websocket
-    ? "import { PmwsClient, type PmwsClientOptions } from '@propanejs/pms-client';"
-    : "import { PmsClient, type PmsClientOptions } from '@propanejs/pms-client';";
+    ? `import { PmwsClient, type PmwsClientOptions } from '${clientSource}';`
+    : `import { PmsClient, type PmsClientOptions } from '${clientSource}';`;
 
   // Group endpoints by source file for imports
   const byFile = groupBySourceFile(endpoints);

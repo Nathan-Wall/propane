@@ -9,7 +9,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { transformSync } from '@babel/core';
-import propanePlugin from '@propanejs/babel-messages';
+import propanePlugin from '@/tools/babel/messages/index.js';
 
 // When running from build/tests/, go up to find source tests/
 const testsDir = path.resolve(import.meta.dirname, '../../tests');

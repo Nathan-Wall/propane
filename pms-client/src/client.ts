@@ -2,8 +2,8 @@ import {
   type Message,
   parseCerealString,
   isTaggedMessageData,
-} from '@propanejs/runtime';
-import type { MessageClass, RpcRequest } from '@propanejs/pms-core';
+} from '@/runtime/index.js';
+import type { MessageClass, RpcRequest } from '@/pms-core/src/index.js';
 
 export interface PmsClientOptions {
   /** Base URL of the PMS server */
