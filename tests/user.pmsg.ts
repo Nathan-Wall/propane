@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/user.pmsg
-import { Distance } from './distance.pmsg';
-import { Email } from './email.pmsg';
-import { Hash } from './hash.pmsg';
+import { Distance } from './distance.pmsg.js';
+import { Email } from './email.pmsg.js';
+import { Hash } from './hash.pmsg.js';
 
 // @message
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";

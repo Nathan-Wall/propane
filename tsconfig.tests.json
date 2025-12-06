@@ -1,0 +1,34 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "noEmitOnError": false,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "paths": {
+      "react": ["node_modules/@types/react"],
+      "@/*": ["./build/*"]
+    }
+  },
+  "include": [
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "tests/**/*.pmsg",
+    "pms-server/tests/**/*.ts",
+    "pms-server/tests/**/*.tsx",
+    "pms-server/tests/**/*.pmsg"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "runtime",
+    "pms-core",
+    "pms-server/src",
+    "pms-client",
+    "tools",
+    "cli",
+    "react",
+    "scripts"
+  ]
+}

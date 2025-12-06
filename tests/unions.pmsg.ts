@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.pmsg
-import { Email } from './email.pmsg';
+import { Email } from './email.pmsg.js';
 
 // @message
 import type { MessagePropDescriptor } from "../runtime/index.js";

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/endpoint-types.pmsg
-import { Endpoint } from '@propanejs/pms-core';
+import { Endpoint } from '@/pms-core/src/index.js';
 
 // @message
 import type { MessagePropDescriptor } from "../runtime/index.js";

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/compound.pmsg
-import { Indexed } from './indexed.pmsg';
-import { User } from './user.pmsg';
+import { Indexed } from './indexed.pmsg.js';
+import { User } from './user.pmsg.js';
 
 // @message
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";

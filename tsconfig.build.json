@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "examples",
+    "tests",
+    "pms-server/tests"
+  ]
+}
