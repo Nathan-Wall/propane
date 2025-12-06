@@ -1,6 +1,7 @@
 // Types
 export type {
   RpcRequest,
+  Endpoint,
   ResponseOf,
   MessageClass,
 } from './types.js';

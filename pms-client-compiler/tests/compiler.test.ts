@@ -26,21 +26,25 @@ describe('PMS Client Compiler', () => {
   before(() => {
     mkdirSync(tempDir, { recursive: true });
     standardFile = createTestFile('standard.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
+import { Endpoint } from '@propanejs/pms-core';
 
-export type GetUserRequest = {
+// @message
+export type GetUserRequest = Endpoint<{
   '1:id': number;
-} & RpcRequest<GetUserResponse>;
+}, GetUserResponse>;
 
+// @message
 export type GetUserResponse = {
   '1:id': number;
   '2:name': string;
 };
 
-export type CreateUserRequest = {
+// @message
+export type CreateUserRequest = Endpoint<{
   '1:name': string;
-} & RpcRequest<CreateUserResponse>;
+}, CreateUserResponse>;
 
+// @message
 export type CreateUserResponse = {
   '1:user': GetUserResponse;
 };
@@ -70,18 +74,21 @@ export type CreateUserResponse = {
       assert.strictEqual(getUser.sourceFile, standardFile);
     });
 
-    it('ignores non-RPC types', () => {
-      const file = createTestFile('non-rpc.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
+    it('ignores non-endpoint message types', () => {
+      const file = createTestFile('non-endpoint.pmsg', `
+import { Endpoint } from '@propanejs/pms-core';
 
+// @message
 export type RegularType = {
   '1:value': string;
 };
 
-export type ActualRequest = {
+// @message
+export type ActualRequest = Endpoint<{
   '1:id': number;
-} & RpcRequest<ActualResponse>;
+}, ActualResponse>;
 
+// @message
 export type ActualResponse = {
   '1:result': string;
 };
@@ -98,8 +105,9 @@ export type ActualResponse = {
       assert.strictEqual(endpoints.length, 0);
     });
 
-    it('handles file with no RPC types', () => {
-      const file = createTestFile('no-rpc.pmsg', `
+    it('handles file with no endpoints', () => {
+      const file = createTestFile('no-endpoints.pmsg', `
+// @message
 export type User = {
   '1:id': number;
   '2:name': string;
@@ -111,12 +119,14 @@ export type User = {
 
     it('handles types without Request suffix', () => {
       const file = createTestFile('no-suffix.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
+import { Endpoint } from '@propanejs/pms-core';
 
-export type FetchUser = {
+// @message
+export type FetchUser = Endpoint<{
   '1:id': number;
-} & RpcRequest<UserData>;
+}, UserData>;
 
+// @message
 export type UserData = {
   '1:name': string;
 };
@@ -128,17 +138,23 @@ export type UserData = {
       assert.strictEqual(endpoints[0]!.responseType, 'UserData');
     });
 
-    it('handles multiple RPC types in one file', () => {
-      const file = createTestFile('many-rpcs.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
+    it('handles multiple endpoints in one file', () => {
+      const file = createTestFile('many-endpoints.pmsg', `
+import { Endpoint } from '@propanejs/pms-core';
 
-export type Req1 = { '1:a': number } & RpcRequest<Res1>;
+// @message
+export type Req1 = Endpoint<{ '1:a': number }, Res1>;
+// @message
 export type Res1 = { '1:b': number };
 
-export type Req2 = { '1:c': string } & RpcRequest<Res2>;
+// @message
+export type Req2 = Endpoint<{ '1:c': string }, Res2>;
+// @message
 export type Res2 = { '1:d': string };
 
-export type Req3 = { '1:e': boolean } & RpcRequest<Res3>;
+// @message
+export type Req3 = Endpoint<{ '1:e': boolean }, Res3>;
+// @message
 export type Res3 = { '1:f': boolean };
 `);
 
@@ -148,14 +164,18 @@ export type Res3 = { '1:f': boolean };
 
     it('aggregates results from multiple files', () => {
       const file1 = createTestFile('multi/file1.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type ReqA = { '1:a': number } & RpcRequest<ResA>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type ReqA = Endpoint<{ '1:a': number }, ResA>;
+// @message
 export type ResA = { '1:b': number };
 `);
 
       const file2 = createTestFile('multi/file2.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type ReqB = { '1:c': string } & RpcRequest<ResB>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type ReqB = Endpoint<{ '1:c': string }, ResB>;
+// @message
 export type ResB = { '1:d': string };
 `);
 
@@ -270,14 +290,18 @@ export type ResB = { '1:d': string };
 
     it('groups imports by source file', () => {
       const file1 = createTestFile('imports/users.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type GetUserReq = { '1:id': number } & RpcRequest<GetUserRes>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type GetUserReq = Endpoint<{ '1:id': number }, GetUserRes>;
+// @message
 export type GetUserRes = { '1:name': string };
 `);
 
       const file2 = createTestFile('imports/orders.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type GetOrderReq = { '1:id': number } & RpcRequest<GetOrderRes>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type GetOrderReq = Endpoint<{ '1:id': number }, GetOrderRes>;
+// @message
 export type GetOrderRes = { '1:total': number };
 `);
 
@@ -401,14 +425,18 @@ export type GetOrderRes = { '1:total': number };
       mkdirSync(subDir, { recursive: true });
 
       createTestFile('cli-dir-scan/a.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type ReqA = { '1:x': number } & RpcRequest<ResA>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type ReqA = Endpoint<{ '1:x': number }, ResA>;
+// @message
 export type ResA = { '1:y': number };
 `);
 
       createTestFile('cli-dir-scan/b.pmsg', `
-import { RpcRequest } from '@propanejs/pms-core';
-export type ReqB = { '1:x': string } & RpcRequest<ResB>;
+import { Endpoint } from '@propanejs/pms-core';
+// @message
+export type ReqB = Endpoint<{ '1:x': string }, ResB>;
+// @message
 export type ResB = { '1:y': string };
 `);
 
@@ -442,13 +470,14 @@ export type ResB = { '1:y': string };
       assert.ok(stderr.includes('not found'));
     });
 
-    it('handles file with no RPC types', () => {
-      const noRpcFile = createTestFile('cli-no-rpc.pmsg', `
-export type NotAnRpc = { '1:value': string };
+    it('handles file with no endpoints', () => {
+      const noEndpointFile = createTestFile('cli-no-endpoint.pmsg', `
+// @message
+export type NotAnEndpoint = { '1:value': string };
 `);
 
-      const outputFile = path.resolve(tempDir, 'cli-output/no-rpc.ts');
-      const { stderr, exitCode } = runCli(`-o ${outputFile} ${noRpcFile}`);
+      const outputFile = path.resolve(tempDir, 'cli-output/no-endpoint.ts');
+      const { stderr, exitCode } = runCli(`-o ${outputFile} ${noEndpointFile}`);
       assert.strictEqual(exitCode, 1);
       assert.ok(stderr.includes('No RPC endpoints found'));
     });

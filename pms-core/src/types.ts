@@ -18,6 +18,36 @@ export interface RpcRequest<TResponse extends Message<any>> {
 }
 
 /**
+ * Wrapper type for RPC endpoints in .pmsg files.
+ * Links a request payload to its response type.
+ *
+ * Used with the @message decorator to define RPC endpoints:
+ *
+ * @example
+ * ```typescript
+ * import { Endpoint } from '@propanejs/core';
+ *
+ * // @message
+ * export type GetUser = Endpoint<{
+ *   '1:id': number;
+ * }, GetUserResponse>;
+ *
+ * // @message
+ * export type GetUserResponse = {
+ *   '1:id': number;
+ *   '2:name': string;
+ * };
+ * ```
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface Endpoint<TPayload, TResponse extends Message<any>> {
+  /** Phantom type field for payload - exists only at compile time */
+  readonly __payloadType?: TPayload;
+  /** Phantom type field for response - exists only at compile time */
+  readonly __responseType?: TResponse;
+}
+
+/**
  * Extract the response type from a request type.
  *
  * @example

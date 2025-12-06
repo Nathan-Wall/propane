@@ -298,7 +298,7 @@ describe('parseSource - decorators', () => {
 describe('parseSource - wrapper types', () => {
   it('should parse Endpoint wrapper type', () => {
     const source = `
-      import { Endpoint } from '@propanejs/core';
+      import { Endpoint } from '@propanejs/pms-core';
 
       // @message
       export type GetUser = Endpoint<{
@@ -326,7 +326,7 @@ describe('parseSource - wrapper types', () => {
 
   it('should detect endpoint via getEndpointInfo', () => {
     const source = `
-      import { Endpoint } from '@propanejs/core';
+      import { Endpoint } from '@propanejs/pms-core';
 
       // @message
       export type GetUser = Endpoint<{
@@ -344,7 +344,7 @@ describe('parseSource - wrapper types', () => {
 
   it('should detect endpoint with aliased import', () => {
     const source = `
-      import { Endpoint as PmsRequest } from '@propanejs/core';
+      import { Endpoint as PmsRequest } from '@propanejs/pms-core';
 
       // @message
       export type GetUser = PmsRequest<{
@@ -468,7 +468,7 @@ describe('parseSource - validation errors', () => {
 
   it('should error on invalid wrapper usage', () => {
     const source = `
-      import { Endpoint } from '@propanejs/core';
+      import { Endpoint } from '@propanejs/pms-core';
 
       // @message
       export type GetUser = Endpoint<User, GetUserResponse>;
@@ -488,7 +488,7 @@ describe('parseSource - validation errors', () => {
 describe('parseSource - imports', () => {
   it('should parse named imports', () => {
     const source = `
-      import { Endpoint, Message } from '@propanejs/core';
+      import { Endpoint, Message } from '@propanejs/pms-core';
       import { User } from './user.pmsg.js';
 
       // @message
@@ -501,7 +501,7 @@ describe('parseSource - imports', () => {
 
     assert.strictEqual(file.imports.length, 2);
 
-    const coreImport = file.imports.find(i => i.source === '@propanejs/core');
+    const coreImport = file.imports.find(i => i.source === '@propanejs/pms-core');
     assert.ok(coreImport);
     assert.strictEqual(coreImport.specifiers.length, 2);
     assert.ok(coreImport.specifiers.some(s => s.imported === 'Endpoint'));
@@ -510,7 +510,7 @@ describe('parseSource - imports', () => {
 
   it('should handle aliased imports', () => {
     const source = `
-      import { Endpoint as PmsRequest } from '@propanejs/core';
+      import { Endpoint as PmsRequest } from '@propanejs/pms-core';
 
       // @message
       export type Test = {
@@ -587,7 +587,7 @@ describe('isTransformableMessage', () => {
 describe('findEndpoints', () => {
   it('should find all endpoints in a file', () => {
     const source = `
-      import { Endpoint } from '@propanejs/core';
+      import { Endpoint } from '@propanejs/pms-core';
 
       // @message
       export type GetUser = Endpoint<{

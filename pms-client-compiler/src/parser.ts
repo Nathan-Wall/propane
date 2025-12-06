@@ -1,5 +1,12 @@
-import ts from 'typescript';
-import { readFileSync } from 'node:fs';
+/**
+ * RPC Endpoint Parser
+ *
+ * Parses .pmsg files to extract RPC endpoint definitions using @propanejs/parser.
+ * Looks for types decorated with @message that use Endpoint<Payload, Response>.
+ */
+
+import { parseFile as pmtParseFile, findEndpoints, getResponseTypeName } from '@/tools/parser/index.js';
+import type { PmtEndpointInfo } from '@/tools/parser/types.js';
 
 /**
  * Represents an RPC endpoint extracted from a .pmsg file.
@@ -24,83 +31,23 @@ export interface ParseResult {
 }
 
 /**
- * Parse a .pmsg file and extract RPC request/response pairs.
+ * Parse a .pmsg file and extract RPC endpoints.
  *
- * Looks for type aliases that intersect with RpcRequest<TResponse>:
- * ```
- * export type GetUser = {
+ * Looks for types decorated with @message that use Endpoint<Payload, Response>:
+ * ```typescript
+ * import { Endpoint } from '@propanejs/pms-core';
+ *
+ * // @message
+ * export type GetUser = Endpoint<{
  *   '1:id': number;
- * } & RpcRequest<GetUserResponse>;
+ * }, GetUserResponse>;
  * ```
  */
 export function parseFile(filePath: string): RpcEndpoint[] {
-  const content = readFileSync(filePath, 'utf8');
-  const sourceFile = ts.createSourceFile(
-    filePath,
-    content,
-    ts.ScriptTarget.Latest,
-    true
-  );
+  const { file } = pmtParseFile(filePath);
+  const pmtEndpoints = findEndpoints(file);
 
-  const endpoints: RpcEndpoint[] = [];
-
-  function visit(node: ts.Node) {
-    if (ts.isTypeAliasDeclaration(node)) {
-      const endpoint = extractRpcEndpoint(node, filePath);
-      if (endpoint) {
-        endpoints.push(endpoint);
-      }
-    }
-    ts.forEachChild(node, visit);
-  }
-
-  visit(sourceFile);
-  return endpoints;
-}
-
-/**
- * Extract RPC endpoint info from a type alias declaration.
- */
-function extractRpcEndpoint(
-  node: ts.TypeAliasDeclaration,
-  filePath: string
-): RpcEndpoint | null {
-  const typeName = node.name.text;
-
-  // Look for intersection types that include RpcRequest<T>
-  if (!ts.isIntersectionTypeNode(node.type)) {
-    return null;
-  }
-
-  for (const member of node.type.types) {
-    if (ts.isTypeReferenceNode(member)) {
-      const refName = getTypeName(member.typeName);
-      if (refName === 'RpcRequest' && member.typeArguments?.length === 1) {
-        const responseTypeArg = member.typeArguments[0]!;
-        if (ts.isTypeReferenceNode(responseTypeArg)) {
-          const responseType = getTypeName(responseTypeArg.typeName);
-          return {
-            requestType: typeName,
-            responseType,
-            sourceFile: filePath,
-          };
-        }
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
- * Get the string name from a TypeScript entity name.
- */
-function getTypeName(name: ts.EntityName): string {
-  if (ts.isIdentifier(name)) {
-    return name.text;
-  }
-  // Qualified name (e.g., Namespace.Type)
-  return `${getTypeName(name.left)}.${name.right.text}`;
+  return pmtEndpoints.map(toRpcEndpoint);
 }
 
 /**
@@ -117,4 +64,15 @@ export function parseFiles(filePaths: string[]): ParseResult {
   }
 
   return { endpoints, fileEndpoints };
+}
+
+/**
+ * Convert PMT endpoint info to RpcEndpoint.
+ */
+function toRpcEndpoint(info: PmtEndpointInfo): RpcEndpoint {
+  return {
+    requestType: info.requestTypeName,
+    responseType: getResponseTypeName(info.responseType),
+    sourceFile: info.file.path,
+  };
 }

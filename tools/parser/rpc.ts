@@ -9,7 +9,7 @@ import type { PmtFile, PmtMessage, PmtEndpointInfo, PmtType } from './types.js';
 /**
  * The canonical module where Endpoint is exported.
  */
-const PROPANE_CORE_MODULE = '@propanejs/core';
+const PROPANE_CORE_MODULE = '@propanejs/pms-core';
 
 /**
  * The canonical name of the Endpoint type.
@@ -49,7 +49,7 @@ export function isTransformableMessage(
  * Get endpoint info for a message.
  *
  * Checks if the message is a wrapper type whose wrapper name
- * resolves to `Endpoint` imported from `@propanejs/core`.
+ * resolves to `Endpoint` imported from `@propanejs/pms-core`.
  *
  * @param file - The file containing the message
  * @param message - The message to check
@@ -73,10 +73,10 @@ export function getEndpointInfo(
     return null;
   }
 
-  // Check if the wrapper's local name resolves to Endpoint from @propanejs/core
+  // Check if the wrapper's local name resolves to Endpoint from @propanejs/pms-core
   const localName = message.wrapper.localName;
 
-  // Find an import that maps this local name to Endpoint from @propanejs/core
+  // Find an import that maps this local name to Endpoint from @propanejs/pms-core
   const isEndpoint = file.imports.some((imp) => {
     if (imp.source !== PROPANE_CORE_MODULE) {
       return false;

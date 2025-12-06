@@ -29,28 +29,32 @@ npm i -D @propanejs/pms-client-compiler
 
 ## Defining Messages
 
-Define request/response pairs in `.pmsg` files. Requests implement
-`RpcRequest<TResponse>` to link them to their response type:
+Define request/response pairs in `.pmsg` files. Use the `@message` decorator
+and `Endpoint<Payload, Response>` type to define RPC endpoints:
 
 ```typescript
 // messages.pmsg
-import { RpcRequest } from '@propanejs/pms-core';
+import { Endpoint } from '@propanejs/pms-core';
 
-export type GetUser = {
+// @message
+export type GetUser = Endpoint<{
   '1:id': number;
-} & RpcRequest<GetUserResponse>;
+}, GetUserResponse>;
 
+// @message
 export type GetUserResponse = {
   '1:id': number;
   '2:name': string;
   '3:email': string;
 };
 
-export type CreateUser = {
+// @message
+export type CreateUser = Endpoint<{
   '1:name': string;
   '2:email': string;
-} & RpcRequest<CreateUserResponse>;
+}, CreateUserResponse>;
 
+// @message
 export type CreateUserResponse = {
   '1:user': GetUserResponse;
 };
@@ -220,10 +224,14 @@ Given these message definitions:
 
 ```typescript
 // messages.pmsg
-export type GetUser = {
-  '1:id': number;
-} & RpcRequest<GetUserResponse>;
+import { Endpoint } from '@propanejs/pms-core';
 
+// @message
+export type GetUser = Endpoint<{
+  '1:id': number;
+}, GetUserResponse>;
+
+// @message
 export type GetUserResponse = {
   '1:id': number;
   '2:name': string;
