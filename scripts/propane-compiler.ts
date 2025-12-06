@@ -1,10 +1,18 @@
 #!/usr/bin/env node
 
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { transformSync } from '@babel/core';
-import propanePlugin from '@propanejs/babel-messages';
+import propanePlugin from '@/tools/babel/messages/index.js';
+
+interface PropaneConfig {
+  runtimeImportPath?: string;
+}
+
+interface LoadedConfig {
+  config: PropaneConfig;
+  configDir: string | undefined;
+}
 
 const targets = process.argv.slice(2);
 
@@ -14,12 +22,12 @@ if (!targets.length) {
 }
 
 // Load propane config
-function loadPropaneConfig() {
+function loadPropaneConfig(): LoadedConfig {
   const configPath = path.resolve(process.cwd(), 'propane.config.json');
   if (fs.existsSync(configPath)) {
     try {
       return {
-        config: JSON.parse(fs.readFileSync(configPath, 'utf8')),
+        config: JSON.parse(fs.readFileSync(configPath, 'utf8')) as PropaneConfig,
         configDir: path.dirname(configPath),
       };
     } catch {
@@ -31,7 +39,7 @@ function loadPropaneConfig() {
 
 const { config: propaneConfig, configDir } = loadPropaneConfig();
 
-function collectPropaneFiles(targetPath) {
+function collectPropaneFiles(targetPath: string): string[] {
   const stats = fs.statSync(targetPath);
 
   if (stats.isDirectory()) {
@@ -47,14 +55,14 @@ function collectPropaneFiles(targetPath) {
   return [];
 }
 
-function transpileFile(sourcePath) {
+function transpileFile(sourcePath: string): void {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
-  const pluginOptions = {};
+  const pluginOptions: Record<string, unknown> = {};
   if (propaneConfig.runtimeImportPath) {
-    pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
+    pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
   }
   if (configDir) {
-    pluginOptions.runtimeImportBase = configDir;
+    pluginOptions['runtimeImportBase'] = configDir;
   }
   const result = transformSync(sourceCode, {
     filename: sourcePath,
@@ -62,13 +70,14 @@ function transpileFile(sourcePath) {
       sourceType: 'module',
       plugins: ['typescript'],
     },
+    // generatorOpts is valid but not in @types/babel__core
     generatorOpts: {
       retainLines: false,
       compact: false,
     },
     plugins: [[propanePlugin, pluginOptions]],
     ast: false,
-  });
+  } as Parameters<typeof transformSync>[1]);
 
   if (!result || typeof result.code !== 'string') {
     throw new Error(`Failed to transpile ${sourcePath}`);
@@ -95,7 +104,7 @@ for (const filePath of propaneFiles) {
   try {
     transpileFile(filePath);
   } catch (err) {
-    console.error(err.message);
+    console.error((err as Error).message);
     process.exitCode = 1;
   }
 }

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import type { EndpointMessage, ResponseOf } from '@propanejs/pms-core';
+import type { EndpointMessage, ResponseOf } from '@/pms-core/src/index.js';
 import { TestRequest, TestResponse } from './endpoint-types.pmsg.js';
 
 describe('Endpoint type compatibility', () => {

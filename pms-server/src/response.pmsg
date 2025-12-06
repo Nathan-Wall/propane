@@ -11,7 +11,7 @@
  * });
  * ```
  */
-import { Message } from '@propanejs/runtime';
+import { Message } from '@/runtime/index.js';
 
 // @message
 export type Response<T extends Message> = {

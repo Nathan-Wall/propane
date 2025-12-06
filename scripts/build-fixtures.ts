@@ -3,11 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import ts from 'typescript';
-import propanePlugin from '@propanejs/babel-messages';
+import propanePlugin from '@/tools/babel/messages/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '..');
+// When running from build/scripts/, go up two levels to reach project root
+const projectRoot = path.resolve(__dirname, '../..');
 const testsDir = path.join(projectRoot, 'tests');
 const outDir = path.join(projectRoot, 'build', 'tests');
 
@@ -16,12 +17,16 @@ const additionalTestDirs = [
   { src: path.join(projectRoot, 'pms-server/tests'), out: path.join(projectRoot, 'build/pms-server/tests') },
 ];
 
+interface PropaneConfig {
+  runtimeImportPath?: string;
+}
+
 // Load propane config for runtimeImportPath
-function loadPropaneConfig() {
+function loadPropaneConfig(): PropaneConfig {
   const configPath = path.join(projectRoot, 'propane.config.json');
   if (fs.existsSync(configPath)) {
     try {
-      return JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return JSON.parse(fs.readFileSync(configPath, 'utf8')) as PropaneConfig;
     } catch {
       return {};
     }
@@ -31,12 +36,12 @@ function loadPropaneConfig() {
 
 const propaneConfig = loadPropaneConfig();
 
-await cleanOutput();
-await buildAll();
-await buildAdditionalTestDirs();
-await copyTests();
+cleanOutput();
+buildAll();
+buildAdditionalTestDirs();
+copyTests();
 
-async function buildAll() {
+function buildAll(): void {
   const files = findPropaneFiles(testsDir);
   ensureDir(outDir);
   ensurePackageTypeModule(outDir);
@@ -51,18 +56,18 @@ async function buildAll() {
     const outPath = path.join(outDir, `${rel}.js`); // keep .pmsg in name for clarity
     ensureDir(path.dirname(outPath));
     const source = fs.readFileSync(file, 'utf8');
-    const pluginOptions = {};
+    const pluginOptions: Record<string, unknown> = {};
     if (propaneConfig.runtimeImportPath) {
-      pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
-      pluginOptions.runtimeImportBase = projectRoot;
+      pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
+      pluginOptions['runtimeImportBase'] = projectRoot;
     }
-    const { code } = transformSync(source, {
+    const result = transformSync(source, {
       filename: file,
       parserOpts: { sourceType: 'module', plugins: ['typescript'] },
       plugins: [[propanePlugin, pluginOptions]],
     });
 
-    const rewritten = rewriteImports(code);
+    const rewritten = rewriteImports(result?.code ?? '');
     const transpiled = ts.transpileModule(rewritten, {
       compilerOptions: {
         module: ts.ModuleKind.ESNext,
@@ -78,7 +83,7 @@ async function buildAll() {
   }
 }
 
-async function buildAdditionalTestDirs() {
+function buildAdditionalTestDirs(): void {
   for (const { src, out } of additionalTestDirs) {
     if (!fs.existsSync(src)) continue;
 
@@ -96,23 +101,24 @@ async function buildAdditionalTestDirs() {
       const outPath = path.join(out, `${rel}.js`);
       ensureDir(path.dirname(outPath));
       const source = fs.readFileSync(file, 'utf8');
-      const pluginOptions = {};
+      const pluginOptions: Record<string, unknown> = {};
       if (propaneConfig.runtimeImportPath) {
-        pluginOptions.runtimeImportPath = propaneConfig.runtimeImportPath;
-        pluginOptions.runtimeImportBase = projectRoot;
+        pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
+        pluginOptions['runtimeImportBase'] = projectRoot;
       }
-      const { code } = transformSync(source, {
+      const result = transformSync(source, {
         filename: file,
         parserOpts: { sourceType: 'module', plugins: ['typescript'] },
         plugins: [[propanePlugin, pluginOptions]],
       });
 
       // Rewrite imports for additional test directories
-      let rewritten = code;
+      let rewritten = result?.code ?? '';
       // Rewrite relative .pmsg imports
       rewritten = rewritten.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
-      // Handle @propanejs/runtime package imports - convert to relative path
-      rewritten = rewritten.replaceAll('@propanejs/runtime', '../../runtime/index.js');
+      // Handle @/ imports - convert to relative paths for build/pms-server/tests/
+      rewritten = rewritten.replaceAll('@/runtime/index.js', '../../runtime/index.js');
+      rewritten = rewritten.replaceAll('@/pms-core/src/index.js', '../../pms-core/src/index.js');
 
       const transpiled = ts.transpileModule(rewritten, {
         compilerOptions: {
@@ -150,9 +156,9 @@ async function buildAdditionalTestDirs() {
   }
 }
 
-function findTestFilesInDir(dir) {
+function findTestFilesInDir(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
+  const files: string[] = [];
   for (const entry of entries) {
     if (entry.name.startsWith('.')) continue;
     const full = path.join(dir, entry.name);
@@ -165,7 +171,7 @@ function findTestFilesInDir(dir) {
   return files;
 }
 
-function rewriteAdditionalTestImports(content) {
+function rewriteAdditionalTestImports(content: string): string {
   let result = content;
 
   // Rewrite .pmsg imports to .pmsg.js
@@ -175,6 +181,7 @@ function rewriteAdditionalTestImports(content) {
   result = result.replaceAll('@/pms-server/src/index.js', '../../pms-server/src/index.js');
   result = result.replaceAll('@/pms-client/src/index.js', '../../pms-client/src/index.js');
   result = result.replaceAll('@/runtime/index.js', '../../runtime/index.js');
+  result = result.replaceAll('@/pms-core/src/index.js', '../../pms-core/src/index.js');
 
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
@@ -182,9 +189,9 @@ function rewriteAdditionalTestImports(content) {
   return result;
 }
 
-function findPropaneFiles(dir) {
+function findPropaneFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const found = [];
+  const found: string[] = [];
   for (const entry of entries) {
     if (entry.name.startsWith('.')) continue;
     const full = path.join(dir, entry.name);
@@ -197,23 +204,23 @@ function findPropaneFiles(dir) {
   return found;
 }
 
-async function cleanOutput() {
+function cleanOutput(): void {
   if (fs.existsSync(outDir)) {
     fs.rmSync(outDir, { recursive: true, force: true });
   }
 }
 
-function ensureDir(dir) {
+function ensureDir(dir: string): void {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-function ensurePackageTypeModule(dir) {
+function ensurePackageTypeModule(dir: string): void {
   const pkgPath = path.join(dir, 'package.json');
   if (fs.existsSync(pkgPath)) return;
   fs.writeFileSync(pkgPath, JSON.stringify({ type: 'module' }, null, 2));
 }
 
-function rewriteImports(code) {
+function rewriteImports(code: string): string {
   let result = code;
   // Rewrite relative .pmsg imports to point at built JS artifacts
   result = result.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
@@ -221,8 +228,11 @@ function rewriteImports(code) {
   // Remove runtime-only type imports (MessagePropDescriptor) from imports
   // This regex targets: import { ..., MessagePropDescriptor, ... } from ...
   const importRegex = /\bimport\s*\{([^}]*)\}\s*from/g;
-  result = result.replaceAll(importRegex, (match, imports) => {
-    const cleanedImports = imports.replaceAll(/,?\s*MessagePropDescriptor/g, '').replace(/^\s*,/, '').trim();
+  result = result.replaceAll(importRegex, (match, imports: string) => {
+    const cleanedImports = imports
+      .replaceAll(/,?\s*MessagePropDescriptor/g, '')
+      .replace(/^\s*,/, '')
+      .trim();
     return `import { ${cleanedImports} } from`;
   });
   result = result.replace(/^import\s*{\s*Brand\s*}\s*from[^;]+;\n?/m, '');
@@ -231,26 +241,30 @@ function rewriteImports(code) {
   // (excluding the .pmsg.js ones we just set)
   result = result.replaceAll(
     /(from\s+['"])(\.\.{1,2}\/[^'"][^'"]*)(['"])/g,
-    (match, p1, p2, p3) => {
+    (match, p1: string, p2: string, p3: string) => {
       if (/\.js$|\.ts$|\.json$/.test(p2) || p2.endsWith('.pmsg.js')) {
         return match;
       }
       return `${p1}${p2}.js${p3}`;
     }
   );
-  
+
   // Fix relative paths for build/ structure
   // Source: tests/file.ts imports ../runtime/...
   // Build: build/tests/file.js imports ../runtime/...
   // If source uses ../../runtime, we need to fix it or understand why.
   // Let's assume source uses ../../runtime (legacy artifact?).
   // We want ../runtime/ in build.
-  
+
   // Fix relative paths for build/ structure
   // Explicitly handle the pattern seen in tests using string replacement
   // Handle case without trailing slash just in case
   result = result.split('../../runtime').join('../runtime');
   result = result.split('../../common').join('../runtime/common');
+
+  // Rewrite @/ imports to relative paths for build/tests/
+  result = result.replaceAll('@/runtime/index.js', '../runtime/index.js');
+  result = result.replaceAll('@/pms-core/src/index.js', '../pms-core/src/index.js');
 
   // Regex backup - only rewrite ../../common (2+ levels) not ../common (1 level)
   // ../common/ refers to build/common/ (standalone utilities like levenshtein)
@@ -261,7 +275,7 @@ function rewriteImports(code) {
   return result;
 }
 
-async function copyTests() {
+function copyTests(): void {
   const testFiles = findTestFiles(testsDir);
   for (const file of testFiles) {
     const rel = path.relative(testsDir, file);
@@ -323,7 +337,7 @@ async function copyTests() {
   }
 }
 
-function rewriteTestImports(content) {
+function rewriteTestImports(content: string): string {
   let result = content.replaceAll('./tmp/', './');
   result = result.replaceAll(/from ['"]\.\/(.+?\.pmsg)\.ts['"]/g, "from './$1.js'");
   result = result.replaceAll(/from ['"]\.\/(.+?\.pmsg)\.js['"]/g, "from './$1.js'");
@@ -338,6 +352,11 @@ function rewriteTestImports(content) {
   result = result.split('../react/index.ts').join('../react/index.js');
   result = result.split('../react/').join('../react/');
 
+  // Rewrite @/ imports to relative paths for build/tests/
+  result = result.replaceAll('@/runtime/index.js', '../runtime/index.js');
+  result = result.replaceAll('@/pms-core/src/index.js', '../pms-core/src/index.js');
+  result = result.replaceAll('@/tools/babel/messages/index.js', '../tools/babel/messages/index.js');
+
   // Regex backup - only rewrite ../../common (2+ levels) not ../common (1 level)
   // ../common/ refers to build/common/ (standalone utilities like levenshtein)
   // ../../common/ refers to runtime/common/ (runtime utilities)
@@ -347,10 +366,11 @@ function rewriteTestImports(content) {
   result = result.replaceAll(/from ['"]\.\/assert\.ts['"]/g, "from './assert.js'");
   result = result.replaceAll(/from ['"]\.\/hash-helpers\.ts['"]/g, "from './hash-helpers.js'");
   result = result.replaceAll(/from ['"]\.\/test-harness\.ts['"]/g, "from './test-harness.js'");
-  result = result.replaceAll(/from ['"](\.\.\/tools\/babel\/messages\/[^'"]+)['"]/g, "from '$1.js'");
-
-  // Rewrite @/* root imports to relative paths for build/tests/
-  result = result.replaceAll('@/tools/babel/messages/index.js', '../tools/babel/messages/index.js');
+  // Only add .js if not already present
+  result = result.replaceAll(
+    /from ['"](\.\.\/tools\/babel\/messages\/[^'"]+)(?<!\.js)['"]/g,
+    "from '$1.js'"
+  );
 
   // generic .ts -> .js for relative imports
   result = result.replaceAll(/(from\s+['"])(\.\.?(?:\/[^'"]+))\.ts(['"])/g, '$1$2.js$3');
@@ -358,9 +378,9 @@ function rewriteTestImports(content) {
   return result;
 }
 
-function findTestFiles(dir) {
+function findTestFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
+  const files: string[] = [];
   for (const entry of entries) {
     if (entry.name.startsWith('.') || entry.name === 'tmp') continue;
     const full = path.join(dir, entry.name);
@@ -373,27 +393,32 @@ function findTestFiles(dir) {
   return files;
 }
 
-function findExtensionFiles(dir) {
+function findExtensionFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  const files = [];
+  const files: string[] = [];
   for (const entry of entries) {
     if (entry.name.startsWith('.') || entry.name === 'tmp') continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       files.push(...findExtensionFiles(full));
-    } else if (entry.isFile() && /\.ext\.ts$/.test(entry.name)) {
+    } else if (entry.isFile() && entry.name.endsWith('.ext.ts')) {
       files.push(full);
     }
   }
   return files;
 }
 
-function ensureValueExport(outputText, source, filePath) {
+function ensureValueExport(
+  outputText: string,
+  source: string,
+  filePath: string
+): string {
   const trimmed = outputText.trim();
   if (trimmed === 'export {};') {
-    const nameMatch = source.match(/export\s+type\s+([A-Za-z0-9_]+)/);
+    const nameMatch = /export\s+type\s+([A-Za-z0-9_]+)/.exec(source);
     const name = nameMatch ? nameMatch[1] : path.basename(filePath, '.pmsg');
-    return `// Auto-generated value shim for type-only module\nexport const ${name} = Symbol('${name}');\n`;
+    const sym = `Symbol('${name}')`;
+    return `// Auto-generated value shim for type-only module\nexport const ${name} = ${sym};\n`;
   }
   return outputText;
 }

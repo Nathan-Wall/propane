@@ -17,9 +17,9 @@
     "build": "tsc && tsc-alias && node scripts/post-build.js",
     "build:types": "tsc --emitDeclarationOnly",
     "bundle": "node scripts/bundle.mjs",
-    "test": "node scripts/build-fixtures.js && node --test 'build/**/*.test.js'",
+    "test": "node build/scripts/build-fixtures.js && node --test 'build/**/*.test.js'",
     "lint": "eslint .",
-    "propane:compile": "node scripts/propane-compiler.js",
+    "propane:compile": "node build/scripts/propane-compiler.js",
     "prepublishOnly": "npm run build",
     "prepare": "husky",
     "publish": "npm run build && node scripts/publish-all.js"

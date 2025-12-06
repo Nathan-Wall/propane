@@ -1,4 +1,4 @@
-import { Endpoint } from '@propanejs/pms-core';
+import { Endpoint } from '@/pms-core/src/index.js';
 
 // @message
 export type EchoRequest = Endpoint<{
