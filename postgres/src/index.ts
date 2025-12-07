@@ -45,3 +45,6 @@ export * from './branch/schema-manager.js';
 // Export type mapping
 export * from './mapping/type-mapper.js';
 export * from './mapping/serializer.js';
+
+// Export code generation
+export * from './codegen/schema-generator.js';
