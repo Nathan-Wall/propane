@@ -2,7 +2,7 @@
  * CLI command implementations for ppg.
  */
 
-import fs from 'node:fs';
+import fs, { globSync } from 'node:fs';
 import path from 'node:path';
 import { createPool, type PoolOptions } from '../connection/pool.js';
 import { createSchemaManager } from '../branch/schema-manager.js';
@@ -10,6 +10,14 @@ import { createMigrationRunner, type MigrationToRun } from '../migration/runner.
 import { formatMigrationFile, generateMigrationFilename } from '../migration/generator.js';
 import { introspectDatabase } from '../migration/introspector.js';
 import { compareSchemas } from '../migration/differ.js';
+import { parseFiles } from '@/tools/parser/index.js';
+import { generateSchema, validateSchema } from '../codegen/schema-generator.js';
+import type {
+  DatabaseSchema,
+  SchemaDiff,
+  TableAlteration,
+  ColumnAlteration,
+} from '../schema/types.js';
 
 /**
  * Configuration for the CLI.
@@ -65,65 +73,307 @@ export async function loadConfig(configPath?: string): Promise<CliConfig> {
 }
 
 /**
- * Generate schema from .pmsg files.
+ * Discover .pmsg files matching the given glob patterns.
  */
-export function generateCommand(unused_config: CliConfig): void {
-  console.log('Generating schema from .pmsg files...');
-
-  // TODO: Implement .pmsg parsing and schema generation
-  // This would integrate with the existing Propane parser
-
-  console.log('Schema generation not yet implemented.');
-  console.log('This will parse .pmsg files and generate the database schema.');
+function discoverPmsgFiles(patterns: string[]): string[] {
+  const files: string[] = [];
+  for (const pattern of patterns) {
+    files.push(...globSync(pattern));
+  }
+  // Dedupe and sort
+  return [...new Set(files)].toSorted();
 }
 
 /**
- * Show diff between current database and schema.
- *
- * Note: Currently only shows the introspected database schema.
- * Full diff requires .pmsg parsing integration (generateCommand).
+ * Generate schema from .pmsg files.
+ */
+export function generateCommand(config: CliConfig): void {
+  console.log('Generating schema from .pmsg files...');
+
+  // 1. Discover .pmsg files
+  const patterns = config.pmsgFiles ?? ['**/*.pmsg'];
+  const pmsgPaths = discoverPmsgFiles(patterns);
+
+  if (pmsgPaths.length === 0) {
+    console.log('No .pmsg files found matching patterns:', patterns.join(', '));
+    return;
+  }
+
+  console.log(`Found ${pmsgPaths.length} .pmsg file(s)`);
+
+  // 2. Parse files
+  const { files, diagnostics } = parseFiles(pmsgPaths);
+
+  // Report parse errors
+  const errors = diagnostics.filter(d => d.severity === 'error');
+  if (errors.length > 0) {
+    console.error('\nParse errors:');
+    for (const err of errors) {
+      console.error(`  ${err.filePath}:${err.location.start.line}: ${err.message}`);
+    }
+    process.exit(1);
+  }
+
+  // 3. Validate schema
+  const validation = validateSchema(files);
+  if (!validation.valid) {
+    console.error('\nSchema validation errors:');
+    for (const err of validation.errors) {
+      const field = err.field ? '.' + err.field : '';
+      console.error(`  ${err.table}${field}: ${err.message}`);
+    }
+    process.exit(1);
+  }
+
+  // 4. Generate schema
+  const schemaName = config.schema?.defaultSchema ?? 'public';
+  const schema = generateSchema(files, { schemaName });
+
+  // 5. Output summary
+  const tableNames = Object.keys(schema.tables);
+  console.log(`\nGenerated schema: ${schemaName}`);
+  console.log(`Tables: ${tableNames.length}`);
+
+  if (tableNames.length === 0) {
+    console.log('\nNo Table<{...}> types found in parsed files.');
+    return;
+  }
+
+  for (const tableName of tableNames) {
+    const table = schema.tables[tableName]!;
+    const colCount = Object.keys(table.columns).length;
+    const idxCount = table.indexes.length;
+    const fkCount = table.foreignKeys.length;
+    console.log(`  ${tableName}: ${colCount} columns, ${idxCount} indexes, ${fkCount} FKs`);
+  }
+
+  console.log('\nSchema generated successfully.');
+}
+
+/**
+ * Show diff between current database and desired schema from .pmsg files.
  */
 export async function diffCommand(config: CliConfig): Promise<void> {
-  console.log('Introspecting database schema...');
+  console.log('Comparing schema...\n');
 
   const pool = createPool(config.connection);
   const schemaName = config.schema?.defaultSchema ?? 'public';
 
   try {
+    // 1. Discover and parse .pmsg files
+    const patterns = config.pmsgFiles ?? ['**/*.pmsg'];
+    const pmsgPaths = discoverPmsgFiles(patterns);
+
+    if (pmsgPaths.length === 0) {
+      console.log('No .pmsg files found. Showing database schema only.\n');
+      const currentSchema = await introspectDatabase(pool, schemaName);
+      displayDatabaseSchema(currentSchema, schemaName);
+      return;
+    }
+
+    const { files, diagnostics } = parseFiles(pmsgPaths);
+    const errors = diagnostics.filter(d => d.severity === 'error');
+    if (errors.length > 0) {
+      console.error('Parse errors in .pmsg files:');
+      for (const err of errors) {
+        console.error(`  ${err.filePath}:${err.location.start.line}: ${err.message}`);
+      }
+      process.exit(1);
+    }
+
+    // 2. Generate desired schema
+    const desiredSchema = generateSchema(files, { schemaName });
+
+    // 3. Introspect current database schema
     const currentSchema = await introspectDatabase(pool, schemaName);
 
-    console.log(`\nDatabase schema: ${schemaName}`);
-    console.log(`Tables found: ${Object.keys(currentSchema.tables).length}`);
+    // 4. Compare schemas
+    const diff = compareSchemas(currentSchema, desiredSchema);
 
-    for (const [tableName, table] of Object.entries(currentSchema.tables)) {
-      console.log(`\n  ${tableName}:`);
-      for (const [colName, col] of Object.entries(table.columns)) {
-        const flags: string[] = [];
-        if (col.isPrimaryKey) flags.push('PK');
-        if (col.isAutoIncrement) flags.push('AUTO');
-        if (col.isUnique) flags.push('UNIQUE');
-        if (!col.nullable) flags.push('NOT NULL');
-        const flagStr = flags.length > 0 ? ` [${flags.join(', ')}]` : '';
-        console.log(`    ${colName}: ${col.type}${flagStr}`);
-      }
-      if (table.indexes.length > 0) {
-        console.log('    Indexes:');
-        for (const idx of table.indexes) {
-          const unique = idx.unique ? 'UNIQUE ' : '';
-          console.log(`      ${idx.name}: ${unique}(${idx.columns.join(', ')})`);
-        }
-      }
-      if (table.foreignKeys.length > 0) {
-        console.log('    Foreign Keys:');
-        for (const fk of table.foreignKeys) {
-          console.log(`      ${fk.name}: (${fk.columns.join(', ')}) -> ${fk.referencedTable}(${fk.referencedColumns.join(', ')})`);
+    // 5. Display diff
+    if (!hasDiffChanges(diff)) {
+      console.log('Database schema matches .pmsg files. No changes needed.');
+      return;
+    }
+
+    displaySchemaDiff(diff);
+
+    if (diff.warnings.length > 0) {
+      console.log('\nWarnings:');
+      for (const warning of diff.warnings) {
+        console.log(`  ${warning.table}: ${warning.message}`);
+        if (warning.suggestion) {
+          console.log(`    Hint: ${warning.suggestion}`);
         }
       }
     }
 
-    console.log('\nNote: Full diff with .pmsg files requires `ppg generate` first.');
+    if (diff.hasBreakingChanges) {
+      console.log('\nThis diff contains breaking changes (DROP operations).');
+    }
   } finally {
     await pool.end();
+  }
+}
+
+/**
+ * Display a database schema in a readable format.
+ */
+function displayDatabaseSchema(
+  schema: DatabaseSchema,
+  schemaName: string
+): void {
+  console.log(`Database schema: ${schemaName}`);
+  console.log(`Tables found: ${Object.keys(schema.tables).length}`);
+
+  for (const [tableName, table] of Object.entries(schema.tables)) {
+    console.log(`\n  ${tableName}:`);
+    for (const [colName, col] of Object.entries(table.columns)) {
+      const flags: string[] = [];
+      if (col.isPrimaryKey) flags.push('PK');
+      if (col.isAutoIncrement) flags.push('AUTO');
+      if (col.isUnique) flags.push('UNIQUE');
+      if (!col.nullable) flags.push('NOT NULL');
+      const flagStr = flags.length > 0 ? ` [${flags.join(', ')}]` : '';
+      console.log(`    ${colName}: ${col.type}${flagStr}`);
+    }
+    if (table.indexes.length > 0) {
+      console.log('    Indexes:');
+      for (const idx of table.indexes) {
+        const unique = idx.unique ? 'UNIQUE ' : '';
+        console.log(`      ${idx.name}: ${unique}(${idx.columns.join(', ')})`);
+      }
+    }
+    if (table.foreignKeys.length > 0) {
+      console.log('    Foreign Keys:');
+      for (const fk of table.foreignKeys) {
+        console.log(`      ${fk.name}: (${fk.columns.join(', ')}) -> ${fk.referencedTable}(${fk.referencedColumns.join(', ')})`);
+      }
+    }
+  }
+}
+
+/**
+ * Check if a SchemaDiff has any changes.
+ */
+function hasDiffChanges(diff: SchemaDiff): boolean {
+  return (
+    diff.tablesToCreate.length > 0
+    || diff.tablesToDrop.length > 0
+    || diff.tablesToAlter.length > 0
+  );
+}
+
+/**
+ * Display a schema diff in a readable format.
+ */
+function displaySchemaDiff(diff: SchemaDiff): void {
+  let changeCount = 0;
+
+  // Tables to create
+  for (const table of diff.tablesToCreate) {
+    changeCount++;
+    console.log(`+ CREATE TABLE ${table.name}`);
+    for (const [colName, col] of Object.entries(table.columns)) {
+      const flags: string[] = [];
+      if (col.isPrimaryKey) flags.push('PK');
+      if (col.isAutoIncrement) flags.push('AUTO');
+      if (!col.nullable) flags.push('NOT NULL');
+      const flagStr = flags.length > 0 ? ` [${flags.join(', ')}]` : '';
+      console.log(`    + ${colName}: ${col.type}${flagStr}`);
+    }
+  }
+
+  // Tables to drop
+  for (const tableName of diff.tablesToDrop) {
+    changeCount++;
+    console.log(`- DROP TABLE ${tableName}`);
+  }
+
+  // Tables to alter
+  for (const alteration of diff.tablesToAlter) {
+    displayTableAlteration(alteration);
+    changeCount++;
+  }
+
+  console.log(`\nFound ${changeCount} change(s).`);
+}
+
+/**
+ * Display alterations for a single table.
+ */
+function displayTableAlteration(alteration: TableAlteration): void {
+  console.log(`~ ALTER TABLE ${alteration.tableName}`);
+
+  for (const col of alteration.columnsToAdd) {
+    console.log(`    + ADD COLUMN ${col.name}: ${col.type}`);
+  }
+
+  for (const colName of alteration.columnsToDrop) {
+    console.log(`    - DROP COLUMN ${colName}`);
+  }
+
+  for (const rename of alteration.columnsToRename) {
+    console.log(`    ~ RENAME COLUMN ${rename.from} TO ${rename.to}`);
+  }
+
+  for (const colAlt of alteration.columnsToAlter) {
+    displayColumnAlteration(alteration.tableName, colAlt);
+  }
+
+  for (const idx of alteration.indexesToCreate) {
+    const unique = idx.unique ? 'UNIQUE ' : '';
+    console.log(`    + CREATE ${unique}INDEX ${idx.name} (${idx.columns.join(', ')})`);
+  }
+
+  for (const idxName of alteration.indexesToDrop) {
+    console.log(`    - DROP INDEX ${idxName}`);
+  }
+
+  for (const fk of alteration.foreignKeysToAdd) {
+    console.log(`    + ADD FK ${fk.name}: (${fk.columns.join(', ')}) -> ${fk.referencedTable}`);
+  }
+
+  for (const fkName of alteration.foreignKeysToDrop) {
+    console.log(`    - DROP FK ${fkName}`);
+  }
+
+  for (const check of alteration.checksToAdd) {
+    console.log(`    + ADD CHECK ${check.name}`);
+  }
+
+  for (const checkName of alteration.checksToDrop) {
+    console.log(`    - DROP CHECK ${checkName}`);
+  }
+}
+
+/**
+ * Display alterations for a single column.
+ */
+function displayColumnAlteration(
+  unused_tableName: string,
+  alteration: ColumnAlteration
+): void {
+  const changes: string[] = [];
+
+  if (alteration.typeChange) {
+    changes.push(`type: ${alteration.typeChange.from} -> ${alteration.typeChange.to}`);
+  }
+
+  if (alteration.nullableChange) {
+    const from = alteration.nullableChange.from ? 'NULL' : 'NOT NULL';
+    const to = alteration.nullableChange.to ? 'NULL' : 'NOT NULL';
+    changes.push(`${from} -> ${to}`);
+  }
+
+  if (alteration.defaultChange) {
+    const from = alteration.defaultChange.from ?? 'none';
+    const to = alteration.defaultChange.to ?? 'none';
+    changes.push(`default: ${from} -> ${to}`);
+  }
+
+  if (changes.length > 0) {
+    console.log(`    ~ ALTER COLUMN ${alteration.columnName}: ${changes.join(', ')}`);
   }
 }
 
