@@ -15,7 +15,7 @@ export {
   Auto,
   Index,
   Unique,
-  Separate,
+  Normalize,
   Json,
   FK,
   type WrapperTypeInfo,

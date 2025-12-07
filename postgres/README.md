@@ -181,7 +181,7 @@ await withTransaction(pool, async (tx) => {
 | `Auto<T>` | `SERIAL/BIGSERIAL` | Auto-increment (use inside `PK<>`) |
 | `Index<T>` | Creates index | B-tree index on field |
 | `Unique<T>` | `UNIQUE` | Unique constraint |
-| `Separate<T[]>` | Separate table | Store array in related table |
+| `Normalize<T[]>` | Separate table | Normalize array into related table |
 | `Json<T>` | `JSONB` | Force JSONB storage |
 | `FK<T>` | `REFERENCES` | Foreign key to another table |
 

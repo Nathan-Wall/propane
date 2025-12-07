@@ -10,7 +10,7 @@ declare const PK_BRAND: unique symbol;
 declare const AUTO_BRAND: unique symbol;
 declare const INDEX_BRAND: unique symbol;
 declare const UNIQUE_BRAND: unique symbol;
-declare const SEPARATE_BRAND: unique symbol;
+declare const NORMALIZE_BRAND: unique symbol;
 declare const JSON_BRAND: unique symbol;
 declare const FK_BRAND: unique symbol;
 
@@ -102,21 +102,24 @@ export type Index<T> = T & { readonly [INDEX_BRAND]: never };
 export type Unique<T> = T & { readonly [UNIQUE_BRAND]: never };
 
 /**
- * Forces an array field to be stored in a separate table with foreign keys.
- * This is the default for arrays of messages, but can be used explicitly.
+ * Normalizes an array field into a separate table with foreign keys.
+ * This follows database normalization principles (1NF, 2NF, 3NF).
+ *
+ * Use `Normalize<T[]>` when you need to query or index array elements,
+ * or when the array could grow large. Use `Json<T[]>` for small, opaque arrays.
  *
  * @typeParam T - An array type
  *
  * @example
  * ```typescript
- * export type Order = {
+ * export type Order = Table<{
  *   '1:id': PK<bigint>;
- *   '2:items': Separate<OrderItem[]>;   // Separate order_items table
- * };
+ *   '2:items': Normalize<OrderItem[]>;  // Normalized into order_items table
+ * }>;
  * ```
  */
-export type Separate<T extends unknown[]> = T & {
-  readonly [SEPARATE_BRAND]: never;
+export type Normalize<T extends unknown[]> = T & {
+  readonly [NORMALIZE_BRAND]: never;
 };
 
 /**
@@ -166,7 +169,7 @@ export interface WrapperTypeInfo {
   isAutoIncrement: boolean;
   isIndexed: boolean;
   isUnique: boolean;
-  forceSeparate: boolean;
+  forceNormalize: boolean;
   forceJson: boolean;
   baseType: string;
   /** Foreign key reference info, if FK<T> wrapper is used */

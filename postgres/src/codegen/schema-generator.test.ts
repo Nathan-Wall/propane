@@ -331,9 +331,9 @@ describe('generateTableDefinition', () => {
   });
 });
 
-// Helper for Separate<T[]>
-function separate(inner: PmtType): PmtType {
-  return { kind: 'reference', name: 'Separate', typeArguments: [inner] };
+// Helper for Normalize<T[]>
+function normalize(inner: PmtType): PmtType {
+  return { kind: 'reference', name: 'Normalize', typeArguments: [inner] };
 }
 
 // Helper for array types
@@ -350,12 +350,12 @@ function fk(typeName: string, column?: string): PmtType {
   return { kind: 'reference', name: 'FK', typeArguments: args };
 }
 
-describe('Separate<T[]> child tables', () => {
-  it('should generate child table for Separate<string[]>', () => {
+describe('Normalize<T[]> child tables', () => {
+  it('should generate child table for Normalize<string[]>', () => {
     const file = createFile([
       tableMessage('User', [
         prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-        prop('tags', separate(arrayType(stringType)), { fieldNumber: 2 }),
+        prop('tags', normalize(arrayType(stringType)), { fieldNumber: 2 }),
       ]),
     ]);
 
@@ -514,16 +514,16 @@ describe('validation', () => {
     assert.strictEqual(result.errors[0]!.code, 'MULTIPLE_PRIMARY_KEYS');
   });
 
-  it('should error on Separate without array type', () => {
+  it('should error on Normalize without array type', () => {
     const msg = tableMessage('Bad', [
       prop('id', pk(bigintType), { fieldNumber: 1 }),
-      prop('value', separate(stringType), { fieldNumber: 2 }),
+      prop('value', normalize(stringType), { fieldNumber: 2 }),
     ]);
 
     const result = validateTableMessage(msg);
 
     assert.strictEqual(result.valid, false);
-    assert.strictEqual(result.errors[0]!.code, 'SEPARATE_NOT_ARRAY');
+    assert.strictEqual(result.errors[0]!.code, 'NORMALIZE_NOT_ARRAY');
   });
 
   it('should error on duplicate field numbers', () => {

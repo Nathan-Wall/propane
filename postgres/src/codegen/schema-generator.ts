@@ -19,7 +19,7 @@ const DB_WRAPPER_TYPES = new Set([
   'Auto',     // Auto-increment
   'Index',    // Create index
   'Unique',   // Unique constraint
-  'Separate', // Force separate table for arrays
+  'Normalize', // Normalize arrays into separate tables
   'Json',     // Force JSONB storage
   'FK',       // Foreign key reference
 ]);
@@ -38,8 +38,8 @@ interface UnwrappedType {
   createIndex: boolean;
   /** Whether this field has a unique constraint */
   isUnique: boolean;
-  /** Whether to force separate table for array (not used in column generation) */
-  forceSeparate: boolean;
+  /** Whether to normalize array into separate table (not used in column generation) */
+  forceNormalize: boolean;
   /** Whether to force JSONB storage */
   forceJson: boolean;
   /** Foreign key reference info */
@@ -64,7 +64,7 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
     isAutoIncrement: false,
     createIndex: false,
     isUnique: false,
-    forceSeparate: false,
+    forceNormalize: false,
     forceJson: false,
   };
 
@@ -93,8 +93,8 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
       case 'Unique':
         result.isUnique = true;
         break;
-      case 'Separate':
-        result.forceSeparate = true;
+      case 'Normalize':
+        result.forceNormalize = true;
         break;
       case 'Json':
         result.forceJson = true;
@@ -338,8 +338,8 @@ function generateTable(
     const columnName = toSnakeCase(prop.name);
     const unwrapped = unwrapDbWrappers(prop.type);
 
-    // Handle Separate<T[]> - generate child table instead of column
-    if (unwrapped.forceSeparate) {
+    // Handle Normalize<T[]> - generate child table instead of column
+    if (unwrapped.forceNormalize) {
       if (pkInfo && unwrapped.baseType.kind === 'array') {
         const childTable = generateChildTable({
           parentTable: tableName,
@@ -441,7 +441,7 @@ function generateTable(
 }
 
 /**
- * Info about a child table to be generated from Separate<T[]>.
+ * Info about a child table to be generated from Normalize<T[]>.
  */
 interface ChildTableInfo {
   parentTable: string;
@@ -501,7 +501,7 @@ function singularize(tableName: string): string {
 }
 
 /**
- * Generate a child table for a Separate<T[]> field.
+ * Generate a child table for a Normalize<T[]> field.
  */
 function generateChildTable(info: ChildTableInfo): TableDefinition {
   const childTableName = `${info.parentTable}_${info.columnName}`;
@@ -709,7 +709,7 @@ export function findTableTypes(files: PmtFile[]): PmtMessage[] {
 export type ValidationErrorCode =
   | 'INVALID_AUTO_TYPE'
   | 'MULTIPLE_PRIMARY_KEYS'
-  | 'SEPARATE_NOT_ARRAY'
+  | 'NORMALIZE_NOT_ARRAY'
   | 'DUPLICATE_FIELD_NUMBER'
   | 'FK_NOT_TABLE';
 
@@ -773,11 +773,11 @@ export function validateTableMessage(
       pkFields.push(prop.name);
     }
 
-    // Check Separate<T> requires array
-    if (unwrapped.forceSeparate && unwrapped.baseType.kind !== 'array') {
+    // Check Normalize<T> requires array
+    if (unwrapped.forceNormalize && unwrapped.baseType.kind !== 'array') {
       errors.push({
-        code: 'SEPARATE_NOT_ARRAY',
-        message: `Separate<T> requires an array type`,
+        code: 'NORMALIZE_NOT_ARRAY',
+        message: `Normalize<T> requires an array type`,
         table: message.name,
         field: prop.name,
       });
@@ -861,7 +861,7 @@ export function validateSchema(files: PmtFile[]): SchemaValidationResult {
 export interface GenerateTableDefinitionResult {
   /** The main table definition */
   table: TableDefinition;
-  /** Any child tables generated from Separate<T[]> fields */
+  /** Any child tables generated from Normalize<T[]> fields */
   childTables: TableDefinition[];
 }
 
