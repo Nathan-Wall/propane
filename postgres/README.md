@@ -20,21 +20,22 @@ npm install @propanejs/postgres postgres
 
 ### Define your schema
 
-Use wrapper types in your `.pmsg` files to configure database storage:
+Use the `Table<{...}>` wrapper in your `.pmsg` files to mark types as database tables:
 
 ```typescript
 // user.pmsg
-import { PK, Auto, Index, Unique } from '@propanejs/postgres';
+import { Table, PK, Auto, Index, Unique, Json } from '@propanejs/postgres';
 
-// @message @table
-export type User = {
+export type User = Table<{
   '1:id': PK<Auto<bigint>>;        // BIGSERIAL PRIMARY KEY
   '2:email': Unique<string>;        // TEXT UNIQUE
   '3:name': string;                 // TEXT NOT NULL
   '4:createdAt': Index<Date>;       // TIMESTAMPTZ with index
   '5:metadata'?: Json<UserMeta>;    // JSONB, nullable
-};
+}>;
 ```
+
+Types wrapped with `Table<{...}>` are transformed into runtime classes (like `Message<T>`) and also generate PostgreSQL schema.
 
 ### Connect to the database
 
@@ -103,13 +104,19 @@ await withTransaction(pool, async (tx) => {
 
 ## Wrapper Types
 
+### Type-Level Wrappers
+| Type | Description |
+|------|-------------|
+| `Table<{...}>` | Marks a type as a database table (transforms like `Message<T>`) |
+
+### Field-Level Wrappers
 | Type | PostgreSQL | Description |
 |------|------------|-------------|
 | `PK<T>` | `PRIMARY KEY` | Marks field as primary key |
 | `Auto<T>` | `SERIAL/BIGSERIAL` | Auto-increment (use inside `PK<>`) |
 | `Index<T>` | Creates index | B-tree index on field |
 | `Unique<T>` | `UNIQUE` | Unique constraint |
-| `Table<T[]>` | Separate table | Store array in related table |
+| `Separate<T[]>` | Separate table | Store array in related table |
 | `Json<T>` | `JSONB` | Force JSONB storage |
 
 ## Scalar Types

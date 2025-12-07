@@ -1,0 +1,23 @@
+import { Table } from '@propanejs/postgres';
+
+/**
+ * Test Table<T> wrapper for database types.
+ * Table types are message types that also generate database schema.
+ */
+export type User = Table<{
+  '1:id': bigint;
+  '2:email': string;
+  '3:name': string;
+  '4:active': boolean;
+  '5:created': Date;
+}>;
+
+export type Post = Table<{
+  '1:id': bigint;
+  '2:userId': bigint;
+  '3:title': string;
+  '4:content': string;
+  '5:published': boolean;
+  created: Date;
+  updated: Date;
+}>;

@@ -10,11 +10,12 @@ export { int32, decimal, toInt32, toDecimal } from '@/runtime/common/numbers/sca
 
 // Export database wrapper types
 export {
+  Table,
   PK,
   Auto,
   Index,
   Unique,
-  Table,
+  Separate,
   Json,
   type WrapperTypeInfo,
 } from './types.js';
