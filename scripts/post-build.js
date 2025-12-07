@@ -24,6 +24,33 @@ if (fs.existsSync(reactIndexPath)) {
   fs.writeFileSync(reactIndexPath, content);
 }
 
+// 0b. Fix tsc-alias incorrect transformation of 'postgres' import
+// tsc-alias transforms 'postgres' to a relative path to node_modules/postgres,
+// but we need the bare 'postgres' specifier for proper ESM resolution
+const postgresDir = path.join(buildDir, 'postgres');
+if (fs.existsSync(postgresDir)) {
+  const fixPostgresImports = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        fixPostgresImports(fullPath);
+      } else if (entry.name.endsWith('.js')) {
+        let content = fs.readFileSync(fullPath, 'utf8');
+        const original = content;
+        // Replace any relative path to node_modules/postgres with bare 'postgres' specifier
+        content = content.replaceAll(
+          /from ['"]\.\.\/.*node_modules\/postgres['"]/g,
+          "from 'postgres'"
+        );
+        if (content !== original) {
+          fs.writeFileSync(fullPath, content);
+        }
+      }
+    }
+  };
+  fixPostgresImports(postgresDir);
+}
+
 // Packages with src/ subdirectory have different output structure
 const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'postgres']);
 
