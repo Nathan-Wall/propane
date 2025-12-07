@@ -8,6 +8,8 @@ import { createPool, type PoolOptions } from '../connection/pool.js';
 import { createSchemaManager } from '../branch/schema-manager.js';
 import { createMigrationRunner, type MigrationToRun } from '../migration/runner.js';
 import { formatMigrationFile, generateMigrationFilename } from '../migration/generator.js';
+import { introspectDatabase } from '../migration/introspector.js';
+import { compareSchemas } from '../migration/differ.js';
 
 /**
  * Configuration for the CLI.
@@ -77,19 +79,49 @@ export function generateCommand(unused_config: CliConfig): void {
 
 /**
  * Show diff between current database and schema.
+ *
+ * Note: Currently only shows the introspected database schema.
+ * Full diff requires .pmsg parsing integration (generateCommand).
  */
 export async function diffCommand(config: CliConfig): Promise<void> {
-  console.log('Comparing database schema with .pmsg definitions...');
+  console.log('Introspecting database schema...');
 
   const pool = createPool(config.connection);
+  const schemaName = config.schema?.defaultSchema ?? 'public';
 
   try {
-    // TODO: Get current database schema
-    // TODO: Get desired schema from .pmsg files
-    // TODO: Compare and display diff
+    const currentSchema = await introspectDatabase(pool, schemaName);
 
-    console.log('Schema diff not yet fully implemented.');
-    console.log('This will compare the database with your .pmsg definitions.');
+    console.log(`\nDatabase schema: ${schemaName}`);
+    console.log(`Tables found: ${Object.keys(currentSchema.tables).length}`);
+
+    for (const [tableName, table] of Object.entries(currentSchema.tables)) {
+      console.log(`\n  ${tableName}:`);
+      for (const [colName, col] of Object.entries(table.columns)) {
+        const flags: string[] = [];
+        if (col.isPrimaryKey) flags.push('PK');
+        if (col.isAutoIncrement) flags.push('AUTO');
+        if (col.isUnique) flags.push('UNIQUE');
+        if (!col.nullable) flags.push('NOT NULL');
+        const flagStr = flags.length > 0 ? ` [${flags.join(', ')}]` : '';
+        console.log(`    ${colName}: ${col.type}${flagStr}`);
+      }
+      if (table.indexes.length > 0) {
+        console.log('    Indexes:');
+        for (const idx of table.indexes) {
+          const unique = idx.unique ? 'UNIQUE ' : '';
+          console.log(`      ${idx.name}: ${unique}(${idx.columns.join(', ')})`);
+        }
+      }
+      if (table.foreignKeys.length > 0) {
+        console.log('    Foreign Keys:');
+        for (const fk of table.foreignKeys) {
+          console.log(`      ${fk.name}: (${fk.columns.join(', ')}) -> ${fk.referencedTable}(${fk.referencedColumns.join(', ')})`);
+        }
+      }
+    }
+
+    console.log('\nNote: Full diff with .pmsg files requires `ppg generate` first.');
   } finally {
     await pool.end();
   }

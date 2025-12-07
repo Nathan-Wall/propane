@@ -35,6 +35,7 @@ export * from './migration/differ.js';
 export * from './migration/generator.js';
 export * from './migration/runner.js';
 export * from './migration/history.js';
+export * from './migration/introspector.js';
 
 // Export repository pattern
 export * from './repository/base-repository.js';
