@@ -130,7 +130,13 @@ export class MigrationRunner {
       return {
         applied: [],
         reverted: [],
-        failed: [{ version: lastVersion, error: new Error('Migration not found') }],
+        failed: [{
+          version: lastVersion,
+          error: new Error(
+            `Migration version "${lastVersion}" not found. ` +
+            `Available versions: ${migrations.map(m => m.version).join(', ') || 'none'}`
+          ),
+        }],
         success: false,
       };
     }

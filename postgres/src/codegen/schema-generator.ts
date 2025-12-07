@@ -170,6 +170,8 @@ function toScalarType(type: PmtType): ScalarType {
 
 /**
  * Extract decimal precision and scale from a decimal<P,S> type.
+ *
+ * @throws Error if precision or scale are out of PostgreSQL bounds
  */
 function extractDecimalOptions(type: PmtType): { precision?: number; scale?: number } {
   if (type.kind === 'reference' && type.name === 'decimal' && type.typeArguments.length >= 2) {
@@ -184,6 +186,17 @@ function extractDecimalOptions(type: PmtType): { precision?: number; scale?: num
     }
     if (scaleArg?.kind === 'literal' && typeof scaleArg.value === 'number') {
       scale = scaleArg.value;
+    }
+
+    // Validate bounds (PostgreSQL limits)
+    if (precision !== undefined && (precision < 1 || precision > 1000)) {
+      throw new Error(`Decimal precision must be between 1 and 1000, got: ${precision}`);
+    }
+    if (scale !== undefined && scale < 0) {
+      throw new Error(`Decimal scale must be non-negative, got: ${scale}`);
+    }
+    if (scale !== undefined && precision !== undefined && scale > precision) {
+      throw new Error(`Decimal scale (${scale}) cannot exceed precision (${precision})`);
     }
 
     return { precision, scale };
@@ -748,7 +761,7 @@ export function validateTableMessage(
       if (!['number', 'bigint', 'int32'].includes(baseScalar)) {
         errors.push({
           code: 'INVALID_AUTO_TYPE',
-          message: `Auto<T> only supports numeric types (number, bigint, int32), got: ${baseScalar}`,
+          message: `Auto<T> only supports numeric types. Got: ${baseScalar}. Use PK<Auto<bigint>> or PK<Auto<number>> for auto-increment primary keys.`,
           table: message.name,
           field: prop.name,
         });

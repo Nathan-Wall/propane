@@ -141,7 +141,10 @@ export function mapScalarType(scalarType: ScalarType, options?: {
       return { sqlType: 'TEXT', isJsonb: false };
 
     default:
-      throw new Error(`Unknown scalar type: ${String(scalarType)}`);
+      throw new Error(
+        `Unknown scalar type: ${String(scalarType)}. ` +
+        `Supported types: string, number, bigint, boolean, int32, decimal, Date, URL, ArrayBuffer, object, array, map, set, union`
+      );
   }
 }
 

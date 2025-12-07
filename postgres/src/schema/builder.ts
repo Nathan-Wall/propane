@@ -38,8 +38,13 @@ export class SchemaBuilder {
 
   /**
    * Add a table to the schema.
+   *
+   * @throws Error if a table with this name already exists
    */
   table(name: string, configure: (table: TableBuilder) => void): this {
+    if (this._tables.has(name)) {
+      throw new Error(`Duplicate table name: ${name}`);
+    }
     const builder = new TableBuilder(name);
     configure(builder);
     this._tables.set(name, builder);
@@ -89,8 +94,13 @@ export class TableBuilder {
 
   /**
    * Add a column to the table.
+   *
+   * @throws Error if a column with this name already exists
    */
   column(name: string, configure: (column: ColumnBuilder) => void): this {
+    if (this._columns.has(name)) {
+      throw new Error(`Duplicate column name in table ${this._name}: ${name}`);
+    }
     const builder = new ColumnBuilder(name);
     configure(builder);
     this._columns.set(name, builder);

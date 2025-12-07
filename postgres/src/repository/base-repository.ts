@@ -164,7 +164,11 @@ export class BaseRepository<T extends Record<string, unknown>> {
     const query = `INSERT INTO ${this.qualifiedTableName} (${columns}) VALUES (${placeholders}) RETURNING *`;
     const result = await this.connection.execute<T>(query, values);
 
-    return this.deserializeRow(result[0]!);
+    const firstRow = result[0];
+    if (!firstRow) {
+      throw new Error('INSERT did not return a row');
+    }
+    return this.deserializeRow(firstRow);
   }
 
   /**
@@ -174,7 +178,11 @@ export class BaseRepository<T extends Record<string, unknown>> {
     if (dataArray.length === 0) return [];
 
     // Use the first item to determine columns
-    const { columns: colNames } = this.buildInsertData(dataArray[0]!);
+    const firstData = dataArray[0];
+    if (!firstData) {
+      return [];
+    }
+    const { columns: colNames } = this.buildInsertData(firstData);
 
     const allValues: unknown[] = [];
     const allPlaceholders: string[] = [];
@@ -331,7 +339,11 @@ export class BaseRepository<T extends Record<string, unknown>> {
     query += ' RETURNING *';
 
     const result = await this.connection.execute<T>(query, values);
-    return this.deserializeRow(result[0]!);
+    const firstRow = result[0];
+    if (!firstRow) {
+      throw new Error('UPSERT did not return a row');
+    }
+    return this.deserializeRow(firstRow);
   }
 
   /**

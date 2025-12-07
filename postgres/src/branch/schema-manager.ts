@@ -35,14 +35,32 @@ export class SchemaManager {
 
   /**
    * Convert a branch name to a valid PostgreSQL schema name.
+   *
+   * @throws Error if the branch name is empty or produces a reserved/invalid schema name
    */
   branchToSchemaName(branchName: string): string {
-    return branchName
+    if (!branchName || branchName.trim().length === 0) {
+      throw new Error('Branch name cannot be empty');
+    }
+
+    const result = branchName
       .replaceAll(/[^a-z0-9]/gi, '_')
       .toLowerCase()
       .replaceAll(/^_+|_+$/g, '')
-      .replaceAll(/_+/g, '_')
-      .slice(0, 63); // PostgreSQL identifier limit
+      .replaceAll(/_+/g, '_');
+
+    // Check for reserved schema names
+    const reserved = ['public', 'information_schema', 'pg_catalog', 'pg_toast'];
+    if (reserved.includes(result)) {
+      throw new Error(`Cannot use reserved schema name: ${result}`);
+    }
+
+    // Ensure non-empty after processing
+    if (result.length === 0) {
+      throw new Error(`Branch name "${branchName}" produces invalid schema name`);
+    }
+
+    return result.slice(0, 63); // PostgreSQL identifier limit
   }
 
   /**
