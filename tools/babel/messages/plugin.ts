@@ -7,6 +7,12 @@ import { ensureBaseImport, DEFAULT_RUNTIME_SOURCE } from './base-import.js';
 import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup.js';
 import { buildDeclarations, GENERATED_ALIAS, IMPLICIT_MESSAGE } from './declarations.js';
 import { levenshteinDistance } from '../../../common/strings/levenshtein.js';
+import {
+  type BrandImportTracker,
+  createBrandImportTracker,
+  trackBrandImport,
+  transformBrandInTypeAlias,
+} from './brand-transform.js';
 
 export interface PropanePluginOptions {
   /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
@@ -49,6 +55,8 @@ export interface PropaneState {
   opts?: PropanePluginOptions;
   /** Map of type name to extension info for types with @extend decorator */
   extendedTypes: Map<string, ExtendInfo>;
+  /** Tracks Brand imports for auto-namespace transformation */
+  brandTracker: BrandImportTracker;
 }
 
 /**
@@ -365,6 +373,7 @@ export default function propanePlugin() {
           state.needsImmutableMapType = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
           state.extendedTypes = new Map();
+          state.brandTracker = createBrandImportTracker();
 
           const fileOpts = state.file?.opts ?? {};
           const filename = fileOpts.filename ?? '';
@@ -408,6 +417,13 @@ export default function propanePlugin() {
           }
         },
       },
+      ImportDeclaration(
+        path: NodePath<t.ImportDeclaration>,
+        state: PropaneState
+      ) {
+        // Track Brand imports for auto-namespace transformation
+        trackBrandImport(path.node, state.brandTracker);
+      },
       ExportNamedDeclaration(
         path: NodePath<t.ExportNamedDeclaration>,
         state: PropaneState
@@ -445,11 +461,28 @@ export default function propanePlugin() {
         const hasMessage = isImplicitMessage || hasMessageDecorator(path);
 
         // If no @message decorator, skip transformation but still validate decorators
+        // and apply Brand auto-namespace transformation
         if (!hasMessage) {
           // Still extract @extend to validate it's not used without @message
           extractExtendDecorator(
             declarationPath, path, false, state.opts
           );
+
+          // Apply Brand auto-namespace transformation for non-@message types
+          const brandResult = transformBrandInTypeAlias(
+            declarationPath, state.brandTracker
+          );
+
+          if (brandResult.transformed) {
+            // Insert symbol declarations before the export
+            // Use replaceWithMultiple to prepend declarations to the original export
+            const replacement: t.Statement[] = [
+              ...brandResult.symbolDeclarations,
+              path.node,
+            ];
+            path.replaceWithMultiple(replacement);
+          }
+
           return;
         }
 
@@ -471,6 +504,7 @@ export default function propanePlugin() {
           declaredMessageTypeNames,
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
+          brandTracker: state.brandTracker,
         });
 
         if (replacement) {
@@ -505,9 +539,26 @@ export default function propanePlugin() {
         const hasMessage = isImplicitMessage || hasMessageDecorator(path);
 
         // If no @message decorator, skip transformation but still validate decorators
+        // and apply Brand auto-namespace transformation
         if (!hasMessage) {
           // Still extract @extend to validate it's not used without @message
           extractExtendDecorator(path, path, false, state.opts);
+
+          // Apply Brand auto-namespace transformation for non-@message types
+          const brandResult = transformBrandInTypeAlias(
+            path, state.brandTracker
+          );
+
+          if (brandResult.transformed) {
+            // Insert symbol declarations before the type alias
+            // Use replaceWithMultiple to prepend declarations to the original type alias
+            const replacement: t.Statement[] = [
+              ...brandResult.symbolDeclarations,
+              path.node,
+            ];
+            path.replaceWithMultiple(replacement);
+          }
+
           return;
         }
 
@@ -527,6 +578,7 @@ export default function propanePlugin() {
           declaredMessageTypeNames,
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
+          brandTracker: state.brandTracker,
         });
 
         if (replacement) {

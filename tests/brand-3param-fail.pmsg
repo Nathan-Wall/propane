@@ -1,0 +1,11 @@
+/**
+ * Test file that should FAIL compilation.
+ * 3-param Brand is not allowed in .pmsg files.
+ */
+
+import type { Brand } from '@propanejs/runtime';
+
+declare const customSymbol: unique symbol;
+
+// This should cause a compilation error - 3-param Brand not allowed
+export type BadBrand = Brand<number, 'id', typeof customSymbol>;

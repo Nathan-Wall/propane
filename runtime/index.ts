@@ -5,3 +5,4 @@ export * from './common/data/immutable-array-buffer.js';
 export * from './common/web/url.js';
 export * from './common/time/date.js';
 export * from './message.js';
+export * from './common/numbers/scalars.js';

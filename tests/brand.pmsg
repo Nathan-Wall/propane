@@ -1,0 +1,32 @@
+/**
+ * Test file for Brand auto-namespace transformation.
+ *
+ * Each Brand<T, B> usage should be transformed to Brand<T, B, typeof _TypeName_brand>
+ * with a unique symbol declaration generated for each type.
+ */
+
+import type { Brand } from '@propanejs/runtime';
+
+// Simple Brand type (should transform)
+export type UserId = Brand<number, 'userId'>;
+
+// Another simple Brand with same tag (should be distinct type)
+export type PostId = Brand<number, 'userId'>;
+
+// Brand with string base type
+export type Email = Brand<string, 'email'>;
+
+// Brand with intersection type
+export type Decimal = Brand<string, 'decimal'> & { __precision: number };
+
+// Brand in union type
+export type OptionalId = Brand<number, 'optId'> | null;
+
+// Non-exported Brand type
+type InternalId = Brand<bigint, 'internal'>;
+
+// Non-Brand type (should pass through unchanged)
+export type RegularType = string | number;
+
+// Type alias without Brand (should pass through)
+export type StringAlias = string;

@@ -1,0 +1,19 @@
+{
+  "name": "@propanejs/postgres",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "../dist/postgres/src/index.js",
+  "types": "../dist/postgres/src/index.d.ts",
+  "bin": {
+    "ppg": "src/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@propanejs/runtime": "*",
+    "postgres": "^3.4.4"
+  },
+  "license": "ISC"
+}

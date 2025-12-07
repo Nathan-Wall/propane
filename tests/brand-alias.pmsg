@@ -1,0 +1,11 @@
+/**
+ * Test Brand transformation with aliased imports.
+ */
+
+import type { Brand as B } from '@propanejs/runtime';
+
+// Should transform even with aliased Brand import
+export type AliasedId = B<number, 'aliased'>;
+
+// Multiple Brand usages with alias
+export type AnotherAliased = B<string, 'another'>;

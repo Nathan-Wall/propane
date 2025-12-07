@@ -5,6 +5,12 @@ import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
 import { buildClassFromProperties, type WrapperInfo } from './class-builder.js';
 import type { PropaneState, ExtendInfo } from './plugin.js';
+import {
+  type BrandImportTracker,
+  findBrandUsages,
+  createSymbolDeclaration,
+  transformBrandToThreeParam,
+} from './brand-transform.js';
 
 /**
  * Extract wrapper info from a type reference if it's an Endpoint type.
@@ -118,6 +124,8 @@ interface BuildDeclarationsOptions {
   getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null;
   /** Extension info if this type has an @extend decorator */
   extendInfo?: ExtendInfo;
+  /** Brand import tracker for auto-namespace transformation */
+  brandTracker?: BrandImportTracker;
 }
 
 export function buildDeclarations(
@@ -128,7 +136,8 @@ export function buildDeclarations(
     declaredTypeNames,
     declaredMessageTypeNames,
     getMessageReferenceName,
-    extendInfo
+    extendInfo,
+    brandTracker,
   }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -163,6 +172,62 @@ export function buildDeclarations(
     assertSupportedTopLevelType(typeLiteralPath);
     insertPrimitiveTypeAlias(typeAliasPath, exported);
     return null;
+  }
+
+  // Transform Brand usages in property types (auto-namespace transformation)
+  const brandSymbolDeclarations: t.VariableDeclaration[] = [];
+  const hasBrandImports = brandTracker
+    && (brandTracker.localNames.size > 0
+      || brandTracker.namespaceImports.size > 0);
+  if (hasBrandImports) {
+    const typeName = typeAlias.id.name;
+    const members = actualTypeLiteralPath.node.members;
+    let brandIndex = 0;
+
+    for (const member of members) {
+      if (!t.isTSPropertySignature(member) || !member.typeAnnotation) {
+        continue;
+      }
+
+      const propType = member.typeAnnotation.typeAnnotation;
+      const usages = findBrandUsages(propType, brandTracker);
+
+      for (const usage of usages) {
+        if (usage.paramCount === 3) {
+          throw typeAliasPath.buildCodeFrameError(
+            'Brand with 3 type parameters is not allowed in .pmsg files.\n\n'
+            + 'Use the 2-parameter form and the plugin will generate a unique '
+            + 'namespace.'
+          );
+        }
+
+        if (usage.paramCount !== 2) {
+          throw typeAliasPath.buildCodeFrameError(
+            `Brand requires exactly 2 type parameters, got ${usage.paramCount}.`
+          );
+        }
+
+        // Extract property name for symbol naming
+        let propName: string;
+        if (t.isIdentifier(member.key)) {
+          propName = member.key.name;
+        } else if (t.isStringLiteral(member.key)) {
+          // Handle '1:id' style property names - extract the name part
+          const match = /^\d+:(.+)$/.exec(member.key.value);
+          propName = match ? match[1]! : member.key.value;
+        } else {
+          propName = `prop${brandIndex}`;
+        }
+
+        // Generate unique symbol name
+        const symbolName = `_${typeName}_${propName}_brand${usages.length > 1 ? `_${brandIndex}` : ''}`;
+        brandIndex++;
+
+        // Create symbol declaration and transform Brand
+        brandSymbolDeclarations.push(createSymbolDeclaration(symbolName));
+        transformBrandToThreeParam(usage.node, symbolName);
+      }
+    }
   }
 
   // Extract type parameters (e.g., T, U from Container<T extends Message, U extends Message>)
@@ -257,10 +322,20 @@ export function buildDeclarations(
 
   if (exported) {
     const classExport = t.exportNamedDeclaration(classDecl, []);
-    return [...generatedStatements, classExport, typeNamespace];
+    return [
+      ...brandSymbolDeclarations,
+      ...generatedStatements,
+      classExport,
+      typeNamespace,
+    ];
   }
 
-  return [...generatedStatements, classDecl, typeNamespace];
+  return [
+    ...brandSymbolDeclarations,
+    ...generatedStatements,
+    classDecl,
+    typeNamespace,
+  ];
 }
 
 export function insertPrimitiveTypeAlias(

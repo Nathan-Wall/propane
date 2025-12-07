@@ -11,6 +11,7 @@
     "tools/parser",
     "cli",
     "react",
+    "postgres",
     "examples/react-todo"
   ],
   "scripts": {

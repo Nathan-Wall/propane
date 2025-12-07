@@ -18,7 +18,8 @@
     "exactOptionalPropertyTypes": false,
     "paths": {
       "react": ["node_modules/@types/react"],
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "postgres": ["node_modules/postgres"]
     },
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true
