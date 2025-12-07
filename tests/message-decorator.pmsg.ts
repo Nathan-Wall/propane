@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-decorator.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+
 // Tests that @message decorator controls which types get transformed
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class TransformedMessage extends Message<TransformedMessage.Data> {
   static TYPE_TAG = Symbol("TransformedMessage");
   static readonly $typeName = "TransformedMessage";
@@ -72,65 +72,7 @@ export type RegularType = 'active' | 'inactive' | 'pending';
 export type RegularAlias = number;
 
 // No decorator - object type without @message stays as-is
-export class RegularObject extends Message<RegularObject.Data> {
-  static TYPE_TAG = Symbol("RegularObject");
-  static readonly $typeName = "RegularObject";
-  static EMPTY: RegularObject;
-  #id: number;
-  #name: string;
-  constructor(props?: RegularObject.Value) {
-    if (!props && RegularObject.EMPTY) return RegularObject.EMPTY;
-    super(RegularObject.TYPE_TAG, "RegularObject");
-    this.#id = props ? props.id : 0;
-    this.#name = props ? props.name : "";
-    if (!props) RegularObject.EMPTY = this;
-  }
-  protected $getPropDescriptors(): MessagePropDescriptor<RegularObject.Data>[] {
-    return [{
-      name: "id",
-      fieldNumber: null,
-      getValue: () => this.#id
-    }, {
-      name: "name",
-      fieldNumber: null,
-      getValue: () => this.#name
-    }];
-  }
-  protected $fromEntries(entries: Record<string, unknown>): RegularObject.Data {
-    const props = {} as Partial<RegularObject.Data>;
-    const idValue = entries["id"];
-    if (idValue === undefined) throw new Error("Missing required property \"id\".");
-    if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
-    const nameValue = entries["name"];
-    if (nameValue === undefined) throw new Error("Missing required property \"name\".");
-    if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
-    return props as RegularObject.Data;
-  }
-  get id(): number {
-    return this.#id;
-  }
-  get name(): string {
-    return this.#name;
-  }
-  setId(value: number) {
-    return this.$update(new (this.constructor as typeof RegularObject)({
-      id: value,
-      name: this.#name
-    }));
-  }
-  setName(value: string) {
-    return this.$update(new (this.constructor as typeof RegularObject)({
-      id: this.#id,
-      name: value
-    }));
-  }
-}
-export namespace RegularObject {
-  export type Data = {
-    id: number;
-    name: string;
-  };
-  export type Value = RegularObject | RegularObject.Data;
-}
+export type RegularObject = {
+  id: number;
+  name: string;
+};

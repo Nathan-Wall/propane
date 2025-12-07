@@ -19,7 +19,7 @@ const ENDPOINT_TYPE_NAME = 'Endpoint';
 /**
  * Check if a message is transformable.
  *
- * A message is transformable if it has the @message decorator
+ * A message is transformable if it is a message type (Message<T>, Table<T>, or Endpoint<P, R>)
  * and has no error-level diagnostics attached to the file
  * that would prevent transformation.
  *
@@ -30,7 +30,7 @@ const ENDPOINT_TYPE_NAME = 'Endpoint';
 export function isTransformableMessage(
   message: PmtMessage, file: PmtFile
 ): boolean {
-  if (!message.hasMessageDecorator) {
+  if (!message.isMessageType) {
     return false;
   }
 
@@ -58,8 +58,8 @@ export function isTransformableMessage(
 export function getEndpointInfo(
   file: PmtFile, message: PmtMessage
 ): PmtEndpointInfo | null {
-  // Must be a @message type
-  if (!message.hasMessageDecorator) {
+  // Must be a message type
+  if (!message.isMessageType) {
     return null;
   }
 
@@ -77,8 +77,9 @@ export function getEndpointInfo(
   const localName = message.wrapper.localName;
 
   // Find an import that maps this local name to Endpoint from @propanejs/pms-core
+  // Also support internal paths like @/pms-core/src/index.js
   const isEndpoint = file.imports.some((imp) => {
-    if (imp.source !== PROPANE_CORE_MODULE) {
+    if (imp.source !== PROPANE_CORE_MODULE && !imp.source.startsWith('@/pms-core')) {
       return false;
     }
     return imp.specifiers.some(

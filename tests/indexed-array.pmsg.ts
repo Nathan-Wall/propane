@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static readonly $typeName = "ArrayMessage_Labels_Item";

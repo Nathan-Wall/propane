@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/object-only.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class ObjectOnly extends Message<ObjectOnly.Data> {
   static TYPE_TAG = Symbol("ObjectOnly");
   static readonly $typeName = "ObjectOnly";

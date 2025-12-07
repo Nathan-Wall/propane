@@ -1,5 +1,6 @@
-// @message
-export type UnionStringBool = {
+import { Message } from '@propanejs/runtime';
+
+export type UnionStringBool = Message<{
   '1:value': string | boolean;
   '2:optional'?: string | boolean;
-};
+}>;

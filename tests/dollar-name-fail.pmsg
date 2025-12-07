@@ -1,4 +1,5 @@
-// @message
-export type DollarNameFail = {
+import { Message } from '@propanejs/runtime';
+
+export type DollarNameFail = Message<{
   na$me: string;
-};
+}>;

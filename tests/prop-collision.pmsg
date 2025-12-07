@@ -1,5 +1,6 @@
-// @message
-export type Foo = {
+import { Message } from '@propanejs/runtime';
+
+export type Foo = Message<{
   name: string;
   _name: string;
-};
+}>;

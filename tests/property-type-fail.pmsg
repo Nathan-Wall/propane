@@ -1,4 +1,5 @@
-// @message
-export type FailProperty = {
+import { Message } from '@propanejs/runtime';
+
+export type FailProperty = Message<{
   callback: Function;
-};
+}>;

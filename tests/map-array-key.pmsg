@@ -1,6 +1,7 @@
-// @message
-export type MapArrayKey = {
+import { Message } from '@propanejs/runtime';
+
+export type MapArrayKey = Message<{
   arrayValues: Map<string[], number>;
   numberArrayMap: Map<number[], string>;
   optionalArrayMap?: Map<boolean[], Date>;
-};
+}>;

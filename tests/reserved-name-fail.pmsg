@@ -1,5 +1,6 @@
+import { Message } from '@propanejs/runtime';
+
 // This should fail because 'equals' is a reserved name
-// @message
-export type BadMessage = {
+export type BadMessage = Message<{
   '1:equals': boolean;
-};
+}>;

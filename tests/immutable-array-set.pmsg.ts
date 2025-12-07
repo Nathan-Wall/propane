@@ -2,10 +2,8 @@
 // Generated from tests/immutable-array-set.pmsg
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-
-// @message
-import type { MessagePropDescriptor, DataObject, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableMap } from "../runtime/index.js";
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static readonly $typeName = "ImmutableArraySet";

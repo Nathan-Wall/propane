@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static readonly $typeName = "OptionalHole";

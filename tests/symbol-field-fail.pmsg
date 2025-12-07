@@ -1,4 +1,5 @@
-// @message
-export type FailSymbol = {
+import { Message } from '@propanejs/runtime';
+
+export type FailSymbol = Message<{
   token: symbol;
-};
+}>;

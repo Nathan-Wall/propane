@@ -5,13 +5,13 @@
  */
 
 import type { Brand, MessagePropDescriptor, Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import { Message } from "../runtime/index.js";
 
 // A standalone Brand type (should transform)
 declare const _UserId_brand: unique symbol;
 export type UserId = Brand<number, 'userId', typeof _UserId_brand>;
 
-// @message type with Brand property (should the nested Brand also transform?)
-// @message
+// Message type with Brand property (should the nested Brand also transform?)
 declare const _User_id_brand: unique symbol;
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");

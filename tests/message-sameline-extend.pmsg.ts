@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-sameline-extend.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+
 // Test same-line syntax: @message @extend('...')
-// @message @extend('./message-sameline-extend.pmsg.ext.ts')
+// @extend('./message-sameline-extend.pmsg.ext.ts')
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   static TYPE_TAG = Symbol("SameLineExtend");
   static readonly $typeName = "SameLineExtend";

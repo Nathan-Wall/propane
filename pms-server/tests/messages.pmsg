@@ -1,23 +1,20 @@
 import { Endpoint } from '@/pms-core/src/index.js';
+import { Message } from '@propanejs/runtime';
 
-// @message
 export type EchoRequest = Endpoint<{
   message: string,
 }, EchoResponse>;
 
-// @message
-export type EchoResponse = {
+export type EchoResponse = Message<{
   echo: string,
   timestamp: number,
-};
+}>;
 
-// @message
 export type AddRequest = Endpoint<{
   a: number,
   b: number,
 }, AddResponse>;
 
-// @message
-export type AddResponse = {
+export type AddResponse = Message<{
   sum: number,
-};
+}>;

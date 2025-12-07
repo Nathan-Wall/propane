@@ -3,10 +3,8 @@
 import { Distance } from './distance.pmsg.js';
 import { Email } from './email.pmsg.js';
 import { Hash } from './hash.pmsg.js';
-
-// @message
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -31,7 +29,7 @@ export class User extends Message<User.Data> {
     this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
-    this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height) : new Distance();
+    this.#height = props ? props.height : new Distance();
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -107,30 +105,8 @@ export class User extends Message<User.Data> {
     props.eyeColor = eyeColorValue;
     const heightValue = entries["height"];
     if (heightValue === undefined) throw new Error("Missing required property \"height\".");
-    const heightMessageValue = heightValue instanceof Distance ? heightValue : new Distance(heightValue);
-    props.height = heightMessageValue;
+    props.height = heightValue;
     return props as User.Data;
-  }
-  override [WITH_CHILD](key: string | number, child: unknown): User {
-    switch (key) {
-      case "height":
-        return new (this.constructor as typeof User)({
-          id: this.#id,
-          name: this.#name,
-          email: this.#email,
-          passwordHash: this.#passwordHash,
-          created: this.#created,
-          updated: this.#updated,
-          active: this.#active,
-          eyeColor: this.#eyeColor,
-          height: child as Distance
-        });
-      default:
-        throw new Error(`Unknown key: ${key}`);
-    }
-  }
-  override *[GET_MESSAGE_CHILDREN]() {
-    yield ["height", this.#height] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get id(): number {
     return this.#id;
@@ -211,7 +187,7 @@ export class User extends Message<User.Data> {
       height: this.#height
     }));
   }
-  setHeight(value: Distance.Value) {
+  setHeight(value: Distance) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
@@ -221,7 +197,7 @@ export class User extends Message<User.Data> {
       updated: this.#updated,
       active: this.#active,
       eyeColor: this.#eyeColor,
-      height: value instanceof Distance ? value : new Distance(value)
+      height: value
     }));
   }
   setId(value: number) {
@@ -287,7 +263,7 @@ export namespace User {
     updated: ImmutableDate | Date;
     active: boolean;
     eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
-    height: Distance.Value;
+    height: Distance;
   };
   export type Value = User | User.Data;
 }

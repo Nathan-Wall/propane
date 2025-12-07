@@ -1,7 +1,10 @@
 /**
  * Decorator Extraction
  *
- * Extracts @message and @extend decorators from comments above type aliases.
+ * Extracts @extend decorator from comments above type aliases.
+ *
+ * Note: The @message decorator has been replaced by the Message<T> wrapper type.
+ * See runtime/common/types/message-wrapper.ts.
  */
 
 import type * as t from '@babel/types';
@@ -12,22 +15,13 @@ import { getSourceLocation } from './type-parser.js';
  * Result of decorator extraction.
  */
 export interface DecoratorInfo {
-  /** Whether @message decorator is present */
-  hasMessage: boolean;
   /** Path from @extend decorator, if present */
   extendPath: string | null;
 }
 
 /**
- * Pattern to match @message decorator.
- * Matches @message at start of line or after whitespace.
- */
-const MESSAGE_PATTERN = /(?:^|\s)@message(?:\s|$)/;
-
-/**
  * Pattern to match @extend decorator with path argument.
  * Captures the path in single or double quotes.
- * Allows @message before @extend on the same line.
  */
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
@@ -38,8 +32,9 @@ const DECORATOR_PATTERN = /@(\w+)/g;
 
 /**
  * Known decorators for validation.
+ * Note: @message is no longer supported - use Message<T> wrapper instead.
  */
-const KNOWN_DECORATORS = new Set(['message', 'extend']);
+const KNOWN_DECORATORS = new Set(['extend']);
 
 /**
  * Extract decorator info from leading comments of a node.
@@ -50,7 +45,6 @@ export function extractDecorators(
   diagnostics: PmtDiagnostic[]
 ): DecoratorInfo {
   const comments = node.leadingComments ?? [];
-  let hasMessage = false;
   let extendPath: string | null = null;
   let extendCount = 0;
 
@@ -62,11 +56,6 @@ export function extractDecorators(
     for (const line of lines) {
       // Strip leading comment markers (* for block comments)
       const cleanLine = line.replace(/^\s*\*?\s*/, '');
-
-      // Check for @message
-      if (MESSAGE_PATTERN.test(cleanLine)) {
-        hasMessage = true;
-      }
 
       // Check for @extend
       const extendMatch = EXTEND_PATTERN.exec(cleanLine);
@@ -112,39 +101,39 @@ export function extractDecorators(
         }
       }
 
-      // Check for unknown decorators
+      // Check for unknown decorators (including deprecated @message)
       const decoratorMatches = cleanLine.matchAll(DECORATOR_PATTERN);
       for (const match of decoratorMatches) {
         const decoratorName = match[1]?.toLowerCase();
         if (decoratorName && !KNOWN_DECORATORS.has(decoratorName)) {
-          // Check if it might be a typo of a known decorator
-          const suggestion = findClosestDecorator(decoratorName);
-          if (suggestion) {
+          // Special message for @message which is now deprecated
+          if (decoratorName === 'message') {
             diagnostics.push({
               filePath,
               location: getCommentLocation(comment),
-              severity: 'warning',
-              code: 'PMT033',
-              message: `Unknown decorator '@${match[1]}'. Did you mean '@${suggestion}'?`,
+              severity: 'error',
+              code: 'PMT035',
+              message: `The @message decorator has been replaced by the Message<T> wrapper. Change to: export type TypeName = Message<{ ... }>;`,
             });
+          } else {
+            // Check if it might be a typo of a known decorator
+            const suggestion = findClosestDecorator(decoratorName);
+            if (suggestion) {
+              diagnostics.push({
+                filePath,
+                location: getCommentLocation(comment),
+                severity: 'warning',
+                code: 'PMT033',
+                message: `Unknown decorator '@${match[1]}'. Did you mean '@${suggestion}'?`,
+              });
+            }
           }
         }
       }
     }
   }
 
-  // Validate that @extend requires @message
-  if (extendPath !== null && !hasMessage) {
-    diagnostics.push({
-      filePath,
-      location: getSourceLocation(node),
-      severity: 'error',
-      code: 'PMT034',
-      message: '@extend decorator requires @message decorator.',
-    });
-  }
-
-  return { hasMessage, extendPath };
+  return { extendPath };
 }
 
 /**

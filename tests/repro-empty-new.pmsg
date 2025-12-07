@@ -1,19 +1,17 @@
-// @message
-export type UnionFirstNumber = {
+import { Message } from '@propanejs/runtime';
+
+export type UnionFirstNumber = Message<{
   val: number | string;
-}
+}>;
 
-// @message
-export type UnionFirstString = {
+export type UnionFirstString = Message<{
   val: string | number;
-}
+}>;
 
-// @message
-export type OptionalField = {
+export type OptionalField = Message<{
   val?: string;
-}
+}>;
 
-// @message
-export type RequiredMessage = {
+export type RequiredMessage = Message<{
   sub: UnionFirstNumber;
-}
+}>;

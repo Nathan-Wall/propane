@@ -1,5 +1,6 @@
-// @message
-export type SetMessage = {
+import { Message } from '@propanejs/runtime';
+
+export type SetMessage = Message<{
   '1:tags': Set<string>;
   '2:ids'?: ReadonlySet<number>;
-};
+}>;

@@ -1,6 +1,8 @@
-// @message @extend('./extend-basic.pmsg.ext.ts')
-export type Person = {
+import { Message } from '@propanejs/runtime';
+
+// @extend('./extend-basic.pmsg.ext.ts')
+export type Person = Message<{
   '1:firstName': string;
   '2:lastName': string;
   '3:age': number;
-};
+}>;

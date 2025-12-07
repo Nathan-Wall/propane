@@ -2,10 +2,8 @@
 // Generated from tests/compound.pmsg
 import { Indexed } from './indexed.pmsg.js';
 import { User } from './user.pmsg.js';
-
-// @message
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static readonly $typeName = "Compound_Inline";
@@ -57,8 +55,8 @@ export class Compound extends Message<Compound.Data> {
   constructor(props?: Compound.Value) {
     if (!props && Compound.EMPTY) return Compound.EMPTY;
     super(Compound.TYPE_TAG, "Compound");
-    this.#user = props ? props.user instanceof User ? props.user : new User(props.user) : new User();
-    this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed) : new Indexed();
+    this.#user = props ? props.user : new User();
+    this.#indexed = props ? props.indexed : new Indexed();
     this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
     if (!props) Compound.EMPTY = this;
   }
@@ -81,12 +79,10 @@ export class Compound extends Message<Compound.Data> {
     const props = {} as Partial<Compound.Data>;
     const userValue = entries["1"] === undefined ? entries["user"] : entries["1"];
     if (userValue === undefined) throw new Error("Missing required property \"user\".");
-    const userMessageValue = userValue instanceof User ? userValue : new User(userValue);
-    props.user = userMessageValue;
+    props.user = userValue;
     const indexedValue = entries["2"] === undefined ? entries["indexed"] : entries["2"];
     if (indexedValue === undefined) throw new Error("Missing required property \"indexed\".");
-    const indexedMessageValue = indexedValue instanceof Indexed ? indexedValue : new Indexed(indexedValue);
-    props.indexed = indexedMessageValue;
+    props.indexed = indexedValue;
     const inlineValue = entries["3"] === undefined ? entries["inline"] : entries["3"];
     if (inlineValue === undefined) throw new Error("Missing required property \"inline\".");
     const inlineMessageValue = inlineValue instanceof Compound_Inline ? inlineValue : new Compound_Inline(inlineValue);
@@ -95,18 +91,6 @@ export class Compound extends Message<Compound.Data> {
   }
   override [WITH_CHILD](key: string | number, child: unknown): Compound {
     switch (key) {
-      case "user":
-        return new (this.constructor as typeof Compound)({
-          user: child as User,
-          indexed: this.#indexed,
-          inline: this.#inline
-        });
-      case "indexed":
-        return new (this.constructor as typeof Compound)({
-          user: this.#user,
-          indexed: child as Indexed,
-          inline: this.#inline
-        });
       case "inline":
         return new (this.constructor as typeof Compound)({
           user: this.#user,
@@ -118,8 +102,6 @@ export class Compound extends Message<Compound.Data> {
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["user", this.#user] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
-    yield ["indexed", this.#indexed] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
     yield ["inline", this.#inline] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   get user(): User {
@@ -131,10 +113,10 @@ export class Compound extends Message<Compound.Data> {
   get inline(): Compound_Inline {
     return this.#inline;
   }
-  setIndexed(value: Indexed.Value) {
+  setIndexed(value: Indexed) {
     return this.$update(new (this.constructor as typeof Compound)({
       user: this.#user,
-      indexed: value instanceof Indexed ? value : new Indexed(value),
+      indexed: value,
       inline: this.#inline
     }));
   }
@@ -145,9 +127,9 @@ export class Compound extends Message<Compound.Data> {
       inline: value instanceof Compound_Inline ? value : new Compound_Inline(value)
     }));
   }
-  setUser(value: User.Value) {
+  setUser(value: User) {
     return this.$update(new (this.constructor as typeof Compound)({
-      user: value instanceof User ? value : new User(value),
+      user: value,
       indexed: this.#indexed,
       inline: this.#inline
     }));
@@ -155,8 +137,8 @@ export class Compound extends Message<Compound.Data> {
 }
 export namespace Compound {
   export type Data = {
-    user: User.Value;
-    indexed: Indexed.Value;
+    user: User;
+    indexed: Indexed;
     inline: Compound_Inline.Value;
   };
   export type Value = Compound | Compound.Data;

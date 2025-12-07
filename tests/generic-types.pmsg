@@ -1,35 +1,32 @@
+import { Message } from '@propanejs/runtime';
+
 /**
  * Test file for generic message types.
  */
 
 // Basic item type for testing
-// @message
-export type Item = {
+export type Item = Message<{
   '1:id': number;
   '2:name': string;
-};
+}>;
 
 // Simple generic container with single type parameter
-// @message
-export type Container<T extends Message> = {
+export type Container<T extends Message> = Message<{
   '1:inner': T;
-};
+}>;
 
 // Generic with optional field
-// @message
-export type Optional<T extends Message> = {
+export type Optional<T extends Message> = Message<{
   '1:value'?: T;
-};
+}>;
 
 // Multiple type parameters
-// @message
-export type Pair<T extends Message, U extends Message> = {
+export type Pair<T extends Message, U extends Message> = Message<{
   '1:first': T;
   '2:second': U;
-};
+}>;
 
 // Non-generic type that can contain generic instances
-// @message
-export type Parent = {
+export type Parent = Message<{
   '1:name': string;
-};
+}>;

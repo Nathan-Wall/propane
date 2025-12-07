@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/array-buffer.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
   static readonly $typeName = "ArrayBufferMessage";

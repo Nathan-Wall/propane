@@ -1,6 +1,7 @@
-// @message
-export type FailNested = {
+import { Message } from '@propanejs/runtime';
+
+export type FailNested = Message<{
   nested: {
     callback: Function;
-  };
+  }>;
 };

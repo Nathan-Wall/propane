@@ -1,7 +1,8 @@
-// @message
-export type ObjectOnly = {
+import { Message } from '@propanejs/runtime';
+
+export type ObjectOnly = Message<{
   id: number;
   name: string;
   age: number;
   active: boolean;
-};
+}>;

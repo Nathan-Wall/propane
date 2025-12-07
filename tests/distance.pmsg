@@ -1,7 +1,8 @@
+import { Message } from '@propanejs/runtime';
+
 export type DistanceUnit = 'm'|'ft';
 
-// @message
-export type Distance = {
+export type Distance = Message<{
   unit: DistanceUnit;
   value: number;
-};
+}>;

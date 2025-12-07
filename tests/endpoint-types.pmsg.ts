@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/endpoint-types.pmsg
 import { Endpoint } from '@/pms-core/src/index.js';
-
-// @message
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class TestResponse extends Message<TestResponse.Data> {
   static TYPE_TAG = Symbol("TestResponse");
   static readonly $typeName = "TestResponse";
@@ -45,7 +43,7 @@ export namespace TestResponse {
     value: string;
   };
   export type Value = TestResponse | TestResponse.Data;
-} // @message
+}
 export class TestRequest extends Message<TestRequest.Data> {
   static TYPE_TAG = Symbol("TestRequest");
   static readonly $typeName = "TestRequest";

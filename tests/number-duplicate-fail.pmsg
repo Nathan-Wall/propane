@@ -1,5 +1,6 @@
-// @message
-export type NumberDuplicateFail = {
+import { Message } from '@propanejs/runtime';
+
+export type NumberDuplicateFail = Message<{
   '1:first': string;
   '1:second': string;
-};
+}>;

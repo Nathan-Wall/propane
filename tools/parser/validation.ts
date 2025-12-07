@@ -178,95 +178,28 @@ export function validateNoIntersections(
 }
 
 /**
- * Validate @message usage.
- * PMT011: @message must be used on an object literal or valid wrapper.
+ * Validate that object literal types must use Message<{...}> wrapper.
+ * PMT012: Object literal types must be wrapped with Message<{...}>.
  */
-export function validateMessageType(
+export function validateObjectLiteralRequiresWrapper(
   node: t.TSType,
-  hasMessageDecorator: boolean,
-  typeName: string,
-  ctx: ValidationContext
-): { isValid: boolean; isWrapper: boolean } {
-  if (!hasMessageDecorator) {
-    return { isValid: true, isWrapper: false };
-  }
-
-  // Check if it's an object literal
-  if (t.isTSTypeLiteral(node)) {
-    return { isValid: true, isWrapper: false };
-  }
-
-  // Check if it's a wrapper pattern: F<Payload, Response, ...>
-  if (t.isTSTypeReference(node)) {
-    const typeParams = node.typeParameters;
-    if (typeParams && typeParams.params.length >= 2) {
-      const firstArg = typeParams.params[0];
-      if (firstArg && t.isTSTypeLiteral(firstArg)) {
-        return { isValid: true, isWrapper: true };
-      }
-
-      // First argument is not an object literal
-      ctx.diagnostics.push({
-        filePath: ctx.filePath,
-        location: getSourceLocation(node),
-        severity: 'error',
-        code: 'PMT014',
-        message: `Invalid wrapper usage for @message type '${typeName}'. The first type argument must be an object literal type.`,
-      });
-      return { isValid: false, isWrapper: true };
-    }
-
-    // It's a type reference but not a valid wrapper (missing second type argument)
-    if (typeParams?.params.length === 1) {
-      const firstArg = typeParams.params[0];
-      if (firstArg && t.isTSTypeLiteral(firstArg)) {
-        ctx.diagnostics.push({
-          filePath: ctx.filePath,
-          location: getSourceLocation(node),
-          severity: 'error',
-          code: 'PMT014',
-          message: `Invalid wrapper usage for @message type '${typeName}'. Wrapper types require at least two type arguments (Payload and Response).`,
-        });
-        return { isValid: false, isWrapper: true };
-      }
-    }
-  }
-
-  // Not a valid @message form
-  ctx.diagnostics.push({
-    filePath: ctx.filePath,
-    location: getSourceLocation(node),
-    severity: 'error',
-    code: 'PMT011',
-    message: `@message decorator on type '${typeName}' requires an object literal type or a wrapper type like 'Endpoint<{ ... }, Response>'.`,
-  });
-
-  return { isValid: false, isWrapper: false };
-}
-
-/**
- * Validate non-@message type aliases.
- * PMT012: non-@message object literal types are not allowed.
- */
-export function validateNonMessageType(
-  node: t.TSType,
-  hasMessageDecorator: boolean,
+  isMessageWrapper: boolean,
   typeName: string,
   ctx: ValidationContext
 ): void {
-  if (hasMessageDecorator) {
-    // Already validated by validateMessageType
+  if (isMessageWrapper) {
+    // Type is properly wrapped - valid
     return;
   }
 
-  // Object literal types without @message are not allowed
+  // Object literal types without Message<{...}> wrapper are not allowed
   if (t.isTSTypeLiteral(node)) {
     ctx.diagnostics.push({
       filePath: ctx.filePath,
       location: getSourceLocation(node),
       severity: 'error',
       code: 'PMT012',
-      message: `Object literal types must use @message decorator in .pmsg files. Add '// @message' before type '${typeName}'.`,
+      message: `Object literal types must use Message<{...}> wrapper in .pmsg files. Change type '${typeName}' to: export type ${typeName} = Message<{ ... }>;`,
     });
   }
 }

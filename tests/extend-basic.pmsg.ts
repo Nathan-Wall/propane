@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/extend-basic.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-// @message @extend('./extend-basic.pmsg.ext.ts')
+
+// @extend('./extend-basic.pmsg.ext.ts')
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class Person$Base extends Message<Person.Data> {
   static TYPE_TAG = Symbol("Person");
   static readonly $typeName = "Person";

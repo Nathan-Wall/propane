@@ -1,5 +1,6 @@
-// @message
-export type Indexed = {
+import { Message } from '@propanejs/runtime';
+
+export type Indexed = Message<{
   '1:id': number;
   '2:name': string;
   '3:age': number;
@@ -8,4 +9,4 @@ export type Indexed = {
   '6:score': number | null;
   '7:alias'?: string | null;
   '8:status': string;
-};
+}>;

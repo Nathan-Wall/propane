@@ -1,6 +1,8 @@
+import { Message } from '@propanejs/runtime';
+
 // Test same-line syntax: @message @extend('...')
-// @message @extend('./message-sameline-extend.pmsg.ext.ts')
-export type SameLineExtend = {
+// @extend('./message-sameline-extend.pmsg.ext.ts')
+export type SameLineExtend = Message<{
   '1:firstName': string;
   '2:lastName': string;
-};
+}>;

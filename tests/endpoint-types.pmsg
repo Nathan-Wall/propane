@@ -1,11 +1,10 @@
 import { Endpoint } from '@/pms-core/src/index.js';
+import { Message } from '@propanejs/runtime';
 
-// @message
-export type TestResponse = {
+export type TestResponse = Message<{
   '1:value': string;
-};
+}>;
 
-// @message
 export type TestRequest = Endpoint<{
   '1:id': number;
 }, TestResponse>;

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
   static readonly $typeName = "UrlMessage";

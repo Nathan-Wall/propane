@@ -1,6 +1,7 @@
-// @message
-export type MapDateKey = {
+import { Message } from '@propanejs/runtime';
+
+export type MapDateKey = Message<{
   dateValues: Map<Date, number>;
   urlValues: Map<URL, string>;
   optionalDateMap?: Map<Date, boolean>;
-};
+}>;

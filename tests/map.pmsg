@@ -1,6 +1,7 @@
-// @message
-export type MapMessage = {
+import { Message } from '@propanejs/runtime';
+
+export type MapMessage = Message<{
   '1:labels': Map<string | number, number>;
   '2:metadata'?: Map<string, { value: string }>;
   '3:extras': Map<string, { note: string | null }>;
-};
+}>;

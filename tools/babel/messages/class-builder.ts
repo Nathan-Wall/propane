@@ -733,10 +733,10 @@ function buildStaticTypeName(typeName: string): t.ClassProperty {
  * Used to generate the __responseType phantom field on endpoint classes.
  */
 export interface WrapperInfo {
-  /** The wrapper type name (e.g., 'Endpoint') */
+  /** The wrapper type name (e.g., 'Endpoint', 'Message', 'Table') */
   wrapperName: string;
-  /** The response type reference (e.g., 'GetUserResponse') */
-  responseTypeName: string;
+  /** The response type reference (e.g., 'GetUserResponse'), only for Endpoint */
+  responseTypeName?: string;
 }
 
 export function buildClassFromProperties(
@@ -1140,7 +1140,7 @@ export function buildClassFromProperties(
   }
 
   // Add __responseType phantom field for Endpoint types
-  if (wrapperInfo) {
+  if (wrapperInfo?.responseTypeName) {
     const responseTypeField = t.classProperty(
       t.identifier('__responseType'),
       undefined, // no initializer

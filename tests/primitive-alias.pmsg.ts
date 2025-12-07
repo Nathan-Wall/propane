@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitive-alias.pmsg
-// @message
+// This file tests a primitive type alias (not using Message wrapper)
+// Primitive aliases are valid TypeScript but not transformed by propane
 export type PrimitiveFlag = boolean;
-export type PrimitiveFlagType = PrimitiveFlag;

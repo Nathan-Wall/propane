@@ -1,9 +1,9 @@
 import { Distance } from './distance.pmsg';
 import { Email } from './email.pmsg';
 import { Hash } from './hash.pmsg';
+import { Message } from '@propanejs/runtime';
 
-// @message
-export type User = {
+export type User = Message<{
   '1:id': number;
   '2:name': string;
   '3:email': Email;
@@ -13,4 +13,4 @@ export type User = {
   active: boolean;
   eyeColor: 'blue'|'green'|'brown'|'hazel';
   height: Distance;
-};
+}>;

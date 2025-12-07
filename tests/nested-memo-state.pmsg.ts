@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+
 // Nested message types for testing memo behavior with state persistence
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
   static readonly $typeName = "InnerMessage";
@@ -44,7 +44,7 @@ export namespace InnerMessage {
     value: string;
   };
   export type Value = InnerMessage | InnerMessage.Data;
-} // @message
+}
 export class OuterMessage extends Message<OuterMessage.Data> {
   static TYPE_TAG = Symbol("OuterMessage");
   static readonly $typeName = "OuterMessage";

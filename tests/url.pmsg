@@ -1,7 +1,8 @@
-// @message
-export type UrlMessage = {
+import { Message } from '@propanejs/runtime';
+
+export type UrlMessage = Message<{
   '1:id': number;
   '2:primary': URL;
   '3:secondary'?: URL;
   '4:links': URL[];
-};
+}>;

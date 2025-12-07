@@ -1,9 +1,10 @@
-// @message
-export type ArrayMessage = {
+import { Message } from '@propanejs/runtime';
+
+export type ArrayMessage = Message<{
   '1:names': string[];
   '2:scores': number[];
   '3:flags'?: boolean[];
   '4:labels': {
     name: string;
   }[];
-};
+}>;

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-order.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static readonly $typeName = "StringFirst";
@@ -43,7 +42,7 @@ export namespace StringFirst {
     value: string | number;
   };
   export type Value = StringFirst | StringFirst.Data;
-} // @message
+}
 export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
   static readonly $typeName = "NumberFirst";

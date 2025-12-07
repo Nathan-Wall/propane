@@ -1,11 +1,11 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
+import { Message } from '@propanejs/runtime';
 
 // Test message with non-optional collection fields to verify defaults
-// @message
-export type DefaultCollections = {
+export type DefaultCollections = Message<{
   arr: ImmutableArray<number>;
   map: ImmutableMap<string, number>;
   set: ImmutableSet<string>;
-};
+}>;

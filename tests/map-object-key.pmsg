@@ -1,5 +1,6 @@
-// @message
-export type MapObjectKey = {
+import { Message } from '@propanejs/runtime';
+
+export type MapObjectKey = Message<{
   objectKeys: Map<{ id: string; version: number }, string>;
   optionalObjectMap?: Map<{ name: string }, Date>;
-};
+}>;

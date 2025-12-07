@@ -3,14 +3,14 @@
  */
 
 import type { Brand } from '@propanejs/runtime';
+import { Message } from '@propanejs/runtime';
 
 // A standalone Brand type (should transform)
 export type UserId = Brand<number, 'userId'>;
 
-// @message type with Brand property (should the nested Brand also transform?)
-// @message
-export type User = {
+// Message type with Brand property (should the nested Brand also transform?)
+export type User = Message<{
   '1:id': Brand<number, 'userId'>;  // Nested Brand
   '2:name': string;
   '3:ref': UserId;  // Reference to existing Brand type
-};
+}>;

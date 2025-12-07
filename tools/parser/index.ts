@@ -127,8 +127,19 @@ export {
 export {
   validateNoInterfaces,
   validateNoIntersections,
-  validateMessageType,
-  validateNonMessageType,
+  validateObjectLiteralRequiresWrapper,
   containsIntersection,
   type ValidationContext,
 } from './validation.js';
+
+// ============================================================================
+// Wrapper Detection (for advanced use cases)
+// ============================================================================
+
+export {
+  detectWrapper,
+  isMessageWrapperType,
+  isTableWrapperType,
+  isEndpointWrapperType,
+  type WrapperDetectionResult,
+} from './wrapper-detection.js';

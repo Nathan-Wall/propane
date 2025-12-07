@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export type DistanceUnit = 'm' | 'ft';
-
-// @message
 export class Distance extends Message<Distance.Data> {
   static TYPE_TAG = Symbol("Distance");
   static readonly $typeName = "Distance";

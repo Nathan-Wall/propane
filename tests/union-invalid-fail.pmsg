@@ -1,4 +1,5 @@
-// @message
-export type UnionInvalidFail = {
+import { Message } from '@propanejs/runtime';
+
+export type UnionInvalidFail = Message<{
   callback: string | Function;
-};
+}>;

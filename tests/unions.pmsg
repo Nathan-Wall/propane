@@ -1,8 +1,8 @@
 import { Email } from './email.pmsg';
+import { Message } from '@propanejs/runtime';
 
-// @message
-export type Unions = {
+export type Unions = Message<{
   username: string | null;
   email: Email | null;
   metadata: { created: Date } | { updated: Date };
-};
+}>;

@@ -1,5 +1,6 @@
-// @message
-export type ToJson = {
+import { Message } from '@propanejs/runtime';
+
+export type ToJson = Message<{
   '1:map': Map<string, number>;
   '2:imap': Map<string, number>;
   '3:big': bigint;
@@ -11,4 +12,4 @@ export type ToJson = {
     map: Map<string, bigint>;
     imap: Map<string, Date>;
   };
-};
+}>;

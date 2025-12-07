@@ -1,5 +1,5 @@
 import path from 'node:path';
-import type * as t from '@babel/types';
+import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { pathTransform, computeRelativePath } from './utils.js';
 import { registerTypeAlias } from './validation.js';
@@ -101,7 +101,7 @@ function computeRuntimeImportPath(state: PropaneState): string {
 }
 
 /** Known decorators for suggestion matching */
-const KNOWN_DECORATORS = ['extend', 'message'];
+const KNOWN_DECORATORS = ['extend'];
 
 /** Maximum edit distance for suggesting a decorator correction */
 const MAX_SUGGESTION_DISTANCE = 3;
@@ -109,17 +109,26 @@ const MAX_SUGGESTION_DISTANCE = 3;
 /**
  * Pattern to match @extend decorator with path argument.
  * Captures the path in single or double quotes.
- * Allows @message before @extend on the same line.
  */
-const EXTEND_PATTERN =
-  /^(?:@message\s+)?@extend\s*\(\s*['"]([^'"]+)['"]\s*\)\s*$/;
+const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
- * Pattern to match @message decorator.
- * Matches @message at start of content, optionally followed by whitespace and more decorators.
- * Must not be followed by word characters (to avoid matching @messageOther).
+ * Known message wrapper types and their source packages.
  */
-const MESSAGE_PATTERN = /(?:^|\s)@message(?:\s|$)/;
+const MESSAGE_WRAPPER_SOURCES: Record<string, Set<string>> = {
+  '@propanejs/runtime': new Set(['Message']),
+  '@propanejs/postgres': new Set(['Table']),
+  '@propanejs/pms-core': new Set(['Endpoint']),
+};
+
+/**
+ * Internal path patterns that map to package names.
+ */
+const INTERNAL_PATH_PATTERNS: Record<string, string> = {
+  '@/runtime': '@propanejs/runtime',
+  '@/postgres': '@propanejs/postgres',
+  '@/pms-core': '@propanejs/pms-core',
+};
 
 /**
  * Check if a comment line starts with a decorator (@ at line start).
@@ -149,31 +158,127 @@ function findClosestDecorator(unknown: string): string | null {
 }
 
 /**
- * Check if comments contain the @message decorator.
- * @message can appear alone or on the same line as @extend.
+ * Result of wrapper detection.
  */
-function hasMessageDecorator(
-  commentSourcePath: NodePath<t.Node>
+interface WrapperDetectionResult {
+  isMessageWrapper: boolean;
+  wrapperName: string | null;
+  innerType: t.TSTypeLiteral | null;
+  secondTypeArg: t.TSType | null;
+}
+
+/**
+ * Get the type name from a TSEntityName.
+ */
+function getTypeName(typeName: t.TSEntityName): string {
+  if (t.isIdentifier(typeName)) {
+    return typeName.name;
+  }
+  return `${getTypeName(typeName.left)}.${typeName.right.name}`;
+}
+
+/**
+ * Check if a local name is imported as a message wrapper from a known package.
+ */
+function isMessageWrapperImport(
+  localName: string,
+  path: NodePath<t.TSTypeAliasDeclaration>
 ): boolean {
-  const comments = commentSourcePath.node.leadingComments ?? [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const program = (path as any).findParent(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (p: any) => p.isProgram()
+  ) as NodePath<t.Program> | null;
+  if (!program) return false;
 
-  for (const comment of comments) {
-    const lines = comment.type === 'CommentLine'
-      ? [comment.value]
-      : comment.value.split('\n');
+  for (const stmt of program.node.body) {
+    if (!t.isImportDeclaration(stmt)) continue;
 
-    for (const line of lines) {
-      // Strip leading comment markers (* for block comments)
-      const cleanLine = line.replace(/^\s*\*?\s*/, '');
+    const source = stmt.source.value;
 
-      // Check if @message appears in this line
-      if (MESSAGE_PATTERN.test(cleanLine)) {
-        return true;
+    // Check direct package imports
+    const wrappers = MESSAGE_WRAPPER_SOURCES[source];
+    if (wrappers) {
+      for (const spec of stmt.specifiers) {
+        if (t.isImportSpecifier(spec)) {
+          const imported = t.isIdentifier(spec.imported)
+            ? spec.imported.name
+            : spec.imported.value;
+          if (spec.local.name === localName && wrappers.has(imported)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    // Check internal path patterns
+    for (const [pattern, packageName] of Object.entries(INTERNAL_PATH_PATTERNS)) {
+      if (source.startsWith(pattern)) {
+        const pkgWrappers = MESSAGE_WRAPPER_SOURCES[packageName];
+        if (pkgWrappers) {
+          for (const spec of stmt.specifiers) {
+            if (t.isImportSpecifier(spec)) {
+              const imported = t.isIdentifier(spec.imported)
+                ? spec.imported.name
+                : spec.imported.value;
+              if (spec.local.name === localName && pkgWrappers.has(imported)) {
+                return true;
+              }
+            }
+          }
+        }
       }
     }
   }
 
   return false;
+}
+
+/**
+ * Detect if a type alias is a message wrapper (Message<T>, Table<T>, or Endpoint<P, R>).
+ */
+function detectMessageWrapper(
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>
+): WrapperDetectionResult {
+  const result: WrapperDetectionResult = {
+    isMessageWrapper: false,
+    wrapperName: null,
+    innerType: null,
+    secondTypeArg: null,
+  };
+
+  const typeAnnotation = typeAliasPath.node.typeAnnotation;
+
+  // Must be a type reference
+  if (!t.isTSTypeReference(typeAnnotation)) {
+    return result;
+  }
+
+  // Must have type parameters
+  const typeParams = typeAnnotation.typeParameters;
+  if (!typeParams || typeParams.params.length === 0) {
+    return result;
+  }
+
+  const localName = getTypeName(typeAnnotation.typeName);
+  const firstArg = typeParams.params[0];
+
+  // Check if first argument is an object literal
+  if (!firstArg || !t.isTSTypeLiteral(firstArg)) {
+    return result;
+  }
+
+  // Check if this is imported as a message wrapper
+  if (!isMessageWrapperImport(localName, typeAliasPath)) {
+    return result;
+  }
+
+  result.isMessageWrapper = true;
+  result.wrapperName = localName;
+  result.innerType = firstArg;
+  result.secondTypeArg = typeParams.params[1] ?? null;
+
+  return result;
 }
 
 /**
@@ -213,13 +318,13 @@ function resolveExtensionPath(
  *
  * @param typeAliasPath - The path to the TSTypeAliasDeclaration
  * @param commentSourcePath - The path to get comments from (may be parent export)
- * @param hasMessage - Whether the @message decorator is present
+ * @param isMessageWrapper - Whether this is a Message/Table/Endpoint wrapper
  * @param opts - Plugin options
  */
 function extractExtendDecorator(
   typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
   commentSourcePath: NodePath<t.Node>,
-  hasMessage: boolean,
+  isMessageWrapper: boolean,
   opts?: PropanePluginOptions
 ): ExtendInfo | null {
   const comments = commentSourcePath.node.leadingComments ?? [];
@@ -240,7 +345,7 @@ function extractExtendDecorator(
 
       const cleanLine = line.replace(/^\s*\*?\s*/, '');
 
-      // Check if the line contains @extend (possibly after @message on same line)
+      // Check if the line contains @extend
       const hasExtendOnLine = /@extend(?!\w)/.test(cleanLine);
 
       if (hasExtendOnLine) {
@@ -249,37 +354,30 @@ function extractExtendDecorator(
 
         if (!extendMatch) {
           // Check for specific syntax errors
-          if (/^(?:@message\s+)?@extend\s*$/.test(cleanLine)) {
+          if (/^\s*@extend\s*$/.test(cleanLine)) {
             throw typeAliasPath.buildCodeFrameError(
               '@extend decorator requires parentheses with a file path.\n\n'
               + 'Add the path to your extension file in parentheses, e.g.:\n'
-              + "  // @message @extend('./foo.ext.ts')"
+              + "  // @extend('./foo.ext.ts')"
             );
           }
-          if (/^(?:@message\s+)?@extend\s*\(\s*\)\s*$/.test(cleanLine)) {
+          if (/@extend\s*\(\s*\)/.test(cleanLine)) {
             throw typeAliasPath.buildCodeFrameError(
               '@extend decorator requires a file path argument.\n\n'
               + 'Provide the path to your extension file, e.g.:\n'
-              + "  // @message @extend('./foo.ext.ts')"
+              + "  // @extend('./foo.ext.ts')"
             );
           }
-          if (/^(?:@message\s+)?@extend\s*\([^)]*$/.test(cleanLine)) {
+          if (/@extend\s*\([^)]*$/.test(cleanLine)) {
             throw typeAliasPath.buildCodeFrameError(
               '@extend decorator has unclosed parentheses.\n\n'
               + 'Add the closing parenthesis:\n'
-              + "  // @message @extend('./foo.ext.ts')"
-            );
-          }
-          if (/^(?:@message\s+)?@extend\s*\([^)]+\)\s*\S/.test(cleanLine)) {
-            throw typeAliasPath.buildCodeFrameError(
-              'Unexpected content after @extend decorator.\n\n'
-              + 'Remove the extra content after the closing parenthesis, '
-              + 'or move it to a separate comment.'
+              + "  // @extend('./foo.ext.ts')"
             );
           }
           throw typeAliasPath.buildCodeFrameError(
             'Invalid @extend decorator syntax.\n\n'
-            + "Expected: // @message @extend('./path/to/extension.ts')"
+            + "Expected: // @extend('./path/to/extension.ts')"
           );
         }
 
@@ -295,18 +393,22 @@ function extractExtendDecorator(
         for (const match of decoratorMatches) {
           const decoratorName = match[1]!;
           // Skip known decorators
-          if (decoratorName.toLowerCase() === 'message') {
-            continue;
-          }
           if (decoratorName.toLowerCase() === 'extend') {
             continue; // Already handled above
+          }
+          // Special error for deprecated @message
+          if (decoratorName.toLowerCase() === 'message') {
+            throw typeAliasPath.buildCodeFrameError(
+              `The @message decorator has been replaced by the Message<T> wrapper.\n\n`
+              + `Change to: export type ${typeAliasPath.node.id.name} = Message<{ ... }>;`
+            );
           }
           // Unknown decorator - check if it might be a typo
           const suggestion = findClosestDecorator(decoratorName);
           const error = suggestion ? typeAliasPath.buildCodeFrameError(
               `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
               + `Use '@${suggestion}' to extend this type with custom methods:\n`
-              + `  // @message @${suggestion}('./foo.ext.ts')`
+              + `  // @${suggestion}('./foo.ext.ts')`
             ) : typeAliasPath.buildCodeFrameError(
               `Unknown decorator '@${decoratorName}'.`
             );
@@ -325,17 +427,13 @@ function extractExtendDecorator(
     );
   }
 
-  // Validate that @extend requires @message
-  if (extendInfos.length > 0 && !hasMessage) {
+  // Validate that @extend requires a message wrapper
+  if (extendInfos.length > 0 && !isMessageWrapper) {
     throw typeAliasPath.buildCodeFrameError(
-      '@extend decorator requires @message decorator.\n\n'
-      + 'Add @message to the type definition:\n'
-      + "  // @message @extend('./foo.ext.ts')\n"
-      + '  export type Foo = { ... };\n\n'
-      + 'Or on separate lines:\n'
-      + '  // @message\n'
+      '@extend decorator requires a Message<T> wrapper.\n\n'
+      + 'Use a message wrapper type:\n'
       + "  // @extend('./foo.ext.ts')\n"
-      + '  export type Foo = { ... };'
+      + '  export type Foo = Message<{ ... }>;'
     );
   }
 
@@ -448,27 +546,27 @@ export default function propanePlugin() {
           return;
         }
 
-        // Register the type alias for reference tracking (even if not @message)
+        // Register the type alias for reference tracking (even if not a message)
         registerTypeAlias(declarationPath.node, declaredTypeNames);
 
-        // Check for @message decorator or implicit message flag
-        // For exported types, comments are on the export declaration
+        // Check for Message<T>/Table<T>/Endpoint<P,R> wrapper or implicit message flag
         type ImplicitNode = t.TSTypeAliasDeclaration & {
           [IMPLICIT_MESSAGE]?: boolean;
         };
         const isImplicitMessage =
           (declarationPath.node as ImplicitNode)[IMPLICIT_MESSAGE];
-        const hasMessage = isImplicitMessage || hasMessageDecorator(path);
+        const wrapperResult = detectMessageWrapper(declarationPath);
+        const isMessage = isImplicitMessage || wrapperResult.isMessageWrapper;
 
-        // If no @message decorator, skip transformation but still validate decorators
+        // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
-        if (!hasMessage) {
-          // Still extract @extend to validate it's not used without @message
+        if (!isMessage) {
+          // Still extract @extend to validate it's not used without a message wrapper
           extractExtendDecorator(
             declarationPath, path, false, state.opts
           );
 
-          // Apply Brand auto-namespace transformation for non-@message types
+          // Apply Brand auto-namespace transformation for non-message types
           const brandResult = transformBrandInTypeAlias(
             declarationPath, state.brandTracker
           );
@@ -528,23 +626,23 @@ export default function propanePlugin() {
           return;
         }
 
-        // Register the type alias for reference tracking (even if not @message)
+        // Register the type alias for reference tracking (even if not a message)
         registerTypeAlias(path.node, declaredTypeNames);
 
-        // Check for @message decorator or implicit message flag (for generated inline types)
-        // For non-exported types, comments are directly on the type alias
+        // Check for Message<T>/Table<T>/Endpoint<P,R> wrapper or implicit message flag
         const isImplicitMessage = (path.node as t.TSTypeAliasDeclaration & {
           [IMPLICIT_MESSAGE]?: boolean;
         })[IMPLICIT_MESSAGE];
-        const hasMessage = isImplicitMessage || hasMessageDecorator(path);
+        const wrapperResult = detectMessageWrapper(path);
+        const isMessage = isImplicitMessage || wrapperResult.isMessageWrapper;
 
-        // If no @message decorator, skip transformation but still validate decorators
+        // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
-        if (!hasMessage) {
-          // Still extract @extend to validate it's not used without @message
+        if (!isMessage) {
+          // Still extract @extend to validate it's not used without a message wrapper
           extractExtendDecorator(path, path, false, state.opts);
 
-          // Apply Brand auto-namespace transformation for non-@message types
+          // Apply Brand auto-namespace transformation for non-message types
           const brandResult = transformBrandInTypeAlias(
             path, state.brandTracker
           );

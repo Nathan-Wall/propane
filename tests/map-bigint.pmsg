@@ -1,5 +1,6 @@
-// @message
-export type MapBigintKey = {
+import { Message } from '@propanejs/runtime';
+
+export type MapBigintKey = Message<{
   values: Map<bigint, string>;
-};
+}>;
 

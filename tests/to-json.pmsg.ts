@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static readonly $typeName = "ToJson_Nested";

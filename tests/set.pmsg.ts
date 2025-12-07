@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableMap } from "../runtime/index.js";
 export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static readonly $typeName = "SetMessage";

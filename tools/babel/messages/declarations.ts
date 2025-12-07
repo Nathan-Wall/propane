@@ -13,13 +13,22 @@ import {
 } from './brand-transform.js';
 
 /**
- * Extract wrapper info from a type reference if it's an Endpoint type.
+ * Known message wrapper types.
+ * Message and Table have 1 type arg (payload).
+ * Endpoint has 2 type args (payload + response).
+ */
+const MESSAGE_WRAPPERS = new Set(['Message', 'Table', 'Endpoint']);
+
+/**
+ * Extract wrapper info from a type reference if it's a message wrapper type.
  *
  * Detects patterns like:
+ *   Message<{ '1:id': number }>
+ *   Table<{ '1:id': number }>
  *   Endpoint<{ '1:id': number }, GetUserResponse>
  *
  * @param typePath - The path to the type annotation
- * @returns WrapperInfo if this is an Endpoint wrapper, null otherwise
+ * @returns WrapperInfo if this is a message wrapper, null otherwise
  */
 function extractWrapperInfo(
   typePath: NodePath<t.TSType>
@@ -28,23 +37,35 @@ function extractWrapperInfo(
 
   const typeName = typePath.node.typeName;
   if (!t.isIdentifier(typeName)) return null;
-  if (typeName.name !== 'Endpoint') return null;
+  if (!MESSAGE_WRAPPERS.has(typeName.name)) return null;
 
+  const wrapperName = typeName.name;
   const typeArgs = typePath.node.typeParameters?.params;
-  if (typeArgs?.length !== 2) return null;
+
+  // Must have at least one type argument
+  if (!typeArgs || typeArgs.length === 0) return null;
 
   // First arg must be a type literal (the payload)
   const payloadType = typeArgs[0];
   if (!t.isTSTypeLiteral(payloadType)) return null;
 
-  // Second arg must be a type reference (the response)
-  const responseType = typeArgs[1];
-  if (!t.isTSTypeReference(responseType)) return null;
-  if (!t.isIdentifier(responseType.typeName)) return null;
+  // For Endpoint, extract response type
+  if (wrapperName === 'Endpoint') {
+    if (typeArgs.length !== 2) return null;
+    const responseType = typeArgs[1];
+    if (!t.isTSTypeReference(responseType)) return null;
+    if (!t.isIdentifier(responseType.typeName)) return null;
 
+    return {
+      wrapperName: 'Endpoint',
+      responseTypeName: responseType.typeName.name,
+    };
+  }
+
+  // For Message and Table, no response type
   return {
-    wrapperName: 'Endpoint',
-    responseTypeName: responseType.typeName.name,
+    wrapperName,
+    responseTypeName: undefined,
   };
 }
 

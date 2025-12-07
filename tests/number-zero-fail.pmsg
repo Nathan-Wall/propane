@@ -1,4 +1,5 @@
-// @message
-export type NumberZeroFail = {
+import { Message } from '@propanejs/runtime';
+
+export type NumberZeroFail = Message<{
   '0:bad': string;
-};
+}>;

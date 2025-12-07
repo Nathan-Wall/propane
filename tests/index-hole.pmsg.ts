@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-hole.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class Hole extends Message<Hole.Data> {
   static TYPE_TAG = Symbol("Hole");
   static readonly $typeName = "Hole";

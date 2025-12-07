@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from pms-server/tests/messages.pmsg
 import { Endpoint } from '@/pms-core/src/index.js';
-
-// @message
-import type { MessagePropDescriptor } from "../../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../../runtime/index.js";
+import type { MessagePropDescriptor } from "../../runtime/index.js";
 export class EchoRequest extends Message<EchoRequest.Data> {
   static TYPE_TAG = Symbol("EchoRequest");
   static readonly $typeName = "EchoRequest";
@@ -46,7 +44,7 @@ export namespace EchoRequest {
     message: string;
   };
   export type Value = EchoRequest | EchoRequest.Data;
-} // @message
+}
 export class EchoResponse extends Message<EchoResponse.Data> {
   static TYPE_TAG = Symbol("EchoResponse");
   static readonly $typeName = "EchoResponse";
@@ -108,7 +106,7 @@ export namespace EchoResponse {
     timestamp: number;
   };
   export type Value = EchoResponse | EchoResponse.Data;
-} // @message
+}
 export class AddRequest extends Message<AddRequest.Data> {
   static TYPE_TAG = Symbol("AddRequest");
   static readonly $typeName = "AddRequest";
@@ -171,7 +169,7 @@ export namespace AddRequest {
     b: number;
   };
   export type Value = AddRequest | AddRequest.Data;
-} // @message
+}
 export class AddResponse extends Message<AddResponse.Data> {
   static TYPE_TAG = Symbol("AddResponse");
   static readonly $typeName = "AddResponse";

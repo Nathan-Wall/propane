@@ -1,9 +1,10 @@
-// @message
-export type Primitives = {
+import { Message } from '@propanejs/runtime';
+
+export type Primitives = Message<{
   flag: boolean;
   count: number;
   label: string;
   size: bigint;
   empty: null;
   missing: undefined;
-};
+}>;

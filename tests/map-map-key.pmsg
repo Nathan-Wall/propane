@@ -1,5 +1,6 @@
-// @message
-export type MapMapKey = {
+import { Message } from '@propanejs/runtime';
+
+export type MapMapKey = Message<{
   /**
    * Map keyed by another Map to exercise map-as-key support.
    */
@@ -9,4 +10,4 @@ export type MapMapKey = {
    * Optional map whose keys are readonly maps; verifies optional handling.
    */
   optional?: Map<ReadonlyMap<string, number>, number>;
-};
+}>;

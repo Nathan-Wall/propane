@@ -1,18 +1,17 @@
-// @message
-export type Cat = {
+import { Message } from '@propanejs/runtime';
+
+export type Cat = Message<{
   '1:name': string;
   '2:meows': boolean;
-};
+}>;
 
-// @message
-export type Dog = {
+export type Dog = Message<{
   '1:name': string;
   '2:barks': boolean;
-};
+}>;
 
-// @message
-export type PetOwner = {
+export type PetOwner = Message<{
   '1:ownerName': string;
   '2:pet': Cat | Dog;
   '3:optionalPet'?: Cat | Dog;
-};
+}>;

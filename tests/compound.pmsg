@@ -1,9 +1,9 @@
 import {Indexed} from './indexed.pmsg';
 import {User} from './user.pmsg';
+import { Message } from '@propanejs/runtime';
 
-// @message
-export type Compound = {
+export type Compound = Message<{
   '1:user': User,
   '2:indexed': Indexed,
   '3:inline': {value: string},
-};
+}>;

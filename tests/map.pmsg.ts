@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
 export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static readonly $typeName = "MapMessage_Metadata_Value";

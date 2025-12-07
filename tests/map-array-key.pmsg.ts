@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-array-key.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
 export class MapArrayKey extends Message<MapArrayKey.Data> {
   static TYPE_TAG = Symbol("MapArrayKey");
   static readonly $typeName = "MapArrayKey";

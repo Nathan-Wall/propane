@@ -1,4 +1,5 @@
-// @message
-export type Wrapper = {
+import { Message } from '@propanejs/runtime';
+
+export type Wrapper = Message<{
   payload: bigint | { id: bigint };
-};
+}>;

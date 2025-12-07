@@ -35,20 +35,21 @@ describe('getBabelParserOptions', () => {
 // ============================================================================
 
 describe('parseSource - basic messages', () => {
-  it('should parse a simple @message type', () => {
+  it('should parse a simple Message<T> type', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
         '2:name': string;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
 
     assert.strictEqual(file.messages.length, 1);
     assert.strictEqual(file.messages[0]!.name, 'User');
-    assert.strictEqual(file.messages[0]!.hasMessageDecorator, true);
+    assert.strictEqual(file.messages[0]!.isMessageType, true);
     assert.strictEqual(file.messages[0]!.properties.length, 2);
 
     // Check properties
@@ -64,11 +65,12 @@ describe('parseSource - basic messages', () => {
 
   it('should parse unnumbered fields', () => {
     const source = `
-      // @message
-      export type Config = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Config = Message<{
         name: string;
         enabled: boolean;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -81,11 +83,12 @@ describe('parseSource - basic messages', () => {
 
   it('should parse optional properties', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
         '2:nickname'?: string;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -97,10 +100,11 @@ describe('parseSource - basic messages', () => {
 
   it('should parse readonly properties', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         readonly '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -118,13 +122,14 @@ describe('parseSource - basic messages', () => {
 describe('parseSource - type parsing', () => {
   it('should parse primitive types', () => {
     const source = `
-      // @message
-      export type Primitives = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Primitives = Message<{
         '1:str': string;
         '2:num': number;
         '3:bool': boolean;
         '4:big': bigint;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -138,11 +143,12 @@ describe('parseSource - type parsing', () => {
 
   it('should parse array types', () => {
     const source = `
-      // @message
-      export type Lists = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Lists = Message<{
         '1:items': string[];
         '2:numbers': Array<number>;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -159,10 +165,11 @@ describe('parseSource - type parsing', () => {
 
   it('should parse map types', () => {
     const source = `
-      // @message
-      export type Maps = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Maps = Message<{
         '1:lookup': Map<string, number>;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -177,10 +184,11 @@ describe('parseSource - type parsing', () => {
 
   it('should parse set types', () => {
     const source = `
-      // @message
-      export type Sets = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Sets = Message<{
         '1:ids': Set<number>;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -191,11 +199,12 @@ describe('parseSource - type parsing', () => {
 
   it('should parse union types', () => {
     const source = `
-      // @message
-      export type Unions = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Unions = Message<{
         '1:status': 'active' | 'inactive';
         '2:value': string | number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -211,12 +220,13 @@ describe('parseSource - type parsing', () => {
 
   it('should parse special types (Date, URL, ArrayBuffer)', () => {
     const source = `
-      // @message
-      export type Special = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Special = Message<{
         '1:created': Date;
         '2:link': URL;
         '3:data': ArrayBuffer;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -229,11 +239,12 @@ describe('parseSource - type parsing', () => {
 
   it('should parse type references', () => {
     const source = `
-      // @message
-      export type Order = {
+      import { Message } from '@propanejs/runtime';
+
+      export type Order = Message<{
         '1:user': User;
         '2:items': OrderItem[];
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -252,42 +263,45 @@ describe('parseSource - type parsing', () => {
 // ============================================================================
 
 describe('parseSource - decorators', () => {
-  it('should detect @message decorator', () => {
+  it('should detect Message wrapper', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
-    assert.strictEqual(file.messages[0]!.hasMessageDecorator, true);
+    assert.strictEqual(file.messages[0]!.isMessageType, true);
   });
 
   it('should detect @extend decorator', () => {
     const source = `
-      // @message
+      import { Message } from '@propanejs/runtime';
+
       // @extend('./user.ext.ts')
-      export type User = {
+      export type User = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
     assert.strictEqual(file.messages[0]!.extendPath, './user.ext.ts');
   });
 
-  it('should handle @message and @extend on same line', () => {
+  it('should error on deprecated @message decorator', () => {
     const source = `
-      // @message @extend('./user.ext.ts')
+      // @message
       export type User = {
         '1:id': number;
       };
     `;
 
-    const { file } = parseSource(source, 'test.pmsg');
-    assert.strictEqual(file.messages[0]!.hasMessageDecorator, true);
-    assert.strictEqual(file.messages[0]!.extendPath, './user.ext.ts');
+    const { diagnostics } = parseSource(source, 'test.pmsg');
+
+    const error = diagnostics.find(d => d.code === 'PMT035');
+    assert.ok(error, 'Should have PMT035 error for deprecated @message decorator');
   });
 });
 
@@ -298,17 +312,16 @@ describe('parseSource - decorators', () => {
 describe('parseSource - wrapper types', () => {
   it('should parse Endpoint wrapper type', () => {
     const source = `
+      import { Message } from '@propanejs/runtime';
       import { Endpoint } from '@propanejs/pms-core';
 
-      // @message
       export type GetUser = Endpoint<{
         '1:id': number;
       }, GetUserResponse>;
 
-      // @message
-      export type GetUserResponse = {
+      export type GetUserResponse = Message<{
         '1:user': User;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -328,7 +341,6 @@ describe('parseSource - wrapper types', () => {
     const source = `
       import { Endpoint } from '@propanejs/pms-core';
 
-      // @message
       export type GetUser = Endpoint<{
         '1:id': number;
       }, GetUserResponse>;
@@ -346,7 +358,6 @@ describe('parseSource - wrapper types', () => {
     const source = `
       import { Endpoint as PmsRequest } from '@propanejs/pms-core';
 
-      // @message
       export type GetUser = PmsRequest<{
         '1:id': number;
       }, GetUserResponse>;
@@ -363,16 +374,14 @@ describe('parseSource - wrapper types', () => {
     const source = `
       import { SomeOther } from 'other-lib';
 
-      // @message
       export type GetUser = SomeOther<{
         '1:id': number;
       }, GetUserResponse>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
-    const endpointInfo = getEndpointInfo(file, file.messages[0]!);
-
-    assert.strictEqual(endpointInfo, null);
+    // Non-message wrappers should not produce messages
+    assert.strictEqual(file.messages.length, 0);
   });
 });
 
@@ -397,10 +406,11 @@ describe('parseSource - validation errors', () => {
 
   it('should error on intersection types', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
-      } & { name: string };
+      } & { name: string }>;
     `;
 
     const { diagnostics } = parseSource(source, 'test.pmsg');
@@ -409,7 +419,7 @@ describe('parseSource - validation errors', () => {
     assert.ok(error, 'Should have PMT013 error for intersection');
   });
 
-  it('should error on non-@message object literal types', () => {
+  it('should error on object literal types without Message wrapper', () => {
     const source = `
       export type User = {
         id: number;
@@ -420,16 +430,17 @@ describe('parseSource - validation errors', () => {
     const { diagnostics } = parseSource(source, 'test.pmsg');
 
     const error = diagnostics.find(d => d.code === 'PMT012');
-    assert.ok(error, 'Should have PMT012 error for non-@message object literal');
+    assert.ok(error, 'Should have PMT012 error for non-Message object literal');
   });
 
   it('should error on duplicate field numbers', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
         '1:name': string;
-      };
+      }>;
     `;
 
     const { diagnostics } = parseSource(source, 'test.pmsg');
@@ -440,10 +451,11 @@ describe('parseSource - validation errors', () => {
 
   it('should error on invalid field numbers', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '0:id': number;
-      };
+      }>;
     `;
 
     const { diagnostics } = parseSource(source, 'test.pmsg');
@@ -454,30 +466,17 @@ describe('parseSource - validation errors', () => {
 
   it('should error on reserved property names', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:data': string;
-      };
+      }>;
     `;
 
     const { diagnostics } = parseSource(source, 'test.pmsg');
 
     const error = diagnostics.find(d => d.code === 'PMT045');
     assert.ok(error, 'Should have PMT045 error for reserved property name');
-  });
-
-  it('should error on invalid wrapper usage', () => {
-    const source = `
-      import { Endpoint } from '@propanejs/pms-core';
-
-      // @message
-      export type GetUser = Endpoint<User, GetUserResponse>;
-    `;
-
-    const { diagnostics } = parseSource(source, 'test.pmsg');
-
-    const error = diagnostics.find(d => d.code === 'PMT014');
-    assert.ok(error, 'Should have PMT014 error for invalid wrapper');
   });
 });
 
@@ -491,10 +490,9 @@ describe('parseSource - imports', () => {
       import { Endpoint, Message } from '@propanejs/pms-core';
       import { User } from './user.pmsg.js';
 
-      // @message
-      export type Test = {
+      export type Test = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -511,16 +509,17 @@ describe('parseSource - imports', () => {
   it('should handle aliased imports', () => {
     const source = `
       import { Endpoint as PmsRequest } from '@propanejs/pms-core';
+      import { Message } from '@propanejs/runtime';
 
-      // @message
-      export type Test = {
+      export type Test = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
 
-    const coreImport = file.imports[0]!;
+    const coreImport = file.imports.find(i => i.source === '@propanejs/pms-core');
+    assert.ok(coreImport);
     const endpointSpec = coreImport.specifiers.find(s => s.imported === 'Endpoint');
     assert.ok(endpointSpec);
     assert.strictEqual(endpointSpec.local, 'PmsRequest');
@@ -534,14 +533,15 @@ describe('parseSource - imports', () => {
 describe('parseSource - type aliases', () => {
   it('should parse non-message type aliases', () => {
     const source = `
+      import { Message } from '@propanejs/runtime';
+
       type Id = number | string;
       type Email = Brand<string, 'Email'>;
 
-      // @message
-      export type User = {
+      export type User = Message<{
         '1:id': Id;
         '2:email': Email;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -558,12 +558,13 @@ describe('parseSource - type aliases', () => {
 // ============================================================================
 
 describe('isTransformableMessage', () => {
-  it('should return true for valid @message types', () => {
+  it('should return true for valid Message types', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -572,10 +573,11 @@ describe('isTransformableMessage', () => {
 
   it('should return false for messages with errors', () => {
     const source = `
-      // @message
-      export type User = {
+      import { Message } from '@propanejs/runtime';
+
+      export type User = Message<{
         '1:data': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
@@ -587,22 +589,20 @@ describe('isTransformableMessage', () => {
 describe('findEndpoints', () => {
   it('should find all endpoints in a file', () => {
     const source = `
+      import { Message } from '@propanejs/runtime';
       import { Endpoint } from '@propanejs/pms-core';
 
-      // @message
       export type GetUser = Endpoint<{
         '1:id': number;
       }, GetUserResponse>;
 
-      // @message
       export type ListUsers = Endpoint<{
         '1:limit': number;
       }, ListUsersResponse>;
 
-      // @message
-      export type User = {
+      export type User = Message<{
         '1:id': number;
-      };
+      }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');

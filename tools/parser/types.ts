@@ -111,8 +111,11 @@ export interface PmtMessage {
   /** Type name (e.g., "User", "GetUser") */
   name: string;
 
-  /** True if the type alias is marked with // @message */
-  hasMessageDecorator: boolean;
+  /** True if wrapped with Message<{...}>, Table<{...}>, or Endpoint<{...}, R> */
+  isMessageType: boolean;
+
+  /** True if wrapped with Table<{...}> from @propanejs/postgres */
+  isTableType: boolean;
 
   /** Path from // @extend('<path>') decorator, if present */
   extendPath: string | null;

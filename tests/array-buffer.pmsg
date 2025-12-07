@@ -1,7 +1,8 @@
-// @message
-export type ArrayBufferMessage = {
+import { Message } from '@propanejs/runtime';
+
+export type ArrayBufferMessage = Message<{
   '1:id': number;
   '2:data': ArrayBuffer;
   '3:extra'?: ArrayBuffer;
   '4:chunks': ArrayBuffer[];
-};
+}>;

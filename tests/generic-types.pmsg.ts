@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/no-explicit-any*/
 // Generated from tests/generic-types.pmsg
-import type { MessagePropDescriptor, MessageConstructor, DataObject } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString } from "../runtime/index.js";
+
 /**
  * Test file for generic message types.
  */
+
 // Basic item type for testing
-// @message
+import type { MessagePropDescriptor, MessageConstructor, DataObject } from "../runtime/index.js";
 export class Item extends Message<Item.Data> {
   static TYPE_TAG = Symbol("Item");
   static readonly $typeName = "Item";
@@ -69,7 +70,6 @@ export namespace Item {
   };
   export type Value = Item | Item.Data;
 } // Simple generic container with single type parameter
-// @message
 export class Container<T extends Message<any>> extends Message<Container.Data<T>> {
   static TYPE_TAG = Symbol("Container");
   #inner: T;
@@ -131,7 +131,6 @@ export namespace Container {
   };
   export type Value<T extends Message<any>> = Container<T> | Container.Data<T>;
 } // Generic with optional field
-// @message
 export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> {
   static TYPE_TAG = Symbol("Optional");
   #value: T;
@@ -197,7 +196,6 @@ export namespace Optional {
   };
   export type Value<T extends Message<any>> = Optional<T> | Optional.Data<T>;
 } // Multiple type parameters
-// @message
 export class Pair<T extends Message<any>, U extends Message<any>> extends Message<Pair.Data<T, U>> {
   static TYPE_TAG = Symbol("Pair");
   #first: T;
@@ -285,7 +283,6 @@ export namespace Pair {
   };
   export type Value<T extends Message<any>, U extends Message<any>> = Pair<T, U> | Pair.Data<T, U>;
 } // Non-generic type that can contain generic instances
-// @message
 export class Parent extends Message<Parent.Data> {
   static TYPE_TAG = Symbol("Parent");
   static readonly $typeName = "Parent";

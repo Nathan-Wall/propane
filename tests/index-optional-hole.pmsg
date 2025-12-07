@@ -1,7 +1,8 @@
-// @message
-export type OptionalHole = {
+import { Message } from '@propanejs/runtime';
+
+export type OptionalHole = Message<{
   '1:id': number;
   '2:created': Date;
   '3:note'?: string;
   '4:name': string;
-};
+}>;

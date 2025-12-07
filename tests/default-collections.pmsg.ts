@@ -3,11 +3,10 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals } from "../runtime/index.js";
 
 // Test message with non-optional collection fields to verify defaults
-// @message
 import type { MessagePropDescriptor, DataObject } from "../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals } from "../runtime/index.js";
 export class DefaultCollections extends Message<DefaultCollections.Data> {
   static TYPE_TAG = Symbol("DefaultCollections");
   static readonly $typeName = "DefaultCollections";

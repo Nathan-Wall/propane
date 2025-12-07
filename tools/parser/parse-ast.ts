@@ -20,16 +20,15 @@ import {
   parseType,
   parseTypeParameters,
   getSourceLocation,
-  extractWrapperInfo,
   type TypeParserContext,
 } from './type-parser.js';
 import {
   validateNoInterfaces,
   validateNoIntersections,
-  validateMessageType,
-  validateNonMessageType,
+  validateObjectLiteralRequiresWrapper,
   validateFileLevel,
 } from './validation.js';
+import { detectWrapper } from './wrapper-detection.js';
 
 /**
  * Parse a Babel AST into a PMT file.
@@ -43,20 +42,27 @@ export function parseFromAst(
   const typeAliases: PmtTypeAlias[] = [];
   const imports: PmtImport[] = [];
 
-  const ctx: TypeParserContext = { filePath, diagnostics };
-
   // Run file-level validations
   validateFileLevel(ast, { filePath, diagnostics });
   validateNoInterfaces(ast.program.body, { filePath, diagnostics });
 
-  // Process all statements
+  // First pass: collect all imports (needed for wrapper detection)
   for (const stmt of ast.program.body) {
-    // Handle imports
     if (t.isImportDeclaration(stmt)) {
       const pmtImport = parseImport(stmt);
       if (pmtImport) {
         imports.push(pmtImport);
       }
+    }
+  }
+
+  // Create context with imports for wrapper detection
+  const ctx: ProcessTypeAliasContext = { filePath, diagnostics, imports };
+
+  // Second pass: process type aliases
+  for (const stmt of ast.program.body) {
+    // Skip imports (already processed)
+    if (t.isImportDeclaration(stmt)) {
       continue;
     }
 
@@ -98,12 +104,19 @@ function extractTypeAlias(stmt: t.Statement): t.TSTypeAliasDeclaration | null {
 }
 
 /**
+ * Interface for parsed imports passed to processTypeAlias.
+ */
+interface ProcessTypeAliasContext extends TypeParserContext {
+  imports: PmtImport[];
+}
+
+/**
  * Process a type alias declaration.
  */
 function processTypeAlias(
   typeAlias: t.TSTypeAliasDeclaration,
   originalStmt: t.Statement,
-  ctx: TypeParserContext,
+  ctx: ProcessTypeAliasContext,
   messages: PmtMessage[],
   typeAliases: PmtTypeAlias[]
 ): void {
@@ -111,7 +124,7 @@ function processTypeAlias(
   const typeAnnotation = typeAlias.typeAnnotation;
   const location = getSourceLocation(typeAlias);
 
-  // Extract decorators from comments
+  // Extract @extend decorator from comments (only decorator still supported)
   const decoratorInfo = extractDecorators(
     originalStmt, ctx.filePath, ctx.diagnostics
   );
@@ -121,18 +134,13 @@ function processTypeAlias(
     filePath: ctx.filePath, diagnostics: ctx.diagnostics,
   });
 
-  // Validate @message usage
-  const { isWrapper } = validateMessageType(
-    typeAnnotation,
-    decoratorInfo.hasMessage,
-    typeName,
-    { filePath: ctx.filePath, diagnostics: ctx.diagnostics }
-  );
+  // Detect Message/Table/Endpoint wrapper
+  const wrapperResult = detectWrapper(typeAnnotation, ctx.imports);
 
-  // Validate non-@message types
-  validateNonMessageType(
+  // Validate that object literals must use Message<{...}> wrapper
+  validateObjectLiteralRequiresWrapper(
     typeAnnotation,
-    decoratorInfo.hasMessage,
+    wrapperResult.isMessageWrapper,
     typeName,
     { filePath: ctx.filePath, diagnostics: ctx.diagnostics }
   );
@@ -140,30 +148,33 @@ function processTypeAlias(
   // Parse type parameters
   const typeParameters = parseTypeParameters(typeAlias.typeParameters, ctx);
 
-  // If this is a @message type
-  if (decoratorInfo.hasMessage) {
+  // If this is a message type (Message<T>, Table<T>, or Endpoint<P, R> wrapper)
+  if (wrapperResult.isMessageWrapper) {
     let properties: PmtProperty[] = [];
     let wrapper: PmtMessageWrapper | null = null;
 
-    if (isWrapper && t.isTSTypeReference(typeAnnotation)) {
-      // Extract wrapper info
-      const wrapperInfo = extractWrapperInfo(typeAnnotation, ctx);
-      if (wrapperInfo) {
-        wrapper = {
-          localName: wrapperInfo.localName,
-          responseType: wrapperInfo.responseType,
-        };
-        // Parse properties from the payload (first type argument)
-        properties = parseProperties(wrapperInfo.payload, ctx);
-      }
-    } else if (t.isTSTypeLiteral(typeAnnotation)) {
-      // Plain object literal message
-      properties = parseProperties(typeAnnotation, ctx);
+    // Extract properties from the inner object literal
+    if (wrapperResult.innerType) {
+      properties = parseProperties(wrapperResult.innerType, ctx);
+    }
+
+    // For Endpoint wrapper, capture the response type
+    if (wrapperResult.isEndpointWrapper && wrapperResult.secondTypeArg) {
+      wrapper = {
+        localName: wrapperResult.wrapperLocalName!,
+        responseType: parseType(wrapperResult.secondTypeArg, ctx),
+      };
+    } else if (wrapperResult.wrapperLocalName) {
+      wrapper = {
+        localName: wrapperResult.wrapperLocalName,
+        responseType: null,
+      };
     }
 
     const message: PmtMessage = {
       name: typeName,
-      hasMessageDecorator: true,
+      isMessageType: true,
+      isTableType: wrapperResult.isTableWrapper,
       extendPath: decoratorInfo.extendPath,
       properties,
       typeParameters,
@@ -173,7 +184,7 @@ function processTypeAlias(
 
     messages.push(message);
   } else {
-    // Non-@message type alias
+    // Non-message type alias
     const type = parseType(typeAnnotation, ctx);
 
     const alias: PmtTypeAlias = {

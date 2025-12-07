@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static readonly $typeName = "UnionFirstNumber";
@@ -43,7 +42,7 @@ export namespace UnionFirstNumber {
     val: number | string;
   };
   export type Value = UnionFirstNumber | UnionFirstNumber.Data;
-} // @message
+}
 export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
   static readonly $typeName = "UnionFirstString";
@@ -84,7 +83,7 @@ export namespace UnionFirstString {
     val: string | number;
   };
   export type Value = UnionFirstString | UnionFirstString.Data;
-} // @message
+}
 export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
   static readonly $typeName = "OptionalField";
@@ -128,7 +127,7 @@ export namespace OptionalField {
     val?: string | undefined;
   };
   export type Value = OptionalField | OptionalField.Data;
-} // @message
+}
 export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
   static readonly $typeName = "RequiredMessage";

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.pmsg
-import type { MessagePropDescriptor } from "../runtime/index.js";
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "../runtime/index.js";
-// @message
+import type { MessagePropDescriptor } from "../runtime/index.js";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static readonly $typeName = "Cat";
@@ -64,7 +63,7 @@ export namespace Cat {
     meows: boolean;
   };
   export type Value = Cat | Cat.Data;
-} // @message
+}
 export class Dog extends Message<Dog.Data> {
   static TYPE_TAG = Symbol("Dog");
   static readonly $typeName = "Dog";
@@ -126,7 +125,7 @@ export namespace Dog {
     barks: boolean;
   };
   export type Value = Dog | Dog.Data;
-} // @message
+}
 export class PetOwner extends Message<PetOwner.Data> {
   static TYPE_TAG = Symbol("PetOwner");
   static readonly $typeName = "PetOwner";
