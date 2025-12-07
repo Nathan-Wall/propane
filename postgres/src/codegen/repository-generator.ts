@@ -85,16 +85,29 @@ function toRepositoryFilename(typeName: string): string {
 }
 
 /**
- * Find the primary key column name for a table.
- * Returns null if no primary key is defined.
+ * Find the primary key column(s) for a table.
+ * Returns string for single-column PK, string[] for composite PK, null if no PK.
  */
-function findPrimaryKeyColumn(table: TableDefinition): string | null {
+function findPrimaryKeyColumns(table: TableDefinition): string | string[] | null {
+  // First check the table.primaryKey array (most reliable source)
+  if (table.primaryKey && table.primaryKey.length > 0) {
+    if (table.primaryKey.length === 1) {
+      return table.primaryKey[0]!;
+    }
+    return table.primaryKey;
+  }
+
+  // Fallback: check individual columns (for backwards compat)
+  const pkCols: string[] = [];
   for (const [colName, col] of Object.entries(table.columns)) {
     if (col.isPrimaryKey) {
-      return colName;
+      pkCols.push(colName);
     }
   }
-  return null;
+
+  if (pkCols.length === 0) return null;
+  if (pkCols.length === 1) return pkCols[0]!;
+  return pkCols;
 }
 
 /**
@@ -136,7 +149,7 @@ function generateRepositorySource(
 
   const columns = Object.keys(table.columns);
   const columnTypes = buildColumnTypes(table);
-  const primaryKey = findPrimaryKeyColumn(table) ?? '';
+  const primaryKey = findPrimaryKeyColumns(table);
 
   // Build imports
   const imports = [
@@ -170,6 +183,16 @@ function generateRepositorySource(
  * Methods like findById() will not work correctly.
  */`;
 
+  // Format primary key for TypeScript - string or string[]
+  let primaryKeyLiteral: string;
+  if (primaryKey === null) {
+    primaryKeyLiteral = "''";
+  } else if (Array.isArray(primaryKey)) {
+    primaryKeyLiteral = `[${primaryKey.map(k => `'${k}'`).join(', ')}]`;
+  } else {
+    primaryKeyLiteral = `'${primaryKey}'`;
+  }
+
   // Build the type parameter - use intersection with Record for BaseRepository constraint
   const typeParam = options.typesImportPrefix
     ? `${message.name} & Record<string, unknown>`
@@ -189,7 +212,7 @@ export class ${className} extends BaseRepository<${typeParam}> {
     super(connection, {
       tableName: '${tableName}',
       schemaName,
-      primaryKey: '${primaryKey}',
+      primaryKey: ${primaryKeyLiteral},
       columns: [${columnsLiteral}],
       columnTypes: {
 ${columnTypesLiteral}

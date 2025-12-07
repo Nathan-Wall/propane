@@ -477,5 +477,50 @@ describe('Repository Generator', () => {
       assert.ok(result.source.includes("'created_at'"));
       assert.ok(result.source.includes("created_at: 'TIMESTAMPTZ'"));
     });
+
+    it('should handle composite primary keys', () => {
+      const message = createMessage('UserRole', [
+        { name: 'user_id', fieldNumber: 1 },
+        { name: 'role_id', fieldNumber: 2 },
+        { name: 'granted_at', fieldNumber: 3 },
+      ]);
+      const table = createTable('user_roles', {
+        user_id: { type: 'BIGINT', isPrimaryKey: true },
+        role_id: { type: 'BIGINT', isPrimaryKey: true },
+        granted_at: { type: 'TIMESTAMPTZ' },
+      });
+
+      const result = generateRepository(message, table);
+
+      assert.ok(result.source.includes("primaryKey: ['user_id', 'role_id']"));
+      assert.strictEqual(result.className, 'UserRoleRepository');
+    });
+
+    it('should handle single primary key from primaryKey array', () => {
+      const message = createMessage('User', [{ name: 'id' }]);
+      const table: TableDefinition = {
+        name: 'users',
+        columns: {
+          id: {
+            name: 'id',
+            type: 'BIGINT',
+            nullable: false,
+            isPrimaryKey: false, // Not marked at column level
+            isAutoIncrement: false,
+            isUnique: false,
+          },
+        },
+        primaryKey: ['id'], // Single-element array
+        indexes: [],
+        foreignKeys: [],
+        checkConstraints: [],
+      };
+
+      const result = generateRepository(message, table);
+
+      // Should be a string, not an array, for single PK
+      assert.ok(result.source.includes("primaryKey: 'id'"));
+      assert.ok(!result.source.includes("primaryKey: ['id']"));
+    });
   });
 });

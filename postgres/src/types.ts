@@ -6,13 +6,13 @@
  */
 
 declare const TABLE_BRAND: unique symbol;
-declare const PK_BRAND: unique symbol;
+declare const PRIMARY_KEY_BRAND: unique symbol;
 declare const AUTO_BRAND: unique symbol;
 declare const INDEX_BRAND: unique symbol;
 declare const UNIQUE_BRAND: unique symbol;
 declare const NORMALIZE_BRAND: unique symbol;
 declare const JSON_BRAND: unique symbol;
-declare const FK_BRAND: unique symbol;
+declare const REFERENCES_BRAND: unique symbol;
 
 /**
  * Marks a type as a database table. Types wrapped with Table<{...}> are
@@ -23,46 +23,64 @@ declare const FK_BRAND: unique symbol;
  *
  * @example
  * ```typescript
- * import { Table, PK, Auto, Unique } from '@propanejs/postgres';
+ * import { Table, PrimaryKey, Auto, Unique } from '@propanejs/postgres';
  *
  * export type User = Table<{
- *   '1:id': PK<Auto<bigint>>;        // BIGSERIAL PRIMARY KEY
- *   '2:email': Unique<string>;       // TEXT UNIQUE
+ *   '1:id': PrimaryKey<Auto<bigint>>;  // BIGSERIAL PRIMARY KEY
+ *   '2:email': Unique<string>;         // TEXT UNIQUE
  *   '3:name': string;
- *   '4:created': Date;               // TIMESTAMPTZ
+ *   '4:created': Date;                 // TIMESTAMPTZ
  * }>;
  * ```
  */
 export type Table<T extends object> = T & { readonly [TABLE_BRAND]: never };
 
 /**
- * Marks a field as the primary key for the table.
+ * Marks a field as part of the primary key.
  *
- * @typeParam T - The underlying type (typically bigint, int32, or string)
+ * @typeParam T - The underlying type (bigint, int32, string, etc.)
+ * @typeParam Order - Optional position in composite key (1-based).
+ *                    Defaults to declaration order when not specified.
  *
  * @example
  * ```typescript
- * export type User = {
- *   '1:id': PK<bigint>;           // BIGINT PRIMARY KEY
- *   '2:uuid': PK<string>;         // TEXT PRIMARY KEY
- *   '3:id': PK<Auto<bigint>>;     // BIGSERIAL PRIMARY KEY
- * };
+ * // Single primary key
+ * export type User = Table<{
+ *   '1:id': PrimaryKey<Auto<bigint>>;
+ *   '2:email': string;
+ * }>;
+ *
+ * // Composite primary key (ordered by declaration order)
+ * export type UserRole = Table<{
+ *   '1:userId': PrimaryKey<bigint>;
+ *   '2:roleId': PrimaryKey<bigint>;
+ * }>;
+ *
+ * // Composite with explicit order
+ * export type TenantUser = Table<{
+ *   '1:visibleId': string;
+ *   '2:tenantId': PrimaryKey<bigint, 1>;  // First in PK
+ *   '3:userId': PrimaryKey<bigint, 2>;    // Second in PK
+ * }>;
  * ```
  */
-export type PK<T> = T & { readonly [PK_BRAND]: never };
+export type PrimaryKey<T, Order extends number = never> = T & {
+  readonly [PRIMARY_KEY_BRAND]: { order: Order };
+};
 
 /**
- * Marks a field for auto-increment. Must be used inside PK<>.
+ * Marks a field for auto-increment. Must be used inside PrimaryKey<>.
  *
  * - PostgreSQL: SERIAL (int32) or BIGSERIAL (bigint)
+ * - Cannot be used in composite primary keys
  *
  * @typeParam T - The underlying numeric type (int32 or bigint)
  *
  * @example
  * ```typescript
- * export type User = {
- *   '1:id': PK<Auto<bigint>>;     // BIGSERIAL PRIMARY KEY
- * };
+ * export type User = Table<{
+ *   '1:id': PrimaryKey<Auto<bigint>>;  // BIGSERIAL PRIMARY KEY
+ * }>;
  * ```
  */
 export type Auto<T extends number | bigint> = T & {
@@ -76,11 +94,11 @@ export type Auto<T extends number | bigint> = T & {
  *
  * @example
  * ```typescript
- * export type User = {
- *   '1:id': PK<bigint>;
+ * export type User = Table<{
+ *   '1:id': PrimaryKey<bigint>;
  *   '2:email': Index<string>;           // TEXT with index
- *   '3:email': Unique<Index<string>>;   // TEXT with unique index
- * };
+ *   '3:code': Unique<Index<string>>;    // TEXT with unique index
+ * }>;
  * ```
  */
 export type Index<T> = T & { readonly [INDEX_BRAND]: never };
@@ -92,11 +110,11 @@ export type Index<T> = T & { readonly [INDEX_BRAND]: never };
  *
  * @example
  * ```typescript
- * export type User = {
- *   '1:id': PK<bigint>;
+ * export type User = Table<{
+ *   '1:id': PrimaryKey<bigint>;
  *   '2:email': Unique<string>;          // TEXT UNIQUE
  *   '3:code': Unique<Index<string>>;    // TEXT UNIQUE with index
- * };
+ * }>;
  * ```
  */
 export type Unique<T> = T & { readonly [UNIQUE_BRAND]: never };
@@ -113,7 +131,7 @@ export type Unique<T> = T & { readonly [UNIQUE_BRAND]: never };
  * @example
  * ```typescript
  * export type Order = Table<{
- *   '1:id': PK<bigint>;
+ *   '1:id': PrimaryKey<bigint>;
  *   '2:items': Normalize<OrderItem[]>;  // Normalized into order_items table
  * }>;
  * ```
@@ -130,11 +148,11 @@ export type Normalize<T extends unknown[]> = T & {
  *
  * @example
  * ```typescript
- * export type User = {
- *   '1:id': PK<bigint>;
+ * export type User = Table<{
+ *   '1:id': PrimaryKey<bigint>;
  *   '2:tags': Json<string[]>;           // JSONB array
  *   '3:metadata': Json<UserMeta>;       // JSONB object
- * };
+ * }>;
  * ```
  */
 export type Json<T> = T & { readonly [JSON_BRAND]: never };
@@ -143,21 +161,24 @@ export type Json<T> = T & { readonly [JSON_BRAND]: never };
  * Marks a field as a foreign key reference to another Table type.
  * The column type is inferred from the referenced table's primary key.
  *
- * @typeParam T - The referenced Table type
+ * Note: Cannot reference tables with composite primary keys.
+ * For those cases, define separate FK columns manually.
+ *
+ * @typeParam T - The referenced Table type (must have single-column PK)
  * @typeParam K - The referenced column name (default: 'id')
  *
  * @example
  * ```typescript
  * export type Post = Table<{
- *   '1:id': PK<Auto<bigint>>;
+ *   '1:id': PrimaryKey<Auto<bigint>>;
  *   '2:title': string;
- *   '3:authorId': FK<User>;              // References users(id)
- *   '4:categoryId': FK<Category, 'code'>; // References categories(code)
+ *   '3:authorId': References<User>;              // References users(id)
+ *   '4:categoryId': References<Category, 'code'>; // References categories(code)
  * }>;
  * ```
  */
-export type FK<T extends object, K extends keyof T = 'id' extends keyof T ? 'id' : keyof T> = T[K] & {
-  readonly [FK_BRAND]: { table: T; column: K };
+export type References<T extends object, K extends keyof T = 'id' extends keyof T ? 'id' : keyof T> = T[K] & {
+  readonly [REFERENCES_BRAND]: { table: T; column: K };
 };
 
 /**
@@ -166,13 +187,15 @@ export type FK<T extends object, K extends keyof T = 'id' extends keyof T ? 'id'
  */
 export interface WrapperTypeInfo {
   isPrimaryKey: boolean;
+  /** Explicit order in composite PK (1-based), undefined for declaration order */
+  primaryKeyOrder?: number;
   isAutoIncrement: boolean;
   isIndexed: boolean;
   isUnique: boolean;
   forceNormalize: boolean;
   forceJson: boolean;
   baseType: string;
-  /** Foreign key reference info, if FK<T> wrapper is used */
+  /** Foreign key reference info, if References<T> wrapper is used */
   foreignKey?: {
     referencedType: string;
     referencedColumn: string;

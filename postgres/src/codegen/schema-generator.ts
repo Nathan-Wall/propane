@@ -15,13 +15,13 @@ import { mapScalarType, type ScalarType } from '../mapping/type-mapper.js';
  * These modify how a field is stored in the database.
  */
 const DB_WRAPPER_TYPES = new Set([
-  'PK',       // Primary key
-  'Auto',     // Auto-increment
-  'Index',    // Create index
-  'Unique',   // Unique constraint
-  'Normalize', // Normalize arrays into separate tables
-  'Json',     // Force JSONB storage
-  'FK',       // Foreign key reference
+  'PrimaryKey', // Primary key (supports composite)
+  'Auto',       // Auto-increment
+  'Index',      // Create index
+  'Unique',     // Unique constraint
+  'Normalize',  // Normalize arrays into separate tables
+  'Json',       // Force JSONB storage
+  'References', // Foreign key reference
 ]);
 
 /**
@@ -32,6 +32,8 @@ interface UnwrappedType {
   baseType: PmtType;
   /** Whether this field is a primary key */
   isPrimaryKey: boolean;
+  /** Explicit order in composite PK (1-based), undefined for declaration order */
+  primaryKeyOrder?: number;
   /** Whether this field is auto-increment */
   isAutoIncrement: boolean;
   /** Whether to create an index on this field */
@@ -52,7 +54,7 @@ interface UnwrappedType {
 /**
  * Unwrap database wrapper types from a PmtType.
  *
- * For example, `PK<Auto<bigint>>` unwraps to:
+ * For example, `PrimaryKey<Auto<bigint>>` unwraps to:
  * - baseType: { kind: 'primitive', primitive: 'bigint' }
  * - isPrimaryKey: true
  * - isAutoIncrement: true
@@ -81,8 +83,15 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
     }
 
     switch (wrapperName) {
-      case 'PK':
+      case 'PrimaryKey':
         result.isPrimaryKey = true;
+        // Extract explicit order if provided: PrimaryKey<T, 1>
+        if (current.typeArguments[1]?.kind === 'literal') {
+          const orderValue = current.typeArguments[1].value;
+          if (typeof orderValue === 'number') {
+            result.primaryKeyOrder = orderValue;
+          }
+        }
         break;
       case 'Auto':
         result.isAutoIncrement = true;
@@ -99,8 +108,8 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
       case 'Json':
         result.forceJson = true;
         break;
-      case 'FK': {
-        // FK<User> or FK<User, 'code'>
+      case 'References': {
+        // References<User> or References<User, 'code'>
         const refType = current.typeArguments[0];
         const refCol = current.typeArguments[1];
 
@@ -113,7 +122,7 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
                 : 'id',
           };
         }
-        // FK doesn't have further nested wrappers, so we set baseType from the referenced type
+        // References doesn't have further nested wrappers, so we set baseType from the referenced type
         // The actual column type will be inferred later from the referenced table
         result.baseType = innerType;
         return result;
@@ -260,11 +269,17 @@ function toTableName(typeName: string): string {
 
 /**
  * Configure a column builder from a property.
+ *
+ * @param builder - The column builder
+ * @param prop - The property definition
+ * @param unwrapped - The unwrapped type info
+ * @param isCompositePk - Whether this table has a composite primary key
  */
 function configureColumn(
   builder: ColumnBuilder,
   prop: PmtProperty,
-  unwrapped: UnwrappedType
+  unwrapped: UnwrappedType,
+  isCompositePk: boolean
 ): void {
   const baseType = unwrapped.baseType;
   const scalarType = toScalarType(baseType);
@@ -301,8 +316,9 @@ function configureColumn(
     builder.notNull();
   }
 
-  // Handle primary key
-  if (unwrapped.isPrimaryKey) {
+  // Handle primary key (only inline for single-column PKs)
+  // Composite PKs are handled separately via compositePrimaryKey()
+  if (unwrapped.isPrimaryKey && !isCompositePk) {
     builder.primaryKey();
   }
 
@@ -333,6 +349,7 @@ function generateTable(
   tableBuilder.sourceType(message.name);
 
   const childTables: TableDefinition[] = [];
+  const isCompositePk = pkInfo?.isComposite ?? false;
 
   for (const prop of message.properties) {
     const columnName = toSnakeCase(prop.name);
@@ -355,7 +372,7 @@ function generateTable(
       continue;
     }
 
-    // Handle FK<T> - create column with foreign key constraint
+    // Handle References<T> - create column with foreign key constraint
     if (unwrapped.foreignKey) {
       const { referencedType, referencedColumn } = unwrapped.foreignKey;
       const refTableName = toTableName(referencedType);
@@ -409,7 +426,7 @@ function generateTable(
 
     // Regular column
     tableBuilder.column(columnName, col => {
-      configureColumn(col, prop, unwrapped);
+      configureColumn(col, prop, unwrapped, isCompositePk);
     });
 
     // Generate index if Index<T> wrapper was used
@@ -437,6 +454,12 @@ function generateTable(
     tableBuilder.index(idx.name, idx.columns, { unique: idx.unique });
   }
 
+  // Set composite primary key if applicable
+  if (isCompositePk && pkInfo) {
+    const pkColumnNames = pkInfo.columns.map(c => c.columnName);
+    tableBuilder.compositePrimaryKey(pkColumnNames);
+  }
+
   return { childTables };
 }
 
@@ -453,17 +476,39 @@ interface ChildTableInfo {
 }
 
 /**
+ * Info about a single column in the primary key.
+ */
+interface PrimaryKeyColumn {
+  columnName: string;
+  sqlType: string;
+  fieldName: string;
+  declarationIndex: number;
+  explicitOrder?: number;
+  isAutoIncrement: boolean;
+  isOptional: boolean;
+  isNullable: boolean;
+}
+
+/**
  * Info about the primary key of a table.
  */
 interface PrimaryKeyInfo {
+  /** Single-column PK backward compatibility fields */
   columnName: string;
   sqlType: string;
+  /** All columns in the PK (sorted by order) */
+  columns: PrimaryKeyColumn[];
+  /** Whether this is a composite (multi-column) primary key */
+  isComposite: boolean;
 }
 
 /**
  * Find the primary key info for a message.
  */
 function findPrimaryKeyInfo(message: PmtMessage): PrimaryKeyInfo | null {
+  const columns: PrimaryKeyColumn[] = [];
+  let pkDeclarationIndex = 0;
+
   for (const prop of message.properties) {
     const unwrapped = unwrapDbWrappers(prop.type);
     if (unwrapped.isPrimaryKey) {
@@ -477,10 +522,37 @@ function findPrimaryKeyInfo(message: PmtMessage): PrimaryKeyInfo | null {
         sqlType = scalarType === 'bigint' ? 'BIGINT' : 'INTEGER';
       }
 
-      return { columnName, sqlType };
+      columns.push({
+        columnName,
+        sqlType,
+        fieldName: prop.name,
+        declarationIndex: pkDeclarationIndex++,
+        explicitOrder: unwrapped.primaryKeyOrder,
+        isAutoIncrement: unwrapped.isAutoIncrement,
+        isOptional: prop.optional,
+        isNullable: isNullable(unwrapped.baseType),
+      });
     }
   }
-  return null;
+
+  if (columns.length === 0) {
+    return null;
+  }
+
+  // Sort by explicit order if provided, otherwise by declaration order
+  columns.sort((a, b) => {
+    const orderA = a.explicitOrder ?? a.declarationIndex;
+    const orderB = b.explicitOrder ?? b.declarationIndex;
+    return orderA - orderB;
+  });
+
+  const firstColumn = columns[0]!;
+  return {
+    columnName: firstColumn.columnName,
+    sqlType: firstColumn.sqlType,
+    columns,
+    isComposite: columns.length > 1,
+  };
 }
 
 /**
@@ -708,10 +780,15 @@ export function findTableTypes(files: PmtFile[]): PmtMessage[] {
  */
 export type ValidationErrorCode =
   | 'INVALID_AUTO_TYPE'
-  | 'MULTIPLE_PRIMARY_KEYS'
+  | 'AUTO_IN_COMPOSITE_PK'
+  | 'MIXED_PK_ORDER'
+  | 'PK_ORDER_MUST_START_AT_1'
+  | 'PK_ORDER_NOT_SEQUENTIAL'
+  | 'REFERENCES_COMPOSITE_PK'
+  | 'NULLABLE_PRIMARY_KEY'
   | 'NORMALIZE_NOT_ARRAY'
   | 'DUPLICATE_FIELD_NUMBER'
-  | 'FK_NOT_TABLE';
+  | 'REFERENCES_NOT_TABLE';
 
 /**
  * A validation error from schema generation.
@@ -738,6 +815,17 @@ export interface SchemaValidationResult {
 }
 
 /**
+ * Internal struct for tracking PK field info during validation.
+ */
+interface PkFieldInfo {
+  name: string;
+  isAutoIncrement: boolean;
+  primaryKeyOrder?: number;
+  isOptional: boolean;
+  isNullable: boolean;
+}
+
+/**
  * Validate a Table<{...}> message for schema generation.
  *
  * @param message - The message to validate
@@ -749,7 +837,7 @@ export function validateTableMessage(
   typeRegistry?: Map<string, PmtMessage>
 ): SchemaValidationResult {
   const errors: SchemaValidationError[] = [];
-  const pkFields: string[] = [];
+  const pkFields: PkFieldInfo[] = [];
   const fieldNumbers = new Map<number, string[]>();
 
   for (const prop of message.properties) {
@@ -761,7 +849,7 @@ export function validateTableMessage(
       if (!['number', 'bigint', 'int32'].includes(baseScalar)) {
         errors.push({
           code: 'INVALID_AUTO_TYPE',
-          message: `Auto<T> only supports numeric types. Got: ${baseScalar}. Use PK<Auto<bigint>> or PK<Auto<number>> for auto-increment primary keys.`,
+          message: `Auto<T> only supports numeric types. Got: ${baseScalar}. Use PrimaryKey<Auto<bigint>> or PrimaryKey<Auto<number>> for auto-increment primary keys.`,
           table: message.name,
           field: prop.name,
         });
@@ -770,7 +858,13 @@ export function validateTableMessage(
 
     // Track PK fields
     if (unwrapped.isPrimaryKey) {
-      pkFields.push(prop.name);
+      pkFields.push({
+        name: prop.name,
+        isAutoIncrement: unwrapped.isAutoIncrement,
+        primaryKeyOrder: unwrapped.primaryKeyOrder,
+        isOptional: prop.optional,
+        isNullable: isNullable(unwrapped.baseType),
+      });
     }
 
     // Check Normalize<T> requires array
@@ -783,16 +877,29 @@ export function validateTableMessage(
       });
     }
 
-    // Check FK<T> references a Table type (if registry available)
+    // Check References<T> references a Table type (if registry available)
     if (unwrapped.foreignKey && typeRegistry) {
       const refMessage = typeRegistry.get(unwrapped.foreignKey.referencedType);
-      if (refMessage && !refMessage.isTableType) {
-        errors.push({
-          code: 'FK_NOT_TABLE',
-          message: `FK<T> requires a Table type, got Message type: ${unwrapped.foreignKey.referencedType}`,
-          table: message.name,
-          field: prop.name,
-        });
+      if (refMessage) {
+        if (!refMessage.isTableType) {
+          errors.push({
+            code: 'REFERENCES_NOT_TABLE',
+            message: `References<T> requires a Table type, got Message type: ${unwrapped.foreignKey.referencedType}`,
+            table: message.name,
+            field: prop.name,
+          });
+        } else {
+          // Check if referenced table has composite PK
+          const refPkInfo = findPrimaryKeyInfo(refMessage);
+          if (refPkInfo && refPkInfo.isComposite) {
+            errors.push({
+              code: 'REFERENCES_COMPOSITE_PK',
+              message: `Cannot use References<T> to reference table '${refMessage.name}' which has a composite primary key. Define separate FK columns instead.`,
+              table: message.name,
+              field: prop.name,
+            });
+          }
+        }
       }
     }
 
@@ -804,13 +911,68 @@ export function validateTableMessage(
     }
   }
 
-  // Check for multiple PKs
+  // Validate nullable PK columns
+  for (const pkField of pkFields) {
+    if (pkField.isOptional || pkField.isNullable) {
+      errors.push({
+        code: 'NULLABLE_PRIMARY_KEY',
+        message: `Primary key column '${pkField.name}' cannot be nullable`,
+        table: message.name,
+        field: pkField.name,
+      });
+    }
+  }
+
+  // Composite PK validations (only if more than 1 PK field)
   if (pkFields.length > 1) {
-    errors.push({
-      code: 'MULTIPLE_PRIMARY_KEYS',
-      message: `Table has multiple primary key fields: ${pkFields.join(', ')}`,
-      table: message.name,
-    });
+    // Auto<T> not allowed in composite PK
+    for (const pkField of pkFields) {
+      if (pkField.isAutoIncrement) {
+        errors.push({
+          code: 'AUTO_IN_COMPOSITE_PK',
+          message: `Auto<T> cannot be used in composite primary key`,
+          table: message.name,
+          field: pkField.name,
+        });
+      }
+    }
+
+    // Check for mixed implicit/explicit ordering
+    const withOrder = pkFields.filter(f => f.primaryKeyOrder !== undefined);
+    const withoutOrder = pkFields.filter(f => f.primaryKeyOrder === undefined);
+    if (withOrder.length > 0 && withoutOrder.length > 0) {
+      errors.push({
+        code: 'MIXED_PK_ORDER',
+        message: `Cannot mix implicit and explicit PrimaryKey ordering. Either all PrimaryKey fields must have an order parameter, or none. Fields with order: ${withOrder.map(f => f.name).join(', ')}. Fields without: ${withoutOrder.map(f => f.name).join(', ')}.`,
+        table: message.name,
+      });
+    }
+
+    // Validate explicit ordering (only if all explicit)
+    if (withOrder.length === pkFields.length && withOrder.length > 0) {
+      const orders = withOrder.map(f => f.primaryKeyOrder!).sort((a, b) => a - b);
+
+      // Must start with 1
+      if (orders[0] !== 1) {
+        errors.push({
+          code: 'PK_ORDER_MUST_START_AT_1',
+          message: `PrimaryKey order must start at 1, got: ${orders[0]}`,
+          table: message.name,
+        });
+      }
+
+      // Must be sequential (no gaps or duplicates)
+      for (let i = 0; i < orders.length; i++) {
+        if (orders[i] !== i + 1) {
+          errors.push({
+            code: 'PK_ORDER_NOT_SEQUENTIAL',
+            message: `PrimaryKey order must be sequential starting at 1. Expected ${i + 1}, got: ${orders[i]}`,
+            table: message.name,
+          });
+          break;
+        }
+      }
+    }
   }
 
   // Check for duplicate field numbers

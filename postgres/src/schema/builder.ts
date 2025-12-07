@@ -171,6 +171,15 @@ export class TableBuilder {
   }
 
   /**
+   * Set composite primary key columns explicitly.
+   * Use this when columns should be ordered differently than their declaration order.
+   */
+  compositePrimaryKey(columns: string[]): this {
+    this._primaryKey = columns;
+    return this;
+  }
+
+  /**
    * Build the final table definition.
    */
   build(): TableDefinition {

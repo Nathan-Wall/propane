@@ -60,8 +60,12 @@ const dateType: PmtType = { kind: 'date' };
 const nullType: PmtType = { kind: 'primitive', primitive: 'null' };
 
 // Wrapper type helpers
-function pk(inner: PmtType): PmtType {
-  return { kind: 'reference', name: 'PK', typeArguments: [inner] };
+function primaryKey(inner: PmtType, order?: number): PmtType {
+  const args: PmtType[] = [inner];
+  if (order !== undefined) {
+    args.push({ kind: 'literal', value: order });
+  }
+  return { kind: 'reference', name: 'PrimaryKey', typeArguments: args };
 }
 
 function auto(inner: PmtType): PmtType {
@@ -92,7 +96,7 @@ describe('generateSchema', () => {
   it('should generate schema from Table<{...}> types', () => {
     const file = createFile([
       tableMessage('User', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
         prop('email', unique(stringType), { fieldNumber: 2 }),
         prop('name', stringType, { fieldNumber: 3 }),
       ]),
@@ -143,7 +147,7 @@ describe('generateSchema', () => {
   it('should handle various PostgreSQL types', () => {
     const file = createFile([
       tableMessage('TestTypes', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('count', numberType, { fieldNumber: 2 }),
         prop('active', booleanType, { fieldNumber: 3 }),
         prop('created', dateType, { fieldNumber: 4 }),
@@ -162,7 +166,7 @@ describe('generateSchema', () => {
   it('should handle nullable types', () => {
     const file = createFile([
       tableMessage('OptionalFields', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('nickname', stringType, { fieldNumber: 2, optional: true }),
         prop('middleName', union(stringType, nullType), { fieldNumber: 3 }),
       ]),
@@ -179,7 +183,7 @@ describe('generateSchema', () => {
   it('should generate indexes for Index<T> fields', () => {
     const file = createFile([
       tableMessage('IndexedTable', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('email', index(stringType), { fieldNumber: 2 }),
         prop('createdAt', index(dateType), { fieldNumber: 3 }),
       ]),
@@ -201,7 +205,7 @@ describe('generateSchema', () => {
   it('should generate unique indexes for Unique<Index<T>>', () => {
     const file = createFile([
       tableMessage('UniqueIndexed', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('email', unique(index(stringType)), { fieldNumber: 2 }),
       ]),
     ]);
@@ -217,7 +221,7 @@ describe('generateSchema', () => {
   it('should generate CHECK constraints for string literal unions', () => {
     const file = createFile([
       tableMessage('StatusField', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('status', union(
           literal('pending'),
           literal('active'),
@@ -239,7 +243,7 @@ describe('generateSchema', () => {
   it('should handle Json<T> wrapper', () => {
     const file = createFile([
       tableMessage('JsonData', [
-        prop('id', pk(bigintType), { fieldNumber: 1 }),
+        prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
         prop('metadata', json(stringType), { fieldNumber: 2 }),
       ]),
     ]);
@@ -270,7 +274,7 @@ describe('generateSchema', () => {
 
   it('should use custom schema name', () => {
     const file = createFile([
-      tableMessage('Simple', [prop('id', pk(bigintType), { fieldNumber: 1 })]),
+      tableMessage('Simple', [prop('id', primaryKey(bigintType), { fieldNumber: 1 })]),
     ]);
 
     const schema = generateSchema([file], { schemaName: 'my_schema' });
@@ -279,7 +283,7 @@ describe('generateSchema', () => {
 
   it('should set schema version', () => {
     const file = createFile([
-      tableMessage('Simple', [prop('id', pk(bigintType), { fieldNumber: 1 })]),
+      tableMessage('Simple', [prop('id', primaryKey(bigintType), { fieldNumber: 1 })]),
     ]);
 
     const schema = generateSchema([file], { version: '1.0.0' });
@@ -314,7 +318,7 @@ describe('findTableTypes', () => {
 describe('generateTableDefinition', () => {
   it('should generate a single table definition', () => {
     const message = tableMessage('Product', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
       prop('name', stringType, { fieldNumber: 2 }),
       prop('price', numberType, { fieldNumber: 3 }),
     ]);
@@ -329,6 +333,47 @@ describe('generateTableDefinition', () => {
     assert.deepStrictEqual(result.table.primaryKey, ['id']);
     assert.strictEqual(result.childTables.length, 0);
   });
+
+  it('should generate composite primary key (declaration order)', () => {
+    const message = tableMessage('UserRole', [
+      prop('userId', primaryKey(bigintType), { fieldNumber: 1 }),
+      prop('roleId', primaryKey(bigintType), { fieldNumber: 2 }),
+      prop('grantedAt', dateType, { fieldNumber: 3 }),
+    ]);
+
+    const result = generateTableDefinition(message);
+
+    assert.strictEqual(result.table.name, 'user_roles');
+    assert.deepStrictEqual(result.table.primaryKey, ['user_id', 'role_id']);
+    // Columns should not be marked as isPrimaryKey for composite PKs
+    assert.strictEqual(result.table.columns['user_id']!.isPrimaryKey, false);
+    assert.strictEqual(result.table.columns['role_id']!.isPrimaryKey, false);
+  });
+
+  it('should generate composite primary key with explicit order', () => {
+    const message = tableMessage('TenantUser', [
+      prop('displayOrder', numberType, { fieldNumber: 1 }),
+      prop('tenantId', primaryKey(bigintType, 1), { fieldNumber: 2 }),
+      prop('userId', primaryKey(bigintType, 2), { fieldNumber: 3 }),
+    ]);
+
+    const result = generateTableDefinition(message);
+
+    // Order should be: tenant_id first, then user_id (based on explicit order)
+    assert.deepStrictEqual(result.table.primaryKey, ['tenant_id', 'user_id']);
+  });
+
+  it('should reverse order with explicit PK ordering', () => {
+    const message = tableMessage('ReversedKey', [
+      prop('first', primaryKey(bigintType, 2), { fieldNumber: 1 }),
+      prop('second', primaryKey(bigintType, 1), { fieldNumber: 2 }),
+    ]);
+
+    const result = generateTableDefinition(message);
+
+    // second should come first because it has order=1
+    assert.deepStrictEqual(result.table.primaryKey, ['second', 'first']);
+  });
 });
 
 // Helper for Normalize<T[]>
@@ -341,20 +386,20 @@ function arrayType(element: PmtType): PmtType {
   return { kind: 'array', elementType: element };
 }
 
-// Helper for FK<T>
-function fk(typeName: string, column?: string): PmtType {
+// Helper for References<T>
+function references(typeName: string, column?: string): PmtType {
   const args: PmtType[] = [{ kind: 'reference', name: typeName, typeArguments: [] }];
   if (column) {
     args.push({ kind: 'literal', value: column });
   }
-  return { kind: 'reference', name: 'FK', typeArguments: args };
+  return { kind: 'reference', name: 'References', typeArguments: args };
 }
 
 describe('Normalize<T[]> child tables', () => {
   it('should generate child table for Normalize<string[]>', () => {
     const file = createFile([
       tableMessage('User', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
         prop('tags', normalize(arrayType(stringType)), { fieldNumber: 2 }),
       ]),
     ]);
@@ -381,8 +426,8 @@ describe('Normalize<T[]> child tables', () => {
   it('should create index on parent foreign key', () => {
     const file = createFile([
       tableMessage('Order', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-        prop('items', separate(arrayType(stringType)), { fieldNumber: 2 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+        prop('items', normalize(arrayType(stringType)), { fieldNumber: 2 }),
       ]),
     ]);
 
@@ -397,8 +442,8 @@ describe('Normalize<T[]> child tables', () => {
   it('should use CASCADE on delete', () => {
     const file = createFile([
       tableMessage('Post', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-        prop('comments', separate(arrayType(stringType)), { fieldNumber: 2 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+        prop('comments', normalize(arrayType(stringType)), { fieldNumber: 2 }),
       ]),
     ]);
 
@@ -412,8 +457,8 @@ describe('Normalize<T[]> child tables', () => {
   it('should handle numeric array elements', () => {
     const file = createFile([
       tableMessage('Stats', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-        prop('scores', separate(arrayType(numberType)), { fieldNumber: 2 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+        prop('scores', normalize(arrayType(numberType)), { fieldNumber: 2 }),
       ]),
     ]);
 
@@ -425,17 +470,17 @@ describe('Normalize<T[]> child tables', () => {
   });
 });
 
-describe('FK<T> foreign keys', () => {
+describe('References<T> foreign keys', () => {
   it('should generate foreign key constraint', () => {
     const userMessage = tableMessage('User', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
       prop('name', stringType, { fieldNumber: 2 }),
     ]);
 
     const postMessage = tableMessage('Post', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
       prop('title', stringType, { fieldNumber: 2 }),
-      prop('authorId', fk('User'), { fieldNumber: 3 }),
+      prop('authorId', references('User'), { fieldNumber: 3 }),
     ]);
 
     const file = createFile([userMessage, postMessage]);
@@ -451,15 +496,15 @@ describe('FK<T> foreign keys', () => {
     assert.deepStrictEqual(fkConstraint.referencedColumns, ['id']);
   });
 
-  it('should handle FK<T, column> with custom column', () => {
+  it('should handle References<T, column> with custom column', () => {
     const categoryMessage = tableMessage('Category', [
-      prop('code', pk(stringType), { fieldNumber: 1 }),
+      prop('code', primaryKey(stringType), { fieldNumber: 1 }),
       prop('name', stringType, { fieldNumber: 2 }),
     ]);
 
     const productMessage = tableMessage('Product', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-      prop('categoryCode', fk('Category', 'code'), { fieldNumber: 2 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+      prop('categoryCode', references('Category', 'code'), { fieldNumber: 2 }),
     ]);
 
     const file = createFile([categoryMessage, productMessage]);
@@ -473,12 +518,12 @@ describe('FK<T> foreign keys', () => {
 
   it('should infer column type from referenced table', () => {
     const userMessage = tableMessage('User', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
     ]);
 
     const postMessage = tableMessage('Post', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
-      prop('authorId', fk('User'), { fieldNumber: 2 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+      prop('authorId', references('User'), { fieldNumber: 2 }),
     ]);
 
     const file = createFile([userMessage, postMessage]);
@@ -491,9 +536,9 @@ describe('FK<T> foreign keys', () => {
 });
 
 describe('validation', () => {
-  it('should error on PK<Auto<string>>', () => {
+  it('should error on PrimaryKey<Auto<string>>', () => {
     const msg = tableMessage('Bad', [
-      prop('id', pk(auto(stringType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(stringType)), { fieldNumber: 1 }),
     ]);
 
     const result = validateTableMessage(msg);
@@ -502,21 +547,90 @@ describe('validation', () => {
     assert.strictEqual(result.errors[0]!.code, 'INVALID_AUTO_TYPE');
   });
 
-  it('should error on multiple PK<T> fields', () => {
+  it('should allow composite primary keys', () => {
+    const msg = tableMessage('UserRole', [
+      prop('userId', primaryKey(bigintType), { fieldNumber: 1 }),
+      prop('roleId', primaryKey(bigintType), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, true);
+  });
+
+  it('should error on Auto<T> in composite primary key', () => {
     const msg = tableMessage('Bad', [
-      prop('id1', pk(bigintType), { fieldNumber: 1 }),
-      prop('id2', pk(bigintType), { fieldNumber: 2 }),
+      prop('id1', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id2', primaryKey(bigintType), { fieldNumber: 2 }),
     ]);
 
     const result = validateTableMessage(msg);
 
     assert.strictEqual(result.valid, false);
-    assert.strictEqual(result.errors[0]!.code, 'MULTIPLE_PRIMARY_KEYS');
+    assert.strictEqual(result.errors[0]!.code, 'AUTO_IN_COMPOSITE_PK');
+  });
+
+  it('should error on nullable primary key', () => {
+    const msg = tableMessage('Bad', [
+      prop('id', primaryKey(bigintType), { fieldNumber: 1, optional: true }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'NULLABLE_PRIMARY_KEY');
+  });
+
+  it('should error on mixed implicit/explicit PK ordering', () => {
+    const msg = tableMessage('Bad', [
+      prop('id1', primaryKey(bigintType, 1), { fieldNumber: 1 }),
+      prop('id2', primaryKey(bigintType), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'MIXED_PK_ORDER');
+  });
+
+  it('should error on PK order not starting at 1', () => {
+    const msg = tableMessage('Bad', [
+      prop('id1', primaryKey(bigintType, 2), { fieldNumber: 1 }),
+      prop('id2', primaryKey(bigintType, 3), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'PK_ORDER_MUST_START_AT_1');
+  });
+
+  it('should error on non-sequential PK order', () => {
+    const msg = tableMessage('Bad', [
+      prop('id1', primaryKey(bigintType, 1), { fieldNumber: 1 }),
+      prop('id2', primaryKey(bigintType, 3), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'PK_ORDER_NOT_SEQUENTIAL');
+  });
+
+  it('should allow explicit PK ordering when valid', () => {
+    const msg = tableMessage('TenantUser', [
+      prop('tenantId', primaryKey(bigintType, 1), { fieldNumber: 1 }),
+      prop('userId', primaryKey(bigintType, 2), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, true);
   });
 
   it('should error on Normalize without array type', () => {
     const msg = tableMessage('Bad', [
-      prop('id', pk(bigintType), { fieldNumber: 1 }),
+      prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
       prop('value', normalize(stringType), { fieldNumber: 2 }),
     ]);
 
@@ -528,7 +642,7 @@ describe('validation', () => {
 
   it('should error on duplicate field numbers', () => {
     const msg = tableMessage('Bad', [
-      prop('id', pk(bigintType), { fieldNumber: 1 }),
+      prop('id', primaryKey(bigintType), { fieldNumber: 1 }),
       prop('name', stringType, { fieldNumber: 1 }),
     ]);
 
@@ -540,7 +654,7 @@ describe('validation', () => {
 
   it('should pass for valid table', () => {
     const msg = tableMessage('Good', [
-      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
       prop('name', stringType, { fieldNumber: 2 }),
     ]);
 
@@ -555,11 +669,11 @@ describe('validateSchema', () => {
   it('should validate all tables in files', () => {
     const file = createFile([
       tableMessage('Good', [
-        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('id', primaryKey(auto(bigintType)), { fieldNumber: 1 }),
       ]),
       tableMessage('Bad', [
-        prop('id1', pk(bigintType), { fieldNumber: 1 }),
-        prop('id2', pk(bigintType), { fieldNumber: 2 }),
+        // Nullable PK is invalid
+        prop('id', primaryKey(bigintType), { fieldNumber: 1, optional: true }),
       ]),
     ]);
 
@@ -568,6 +682,7 @@ describe('validateSchema', () => {
     assert.strictEqual(result.valid, false);
     assert.strictEqual(result.errors.length, 1);
     assert.strictEqual(result.errors[0]!.table, 'Bad');
+    assert.strictEqual(result.errors[0]!.code, 'NULLABLE_PRIMARY_KEY');
   });
 });
 

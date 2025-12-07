@@ -24,14 +24,14 @@ Use the `Table<{...}>` wrapper in your `.pmsg` files to mark types as database t
 
 ```typescript
 // user.pmsg
-import { Table, PK, Auto, Index, Unique, Json } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, Index, Unique, Json } from '@propanejs/postgres';
 
 export type User = Table<{
-  '1:id': PK<Auto<bigint>>;        // BIGSERIAL PRIMARY KEY
-  '2:email': Unique<string>;        // TEXT UNIQUE
-  '3:name': string;                 // TEXT NOT NULL
-  '4:createdAt': Index<Date>;       // TIMESTAMPTZ with index
-  '5:metadata'?: Json<UserMeta>;    // JSONB, nullable
+  '1:id': PrimaryKey<Auto<bigint>>;  // BIGSERIAL PRIMARY KEY
+  '2:email': Unique<string>;          // TEXT UNIQUE
+  '3:name': string;                   // TEXT NOT NULL
+  '4:createdAt': Index<Date>;         // TIMESTAMPTZ with index
+  '5:metadata'?: Json<UserMeta>;      // JSONB, nullable
 }>;
 ```
 
@@ -75,7 +75,7 @@ import { BaseRepository } from '@propanejs/postgres';
 
 const users = new BaseRepository<User>(pool, {
   tableName: 'users',
-  primaryKey: 'id',
+  primaryKey: 'id',  // Use string[] for composite keys: ['user_id', 'role_id']
   columns: ['id', 'email', 'name', 'created_at', 'metadata'],
   columnTypes: {
     id: 'BIGINT',
@@ -177,30 +177,107 @@ await withTransaction(pool, async (tx) => {
 ### Field-Level Wrappers
 | Type | PostgreSQL | Description |
 |------|------------|-------------|
-| `PK<T>` | `PRIMARY KEY` | Marks field as primary key |
-| `Auto<T>` | `SERIAL/BIGSERIAL` | Auto-increment (use inside `PK<>`) |
+| `PrimaryKey<T>` | `PRIMARY KEY` | Marks field as part of primary key |
+| `PrimaryKey<T, N>` | `PRIMARY KEY` | With explicit order N in composite key |
+| `Auto<T>` | `SERIAL/BIGSERIAL` | Auto-increment (use inside `PrimaryKey<>`) |
 | `Index<T>` | Creates index | B-tree index on field |
 | `Unique<T>` | `UNIQUE` | Unique constraint |
 | `Normalize<T[]>` | Separate table | Normalize array into related table |
 | `Json<T>` | `JSONB` | Force JSONB storage |
-| `FK<T>` | `REFERENCES` | Foreign key to another table |
+| `References<T>` | `REFERENCES` | Foreign key to another table |
 
 ### Foreign Keys
 
-Use `FK<T>` to create foreign key relationships:
+Use `References<T>` to create foreign key relationships:
 
 ```typescript
-import { Table, PK, Auto, FK } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, References } from '@propanejs/postgres';
 
 export type Post = Table<{
-  '1:id': PK<Auto<bigint>>;
+  '1:id': PrimaryKey<Auto<bigint>>;
   '2:title': string;
-  '3:authorId': FK<User>;              // References users(id)
-  '4:categoryId': FK<Category, 'code'>; // References categories(code)
+  '3:authorId': References<User>;              // References users(id)
+  '4:categoryId': References<Category, 'code'>; // References categories(code)
 }>;
 ```
 
 The column type is automatically inferred from the referenced table's primary key.
+
+**Note:** `References<T>` cannot reference tables with composite primary keys. For those cases, define separate FK columns manually.
+
+### Composite Primary Keys
+
+Tables can have composite (multi-column) primary keys:
+
+```typescript
+import { Table, PrimaryKey } from '@propanejs/postgres';
+
+// Composite key ordered by declaration order
+export type UserRole = Table<{
+  '1:userId': PrimaryKey<bigint>;
+  '2:roleId': PrimaryKey<bigint>;
+  '3:grantedAt': Date;
+}>;
+// Result: PRIMARY KEY (user_id, role_id)
+
+// Composite key with explicit order
+export type TenantUser = Table<{
+  '1:displayOrder': number;
+  '2:tenantId': PrimaryKey<bigint, 1>;  // First in PK
+  '3:userId': PrimaryKey<bigint, 2>;    // Second in PK
+}>;
+// Result: PRIMARY KEY (tenant_id, user_id)
+```
+
+**Rules for composite keys:**
+- `Auto<T>` cannot be used in composite keys
+- Either all `PrimaryKey` fields have explicit order, or none do (no mixing)
+- Explicit order must start at 1 and be sequential (1, 2, 3...)
+
+**Using repositories with composite keys:**
+
+For tables with composite primary keys, pass an object with the key columns to `findById`, `update`, and `delete`:
+
+```typescript
+import { UserRoleRepository } from './generated/user-role-repository';
+
+const userRoles = new UserRoleRepository(pool);
+
+// Find by composite key
+const role = await userRoles.findById({ userId: 1n, roleId: 2n });
+
+// Find multiple by composite keys
+const roles = await userRoles.findByIds([
+  { userId: 1n, roleId: 2n },
+  { userId: 1n, roleId: 3n },
+]);
+
+// Update by composite key
+await userRoles.update(
+  { userId: 1n, roleId: 2n },
+  { grantedAt: new Date() }
+);
+
+// Delete by composite key
+await userRoles.delete({ userId: 1n, roleId: 2n });
+```
+
+Generated repositories for composite key tables look like:
+
+```typescript
+// generated/user-role-repository.ts
+export class UserRoleRepository extends BaseRepository<UserRole & Record<string, unknown>> {
+  constructor(connection: Connection | Pool, schemaName = 'public') {
+    super(connection, {
+      tableName: 'user_roles',
+      schemaName,
+      primaryKey: ['user_id', 'role_id'],  // Array for composite keys
+      columns: ['user_id', 'role_id', 'granted_at'],
+      columnTypes: { user_id: 'BIGINT', role_id: 'BIGINT', granted_at: 'TIMESTAMPTZ' },
+    });
+  }
+}
+```
 
 ## Scalar Types
 
@@ -221,11 +298,10 @@ The column type is automatically inferred from the referenced table's primary ke
 Use `decimal<Precision, Scale>` for exact numeric values (e.g., money):
 
 ```typescript
-import { Table, PK, Auto } from '@propanejs/postgres';
-import { decimal } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, decimal } from '@propanejs/postgres';
 
 export type Product = Table<{
-  '1:id': PK<Auto<bigint>>;
+  '1:id': PrimaryKey<Auto<bigint>>;
   '2:name': string;
   '3:price': decimal<10, 2>;    // NUMERIC(10,2) - up to $99,999,999.99
   '4:weight': decimal<8, 4>;    // NUMERIC(8,4) - e.g., 1234.5678 kg
@@ -423,14 +499,14 @@ The migration system uses field numbers for reliable rename detection:
 ```typescript
 // Before: field number 2 is 'name'
 export type User = {
-  '1:id': PK<bigint>;
-  '2:name': string;        // Field number 2
+  '1:id': PrimaryKey<bigint>;
+  '2:name': string;           // Field number 2
 };
 
 // After: field number 2 is renamed to 'fullName'
 export type User = {
-  '1:id': PK<bigint>;
-  '2:fullName': string;    // Same field number = rename detected
+  '1:id': PrimaryKey<bigint>;
+  '2:fullName': string;       // Same field number = rename detected
 };
 ```
 
