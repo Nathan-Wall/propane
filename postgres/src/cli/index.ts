@@ -26,6 +26,7 @@ import {
   branchCloneCommand,
   branchDropCommand,
   branchListCommand,
+  type GenerateCommandOptions,
 } from './commands.js';
 
 const HELP = `
@@ -48,6 +49,10 @@ Options:
   --config <path>           Path to config file
   --help, -h                Show this help message
 
+Generate Options:
+  --repositories            Generate repository classes
+  --output-dir <path>       Output directory for generated files
+
 Environment Variables:
   DB_HOST                   Database host (default: localhost)
   DB_PORT                   Database port (default: 5432)
@@ -57,6 +62,7 @@ Environment Variables:
 
 Examples:
   ppg generate
+  ppg generate --repositories --output-dir ./src/generated
   ppg migrate:create "add user email"
   ppg migrate:up
   ppg branch:create feature/new-auth
@@ -87,9 +93,26 @@ async function main(): Promise<void> {
     const config = await loadConfig(configPath);
 
     switch (command) {
-      case 'generate':
-        generateCommand(config);
+      case 'generate': {
+        const generateOptions: GenerateCommandOptions = {};
+
+        // Parse --repositories flag
+        if (commandArgs.includes('--repositories')) {
+          generateOptions.repositories = true;
+          const idx = commandArgs.indexOf('--repositories');
+          commandArgs.splice(idx, 1);
+        }
+
+        // Parse --output-dir flag
+        const outputDirIdx = commandArgs.indexOf('--output-dir');
+        if (outputDirIdx !== -1 && commandArgs[outputDirIdx + 1]) {
+          generateOptions.outputDir = commandArgs[outputDirIdx + 1];
+          commandArgs.splice(outputDirIdx, 2);
+        }
+
+        generateCommand(config, generateOptions);
         break;
+      }
 
       case 'diff':
         await diffCommand(config);

@@ -7,11 +7,16 @@ import path from 'node:path';
 import { createPool, type PoolOptions } from '../connection/pool.js';
 import { createSchemaManager } from '../branch/schema-manager.js';
 import { createMigrationRunner, type MigrationToRun } from '../migration/runner.js';
-import { formatMigrationFile, generateMigrationFilename } from '../migration/generator.js';
+import {
+  formatMigrationFile,
+  generateMigrationFilename,
+  generateMigration,
+} from '../migration/generator.js';
 import { introspectDatabase } from '../migration/introspector.js';
 import { compareSchemas } from '../migration/differ.js';
 import { parseFiles } from '@/tools/parser/index.js';
 import { generateSchema, validateSchema } from '../codegen/schema-generator.js';
+import { generateRepositories } from '../codegen/repository-generator.js';
 import type {
   DatabaseSchema,
   SchemaDiff,
@@ -33,8 +38,22 @@ export interface CliConfig {
   };
   codegen?: {
     outputDir?: string;
+    /** Whether to generate repositories by default */
+    generateRepositories?: boolean;
+    /** Import path prefix for source types in generated repositories */
+    typesImportPrefix?: string;
   };
   pmsgFiles?: string[];
+}
+
+/**
+ * Options for the generate command.
+ */
+export interface GenerateCommandOptions {
+  /** Generate repository classes */
+  repositories?: boolean;
+  /** Output directory for generated files */
+  outputDir?: string;
 }
 
 /**
@@ -87,7 +106,10 @@ function discoverPmsgFiles(patterns: string[]): string[] {
 /**
  * Generate schema from .pmsg files.
  */
-export function generateCommand(config: CliConfig): void {
+export function generateCommand(
+  config: CliConfig,
+  options: GenerateCommandOptions = {}
+): void {
   console.log('Generating schema from .pmsg files...');
 
   // 1. Discover .pmsg files
@@ -148,6 +170,45 @@ export function generateCommand(config: CliConfig): void {
   }
 
   console.log('\nSchema generated successfully.');
+
+  // 6. Generate repositories if requested
+  const shouldGenerateRepos = options.repositories ?? config.codegen?.generateRepositories;
+  if (shouldGenerateRepos) {
+    const outputDir = options.outputDir ?? config.codegen?.outputDir ?? './generated';
+
+    console.log(`\nGenerating repositories to ${outputDir}...`);
+
+    const repoResult = generateRepositories(files, schema, {
+      schemaName,
+      typesImportPrefix: config.codegen?.typesImportPrefix,
+    });
+
+    if (repoResult.repositories.length === 0) {
+      console.log('No repositories to generate.');
+      return;
+    }
+
+    // Ensure output directory exists
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+
+    // Write repository files
+    for (const repo of repoResult.repositories) {
+      const filepath = path.join(outputDir, `${repo.filename}.ts`);
+      fs.writeFileSync(filepath, repo.source);
+      console.log(`  Generated: ${filepath}`);
+    }
+
+    // Write barrel export
+    if (repoResult.barrelExport) {
+      const barrelPath = path.join(outputDir, 'index.ts');
+      fs.writeFileSync(barrelPath, repoResult.barrelExport);
+      console.log(`  Generated: ${barrelPath}`);
+    }
+
+    console.log(`\nGenerated ${repoResult.repositories.length} repository file(s).`);
+  }
 }
 
 /**
@@ -387,6 +448,7 @@ export async function migrateCreateCommand(
   console.log(`Creating migration: ${description}`);
 
   const migrationDir = config.migration?.directory ?? './migrations';
+  const schemaName = config.schema?.defaultSchema ?? 'public';
 
   // Ensure migrations directory exists
   if (!fs.existsSync(migrationDir)) {
@@ -399,23 +461,99 @@ export async function migrateCreateCommand(
     // Generate version timestamp
     const version = new Date().toISOString().replaceAll(/[-:T.]/g, '').slice(0, 14);
 
-    // TODO: Get current database schema and desired schema
-    // For now, create an empty migration template
+    // Discover and parse .pmsg files to get desired schema
+    const patterns = config.pmsgFiles ?? ['**/*.pmsg'];
+    const pmsgPaths = discoverPmsgFiles(patterns);
 
-    const migration = {
-      version,
-      description,
-      up: '-- Add your migration SQL here',
-      down: '-- Add your rollback SQL here',
-      hasBreakingChanges: false,
-    };
+    let migration;
+
+    if (pmsgPaths.length === 0) {
+      // No .pmsg files - create empty migration template
+      console.log('No .pmsg files found. Creating empty migration template.');
+      migration = {
+        version,
+        description,
+        up: '-- Add your migration SQL here',
+        down: '-- Add your rollback SQL here',
+        hasBreakingChanges: false,
+      };
+    } else {
+      // Parse .pmsg files
+      const { files, diagnostics } = parseFiles(pmsgPaths);
+      const errors = diagnostics.filter(d => d.severity === 'error');
+      if (errors.length > 0) {
+        console.error('Parse errors in .pmsg files:');
+        for (const err of errors) {
+          console.error(`  ${err.filePath}:${err.location.start.line}: ${err.message}`);
+        }
+        process.exit(1);
+      }
+
+      // Validate schema
+      const validation = validateSchema(files);
+      if (!validation.valid) {
+        console.error('Schema validation errors:');
+        for (const err of validation.errors) {
+          const field = err.field ? '.' + err.field : '';
+          console.error(`  ${err.table}${field}: ${err.message}`);
+        }
+        process.exit(1);
+      }
+
+      // Generate desired schema from .pmsg files
+      const desiredSchema = generateSchema(files, { schemaName });
+
+      // Introspect current database schema
+      const currentSchema = await introspectDatabase(pool, schemaName);
+
+      // Compare schemas to generate diff
+      const diff = compareSchemas(currentSchema, desiredSchema);
+
+      // Check if there are any changes
+      const hasChanges =
+        diff.tablesToCreate.length > 0
+        || diff.tablesToDrop.length > 0
+        || diff.tablesToAlter.length > 0;
+
+      if (!hasChanges) {
+        console.log('No schema changes detected. Creating empty migration.');
+        migration = {
+          version,
+          description,
+          up: '-- No changes detected',
+          down: '-- No changes to revert',
+          hasBreakingChanges: false,
+        };
+      } else {
+        // Generate migration SQL from diff
+        migration = generateMigration(diff, {
+          version,
+          description,
+          schemaName,
+        });
+
+        console.log(`\nDetected changes:`);
+        if (diff.tablesToCreate.length > 0) {
+          console.log(`  + ${diff.tablesToCreate.length} table(s) to create`);
+        }
+        if (diff.tablesToDrop.length > 0) {
+          console.log(`  - ${diff.tablesToDrop.length} table(s) to drop`);
+        }
+        if (diff.tablesToAlter.length > 0) {
+          console.log(`  ~ ${diff.tablesToAlter.length} table(s) to alter`);
+        }
+        if (migration.hasBreakingChanges) {
+          console.log('\n  WARNING: This migration contains breaking changes!');
+        }
+      }
+    }
 
     const filename = generateMigrationFilename(version, description);
     const filepath = path.join(migrationDir, filename);
     const content = formatMigrationFile(migration);
 
     fs.writeFileSync(filepath, content);
-    console.log(`Created migration: ${filepath}`);
+    console.log(`\nCreated migration: ${filepath}`);
   } finally {
     await pool.end();
   }
