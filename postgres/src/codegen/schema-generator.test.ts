@@ -5,6 +5,9 @@ import {
   generateSchema,
   generateTableDefinition,
   findTableTypes,
+  buildTypeRegistry,
+  validateTableMessage,
+  validateSchema,
 } from './schema-generator.js';
 
 // Helper to create a minimal PmtFile
@@ -316,13 +319,269 @@ describe('generateTableDefinition', () => {
       prop('price', numberType, { fieldNumber: 3 }),
     ]);
 
-    const table = generateTableDefinition(message);
+    const result = generateTableDefinition(message);
 
-    assert.strictEqual(table.name, 'products');
-    assert.strictEqual(table.sourceType, 'Product');
-    assert.ok(table.columns['id']);
-    assert.ok(table.columns['name']);
-    assert.ok(table.columns['price']);
-    assert.deepStrictEqual(table.primaryKey, ['id']);
+    assert.strictEqual(result.table.name, 'products');
+    assert.strictEqual(result.table.sourceType, 'Product');
+    assert.ok(result.table.columns['id']);
+    assert.ok(result.table.columns['name']);
+    assert.ok(result.table.columns['price']);
+    assert.deepStrictEqual(result.table.primaryKey, ['id']);
+    assert.strictEqual(result.childTables.length, 0);
+  });
+});
+
+// Helper for Separate<T[]>
+function separate(inner: PmtType): PmtType {
+  return { kind: 'reference', name: 'Separate', typeArguments: [inner] };
+}
+
+// Helper for array types
+function arrayType(element: PmtType): PmtType {
+  return { kind: 'array', elementType: element };
+}
+
+// Helper for FK<T>
+function fk(typeName: string, column?: string): PmtType {
+  const args: PmtType[] = [{ kind: 'reference', name: typeName, typeArguments: [] }];
+  if (column) {
+    args.push({ kind: 'literal', value: column });
+  }
+  return { kind: 'reference', name: 'FK', typeArguments: args };
+}
+
+describe('Separate<T[]> child tables', () => {
+  it('should generate child table for Separate<string[]>', () => {
+    const file = createFile([
+      tableMessage('User', [
+        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('tags', separate(arrayType(stringType)), { fieldNumber: 2 }),
+      ]),
+    ]);
+
+    const schema = generateSchema([file]);
+
+    // Parent table should NOT have tags column
+    assert.ok(!schema.tables['users']!.columns['tags']);
+
+    // Child table should exist (parent_table + column_name = users_tags)
+    assert.ok(schema.tables['users_tags']);
+    const child = schema.tables['users_tags']!;
+
+    assert.ok(child.columns['id']);
+    assert.ok(child.columns['user_id']);
+    assert.ok(child.columns['array_index']);
+    assert.ok(child.columns['value']);
+
+    assert.strictEqual(child.columns['value']!.type, 'TEXT');
+    assert.strictEqual(child.foreignKeys.length, 1);
+    assert.strictEqual(child.foreignKeys[0]!.referencedTable, 'users');
+  });
+
+  it('should create index on parent foreign key', () => {
+    const file = createFile([
+      tableMessage('Order', [
+        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('items', separate(arrayType(stringType)), { fieldNumber: 2 }),
+      ]),
+    ]);
+
+    const schema = generateSchema([file]);
+    // orders + items = orders_items
+    const child = schema.tables['orders_items']!;
+
+    const fkIndex = child.indexes.find(i => i.columns.includes('order_id'));
+    assert.ok(fkIndex, 'Should have index on parent FK');
+  });
+
+  it('should use CASCADE on delete', () => {
+    const file = createFile([
+      tableMessage('Post', [
+        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('comments', separate(arrayType(stringType)), { fieldNumber: 2 }),
+      ]),
+    ]);
+
+    const schema = generateSchema([file]);
+    // posts + comments = posts_comments
+    const child = schema.tables['posts_comments']!;
+
+    assert.strictEqual(child.foreignKeys[0]!.onDelete, 'CASCADE');
+  });
+
+  it('should handle numeric array elements', () => {
+    const file = createFile([
+      tableMessage('Stats', [
+        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+        prop('scores', separate(arrayType(numberType)), { fieldNumber: 2 }),
+      ]),
+    ]);
+
+    const schema = generateSchema([file]);
+    // Stats -> stats (already ends in 's') + scores = stats_scores
+    const child = schema.tables['stats_scores']!;
+
+    assert.strictEqual(child.columns['value']!.type, 'DOUBLE PRECISION');
+  });
+});
+
+describe('FK<T> foreign keys', () => {
+  it('should generate foreign key constraint', () => {
+    const userMessage = tableMessage('User', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('name', stringType, { fieldNumber: 2 }),
+    ]);
+
+    const postMessage = tableMessage('Post', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('title', stringType, { fieldNumber: 2 }),
+      prop('authorId', fk('User'), { fieldNumber: 3 }),
+    ]);
+
+    const file = createFile([userMessage, postMessage]);
+    const schema = generateSchema([file]);
+
+    const posts = schema.tables['posts']!;
+
+    assert.ok(posts.columns['author_id']);
+    assert.strictEqual(posts.foreignKeys.length, 1);
+
+    const fkConstraint = posts.foreignKeys[0]!;
+    assert.strictEqual(fkConstraint.referencedTable, 'users');
+    assert.deepStrictEqual(fkConstraint.referencedColumns, ['id']);
+  });
+
+  it('should handle FK<T, column> with custom column', () => {
+    const categoryMessage = tableMessage('Category', [
+      prop('code', pk(stringType), { fieldNumber: 1 }),
+      prop('name', stringType, { fieldNumber: 2 }),
+    ]);
+
+    const productMessage = tableMessage('Product', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('categoryCode', fk('Category', 'code'), { fieldNumber: 2 }),
+    ]);
+
+    const file = createFile([categoryMessage, productMessage]);
+    const schema = generateSchema([file]);
+
+    const products = schema.tables['products']!;
+    const fkConstraint = products.foreignKeys[0]!;
+
+    assert.deepStrictEqual(fkConstraint.referencedColumns, ['code']);
+  });
+
+  it('should infer column type from referenced table', () => {
+    const userMessage = tableMessage('User', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+    ]);
+
+    const postMessage = tableMessage('Post', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('authorId', fk('User'), { fieldNumber: 2 }),
+    ]);
+
+    const file = createFile([userMessage, postMessage]);
+    const schema = generateSchema([file]);
+
+    const posts = schema.tables['posts']!;
+    // FK column should be BIGINT (matching User.id type)
+    assert.strictEqual(posts.columns['author_id']!.type, 'BIGINT');
+  });
+});
+
+describe('validation', () => {
+  it('should error on PK<Auto<string>>', () => {
+    const msg = tableMessage('Bad', [
+      prop('id', pk(auto(stringType)), { fieldNumber: 1 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'INVALID_AUTO_TYPE');
+  });
+
+  it('should error on multiple PK<T> fields', () => {
+    const msg = tableMessage('Bad', [
+      prop('id1', pk(bigintType), { fieldNumber: 1 }),
+      prop('id2', pk(bigintType), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'MULTIPLE_PRIMARY_KEYS');
+  });
+
+  it('should error on Separate without array type', () => {
+    const msg = tableMessage('Bad', [
+      prop('id', pk(bigintType), { fieldNumber: 1 }),
+      prop('value', separate(stringType), { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'SEPARATE_NOT_ARRAY');
+  });
+
+  it('should error on duplicate field numbers', () => {
+    const msg = tableMessage('Bad', [
+      prop('id', pk(bigintType), { fieldNumber: 1 }),
+      prop('name', stringType, { fieldNumber: 1 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors[0]!.code, 'DUPLICATE_FIELD_NUMBER');
+  });
+
+  it('should pass for valid table', () => {
+    const msg = tableMessage('Good', [
+      prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      prop('name', stringType, { fieldNumber: 2 }),
+    ]);
+
+    const result = validateTableMessage(msg);
+
+    assert.strictEqual(result.valid, true);
+    assert.strictEqual(result.errors.length, 0);
+  });
+});
+
+describe('validateSchema', () => {
+  it('should validate all tables in files', () => {
+    const file = createFile([
+      tableMessage('Good', [
+        prop('id', pk(auto(bigintType)), { fieldNumber: 1 }),
+      ]),
+      tableMessage('Bad', [
+        prop('id1', pk(bigintType), { fieldNumber: 1 }),
+        prop('id2', pk(bigintType), { fieldNumber: 2 }),
+      ]),
+    ]);
+
+    const result = validateSchema([file]);
+
+    assert.strictEqual(result.valid, false);
+    assert.strictEqual(result.errors.length, 1);
+    assert.strictEqual(result.errors[0]!.table, 'Bad');
+  });
+});
+
+describe('buildTypeRegistry', () => {
+  it('should build registry from files', () => {
+    const file = createFile([
+      tableMessage('User', []),
+      tableMessage('Post', []),
+    ]);
+
+    const registry = buildTypeRegistry([file]);
+
+    assert.ok(registry.has('User'));
+    assert.ok(registry.has('Post'));
+    assert.strictEqual(registry.size, 2);
   });
 });

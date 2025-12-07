@@ -21,6 +21,7 @@ const DB_WRAPPER_TYPES = new Set([
   'Unique',   // Unique constraint
   'Separate', // Force separate table for arrays
   'Json',     // Force JSONB storage
+  'FK',       // Foreign key reference
 ]);
 
 /**
@@ -41,6 +42,11 @@ interface UnwrappedType {
   forceSeparate: boolean;
   /** Whether to force JSONB storage */
   forceJson: boolean;
+  /** Foreign key reference info */
+  foreignKey?: {
+    referencedType: string;
+    referencedColumn: string;
+  };
 }
 
 /**
@@ -93,6 +99,25 @@ function unwrapDbWrappers(type: PmtType): UnwrappedType {
       case 'Json':
         result.forceJson = true;
         break;
+      case 'FK': {
+        // FK<User> or FK<User, 'code'>
+        const refType = current.typeArguments[0];
+        const refCol = current.typeArguments[1];
+
+        if (refType?.kind === 'reference') {
+          result.foreignKey = {
+            referencedType: refType.name,
+            referencedColumn:
+              refCol?.kind === 'literal' && typeof refCol.value === 'string'
+                ? refCol.value
+                : 'id',
+          };
+        }
+        // FK doesn't have further nested wrappers, so we set baseType from the referenced type
+        // The actual column type will be inferred later from the referenced table
+        result.baseType = innerType;
+        return result;
+      }
     }
 
     current = innerType;
@@ -275,26 +300,108 @@ function configureColumn(
 }
 
 /**
+ * Result from generating a table, including any child tables.
+ */
+interface GenerateTableResult {
+  childTables: TableDefinition[];
+}
+
+/**
  * Generate a table definition from a Table<{...}> message.
  */
 function generateTable(
   tableBuilder: TableBuilder,
   message: PmtMessage,
-  indexes: IndexDefinition[]
-): void {
+  indexes: IndexDefinition[],
+  tableName: string,
+  pkInfo: PrimaryKeyInfo | null,
+  typeRegistry?: Map<string, PmtMessage>
+): GenerateTableResult {
   tableBuilder.sourceType(message.name);
+
+  const childTables: TableDefinition[] = [];
 
   for (const prop of message.properties) {
     const columnName = toSnakeCase(prop.name);
     const unwrapped = unwrapDbWrappers(prop.type);
 
+    // Handle Separate<T[]> - generate child table instead of column
+    if (unwrapped.forceSeparate) {
+      if (pkInfo && unwrapped.baseType.kind === 'array') {
+        const childTable = generateChildTable({
+          parentTable: tableName,
+          parentPkColumn: pkInfo.columnName,
+          parentPkType: pkInfo.sqlType,
+          fieldName: prop.name,
+          columnName,
+          elementType: unwrapped.baseType.elementType,
+        });
+        childTables.push(childTable);
+      }
+      // Skip creating column in parent table
+      continue;
+    }
+
+    // Handle FK<T> - create column with foreign key constraint
+    if (unwrapped.foreignKey) {
+      const { referencedType, referencedColumn } = unwrapped.foreignKey;
+      const refTableName = toTableName(referencedType);
+      const refColumnName = toSnakeCase(referencedColumn);
+      const fkName = `${tableName}_${columnName}_fkey`;
+
+      // Try to infer column type from referenced table
+      let columnType = 'BIGINT'; // Default assumption
+      if (typeRegistry) {
+        const refMessage = typeRegistry.get(referencedType);
+        if (refMessage) {
+          const refPkInfo = findPrimaryKeyInfo(refMessage);
+          if (refPkInfo) {
+            columnType = refPkInfo.sqlType;
+          }
+        }
+      }
+
+      tableBuilder.column(columnName, col => {
+        col.type(columnType);
+        if (!prop.optional && !isNullable(unwrapped.baseType)) {
+          col.notNull();
+        } else {
+          col.nullable();
+        }
+        if (prop.fieldNumber !== null) {
+          col.fieldNumber(prop.fieldNumber);
+        }
+      });
+
+      tableBuilder.foreignKey(
+        fkName,
+        [columnName],
+        refTableName,
+        [refColumnName],
+        { onDelete: 'NO ACTION', onUpdate: 'NO ACTION' }
+      );
+
+      // Generate index if Index<T> wrapper was also used
+      if (unwrapped.createIndex) {
+        const indexName = `${tableName}_${columnName}_idx`;
+        indexes.push({
+          name: indexName,
+          columns: [columnName],
+          unique: unwrapped.isUnique,
+        });
+      }
+
+      continue;
+    }
+
+    // Regular column
     tableBuilder.column(columnName, col => {
       configureColumn(col, prop, unwrapped);
     });
 
     // Generate index if Index<T> wrapper was used
     if (unwrapped.createIndex) {
-      const indexName = `${toTableName(message.name)}_${columnName}_idx`;
+      const indexName = `${tableName}_${columnName}_idx`;
       indexes.push({
         name: indexName,
         columns: [columnName],
@@ -305,7 +412,7 @@ function generateTable(
     // Generate CHECK constraint for string literal unions
     const literals = isStringLiteralUnion(unwrapped.baseType);
     if (literals) {
-      const constraintName = `${toTableName(message.name)}_${columnName}_check`;
+      const constraintName = `${tableName}_${columnName}_check`;
       const escapedLiterals = literals.map(l => `'${l.replaceAll("'", "''")}'`);
       const expression = `${columnName} IN (${escapedLiterals.join(', ')})`;
       tableBuilder.check(constraintName, expression);
@@ -316,6 +423,119 @@ function generateTable(
   for (const idx of indexes) {
     tableBuilder.index(idx.name, idx.columns, { unique: idx.unique });
   }
+
+  return { childTables };
+}
+
+/**
+ * Info about a child table to be generated from Separate<T[]>.
+ */
+interface ChildTableInfo {
+  parentTable: string;
+  parentPkColumn: string;
+  parentPkType: string;
+  fieldName: string;
+  columnName: string;
+  elementType: PmtType;
+}
+
+/**
+ * Info about the primary key of a table.
+ */
+interface PrimaryKeyInfo {
+  columnName: string;
+  sqlType: string;
+}
+
+/**
+ * Find the primary key info for a message.
+ */
+function findPrimaryKeyInfo(message: PmtMessage): PrimaryKeyInfo | null {
+  for (const prop of message.properties) {
+    const unwrapped = unwrapDbWrappers(prop.type);
+    if (unwrapped.isPrimaryKey) {
+      const columnName = toSnakeCase(prop.name);
+      const scalarType = toScalarType(unwrapped.baseType);
+      const pgType = mapScalarType(scalarType, {});
+
+      // Determine the actual type (not SERIAL/BIGSERIAL for FK references)
+      let sqlType = pgType.sqlType;
+      if (unwrapped.isAutoIncrement) {
+        sqlType = scalarType === 'bigint' ? 'BIGINT' : 'INTEGER';
+      }
+
+      return { columnName, sqlType };
+    }
+  }
+  return null;
+}
+
+/**
+ * Convert a plural table name to singular for FK column naming.
+ */
+function singularize(tableName: string): string {
+  // Simple singularization - handle common cases
+  if (tableName.endsWith('ies')) {
+    return tableName.slice(0, -3) + 'y';
+  }
+  if (tableName.endsWith('ses') || tableName.endsWith('xes') || tableName.endsWith('ches') || tableName.endsWith('shes')) {
+    return tableName.slice(0, -2);
+  }
+  if (tableName.endsWith('s') && !tableName.endsWith('ss')) {
+    return tableName.slice(0, -1);
+  }
+  return tableName;
+}
+
+/**
+ * Generate a child table for a Separate<T[]> field.
+ */
+function generateChildTable(info: ChildTableInfo): TableDefinition {
+  const childTableName = `${info.parentTable}_${info.columnName}`;
+  const parentFkColumn = `${singularize(info.parentTable)}_id`;
+
+  const builder = new TableBuilder(childTableName);
+
+  // Add id column (always BIGSERIAL for child tables)
+  builder.column('id', col => col.bigserial().primaryKey());
+
+  // Add parent foreign key column
+  builder.column(parentFkColumn, col => {
+    col.type(info.parentPkType).notNull();
+  });
+
+  // Add array index column
+  builder.column('array_index', col => col.integer().notNull());
+
+  // Add value column(s) based on element type
+  const elementType = info.elementType;
+  const scalarType = toScalarType(elementType);
+
+  if (scalarType !== 'object' && elementType.kind !== 'reference') {
+    // Primitive element - single 'value' column
+    const pgType = mapScalarType(scalarType, {});
+    builder.column('value', col => col.type(pgType.sqlType).notNull());
+  } else {
+    // Complex type - store as JSONB
+    builder.column('value', col => col.jsonb().notNull());
+  }
+
+  // Add foreign key constraint
+  builder.foreignKey(
+    `${childTableName}_${parentFkColumn}_fkey`,
+    [parentFkColumn],
+    info.parentTable,
+    [info.parentPkColumn],
+    { onDelete: 'CASCADE' }
+  );
+
+  // Add index on parent FK for join performance
+  builder.index(
+    `${childTableName}_${parentFkColumn}_idx`,
+    [parentFkColumn]
+  );
+
+  return builder.build();
 }
 
 /**
@@ -326,6 +546,8 @@ export interface SchemaGeneratorOptions {
   schemaName?: string;
   /** Schema version */
   version?: string;
+  /** Type registry for resolving references (built from parsed files) */
+  typeRegistry?: Map<string, PmtMessage>;
 }
 
 /**
@@ -357,6 +579,12 @@ export function generateSchema(
     builder.version(options.version);
   }
 
+  // Build type registry if not provided
+  const typeRegistry = options.typeRegistry ?? buildTypeRegistry(files);
+
+  // Collect all child tables to add after parent tables
+  const allChildTables: TableDefinition[] = [];
+
   // Find all Table<{...}> types across all files
   for (const file of files) {
     for (const message of file.messages) {
@@ -366,14 +594,80 @@ export function generateSchema(
 
       const tableName = toTableName(message.name);
       const indexes: IndexDefinition[] = [];
+      const pkInfo = findPrimaryKeyInfo(message);
 
       builder.table(tableName, tableBuilder => {
-        generateTable(tableBuilder, message, indexes);
+        const result = generateTable(
+          tableBuilder,
+          message,
+          indexes,
+          tableName,
+          pkInfo,
+          typeRegistry
+        );
+        allChildTables.push(...result.childTables);
       });
     }
   }
 
+  // Add child tables to schema
+  for (const childTable of allChildTables) {
+    builder.table(childTable.name, tableBuilder => {
+      // Copy the pre-built table definition
+      tableBuilder.sourceType(childTable.sourceType ?? '');
+      for (const [colName, colDef] of Object.entries(childTable.columns)) {
+        tableBuilder.column(colName, col => {
+          col.type(colDef.type);
+          if (colDef.nullable) {
+            col.nullable();
+          } else {
+            col.notNull();
+          }
+          if (colDef.isPrimaryKey) {
+            col.primaryKey();
+          }
+          if (colDef.isUnique) {
+            col.unique();
+          }
+          if (colDef.fieldNumber !== undefined) {
+            col.fieldNumber(colDef.fieldNumber);
+          }
+        });
+      }
+      for (const fk of childTable.foreignKeys) {
+        tableBuilder.foreignKey(
+          fk.name,
+          fk.columns,
+          fk.referencedTable,
+          fk.referencedColumns,
+          { onDelete: fk.onDelete, onUpdate: fk.onUpdate }
+        );
+      }
+      for (const idx of childTable.indexes) {
+        tableBuilder.index(idx.name, idx.columns, { unique: idx.unique });
+      }
+    });
+  }
+
   return builder.build();
+}
+
+/**
+ * Build a type registry from parsed files for resolving type references.
+ *
+ * @param files - Parsed .pmsg files
+ * @returns Map from type name to message definition
+ */
+export function buildTypeRegistry(files: PmtFile[]): Map<string, PmtMessage> {
+  const registry = new Map<string, PmtMessage>();
+
+  for (const file of files) {
+    for (const message of file.messages) {
+      registry.set(message.name, message);
+    }
+  }
+
+  return registry;
 }
 
 /**
@@ -397,17 +691,194 @@ export function findTableTypes(files: PmtFile[]): PmtMessage[] {
 }
 
 /**
+ * Validation error codes.
+ */
+export type ValidationErrorCode =
+  | 'INVALID_AUTO_TYPE'
+  | 'MULTIPLE_PRIMARY_KEYS'
+  | 'SEPARATE_NOT_ARRAY'
+  | 'DUPLICATE_FIELD_NUMBER'
+  | 'FK_NOT_TABLE';
+
+/**
+ * A validation error from schema generation.
+ */
+export interface SchemaValidationError {
+  /** Error code */
+  code: ValidationErrorCode;
+  /** Human-readable error message */
+  message: string;
+  /** Table/type name where the error occurred */
+  table: string;
+  /** Field name where the error occurred (if applicable) */
+  field?: string;
+}
+
+/**
+ * Result of validating a table message.
+ */
+export interface SchemaValidationResult {
+  /** Whether the message is valid */
+  valid: boolean;
+  /** Validation errors (empty if valid) */
+  errors: SchemaValidationError[];
+}
+
+/**
+ * Validate a Table<{...}> message for schema generation.
+ *
+ * @param message - The message to validate
+ * @param typeRegistry - Optional type registry for checking FK references
+ * @returns Validation result with any errors
+ */
+export function validateTableMessage(
+  message: PmtMessage,
+  typeRegistry?: Map<string, PmtMessage>
+): SchemaValidationResult {
+  const errors: SchemaValidationError[] = [];
+  const pkFields: string[] = [];
+  const fieldNumbers = new Map<number, string[]>();
+
+  for (const prop of message.properties) {
+    const unwrapped = unwrapDbWrappers(prop.type);
+
+    // Check Auto<T> only on numeric types
+    if (unwrapped.isAutoIncrement) {
+      const baseScalar = toScalarType(unwrapped.baseType);
+      if (!['number', 'bigint', 'int32'].includes(baseScalar)) {
+        errors.push({
+          code: 'INVALID_AUTO_TYPE',
+          message: `Auto<T> only supports numeric types (number, bigint, int32), got: ${baseScalar}`,
+          table: message.name,
+          field: prop.name,
+        });
+      }
+    }
+
+    // Track PK fields
+    if (unwrapped.isPrimaryKey) {
+      pkFields.push(prop.name);
+    }
+
+    // Check Separate<T> requires array
+    if (unwrapped.forceSeparate && unwrapped.baseType.kind !== 'array') {
+      errors.push({
+        code: 'SEPARATE_NOT_ARRAY',
+        message: `Separate<T> requires an array type`,
+        table: message.name,
+        field: prop.name,
+      });
+    }
+
+    // Check FK<T> references a Table type (if registry available)
+    if (unwrapped.foreignKey && typeRegistry) {
+      const refMessage = typeRegistry.get(unwrapped.foreignKey.referencedType);
+      if (refMessage && !refMessage.isTableType) {
+        errors.push({
+          code: 'FK_NOT_TABLE',
+          message: `FK<T> requires a Table type, got Message type: ${unwrapped.foreignKey.referencedType}`,
+          table: message.name,
+          field: prop.name,
+        });
+      }
+    }
+
+    // Track field numbers for duplicates
+    if (prop.fieldNumber !== null) {
+      const existing = fieldNumbers.get(prop.fieldNumber) ?? [];
+      existing.push(prop.name);
+      fieldNumbers.set(prop.fieldNumber, existing);
+    }
+  }
+
+  // Check for multiple PKs
+  if (pkFields.length > 1) {
+    errors.push({
+      code: 'MULTIPLE_PRIMARY_KEYS',
+      message: `Table has multiple primary key fields: ${pkFields.join(', ')}`,
+      table: message.name,
+    });
+  }
+
+  // Check for duplicate field numbers
+  for (const [num, fields] of fieldNumbers) {
+    if (fields.length > 1) {
+      errors.push({
+        code: 'DUPLICATE_FIELD_NUMBER',
+        message: `Duplicate field number ${num}: ${fields.join(', ')}`,
+        table: message.name,
+      });
+    }
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
+ * Validate all Table<{...}> messages in the given files.
+ *
+ * @param files - Parsed .pmsg files
+ * @returns Combined validation result
+ */
+export function validateSchema(files: PmtFile[]): SchemaValidationResult {
+  const allErrors: SchemaValidationError[] = [];
+  const typeRegistry = buildTypeRegistry(files);
+
+  for (const file of files) {
+    for (const message of file.messages) {
+      if (message.isTableType) {
+        const result = validateTableMessage(message, typeRegistry);
+        allErrors.push(...result.errors);
+      }
+    }
+  }
+
+  return {
+    valid: allErrors.length === 0,
+    errors: allErrors,
+  };
+}
+
+/**
+ * Result of generating a table definition, including any child tables.
+ */
+export interface GenerateTableDefinitionResult {
+  /** The main table definition */
+  table: TableDefinition;
+  /** Any child tables generated from Separate<T[]> fields */
+  childTables: TableDefinition[];
+}
+
+/**
  * Generate a single table definition from a message.
  *
  * @param message - A Table<{...}> message
- * @returns The table definition
+ * @param typeRegistry - Optional type registry for resolving FK references
+ * @returns The table definition and any child tables
  */
-export function generateTableDefinition(message: PmtMessage): TableDefinition {
+export function generateTableDefinition(
+  message: PmtMessage,
+  typeRegistry?: Map<string, PmtMessage>
+): GenerateTableDefinitionResult {
   const tableName = toTableName(message.name);
   const tableBuilder = new TableBuilder(tableName);
   const indexes: IndexDefinition[] = [];
+  const pkInfo = findPrimaryKeyInfo(message);
 
-  generateTable(tableBuilder, message, indexes);
+  const result = generateTable(
+    tableBuilder,
+    message,
+    indexes,
+    tableName,
+    pkInfo,
+    typeRegistry
+  );
 
-  return tableBuilder.build();
+  return {
+    table: tableBuilder.build(),
+    childTables: result.childTables,
+  };
 }

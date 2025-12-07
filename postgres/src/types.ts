@@ -12,6 +12,7 @@ declare const INDEX_BRAND: unique symbol;
 declare const UNIQUE_BRAND: unique symbol;
 declare const SEPARATE_BRAND: unique symbol;
 declare const JSON_BRAND: unique symbol;
+declare const FK_BRAND: unique symbol;
 
 /**
  * Marks a type as a database table. Types wrapped with Table<{...}> are
@@ -136,6 +137,27 @@ export type Separate<T extends unknown[]> = T & {
 export type Json<T> = T & { readonly [JSON_BRAND]: never };
 
 /**
+ * Marks a field as a foreign key reference to another Table type.
+ * The column type is inferred from the referenced table's primary key.
+ *
+ * @typeParam T - The referenced Table type
+ * @typeParam K - The referenced column name (default: 'id')
+ *
+ * @example
+ * ```typescript
+ * export type Post = Table<{
+ *   '1:id': PK<Auto<bigint>>;
+ *   '2:title': string;
+ *   '3:authorId': FK<User>;              // References users(id)
+ *   '4:categoryId': FK<Category, 'code'>; // References categories(code)
+ * }>;
+ * ```
+ */
+export type FK<T extends object, K extends keyof T = 'id' extends keyof T ? 'id' : keyof T> = T[K] & {
+  readonly [FK_BRAND]: { table: T; column: K };
+};
+
+/**
  * Type guard utilities for wrapper type detection.
  * Used internally by the schema generator.
  */
@@ -147,4 +169,9 @@ export interface WrapperTypeInfo {
   forceSeparate: boolean;
   forceJson: boolean;
   baseType: string;
+  /** Foreign key reference info, if FK<T> wrapper is used */
+  foreignKey?: {
+    referencedType: string;
+    referencedColumn: string;
+  };
 }

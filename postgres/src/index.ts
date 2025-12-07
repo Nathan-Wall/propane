@@ -17,6 +17,7 @@ export {
   Unique,
   Separate,
   Json,
+  FK,
   type WrapperTypeInfo,
 } from './types.js';
 
