@@ -101,14 +101,15 @@ function generateCreateTable(
 ): string {
   const lines: string[] = [];
   const constraints: string[] = [];
+  const isCompositePk = table.primaryKey.length > 1;
 
   // Columns
   for (const [, col] of Object.entries(table.columns)) {
-    lines.push(`  ${generateColumnDef(col)}`);
+    lines.push(`  ${generateColumnDef(col, isCompositePk)}`);
   }
 
   // Primary key (if not inline with column)
-  if (table.primaryKey.length > 1) {
+  if (isCompositePk) {
     constraints.push(`  PRIMARY KEY (${table.primaryKey.map(escapeIdentifier).join(', ')})`);
   }
 
@@ -144,8 +145,10 @@ function generateCreateTable(
 
 /**
  * Generate column definition for CREATE TABLE.
+ * @param col - Column definition
+ * @param isCompositePk - Whether the table has a composite primary key
  */
-function generateColumnDef(col: ColumnDefinition): string {
+function generateColumnDef(col: ColumnDefinition, isCompositePk = false): string {
   const parts: string[] = [escapeIdentifier(col.name)];
 
   // Type (use SERIAL/BIGSERIAL for auto-increment)
@@ -165,8 +168,8 @@ function generateColumnDef(col: ColumnDefinition): string {
     parts.push(`DEFAULT ${col.defaultValue}`);
   }
 
-  // Primary key (inline for single-column PKs)
-  if (col.isPrimaryKey) {
+  // Primary key (inline for single-column PKs only)
+  if (col.isPrimaryKey && !isCompositePk) {
     parts.push('PRIMARY KEY');
   }
 

@@ -27,6 +27,7 @@ import {
   branchDropCommand,
   branchListCommand,
   type GenerateCommandOptions,
+  type MigrateCreateOptions,
 } from './commands.js';
 
 const HELP = `
@@ -52,6 +53,10 @@ Options:
 Generate Options:
   --repositories            Generate repository classes
   --output-dir <path>       Output directory for generated files
+
+Migrate Options:
+  --dry-run                 Preview SQL without creating migration file
+  --no-transaction          Don't wrap migration in BEGIN/COMMIT
 
 Environment Variables:
   DB_HOST                   Database host (default: localhost)
@@ -118,14 +123,31 @@ async function main(): Promise<void> {
         await diffCommand(config);
         break;
 
-      case 'migrate:create':
+      case 'migrate:create': {
+        const migrateOptions: MigrateCreateOptions = {};
+
+        // Parse --dry-run flag
+        if (commandArgs.includes('--dry-run')) {
+          migrateOptions.dryRun = true;
+          const idx = commandArgs.indexOf('--dry-run');
+          commandArgs.splice(idx, 1);
+        }
+
+        // Parse --no-transaction flag
+        if (commandArgs.includes('--no-transaction')) {
+          migrateOptions.noTransaction = true;
+          const idx = commandArgs.indexOf('--no-transaction');
+          commandArgs.splice(idx, 1);
+        }
+
         if (!commandArgs[0]) {
           console.error('Error: Migration description required');
-          console.error('Usage: ppg migrate:create <description>');
+          console.error('Usage: ppg migrate:create <description> [--dry-run] [--no-transaction]');
           process.exit(1);
         }
-        await migrateCreateCommand(config, commandArgs.join(' '));
+        await migrateCreateCommand(config, commandArgs.join(' '), migrateOptions);
         break;
+      }
 
       case 'migrate:up':
         await migrateUpCommand(config);

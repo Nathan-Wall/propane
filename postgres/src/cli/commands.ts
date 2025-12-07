@@ -57,6 +57,16 @@ export interface GenerateCommandOptions {
 }
 
 /**
+ * Options for the migrate:create command.
+ */
+export interface MigrateCreateOptions {
+  /** Preview SQL without creating migration file */
+  dryRun?: boolean;
+  /** Disable transaction wrapping (default: migrations are wrapped in BEGIN/COMMIT) */
+  noTransaction?: boolean;
+}
+
+/**
  * Load configuration from file.
  */
 export async function loadConfig(configPath?: string): Promise<CliConfig> {
@@ -443,9 +453,14 @@ function displayColumnAlteration(
  */
 export async function migrateCreateCommand(
   config: CliConfig,
-  description: string
+  description: string,
+  options: MigrateCreateOptions = {}
 ): Promise<void> {
-  console.log(`Creating migration: ${description}`);
+  if (options.dryRun) {
+    console.log('Dry run - migration will not be created\n');
+  } else {
+    console.log(`Creating migration: ${description}`);
+  }
 
   const migrationDir = config.migration?.directory ?? './migrations';
   const schemaName = config.schema?.defaultSchema ?? 'public';
@@ -526,10 +541,12 @@ export async function migrateCreateCommand(
         };
       } else {
         // Generate migration SQL from diff
+        // Wrap in transaction by default (unless --no-transaction is specified)
         migration = generateMigration(diff, {
           version,
           description,
           schemaName,
+          wrapInTransaction: !options.noTransaction,
         });
 
         console.log(`\nDetected changes:`);
@@ -548,9 +565,27 @@ export async function migrateCreateCommand(
       }
     }
 
+    // Dry run: print SQL and exit without creating file
+    if (options.dryRun) {
+      console.log('-- Up');
+      console.log(migration.up);
+      console.log('\n-- Down');
+      console.log(migration.down);
+      if (migration.hasBreakingChanges) {
+        console.log('\nWARNING: This migration contains breaking changes!');
+      }
+      console.log('\nTo create this migration, run without --dry-run');
+      return;
+    }
+
     const filename = generateMigrationFilename(version, description);
     const filepath = path.join(migrationDir, filename);
     const content = formatMigrationFile(migration);
+
+    // Ensure migrations directory exists
+    if (!fs.existsSync(migrationDir)) {
+      fs.mkdirSync(migrationDir, { recursive: true });
+    }
 
     fs.writeFileSync(filepath, content);
     console.log(`\nCreated migration: ${filepath}`);

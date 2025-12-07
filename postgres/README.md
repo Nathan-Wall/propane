@@ -361,8 +361,14 @@ npx ppg generate --repositories --output-dir ./src/generated
 # Show diff between database and schema
 npx ppg diff
 
-# Create a migration
+# Create a migration (auto-generates SQL, wrapped in transaction)
 npx ppg migrate:create "add user email index"
+
+# Preview migration SQL without creating file
+npx ppg migrate:create "add user email index" --dry-run
+
+# Create migration without transaction wrapping (for large migrations)
+npx ppg migrate:create "add user email index" --no-transaction
 
 # Apply pending migrations
 npx ppg migrate:up
@@ -375,6 +381,45 @@ npx ppg branch:create feature/new-auth
 npx ppg branch:clone main feature/new-auth
 npx ppg branch:drop feature/new-auth
 npx ppg branch:list
+```
+
+### Migration Creation
+
+The `migrate:create` command auto-generates SQL by comparing your `.pmsg` schema against the database:
+
+```bash
+# Generate migration SQL automatically
+npx ppg migrate:create "add user phone column"
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--dry-run` | Preview the SQL without creating a file |
+| `--no-transaction` | Don't wrap migration in BEGIN/COMMIT |
+
+**Transaction wrapping:** By default, migrations are wrapped in `BEGIN`/`COMMIT` for atomicity. Use `--no-transaction` for migrations that can't run in a transaction (e.g., `CREATE INDEX CONCURRENTLY`).
+
+**Example output:**
+
+```sql
+-- Migration: add user phone column
+-- Version: 20241207120000
+
+-- Up
+BEGIN;
+
+ALTER TABLE users ADD COLUMN phone TEXT;
+
+COMMIT;
+
+-- Down
+BEGIN;
+
+ALTER TABLE users DROP COLUMN phone;
+
+COMMIT;
 ```
 
 ### Repository Generation
