@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.pmsg
-import { Email } from './email.pmsg';
+import { Email } from './email.pmsg.js';
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
 import type { MessagePropDescriptor } from "../runtime/index.js";
 export class Unions extends Message<Unions.Data> {
