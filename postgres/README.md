@@ -459,6 +459,80 @@ const users = new UserRepository(pool);
 const user = await users.findById(1n);
 ```
 
+### Relation Methods
+
+When you use `References<T>` to define foreign keys, generated repositories automatically include methods to traverse relationships:
+
+**Belongs-to** (FK on this table → related record):
+
+```typescript
+// post.pmsg
+export type Post = Table<{
+  '1:id': PrimaryKey<Auto<bigint>>;
+  '2:title': string;
+  '3:authorId': References<User>;  // FK to users table
+}>;
+
+// Usage
+const post = await posts.findById(1n);
+const author = await posts.getAuthor(post);  // Returns User | null
+```
+
+**Has-many** (other table's FK → this table):
+
+```typescript
+// User is referenced by Post.authorId
+const user = await users.findById(1n);
+const userPosts = await users.getPosts(user);  // Returns Post[]
+```
+
+**Multiple FKs to same table** are disambiguated automatically:
+
+```typescript
+// post.pmsg - Post has both author and editor
+export type Post = Table<{
+  '1:id': PrimaryKey<Auto<bigint>>;
+  '2:title': string;
+  '3:authorId': References<User>;
+  '4:editorId'?: References<User>;
+}>;
+
+// Generated UserRepository methods:
+await users.getPostsByAuthor(user);   // Posts where user is author
+await users.getPostsByEditor(user);   // Posts where user is editor
+
+// Generated PostRepository methods:
+await posts.getAuthor(post);  // Get author
+await posts.getEditor(post);  // Get editor (or null)
+```
+
+**Self-referencing FKs** (hierarchies):
+
+```typescript
+// category.pmsg
+export type Category = Table<{
+  '1:id': PrimaryKey<Auto<bigint>>;
+  '2:name': string;
+  '3:parentId'?: References<Category>;  // Self-reference
+}>;
+
+// Usage
+const parent = await categories.getParent(category);     // Category | null
+const children = await categories.getCategories(parent); // Category[]
+```
+
+**Disabling relation generation:**
+
+```bash
+npx ppg generate --repositories --no-relations --output-dir ./src/generated
+```
+
+Or programmatically:
+
+```typescript
+generateRepositories(files, schema, { generateRelations: false });
+```
+
 ## Configuration
 
 Create `propane-pg.config.ts` in your project root:
