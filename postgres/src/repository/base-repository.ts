@@ -571,6 +571,116 @@ export class BaseRepository<T extends Record<string, unknown>> {
       params,
     };
   }
+
+  /**
+   * Query a related table and return a single row.
+   *
+   * Used by generated belongs-to relation methods. Queries another table
+   * by matching column values (typically FK -> PK lookup).
+   *
+   * @param targetTable - Table name to query (snake_case)
+   * @param targetColumns - Column(s) to match against (snake_case)
+   * @param values - Value(s) to match (in same order as targetColumns)
+   * @param targetColumnTypes - Column type map for the target table
+   * @returns The first matching row, or null if no match or null FK value
+   *
+   * @example
+   * // In generated PostRepository.getAuthor():
+   * const row = await this.queryRelatedOne(
+   *   'users',
+   *   ['id'],
+   *   [entity.authorId],
+   *   { id: 'BIGINT', name: 'TEXT', email: 'TEXT' }
+   * );
+   */
+  protected async queryRelatedOne(
+    targetTable: string,
+    targetColumns: string[],
+    values: unknown[],
+    targetColumnTypes: Record<string, string>
+  ): Promise<Record<string, unknown> | null> {
+    // Return null if any FK value is null/undefined (no relation)
+    if (values.some((v) => v === null || v === undefined)) {
+      return null;
+    }
+
+    // Build WHERE clause: col1 = $1 AND col2 = $2 ...
+    const conditions = targetColumns
+      .map((col, i) => `${escapeIdentifier(col)} = $${i + 1}`)
+      .join(' AND ');
+
+    // Serialize values using target column types
+    const serializedValues = values.map((v, i) => {
+      const col = targetColumns[i]!;
+      const colType = targetColumnTypes[col] ?? 'TEXT';
+      return serializeValue(v, colType);
+    });
+
+    // Build qualified table name
+    const qualifiedTable = `${escapeIdentifier(this.schemaName)}.${escapeIdentifier(targetTable)}`;
+
+    const result = await this.connection.execute<Record<string, unknown>>(
+      `SELECT * FROM ${qualifiedTable} WHERE ${conditions} LIMIT 1`,
+      serializedValues
+    );
+
+    return result[0] ?? null;
+  }
+
+  /**
+   * Query a related table and return all matching rows.
+   *
+   * Used by generated has-many relation methods. Queries another table
+   * by matching column values (typically PK -> FK reverse lookup).
+   *
+   * @param targetTable - Table name to query (snake_case)
+   * @param targetColumns - Column(s) to match against (snake_case)
+   * @param values - Value(s) to match (in same order as targetColumns)
+   * @param targetColumnTypes - Column type map for the target table
+   * @returns Array of matching rows, or empty array if null PK value
+   *
+   * @example
+   * // In generated UserRepository.getPosts():
+   * const rows = await this.queryRelatedMany(
+   *   'posts',
+   *   ['author_id'],
+   *   [entity.id],
+   *   { id: 'BIGINT', title: 'TEXT', author_id: 'BIGINT' }
+   * );
+   */
+  protected async queryRelatedMany(
+    targetTable: string,
+    targetColumns: string[],
+    values: unknown[],
+    targetColumnTypes: Record<string, string>
+  ): Promise<Record<string, unknown>[]> {
+    // Return empty array if any value is null/undefined
+    if (values.some((v) => v === null || v === undefined)) {
+      return [];
+    }
+
+    // Build WHERE clause: col1 = $1 AND col2 = $2 ...
+    const conditions = targetColumns
+      .map((col, i) => `${escapeIdentifier(col)} = $${i + 1}`)
+      .join(' AND ');
+
+    // Serialize values using target column types
+    const serializedValues = values.map((v, i) => {
+      const col = targetColumns[i]!;
+      const colType = targetColumnTypes[col] ?? 'TEXT';
+      return serializeValue(v, colType);
+    });
+
+    // Build qualified table name
+    const qualifiedTable = `${escapeIdentifier(this.schemaName)}.${escapeIdentifier(targetTable)}`;
+
+    const result = await this.connection.execute<Record<string, unknown>>(
+      `SELECT * FROM ${qualifiedTable} WHERE ${conditions}`,
+      serializedValues
+    );
+
+    return result;
+  }
 }
 
 /**

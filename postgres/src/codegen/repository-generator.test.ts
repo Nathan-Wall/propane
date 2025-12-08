@@ -92,6 +92,13 @@ function createSchema(tables: Record<string, TableDefinition>): DatabaseSchema {
   };
 }
 
+/**
+ * Helper to wrap a single table in a schema.
+ */
+function schemaWith(table: TableDefinition): DatabaseSchema {
+  return createSchema({ [table.name]: table });
+}
+
 describe('Repository Generator', () => {
   describe('generateRepository', () => {
     it('should generate a basic repository class', () => {
@@ -107,7 +114,7 @@ describe('Repository Generator', () => {
         name: { type: 'TEXT' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.strictEqual(result.className, 'UserRepository');
       assert.strictEqual(result.filename, 'user-repository');
@@ -127,7 +134,7 @@ describe('Repository Generator', () => {
         id: { type: 'SERIAL', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("id: 'INTEGER'"));
       assert.ok(!result.source.includes("id: 'SERIAL'"));
@@ -139,7 +146,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGSERIAL', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("id: 'BIGINT'"));
       assert.ok(!result.source.includes("id: 'BIGSERIAL'"));
@@ -151,7 +158,7 @@ describe('Repository Generator', () => {
         email: { type: 'VARCHAR(255)' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("email: 'TEXT'"));
       assert.ok(!result.source.includes('VARCHAR'));
@@ -163,7 +170,7 @@ describe('Repository Generator', () => {
         price: { type: 'NUMERIC(10,2)' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("price: 'NUMERIC(10,2)'"));
     });
@@ -174,7 +181,7 @@ describe('Repository Generator', () => {
         message: { type: 'TEXT' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes('WARNING: This table has no primary key'));
       assert.ok(result.source.includes("primaryKey: ''"));
@@ -186,7 +193,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table, {
+      const result = generateRepository(message, table, schemaWith(table), {
         postgresImport: '../lib/postgres',
       });
 
@@ -199,7 +206,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table, {
+      const result = generateRepository(message, table, schemaWith(table), {
         typesImportPrefix: '../models',
       });
 
@@ -213,7 +220,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table, {
+      const result = generateRepository(message, table, schemaWith(table), {
         schemaName: 'myapp',
       });
 
@@ -226,7 +233,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.strictEqual(result.className, 'UserProfileRepository');
       assert.strictEqual(result.filename, 'user-profile-repository');
@@ -239,7 +246,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.strictEqual(result.className, 'ApiKeyRepository');
       assert.strictEqual(result.filename, 'api-key-repository');
@@ -383,7 +390,7 @@ describe('Repository Generator', () => {
       const schema = createSchema({
         zebras: createTable('zebras', { id: { type: 'BIGINT', isPrimaryKey: true } }),
         apples: createTable('apples', { id: { type: 'BIGINT', isPrimaryKey: true } }),
-        mangos: createTable('mangos', { id: { type: 'BIGINT', isPrimaryKey: true } }),
+        mangoes: createTable('mangoes', { id: { type: 'BIGINT', isPrimaryKey: true } }),
       });
 
       const result = generateRepositories(files, schema);
@@ -447,7 +454,7 @@ describe('Repository Generator', () => {
       }
       const table = createTable('big_tables', columns);
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes('col0'));
       assert.ok(result.source.includes('col19'));
@@ -460,7 +467,7 @@ describe('Repository Generator', () => {
         id: { type: 'BIGINT', isPrimaryKey: true },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.strictEqual(result.tableName, 'news');
       assert.ok(result.source.includes("tableName: 'news'"));
@@ -472,7 +479,7 @@ describe('Repository Generator', () => {
         created_at: { type: 'TIMESTAMPTZ' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("'created_at'"));
       assert.ok(result.source.includes("created_at: 'TIMESTAMPTZ'"));
@@ -490,7 +497,7 @@ describe('Repository Generator', () => {
         granted_at: { type: 'TIMESTAMPTZ' },
       });
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       assert.ok(result.source.includes("primaryKey: ['user_id', 'role_id']"));
       assert.strictEqual(result.className, 'UserRoleRepository');
@@ -516,11 +523,333 @@ describe('Repository Generator', () => {
         checkConstraints: [],
       };
 
-      const result = generateRepository(message, table);
+      const result = generateRepository(message, table, schemaWith(table));
 
       // Should be a string, not an array, for single PK
       assert.ok(result.source.includes("primaryKey: 'id'"));
       assert.ok(!result.source.includes("primaryKey: ['id']"));
+    });
+  });
+
+  describe('relation generation', () => {
+    /**
+     * Helper to create a schema with foreign keys.
+     */
+    function createSchemaWithFk(): DatabaseSchema {
+      return {
+        schemaName: 'public',
+        tables: {
+          users: {
+            name: 'users',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+              name: { name: 'name', type: 'TEXT', nullable: false, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [],
+            checkConstraints: [],
+            sourceType: 'User',
+          },
+          posts: {
+            name: 'posts',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+              title: { name: 'title', type: 'TEXT', nullable: false, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+              author_id: { name: 'author_id', type: 'BIGINT', nullable: false, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [{
+              name: 'posts_author_id_fkey',
+              columns: ['author_id'],
+              referencedTable: 'users',
+              referencedColumns: ['id'],
+              onDelete: 'NO ACTION',
+              onUpdate: 'NO ACTION',
+            }],
+            checkConstraints: [],
+            sourceType: 'Post',
+          },
+        },
+      };
+    }
+
+    it('should generate belongs-to relation method', () => {
+      const postMessage = createMessage('Post', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'title', fieldNumber: 2 },
+        { name: 'author_id', fieldNumber: 3 },
+      ]);
+
+      const schema = createSchemaWithFk();
+      const result = generateRepository(postMessage, schema.tables['posts']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      // Should have getAuthor method
+      assert.ok(result.source.includes('async getAuthor(entity: Partial<Post>): Promise<User | null>'));
+      assert.ok(result.source.includes('queryRelatedOne'));
+      assert.ok(result.source.includes("'users'"));
+      assert.ok(result.source.includes('[entity.authorId]'));
+
+      // Should have deserialize helper
+      assert.ok(result.source.includes('private deserializeAsUser(row: Record<string, unknown>): User'));
+
+      // Should import User type (value import for instantiation)
+      assert.ok(result.source.includes("import { User } from '../models/user.pmsg.js'"));
+
+      // Should import deserializeValue
+      assert.ok(result.source.includes('import { BaseRepository, deserializeValue }'));
+    });
+
+    it('should generate has-many relation method', () => {
+      const userMessage = createMessage('User', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'name', fieldNumber: 2 },
+      ]);
+
+      const schema = createSchemaWithFk();
+      const result = generateRepository(userMessage, schema.tables['users']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      // Should have getPosts method
+      assert.ok(result.source.includes('async getPosts(entity: Partial<User>): Promise<Post[]>'));
+      assert.ok(result.source.includes('queryRelatedMany'));
+      assert.ok(result.source.includes("'posts'"));
+      assert.ok(result.source.includes('[entity.id]'));
+
+      // Should have deserialize helper
+      assert.ok(result.source.includes('private deserializeAsPost(row: Record<string, unknown>): Post'));
+
+      // Should import Post type (value import)
+      assert.ok(result.source.includes("import { Post } from '../models/post.pmsg.js'"));
+    });
+
+    it('should not generate relations when generateRelations is false', () => {
+      const postMessage = createMessage('Post', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'author_id', fieldNumber: 2 },
+      ]);
+
+      const schema = createSchemaWithFk();
+      const result = generateRepository(postMessage, schema.tables['posts']!, schema, {
+        typesImportPrefix: '../models',
+        generateRelations: false,
+      });
+
+      assert.ok(!result.source.includes('getAuthor'));
+      assert.ok(!result.source.includes('queryRelatedOne'));
+    });
+
+    it('should not generate relations without typesImportPrefix', () => {
+      const postMessage = createMessage('Post', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'author_id', fieldNumber: 2 },
+      ]);
+
+      const schema = createSchemaWithFk();
+      const result = generateRepository(postMessage, schema.tables['posts']!, schema, {
+        // No typesImportPrefix
+      });
+
+      // Without typesImportPrefix, we can't generate typed relation methods
+      assert.ok(!result.source.includes('getAuthor'));
+    });
+
+    it('should not import self type twice for self-referencing FK', () => {
+      const categoryMessage = createMessage('Category', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'parent_id', fieldNumber: 2 },
+      ]);
+
+      const schema: DatabaseSchema = {
+        schemaName: 'public',
+        tables: {
+          categories: {
+            name: 'categories',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+              parent_id: { name: 'parent_id', type: 'BIGINT', nullable: true, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [{
+              name: 'categories_parent_id_fkey',
+              columns: ['parent_id'],
+              referencedTable: 'categories',
+              referencedColumns: ['id'],
+              onDelete: 'NO ACTION',
+              onUpdate: 'NO ACTION',
+            }],
+            checkConstraints: [],
+            sourceType: 'Category',
+          },
+        },
+      };
+
+      const result = generateRepository(categoryMessage, schema.tables['categories']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      // Should have a value import for Category (for instantiation in deserialize helper)
+      const categoryValueImports = (result.source.match(/import \{ Category \}/g) || []).length;
+      assert.strictEqual(categoryValueImports, 1);
+
+      // Should NOT have a type import (we use value import instead)
+      const categoryTypeImports = (result.source.match(/import type \{ Category \}/g) || []).length;
+      assert.strictEqual(categoryTypeImports, 0);
+
+      // Should have both getParent and getCategories
+      assert.ok(result.source.includes('getParent'));
+      assert.ok(result.source.includes('getCategories'));
+    });
+
+    it('should handle multiple relations to same type', () => {
+      const postMessage = createMessage('Post', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'author_id', fieldNumber: 2 },
+        { name: 'editor_id', fieldNumber: 3 },
+      ]);
+
+      const schema: DatabaseSchema = {
+        schemaName: 'public',
+        tables: {
+          users: {
+            name: 'users',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [],
+            checkConstraints: [],
+            sourceType: 'User',
+          },
+          posts: {
+            name: 'posts',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+              author_id: { name: 'author_id', type: 'BIGINT', nullable: false, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+              editor_id: { name: 'editor_id', type: 'BIGINT', nullable: true, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [
+              {
+                name: 'posts_author_id_fkey',
+                columns: ['author_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id'],
+                onDelete: 'NO ACTION',
+                onUpdate: 'NO ACTION',
+              },
+              {
+                name: 'posts_editor_id_fkey',
+                columns: ['editor_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id'],
+                onDelete: 'NO ACTION',
+                onUpdate: 'NO ACTION',
+              },
+            ],
+            checkConstraints: [],
+            sourceType: 'Post',
+          },
+        },
+      };
+
+      const result = generateRepository(postMessage, schema.tables['posts']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      // Should have both methods
+      assert.ok(result.source.includes('getAuthor'));
+      assert.ok(result.source.includes('getEditor'));
+
+      // Should only have one deserializeAsUser helper (not duplicated)
+      const deserializeCount = (result.source.match(/private deserializeAsUser/g) || []).length;
+      assert.strictEqual(deserializeCount, 1);
+    });
+
+    it('should generate correct JSDoc comments', () => {
+      const postMessage = createMessage('Post', [
+        { name: 'id', fieldNumber: 1 },
+        { name: 'author_id', fieldNumber: 2 },
+      ]);
+
+      const schema = createSchemaWithFk();
+      const result = generateRepository(postMessage, schema.tables['posts']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      assert.ok(result.source.includes('Get the related User for this Post'));
+      assert.ok(result.source.includes('Follows FK: author_id -> users(id)'));
+    });
+
+    it('should generate disambiguated has-many methods when multiple FKs from same table', () => {
+      const userMessage = createMessage('User', [
+        { name: 'id', fieldNumber: 1 },
+      ]);
+
+      const schema: DatabaseSchema = {
+        schemaName: 'public',
+        tables: {
+          users: {
+            name: 'users',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [],
+            checkConstraints: [],
+            sourceType: 'User',
+          },
+          posts: {
+            name: 'posts',
+            columns: {
+              id: { name: 'id', type: 'BIGINT', nullable: false, isPrimaryKey: true, isUnique: false, isAutoIncrement: true },
+              author_id: { name: 'author_id', type: 'BIGINT', nullable: false, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+              reviewer_id: { name: 'reviewer_id', type: 'BIGINT', nullable: true, isPrimaryKey: false, isUnique: false, isAutoIncrement: false },
+            },
+            primaryKey: ['id'],
+            indexes: [],
+            foreignKeys: [
+              {
+                name: 'posts_author_id_fkey',
+                columns: ['author_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id'],
+                onDelete: 'NO ACTION',
+                onUpdate: 'NO ACTION',
+              },
+              {
+                name: 'posts_reviewer_id_fkey',
+                columns: ['reviewer_id'],
+                referencedTable: 'users',
+                referencedColumns: ['id'],
+                onDelete: 'NO ACTION',
+                onUpdate: 'NO ACTION',
+              },
+            ],
+            checkConstraints: [],
+            sourceType: 'Post',
+          },
+        },
+      };
+
+      const result = generateRepository(userMessage, schema.tables['users']!, schema, {
+        typesImportPrefix: '../models',
+      });
+
+      // Should have disambiguated method names
+      assert.ok(result.source.includes('getPostsByAuthor'));
+      assert.ok(result.source.includes('getPostsByReviewer'));
+
+      // Should NOT have simple getPosts (would be ambiguous)
+      assert.ok(!result.source.match(/\bgetPosts\s*\(/));
     });
   });
 });

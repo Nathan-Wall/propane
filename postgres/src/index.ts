@@ -51,3 +51,4 @@ export * from './mapping/serializer.js';
 // Export code generation
 export * from './codegen/schema-generator.js';
 export * from './codegen/repository-generator.js';
+export * from './codegen/relation-discovery.js';

@@ -103,6 +103,29 @@ export interface ForeignKeyDefinition {
 export type ForeignKeyAction = 'CASCADE' | 'SET NULL' | 'SET DEFAULT' | 'RESTRICT' | 'NO ACTION';
 
 /**
+ * Type of relation between tables.
+ */
+export type RelationType = 'belongs_to' | 'has_many';
+
+/**
+ * Information about a relation for generated repository methods.
+ */
+export interface RelationInfo {
+  /** Method name (e.g., 'getAuthor', 'getPosts') */
+  methodName: string;
+  /** Relation type */
+  type: RelationType;
+  /** Local column(s) for belongs-to, or target's FK columns for has-many */
+  localColumns: string[];
+  /** Target table name in snake_case */
+  targetTable: string;
+  /** Target column(s) - usually PK for belongs-to, FK columns for has-many */
+  targetColumns: string[];
+  /** Propane type name for the target (e.g., 'User', 'Post') */
+  targetType: string;
+}
+
+/**
  * A CHECK constraint.
  */
 export interface CheckConstraint {
