@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/user.pmsg
-import { Distance } from './distance.pmsg.js';
-import { Email } from './email.pmsg.js';
-import { Hash } from './hash.pmsg.js';
+import { Distance } from './distance.pmsg';
+import { Email } from './email.pmsg';
+import { Hash } from './hash.pmsg';
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
 import type { MessagePropDescriptor } from "../runtime/index.js";
 export class User extends Message<User.Data> {
