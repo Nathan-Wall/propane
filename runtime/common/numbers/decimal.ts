@@ -38,6 +38,12 @@ export type decimal<P extends number, S extends number> = Brand<string, 'decimal
 };
 
 /**
+ * Type for any decimal value regardless of precision and scale.
+ * Use this when you need to accept decimals without caring about specific P,S values.
+ */
+export type AnyDecimal = decimal<number, number>;
+
+/**
  * Helper to create a decimal value at runtime.
  * Validates that the value fits within the specified precision and scale.
  *
@@ -64,7 +70,13 @@ export function toDecimal<P extends number, S extends number>(
   scale: S,
   value: string | number
 ): decimal<P, S> {
-  // Validate scale <= precision
+  // Validate precision and scale are positive integers
+  if (!Number.isInteger(precision) || precision < 1) {
+    throw new RangeError(`Invalid decimal precision: ${precision} (must be a positive integer)`);
+  }
+  if (!Number.isInteger(scale) || scale < 0) {
+    throw new RangeError(`Invalid decimal scale: ${scale} (must be a non-negative integer)`);
+  }
   if (scale > precision) {
     throw new RangeError(
       `Invalid decimal specification: scale (${scale}) cannot exceed precision (${precision})`
@@ -122,4 +134,215 @@ export function toDecimal<P extends number, S extends number>(
     : `${isNegative ? '-' : ''}${integerPart}`;
 
   return normalized as decimal<P, S>;
+}
+
+// -----------------------------------------------------------------------------
+// Decimal Comparison Functions
+// -----------------------------------------------------------------------------
+
+/** Result of comparing two decimals: -1 (a < b), 0 (a === b), 1 (a > b) */
+export type ComparisonResult = -1 | 0 | 1;
+
+/**
+ * Compare absolute values of two non-negative decimal strings.
+ * Assumes inputs are valid decimal format without negative sign.
+ */
+function compareAbsolute(a: string, b: string): ComparisonResult {
+  const [aInt, aDec = ''] = a.split('.');
+  const [bInt, bDec = ''] = b.split('.');
+
+  // Normalize integer parts by removing leading zeros
+  const aNormInt = aInt?.replace(/^0+/, '') || '0';
+  const bNormInt = bInt?.replace(/^0+/, '') || '0';
+
+  // Compare integer part lengths first (longer = larger)
+  if (aNormInt.length > bNormInt.length) return 1;
+  if (aNormInt.length < bNormInt.length) return -1;
+
+  // Same length - compare lexicographically
+  if (aNormInt > bNormInt) return 1;
+  if (aNormInt < bNormInt) return -1;
+
+  // Integer parts are equal - compare decimal parts
+  // Pad to same length for fair comparison
+  const maxDecLen = Math.max(aDec.length, bDec.length);
+  const aPaddedDec = aDec.padEnd(maxDecLen, '0');
+  const bPaddedDec = bDec.padEnd(maxDecLen, '0');
+
+  if (aPaddedDec > bPaddedDec) return 1;
+  if (aPaddedDec < bPaddedDec) return -1;
+
+  return 0;
+}
+
+/**
+ * Compare two decimal values.
+ *
+ * @param a - First decimal value
+ * @param b - Second decimal value
+ * @returns -1 if a < b, 0 if a === b, 1 if a > b
+ *
+ * @example
+ * ```typescript
+ * decimalCompare(price1, price2);   // 0 (equal)
+ * decimalCompare(amount, limit);    // 1 (a > b)
+ * ```
+ */
+export function decimalCompare(a: AnyDecimal, b: AnyDecimal): ComparisonResult {
+  const aIsNegative = a.startsWith('-');
+  const bIsNegative = b.startsWith('-');
+
+  // Get absolute values
+  const aAbs = aIsNegative ? a.slice(1) : a;
+  const bAbs = bIsNegative ? b.slice(1) : b;
+
+  // Check if either is zero (treat -0 as 0)
+  const aIsZero = isZeroString(aAbs);
+  const bIsZero = isZeroString(bAbs);
+
+  // Both zero (including -0 vs 0)
+  if (aIsZero && bIsZero) return 0;
+
+  // Effective signs (zero is neither positive nor negative)
+  const aEffectiveNegative = aIsNegative && !aIsZero;
+  const bEffectiveNegative = bIsNegative && !bIsZero;
+
+  // Different effective signs: negative < positive
+  if (aEffectiveNegative && !bEffectiveNegative) return -1;
+  if (!aEffectiveNegative && bEffectiveNegative) return 1;
+
+  // Same effective sign - compare absolute values
+  const absComparison = compareAbsolute(aAbs, bAbs);
+
+  // If both negative, reverse the comparison
+  if (aEffectiveNegative && absComparison !== 0) {
+    return absComparison === 1 ? -1 : 1;
+  }
+
+  return absComparison;
+}
+
+/**
+ * Check if an absolute value string represents zero.
+ */
+function isZeroString(absValue: string): boolean {
+  return absValue.replace(/[.0]/g, '').length === 0;
+}
+
+/**
+ * Check if two decimal values are equal.
+ *
+ * @example
+ * ```typescript
+ * decimalEquals(price1, price2);   // true if equal
+ * ```
+ */
+export function decimalEquals(a: AnyDecimal, b: AnyDecimal): boolean {
+  return decimalCompare(a, b) === 0;
+}
+
+/**
+ * Check if a decimal value is greater than another.
+ */
+export function decimalGreaterThan(a: AnyDecimal, b: AnyDecimal): boolean {
+  return decimalCompare(a, b) === 1;
+}
+
+/**
+ * Check if a decimal value is greater than or equal to another.
+ */
+export function decimalGreaterThanOrEqual(a: AnyDecimal, b: AnyDecimal): boolean {
+  return decimalCompare(a, b) >= 0;
+}
+
+/**
+ * Check if a decimal value is less than another.
+ */
+export function decimalLessThan(a: AnyDecimal, b: AnyDecimal): boolean {
+  return decimalCompare(a, b) === -1;
+}
+
+/**
+ * Check if a decimal value is less than or equal to another.
+ */
+export function decimalLessThanOrEqual(a: AnyDecimal, b: AnyDecimal): boolean {
+  return decimalCompare(a, b) <= 0;
+}
+
+// -----------------------------------------------------------------------------
+// Decimal Sign Check Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a decimal value is positive (greater than zero).
+ */
+export function decimalIsPositive(value: AnyDecimal): boolean {
+  // Negative values are not positive
+  if (value.startsWith('-')) return false;
+
+  // Check if it's zero (all digits are 0)
+  const withoutSign = value.replace(/^-/, '');
+  const normalized = withoutSign.replace(/[.0]/g, '');
+  return normalized.length > 0;
+}
+
+/**
+ * Check if a decimal value is negative (less than zero).
+ */
+export function decimalIsNegative(value: AnyDecimal): boolean {
+  if (!value.startsWith('-')) return false;
+
+  // Check if it's negative zero (treat as not negative)
+  const withoutSign = value.slice(1);
+  const normalized = withoutSign.replace(/[.0]/g, '');
+  return normalized.length > 0;
+}
+
+/**
+ * Check if a decimal value is zero.
+ */
+export function decimalIsZero(value: AnyDecimal): boolean {
+  const withoutSign = value.replace(/^-/, '');
+  const normalized = withoutSign.replace(/[.0]/g, '');
+  return normalized.length === 0;
+}
+
+/**
+ * Check if a decimal value is non-negative (>= zero).
+ */
+export function decimalIsNonNegative(value: AnyDecimal): boolean {
+  return !decimalIsNegative(value);
+}
+
+/**
+ * Check if a decimal value is non-positive (<= zero).
+ */
+export function decimalIsNonPositive(value: AnyDecimal): boolean {
+  return !decimalIsPositive(value);
+}
+
+// -----------------------------------------------------------------------------
+// Decimal Range Check Functions
+// -----------------------------------------------------------------------------
+
+/**
+ * Check if a decimal value is within a range (inclusive).
+ *
+ * @param value - The value to check
+ * @param min - Minimum value (inclusive)
+ * @param max - Maximum value (inclusive)
+ */
+export function decimalInRange(value: AnyDecimal, min: AnyDecimal, max: AnyDecimal): boolean {
+  return decimalGreaterThanOrEqual(value, min) && decimalLessThanOrEqual(value, max);
+}
+
+/**
+ * Check if a decimal value is within a range (exclusive).
+ *
+ * @param value - The value to check
+ * @param min - Minimum value (exclusive)
+ * @param max - Maximum value (exclusive)
+ */
+export function decimalInRangeExclusive(value: AnyDecimal, min: AnyDecimal, max: AnyDecimal): boolean {
+  return decimalGreaterThan(value, min) && decimalLessThan(value, max);
 }

@@ -1,6 +1,36 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { toInt32, toDecimal } from '../runtime/common/numbers/scalars.js';
+import {
+  toInt32,
+  toDecimal,
+  decimalCompare,
+  decimalEquals,
+  decimalGreaterThan,
+  decimalGreaterThanOrEqual,
+  decimalLessThan,
+  decimalLessThanOrEqual,
+  decimalIsPositive,
+  decimalIsNegative,
+  decimalIsZero,
+  decimalIsNonNegative,
+  decimalIsNonPositive,
+  decimalInRange,
+  decimalInRangeExclusive,
+  compare,
+  equals,
+  greaterThan,
+  greaterThanOrEqual,
+  lessThan,
+  lessThanOrEqual,
+  isPositive,
+  isNegative,
+  isZero,
+  isNonNegative,
+  isNonPositive,
+  inRange,
+  inRangeExclusive,
+  isInteger,
+} from '../runtime/common/numbers/scalars.js';
 
 describe('toInt32', () => {
   describe('valid values', () => {
@@ -232,6 +262,41 @@ describe('toDecimal', () => {
     it('should allow scale equal to precision', () => {
       assert.strictEqual(toDecimal(4, 4, '0.1234'), '0.1234');
     });
+
+    it('should reject non-integer precision', () => {
+      assert.throws(
+        () => toDecimal(5.5, 2, '1.5'),
+        /Invalid decimal precision.*5.5.*must be a positive integer/i
+      );
+    });
+
+    it('should reject negative precision', () => {
+      assert.throws(
+        () => toDecimal(-1, 2, '1.5'),
+        /Invalid decimal precision.*-1.*must be a positive integer/i
+      );
+    });
+
+    it('should reject zero precision', () => {
+      assert.throws(
+        () => toDecimal(0, 0, '5'),
+        /Invalid decimal precision.*0.*must be a positive integer/i
+      );
+    });
+
+    it('should reject non-integer scale', () => {
+      assert.throws(
+        () => toDecimal(10, 2.5, '1.5'),
+        /Invalid decimal scale.*2.5.*must be a non-negative integer/i
+      );
+    });
+
+    it('should reject negative scale', () => {
+      assert.throws(
+        () => toDecimal(10, -1, '1.5'),
+        /Invalid decimal scale.*-1.*must be a non-negative integer/i
+      );
+    });
   });
 
   describe('invalid format', () => {
@@ -301,5 +366,534 @@ describe('toDecimal', () => {
         '12345678901234567890.123456789012345678'
       );
     });
+  });
+});
+
+describe('decimalCompare', () => {
+  describe('equal values', () => {
+    it('should return 0 for identical strings', () => {
+      assert.strictEqual(decimalCompare('10.50', '10.50'), 0);
+      assert.strictEqual(decimalCompare('0', '0'), 0);
+      assert.strictEqual(decimalCompare('-5.25', '-5.25'), 0);
+    });
+
+    it('should return 0 for equivalent values with different formatting', () => {
+      assert.strictEqual(decimalCompare('10.50', '10.5'), 0);
+      assert.strictEqual(decimalCompare('10.00', '10'), 0);
+      assert.strictEqual(decimalCompare('007.50', '7.5'), 0);
+      assert.strictEqual(decimalCompare('0.0', '0'), 0);
+    });
+  });
+
+  describe('positive comparisons', () => {
+    it('should compare positive values correctly', () => {
+      assert.strictEqual(decimalCompare('10.50', '10.49'), 1);
+      assert.strictEqual(decimalCompare('10.49', '10.50'), -1);
+      assert.strictEqual(decimalCompare('100', '99.99'), 1);
+      assert.strictEqual(decimalCompare('99.99', '100'), -1);
+    });
+
+    it('should handle different integer lengths', () => {
+      assert.strictEqual(decimalCompare('1000', '999'), 1);
+      assert.strictEqual(decimalCompare('999', '1000'), -1);
+      assert.strictEqual(decimalCompare('10', '9'), 1);
+    });
+  });
+
+  describe('negative comparisons', () => {
+    it('should compare negative values correctly', () => {
+      assert.strictEqual(decimalCompare('-5.00', '-10.00'), 1);
+      assert.strictEqual(decimalCompare('-10.00', '-5.00'), -1);
+      assert.strictEqual(decimalCompare('-0.01', '-0.02'), 1);
+    });
+  });
+
+  describe('mixed sign comparisons', () => {
+    it('should always order negative before positive', () => {
+      assert.strictEqual(decimalCompare('-1', '1'), -1);
+      assert.strictEqual(decimalCompare('1', '-1'), 1);
+      assert.strictEqual(decimalCompare('-0.01', '0.01'), -1);
+      assert.strictEqual(decimalCompare('-1000', '0.001'), -1);
+    });
+  });
+
+  describe('zero comparisons', () => {
+    it('should treat different zero representations as equal', () => {
+      assert.strictEqual(decimalCompare('0', '0.00'), 0);
+      assert.strictEqual(decimalCompare('-0', '0'), 0);
+      assert.strictEqual(decimalCompare('-0.00', '0.00'), 0);
+    });
+
+    it('should compare zero with positive/negative correctly', () => {
+      assert.strictEqual(decimalCompare('0', '0.01'), -1);
+      assert.strictEqual(decimalCompare('0', '-0.01'), 1);
+    });
+  });
+});
+
+describe('decimalEquals', () => {
+  it('should return true for equal values', () => {
+    assert.strictEqual(decimalEquals('10.50', '10.5'), true);
+    assert.strictEqual(decimalEquals('100', '100.00'), true);
+    assert.strictEqual(decimalEquals('-5', '-5.0'), true);
+  });
+
+  it('should return false for unequal values', () => {
+    assert.strictEqual(decimalEquals('10.50', '10.51'), false);
+    assert.strictEqual(decimalEquals('100', '-100'), false);
+  });
+});
+
+describe('decimalGreaterThan', () => {
+  it('should return true when a > b', () => {
+    assert.strictEqual(decimalGreaterThan('10.50', '10.49'), true);
+    assert.strictEqual(decimalGreaterThan('0', '-1'), true);
+  });
+
+  it('should return false when a <= b', () => {
+    assert.strictEqual(decimalGreaterThan('10.50', '10.50'), false);
+    assert.strictEqual(decimalGreaterThan('10.49', '10.50'), false);
+  });
+});
+
+describe('decimalGreaterThanOrEqual', () => {
+  it('should return true when a >= b', () => {
+    assert.strictEqual(decimalGreaterThanOrEqual('10.50', '10.49'), true);
+    assert.strictEqual(decimalGreaterThanOrEqual('10.50', '10.50'), true);
+  });
+
+  it('should return false when a < b', () => {
+    assert.strictEqual(decimalGreaterThanOrEqual('10.49', '10.50'), false);
+  });
+});
+
+describe('decimalLessThan', () => {
+  it('should return true when a < b', () => {
+    assert.strictEqual(decimalLessThan('10.49', '10.50'), true);
+    assert.strictEqual(decimalLessThan('-1', '0'), true);
+  });
+
+  it('should return false when a >= b', () => {
+    assert.strictEqual(decimalLessThan('10.50', '10.50'), false);
+    assert.strictEqual(decimalLessThan('10.50', '10.49'), false);
+  });
+});
+
+describe('decimalLessThanOrEqual', () => {
+  it('should return true when a <= b', () => {
+    assert.strictEqual(decimalLessThanOrEqual('10.49', '10.50'), true);
+    assert.strictEqual(decimalLessThanOrEqual('10.50', '10.50'), true);
+  });
+
+  it('should return false when a > b', () => {
+    assert.strictEqual(decimalLessThanOrEqual('10.51', '10.50'), false);
+  });
+});
+
+describe('decimalIsPositive', () => {
+  it('should return true for positive values', () => {
+    assert.strictEqual(decimalIsPositive('10.50'), true);
+    assert.strictEqual(decimalIsPositive('0.01'), true);
+    assert.strictEqual(decimalIsPositive('1'), true);
+  });
+
+  it('should return false for zero', () => {
+    assert.strictEqual(decimalIsPositive('0'), false);
+    assert.strictEqual(decimalIsPositive('0.00'), false);
+    assert.strictEqual(decimalIsPositive('0.0000'), false);
+  });
+
+  it('should return false for negative values', () => {
+    assert.strictEqual(decimalIsPositive('-10.50'), false);
+    assert.strictEqual(decimalIsPositive('-0.01'), false);
+  });
+});
+
+describe('decimalIsNegative', () => {
+  it('should return true for negative values', () => {
+    assert.strictEqual(decimalIsNegative('-10.50'), true);
+    assert.strictEqual(decimalIsNegative('-0.01'), true);
+    assert.strictEqual(decimalIsNegative('-1'), true);
+  });
+
+  it('should return false for zero', () => {
+    assert.strictEqual(decimalIsNegative('0'), false);
+    assert.strictEqual(decimalIsNegative('-0'), false);
+    assert.strictEqual(decimalIsNegative('-0.00'), false);
+  });
+
+  it('should return false for positive values', () => {
+    assert.strictEqual(decimalIsNegative('10.50'), false);
+    assert.strictEqual(decimalIsNegative('0.01'), false);
+  });
+});
+
+describe('decimalIsZero', () => {
+  it('should return true for zero values', () => {
+    assert.strictEqual(decimalIsZero('0'), true);
+    assert.strictEqual(decimalIsZero('0.00'), true);
+    assert.strictEqual(decimalIsZero('-0'), true);
+    assert.strictEqual(decimalIsZero('-0.00'), true);
+    assert.strictEqual(decimalIsZero('0.0000000'), true);
+  });
+
+  it('should return false for non-zero values', () => {
+    assert.strictEqual(decimalIsZero('0.01'), false);
+    assert.strictEqual(decimalIsZero('-0.01'), false);
+    assert.strictEqual(decimalIsZero('1'), false);
+  });
+});
+
+describe('decimalIsNonNegative', () => {
+  it('should return true for positive and zero values', () => {
+    assert.strictEqual(decimalIsNonNegative('10.50'), true);
+    assert.strictEqual(decimalIsNonNegative('0'), true);
+    assert.strictEqual(decimalIsNonNegative('0.00'), true);
+  });
+
+  it('should return false for negative values', () => {
+    assert.strictEqual(decimalIsNonNegative('-0.01'), false);
+    assert.strictEqual(decimalIsNonNegative('-10.50'), false);
+  });
+});
+
+describe('decimalIsNonPositive', () => {
+  it('should return true for negative and zero values', () => {
+    assert.strictEqual(decimalIsNonPositive('-10.50'), true);
+    assert.strictEqual(decimalIsNonPositive('0'), true);
+    assert.strictEqual(decimalIsNonPositive('-0.00'), true);
+  });
+
+  it('should return false for positive values', () => {
+    assert.strictEqual(decimalIsNonPositive('0.01'), false);
+    assert.strictEqual(decimalIsNonPositive('10.50'), false);
+  });
+});
+
+describe('decimalInRange', () => {
+  it('should return true for values within range (inclusive)', () => {
+    assert.strictEqual(decimalInRange('50', '0', '100'), true);
+    assert.strictEqual(decimalInRange('0', '0', '100'), true);
+    assert.strictEqual(decimalInRange('100', '0', '100'), true);
+    assert.strictEqual(decimalInRange('0.5', '0', '1'), true);
+  });
+
+  it('should return false for values outside range', () => {
+    assert.strictEqual(decimalInRange('-0.01', '0', '100'), false);
+    assert.strictEqual(decimalInRange('100.01', '0', '100'), false);
+    assert.strictEqual(decimalInRange('200', '0', '100'), false);
+  });
+
+  it('should handle negative ranges', () => {
+    assert.strictEqual(decimalInRange('-50', '-100', '0'), true);
+    assert.strictEqual(decimalInRange('-100', '-100', '0'), true);
+    assert.strictEqual(decimalInRange('0', '-100', '0'), true);
+    assert.strictEqual(decimalInRange('-101', '-100', '0'), false);
+  });
+});
+
+describe('decimalInRangeExclusive', () => {
+  it('should return true for values strictly within range', () => {
+    assert.strictEqual(decimalInRangeExclusive('50', '0', '100'), true);
+    assert.strictEqual(decimalInRangeExclusive('0.01', '0', '100'), true);
+    assert.strictEqual(decimalInRangeExclusive('99.99', '0', '100'), true);
+  });
+
+  it('should return false for boundary values', () => {
+    assert.strictEqual(decimalInRangeExclusive('0', '0', '100'), false);
+    assert.strictEqual(decimalInRangeExclusive('100', '0', '100'), false);
+  });
+
+  it('should return false for values outside range', () => {
+    assert.strictEqual(decimalInRangeExclusive('-0.01', '0', '100'), false);
+    assert.strictEqual(decimalInRangeExclusive('100.01', '0', '100'), false);
+  });
+});
+
+// =============================================================================
+// Numeric Functions (number | bigint | decimal)
+// =============================================================================
+
+describe('compare', () => {
+  describe('number comparisons', () => {
+    it('should compare numbers correctly', () => {
+      assert.strictEqual(compare(10, 5), 1);
+      assert.strictEqual(compare(5, 10), -1);
+      assert.strictEqual(compare(10, 10), 0);
+    });
+
+    it('should handle negative numbers', () => {
+      assert.strictEqual(compare(-5, -10), 1);
+      assert.strictEqual(compare(-10, -5), -1);
+      assert.strictEqual(compare(-5, 5), -1);
+    });
+
+    it('should handle zero', () => {
+      assert.strictEqual(compare(0, 0), 0);
+      assert.strictEqual(compare(0, 1), -1);
+      assert.strictEqual(compare(1, 0), 1);
+    });
+  });
+
+  describe('bigint comparisons', () => {
+    it('should compare bigints correctly', () => {
+      assert.strictEqual(compare(10n, 5n), 1);
+      assert.strictEqual(compare(5n, 10n), -1);
+      assert.strictEqual(compare(10n, 10n), 0);
+    });
+
+    it('should handle very large bigints', () => {
+      const big1 = 9007199254740993n; // > MAX_SAFE_INTEGER
+      const big2 = 9007199254740994n;
+      assert.strictEqual(compare(big1, big2), -1);
+      assert.strictEqual(compare(big2, big1), 1);
+    });
+  });
+
+  describe('decimal (string) comparisons', () => {
+    it('should compare decimal strings correctly', () => {
+      assert.strictEqual(compare('10.50', '10.49'), 1);
+      assert.strictEqual(compare('10.49', '10.50'), -1);
+      assert.strictEqual(compare('10.50', '10.5'), 0);
+    });
+  });
+
+  describe('mixed type comparisons', () => {
+    it('should compare number with decimal string', () => {
+      assert.strictEqual(compare(10, '10'), 0);
+      assert.strictEqual(compare(10, '9.99'), 1);
+      assert.strictEqual(compare(10, '10.01'), -1);
+    });
+
+    it('should compare bigint with decimal string', () => {
+      assert.strictEqual(compare(10n, '10'), 0);
+      assert.strictEqual(compare(10n, '9'), 1);
+      assert.strictEqual(compare(10n, '11'), -1);
+    });
+
+    it('should compare number with bigint', () => {
+      assert.strictEqual(compare(10, 10n), 0);
+      assert.strictEqual(compare(10, 5n), 1);
+      assert.strictEqual(compare(5, 10n), -1);
+    });
+  });
+});
+
+describe('equals', () => {
+  it('should return true for equal values of same type', () => {
+    assert.strictEqual(equals(10, 10), true);
+    assert.strictEqual(equals(10n, 10n), true);
+    assert.strictEqual(equals('10.50', '10.5'), true);
+  });
+
+  it('should return true for equal values of different types', () => {
+    assert.strictEqual(equals(10, '10'), true);
+    assert.strictEqual(equals(10n, '10'), true);
+  });
+
+  it('should return false for unequal values', () => {
+    assert.strictEqual(equals(10, 11), false);
+    assert.strictEqual(equals('10.50', '10.51'), false);
+  });
+});
+
+describe('greaterThan', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(greaterThan(10, 5), true);
+    assert.strictEqual(greaterThan(5, 10), false);
+    assert.strictEqual(greaterThan(10, 10), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(greaterThan(10n, 5n), true);
+    assert.strictEqual(greaterThan(5n, 10n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(greaterThan('10.50', '10.49'), true);
+    assert.strictEqual(greaterThan('10.49', '10.50'), false);
+  });
+});
+
+describe('greaterThanOrEqual', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(greaterThanOrEqual(10, 5), true);
+    assert.strictEqual(greaterThanOrEqual(10, 10), true);
+    assert.strictEqual(greaterThanOrEqual(5, 10), false);
+  });
+});
+
+describe('lessThan', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(lessThan(5, 10), true);
+    assert.strictEqual(lessThan(10, 5), false);
+    assert.strictEqual(lessThan(10, 10), false);
+  });
+});
+
+describe('lessThanOrEqual', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(lessThanOrEqual(5, 10), true);
+    assert.strictEqual(lessThanOrEqual(10, 10), true);
+    assert.strictEqual(lessThanOrEqual(10, 5), false);
+  });
+});
+
+describe('isPositive', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(isPositive(10), true);
+    assert.strictEqual(isPositive(0.01), true);
+    assert.strictEqual(isPositive(0), false);
+    assert.strictEqual(isPositive(-10), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(isPositive(10n), true);
+    assert.strictEqual(isPositive(0n), false);
+    assert.strictEqual(isPositive(-10n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(isPositive('10.50'), true);
+    assert.strictEqual(isPositive('0.01'), true);
+    assert.strictEqual(isPositive('0'), false);
+    assert.strictEqual(isPositive('-10.50'), false);
+  });
+});
+
+describe('isNegative', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(isNegative(-10), true);
+    assert.strictEqual(isNegative(-0.01), true);
+    assert.strictEqual(isNegative(0), false);
+    assert.strictEqual(isNegative(10), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(isNegative(-10n), true);
+    assert.strictEqual(isNegative(0n), false);
+    assert.strictEqual(isNegative(10n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(isNegative('-10.50'), true);
+    assert.strictEqual(isNegative('-0.01'), true);
+    assert.strictEqual(isNegative('0'), false);
+    assert.strictEqual(isNegative('10.50'), false);
+  });
+});
+
+describe('isZero', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(isZero(0), true);
+    assert.strictEqual(isZero(-0), true);
+    assert.strictEqual(isZero(0.01), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(isZero(0n), true);
+    assert.strictEqual(isZero(1n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(isZero('0'), true);
+    assert.strictEqual(isZero('0.00'), true);
+    assert.strictEqual(isZero('-0'), true);
+    assert.strictEqual(isZero('0.01'), false);
+  });
+});
+
+describe('isNonNegative', () => {
+  it('should work with all types', () => {
+    assert.strictEqual(isNonNegative(10), true);
+    assert.strictEqual(isNonNegative(0), true);
+    assert.strictEqual(isNonNegative(-10), false);
+    assert.strictEqual(isNonNegative(10n), true);
+    assert.strictEqual(isNonNegative('10.50'), true);
+    assert.strictEqual(isNonNegative('-0.01'), false);
+  });
+});
+
+describe('isNonPositive', () => {
+  it('should work with all types', () => {
+    assert.strictEqual(isNonPositive(-10), true);
+    assert.strictEqual(isNonPositive(0), true);
+    assert.strictEqual(isNonPositive(10), false);
+    assert.strictEqual(isNonPositive(-10n), true);
+    assert.strictEqual(isNonPositive('-10.50'), true);
+    assert.strictEqual(isNonPositive('0.01'), false);
+  });
+});
+
+describe('inRange', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(inRange(50, 0, 100), true);
+    assert.strictEqual(inRange(0, 0, 100), true);
+    assert.strictEqual(inRange(100, 0, 100), true);
+    assert.strictEqual(inRange(101, 0, 100), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(inRange(50n, 0n, 100n), true);
+    assert.strictEqual(inRange(0n, 0n, 100n), true);
+    assert.strictEqual(inRange(101n, 0n, 100n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(inRange('50.00', '0', '100'), true);
+    assert.strictEqual(inRange('0', '0', '100'), true);
+    assert.strictEqual(inRange('100.01', '0', '100'), false);
+  });
+
+  it('should work with mixed types', () => {
+    assert.strictEqual(inRange(50, '0', '100'), true);
+    assert.strictEqual(inRange('50', 0, 100), true);
+    assert.strictEqual(inRange(50n, '0', '100'), true);
+  });
+});
+
+describe('inRangeExclusive', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(inRangeExclusive(50, 0, 100), true);
+    assert.strictEqual(inRangeExclusive(0, 0, 100), false);
+    assert.strictEqual(inRangeExclusive(100, 0, 100), false);
+  });
+
+  it('should work with bigints', () => {
+    assert.strictEqual(inRangeExclusive(50n, 0n, 100n), true);
+    assert.strictEqual(inRangeExclusive(0n, 0n, 100n), false);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(inRangeExclusive('50.00', '0', '100'), true);
+    assert.strictEqual(inRangeExclusive('0', '0', '100'), false);
+    assert.strictEqual(inRangeExclusive('0.01', '0', '100'), true);
+  });
+});
+
+describe('isInteger', () => {
+  it('should work with numbers', () => {
+    assert.strictEqual(isInteger(42), true);
+    assert.strictEqual(isInteger(0), true);
+    assert.strictEqual(isInteger(-42), true);
+    assert.strictEqual(isInteger(42.5), false);
+    assert.strictEqual(isInteger(0.1), false);
+  });
+
+  it('should always return true for bigints', () => {
+    assert.strictEqual(isInteger(42n), true);
+    assert.strictEqual(isInteger(0n), true);
+    assert.strictEqual(isInteger(-42n), true);
+    assert.strictEqual(isInteger(9007199254740993n), true);
+  });
+
+  it('should work with decimal strings', () => {
+    assert.strictEqual(isInteger('42'), true);
+    assert.strictEqual(isInteger('42.00'), true);
+    assert.strictEqual(isInteger('42.0000'), true);
+    assert.strictEqual(isInteger('-42.00'), true);
+    assert.strictEqual(isInteger('42.50'), false);
+    assert.strictEqual(isInteger('42.01'), false);
+    assert.strictEqual(isInteger('0.1'), false);
   });
 });

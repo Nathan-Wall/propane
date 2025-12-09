@@ -9,4 +9,39 @@
  */
 
 export { int32, toInt32 } from './int32.js';
-export { decimal, toDecimal } from './decimal.js';
+export {
+  decimal,
+  type AnyDecimal,
+  toDecimal,
+  decimalCompare,
+  decimalEquals,
+  decimalGreaterThan,
+  decimalGreaterThanOrEqual,
+  decimalLessThan,
+  decimalLessThanOrEqual,
+  decimalIsPositive,
+  decimalIsNegative,
+  decimalIsZero,
+  decimalIsNonNegative,
+  decimalIsNonPositive,
+  decimalInRange,
+  decimalInRangeExclusive,
+  type ComparisonResult,
+} from './decimal.js';
+export {
+  numeric,
+  compare,
+  equals,
+  greaterThan,
+  greaterThanOrEqual,
+  lessThan,
+  lessThanOrEqual,
+  isPositive,
+  isNegative,
+  isZero,
+  isNonNegative,
+  isNonPositive,
+  inRange,
+  inRangeExclusive,
+  isInteger,
+} from './numeric.js';
