@@ -469,7 +469,7 @@ describe('parseSource - validation errors', () => {
       import { Message } from '@propanejs/runtime';
 
       export type User = Message<{
-        '1:data': string;
+        '1:serialize': string;
       }>;
     `;
 
@@ -576,12 +576,12 @@ describe('isTransformableMessage', () => {
       import { Message } from '@propanejs/runtime';
 
       export type User = Message<{
-        '1:data': number;
+        '1:serialize': number;
       }>;
     `;
 
     const { file } = parseSource(source, 'test.pmsg');
-    // 'data' is a reserved name, so there should be an error
+    // 'serialize' is a reserved name, so there should be an error
     assert.strictEqual(isTransformableMessage(file.messages[0]!, file), false);
   });
 });

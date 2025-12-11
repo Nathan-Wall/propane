@@ -98,7 +98,7 @@ export interface MessagePropDescriptor<T extends object> {
  * Uses Message<any> constraint to allow generic types like Response<T>
  * where T extends Message<any>.
  */
- 
+
 export interface MessageConstructor<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   T extends Message<any>,

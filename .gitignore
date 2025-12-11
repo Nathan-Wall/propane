@@ -80,7 +80,7 @@ out/
 .rollup.cache/
 
 # Custom
+AGENTS.md
 CLAUDE.md
-tmp/
+planning/
 .gitattributes
-

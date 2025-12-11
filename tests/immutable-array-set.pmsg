@@ -4,5 +4,5 @@ import { Message } from '@propanejs/runtime';
 
 export type ImmutableArraySet = Message<{
   arr: ImmutableArray<number>;
-  set: ImmutableSet<string>;
+  items: ImmutableSet<string>;
 }>;

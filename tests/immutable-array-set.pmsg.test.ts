@@ -8,12 +8,12 @@ export default function runImmutableArraySetTests() {
   const arr = new ImmutableArray([1, 2, 3]);
   const set = new ImmutableSet(['a', 'b', 'a']);
 
-  const instance: ImmutableArraySet = new ImmutableArraySet({ arr, set });
+  const instance: ImmutableArraySet = new ImmutableArraySet({ arr, items: set });
 
   // toJSON normalization
   const json = JSON.parse(JSON.stringify(instance));
   assert(JSON.stringify(json.arr) === JSON.stringify([1, 2, 3]), 'ImmutableArray should JSONify to plain array');
-  assert(JSON.stringify(json.set) === JSON.stringify(['a', 'b']), 'ImmutableSet should JSONify to array of unique values');
+  assert(JSON.stringify(json.items) === JSON.stringify(['a', 'b']), 'ImmutableSet should JSONify to array of unique values');
 
   // equals / hashCode semantics
   const arrSame = new ImmutableArray([1, 2, 3]);

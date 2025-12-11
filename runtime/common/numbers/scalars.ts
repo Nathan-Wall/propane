@@ -9,6 +9,7 @@
  */
 
 export { int32, toInt32 } from './int32.js';
+export { int53, toInt53 } from './int53.js';
 export {
   decimal,
   type AnyDecimal,

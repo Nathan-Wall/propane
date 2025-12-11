@@ -71,6 +71,7 @@ export type User = {
 | **Inline Objects** | `{ street: string }` | Auto-generates nested type |
 | **Unions** | `Cat \| Dog` | Tagged for message unions |
 | **String Literals** | `'admin' \| 'user'` | Enum-like validation |
+| **Validators** | `Positive<number>` | See [Validators Guide](./validators-guide.md) |
 
 ## Nested Messages
 

@@ -24,10 +24,10 @@ export default function runDefaultCollectionsTests() {
 
   // Verify default set is an ImmutableSet, not a plain Set
   assert(
-    instance.set instanceof ImmutableSet,
-    `Default set should be ImmutableSet, got ${Object.prototype.toString.call(instance.set)}`
+    instance.tags instanceof ImmutableSet,
+    `Default tags should be ImmutableSet, got ${Object.prototype.toString.call(instance.tags)}`
   );
-  assert(instance.set.size === 0, 'Default set should be empty');
+  assert(instance.tags.size === 0, 'Default tags should be empty');
 
   // Verify equality works with empty defaults
   const instance2 = new DefaultCollections();
@@ -39,6 +39,6 @@ export default function runDefaultCollectionsTests() {
   const deserialized = DefaultCollections.deserialize(serialized);
   assert(deserialized.arr instanceof ImmutableArray, 'Deserialized arr should be ImmutableArray');
   assert(deserialized.map instanceof ImmutableMap, 'Deserialized map should be ImmutableMap');
-  assert(deserialized.set instanceof ImmutableSet, 'Deserialized set should be ImmutableSet');
+  assert(deserialized.tags instanceof ImmutableSet, 'Deserialized tags should be ImmutableSet');
   assert(instance.equals(deserialized), 'Deserialized instance should equal original');
 }

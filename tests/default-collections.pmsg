@@ -7,5 +7,5 @@ import { Message } from '@propanejs/runtime';
 export type DefaultCollections = Message<{
   arr: ImmutableArray<number>;
   map: ImmutableMap<string, number>;
-  set: ImmutableSet<string>;
+  tags: ImmutableSet<string>;
 }>;

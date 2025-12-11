@@ -110,6 +110,12 @@ export function normalizePropertyKey(
       );
     }
 
+    if (fieldNumber < 1) {
+      throw keyPath.buildCodeFrameError(
+        'Field numbers must be positive integers (1 or greater).'
+      );
+    }
+
     assertValidPropertyName(identifierPart, keyPath);
     return { name: identifierPart, fieldNumber };
   }
@@ -120,13 +126,25 @@ export function normalizePropertyKey(
   );
 }
 
-// Reserved names that would collide with Message base class methods
+// Reserved names that would collide with Message class or JavaScript internals
 const RESERVED_PROPERTY_NAMES = new Set([
+  // JavaScript reserved
+  'constructor',
+  'prototype',
+  '__proto__',
+
+  // Message base class methods
   'detach',
-  'hashCode',
   'equals',
+  'hashCode',
   'serialize',
   'toJSON',
+
+  // Message static methods
+  'deserialize',
+
+  // Generated methods
+  'set',
 ]);
 
 export function assertValidPropertyName(

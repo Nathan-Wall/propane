@@ -1,0 +1,6 @@
+import { Message } from '@propanejs/runtime';
+
+// This should fail because 'deserialize' is a reserved name
+export type BadMessage = Message<{
+  '1:deserialize': string;
+}>;

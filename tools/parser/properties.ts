@@ -19,15 +19,23 @@ const NUMBERED_FIELD_PATTERN = /^(\d+):(.+)$/;
  * Reserved property names that cannot be used.
  */
 const RESERVED_NAMES = new Set([
+  // JavaScript reserved
   'constructor',
   'prototype',
   '__proto__',
-  'data',
-  'toJSON',
-  'serialize',
-  'deserialize',
+
+  // Message base class methods
+  'detach',
   'equals',
   'hashCode',
+  'serialize',
+  'toJSON',
+
+  // Message static methods
+  'deserialize',
+
+  // Generated methods
+  'set',
 ]);
 
 /**
@@ -140,6 +148,17 @@ function parsePropertySignature(
       severity: 'error',
       code: 'PMT044',
       message: `Invalid property name '${name}'. Property names must be valid JavaScript identifiers.`,
+    });
+  }
+
+  // Check for $ character (reserved for internal use like $check)
+  if (name.includes('$')) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location,
+      severity: 'error',
+      code: 'PMT048',
+      message: `Property names cannot contain '$'. The '$' prefix is reserved for internal use.`,
     });
   }
 

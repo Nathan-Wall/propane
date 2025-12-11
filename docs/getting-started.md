@@ -142,5 +142,6 @@ person.hashCode()         // Stable hash (Immutable.js compatible)
 ## Next Steps
 
 - [Writing Propane Files](./propane-files.md) - Type syntax and supported types
+- [Validators Guide](./validators-guide.md) - Data validation with built-in and custom validators
 - [React Integration](./react-integration.md) - Using Propane with React
 - [Propane Message System](./pms.md) - RPC framework for client-server communication
