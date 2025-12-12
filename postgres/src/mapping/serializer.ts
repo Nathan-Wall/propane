@@ -2,6 +2,39 @@
  * Value serialization and deserialization between JavaScript and PostgreSQL.
  */
 
+import type { UnionAnalysis } from './type-mapper.js';
+import { extractTypeName } from './type-mapper.js';
+
+// ============================================================================
+// JSONB Union Format
+// ============================================================================
+//
+// All JSONB union storage uses a consistent {"$t": ..., "$v": ...} format:
+//
+// | Value Type | Format |
+// |------------|--------|
+// | Message | {"$t": "message", "$v": ":$TypeName{...}"} |
+// | string | {"$t": "string", "$v": "hello"} |
+// | number | {"$t": "number", "$v": 42} |
+// | bigint | {"$t": "bigint", "$v": "12345678901234567890"} |
+// | boolean | {"$t": "boolean", "$v": true} |
+// | Date | {"$t": "Date", "$v": "2024-01-01T00:00:00.000Z"} |
+// | URL | {"$t": "URL", "$v": "https://example.com"} |
+// | null | {"$v": null} |
+// | undefined | {} |
+//
+// ============================================================================
+
+/**
+ * JSONB wrapper for union values.
+ */
+export interface JsonbUnionWrapper {
+  /** Type discriminator: "message" for messages, scalar type name for scalars */
+  $t?: string;
+  /** The value: tagged cereal for messages, native JSON for scalars */
+  $v?: unknown;
+}
+
 /**
  * Serializes a JavaScript value for PostgreSQL storage.
  */
@@ -219,4 +252,247 @@ export function escapeIdentifier(name: string): string {
     return `"${name.replaceAll('"', '""')}"`;
   }
   return name;
+}
+
+// ============================================================================
+// Union-Aware Serialization/Deserialization
+// ============================================================================
+
+/**
+ * Serializes a value for PostgreSQL storage, using union analysis to determine format.
+ *
+ * For JSONB unions:
+ * - Messages: {"$t": "message", "$v": ":$TypeName{...}"}
+ * - Scalars: {"$t": "string", "$v": "hello"}
+ * - null: {"$v": null}
+ * - undefined: {}
+ */
+export function serializeUnionValue(
+  value: unknown,
+  sqlType: string,
+  unionAnalysis: UnionAnalysis
+): unknown {
+  // Handle undefined
+  if (value === undefined) {
+    if (unionAnalysis.strategy === 'jsonb' && unionAnalysis.hasNull) {
+      // Must distinguish from null - use empty object
+      return {};
+    }
+    // Native storage: undefined becomes NULL
+    return null;
+  }
+
+  // Handle null
+  if (value === null) {
+    if (unionAnalysis.strategy === 'jsonb' && unionAnalysis.hasUndefined) {
+      // Must distinguish from undefined - use explicit null wrapper
+      return { $v: null } satisfies JsonbUnionWrapper;
+    }
+    // Native storage: null stays NULL
+    return null;
+  }
+
+  // For native strategy, use standard serialization
+  if (unionAnalysis.strategy === 'native') {
+    return serializeValue(value, sqlType);
+  }
+
+  // JSONB strategy - wrap with type discriminator
+
+  // Check if value is a Propane message (has $typeName and serialize)
+  if (isMessage(value)) {
+    const message = value as MessageLike;
+    return {
+      $t: 'message',
+      $v: message.serialize({ includeTag: true }),
+    } satisfies JsonbUnionWrapper;
+  }
+
+  // Scalar value - determine type and wrap
+  const scalarType = getScalarTypeName(value);
+  const serializedValue = serializeScalarForJsonb(value);
+
+  // If there's only one possible type (single scalar with null/undefined), skip $t
+  const needsTypeTag = unionAnalysis.unionMembers && unionAnalysis.unionMembers.length > 1;
+  if (!needsTypeTag) {
+    return { $v: serializedValue } satisfies JsonbUnionWrapper;
+  }
+
+  return {
+    $t: scalarType,
+    $v: serializedValue,
+  } satisfies JsonbUnionWrapper;
+}
+
+/**
+ * Deserializes a PostgreSQL value using union analysis.
+ */
+export function deserializeUnionValue(
+  value: unknown,
+  sqlType: string,
+  unionAnalysis: UnionAnalysis
+): unknown {
+  // Handle NULL
+  if (value === null) {
+    if (unionAnalysis.hasUndefined && !unionAnalysis.hasNull) {
+      // T | undefined - NULL means undefined
+      return undefined;
+    }
+    // T | null - NULL means null
+    return null;
+  }
+
+  // For native strategy, use standard deserialization
+  if (unionAnalysis.strategy === 'native') {
+    const result = deserializeValue(value, sqlType);
+    // Convert null to undefined for T | undefined types
+    if (result === null && unionAnalysis.hasUndefined && !unionAnalysis.hasNull) {
+      return undefined;
+    }
+    return result;
+  }
+
+  // JSONB strategy - unwrap the discriminated format
+  if (typeof value !== 'object' || value === null) {
+    return value;
+  }
+
+  const obj = value as JsonbUnionWrapper;
+
+  // Empty object = undefined
+  if (Object.keys(obj).length === 0) {
+    return undefined;
+  }
+
+  // {$v: ...} without $t = wrapped value (simple or null)
+  if ('$v' in obj && !('$t' in obj)) {
+    return obj.$v === null ? null : obj.$v;
+  }
+
+  // Tagged format: {"$t": ..., "$v": ...}
+  if ('$t' in obj && '$v' in obj) {
+    const typeTag = obj.$t as string;
+
+    // Message: {"$t": "message", "$v": ":$TypeName{...}"}
+    if (typeTag === 'message') {
+      const taggedCereal = obj.$v as string;
+      const typeName = extractTypeName(taggedCereal);
+      const MessageClass = unionAnalysis.messageClasses?.get(typeName);
+      if (MessageClass) {
+        // Strip the tag to get standard cereal format: ":$TypeName{...}" -> ":{...}"
+        const cereal = ':' + taggedCereal.slice(taggedCereal.indexOf('{'));
+        return MessageClass.deserialize(cereal);
+      }
+      throw new Error(`Unknown message type in union: ${typeName}`);
+    }
+
+    // Scalar: {"$t": "string", "$v": "hello"}
+    return deserializeScalarByType(obj.$v, typeTag);
+  }
+
+  // Fallback to standard deserialization
+  return deserializeValue(value, sqlType);
+}
+
+// ============================================================================
+// Helper Types and Functions
+// ============================================================================
+
+/**
+ * Interface for checking if a value is a Propane message.
+ */
+interface MessageLike {
+  $typeName: string;
+  serialize(options?: { includeTag?: boolean }): string;
+}
+
+/**
+ * Checks if a value is a Propane message.
+ */
+function isMessage(value: unknown): value is MessageLike {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '$typeName' in value &&
+    'serialize' in value &&
+    typeof (value as MessageLike).serialize === 'function'
+  );
+}
+
+/**
+ * Gets the scalar type name for a value.
+ */
+function getScalarTypeName(value: unknown): string {
+  if (typeof value === 'string') return 'string';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'bigint') return 'bigint';
+  if (typeof value === 'boolean') return 'boolean';
+  if (value instanceof Date) return 'Date';
+  if (value instanceof URL) return 'URL';
+  if (value instanceof ArrayBuffer) return 'ArrayBuffer';
+  // Check for immutable types
+  if (typeof value === 'object' && value !== null) {
+    if ('toDate' in value) return 'Date';
+    if ('href' in value) return 'URL';
+    if ('toArrayBuffer' in value) return 'ArrayBuffer';
+  }
+  return 'unknown';
+}
+
+/**
+ * Serializes a scalar value for JSONB storage.
+ */
+function serializeScalarForJsonb(value: unknown): unknown {
+  if (typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (value instanceof URL) {
+    return value.href;
+  }
+  if (value instanceof ArrayBuffer) {
+    // Base64 encode
+    return Buffer.from(value).toString('base64');
+  }
+  // Check for immutable types
+  if (typeof value === 'object' && value !== null) {
+    if ('toDate' in value) {
+      return (value as { toDate(): Date }).toDate().toISOString();
+    }
+    if ('href' in value) {
+      return (value as { href: string }).href;
+    }
+    if ('toArrayBuffer' in value) {
+      const buf = (value as { toArrayBuffer(): ArrayBuffer }).toArrayBuffer();
+      return Buffer.from(buf).toString('base64');
+    }
+  }
+  return value;
+}
+
+/**
+ * Deserializes a scalar value based on its type name.
+ */
+function deserializeScalarByType(value: unknown, typeName: string): unknown {
+  switch (typeName) {
+    case 'string':
+      return String(value);
+    case 'number':
+      return Number(value);
+    case 'bigint':
+      return BigInt(value as string);
+    case 'boolean':
+      return Boolean(value);
+    case 'Date':
+      return new Date(value as string);
+    case 'URL':
+      return new URL(value as string);
+    case 'ArrayBuffer':
+      // Base64 decode
+      return Buffer.from(value as string, 'base64').buffer;
+    default:
+      return value;
+  }
 }

@@ -109,6 +109,21 @@ export interface MessageConstructor<
   readonly $typeName: string;
 }
 
+/**
+ * Options for serializing a message.
+ */
+export interface SerializeOptions {
+  /**
+   * When true, includes the type tag in the serialized output.
+   * - Without tag: `:{field:value}`
+   * - With tag: `:$TypeName{field:value}`
+   *
+   * Use this when storing messages in contexts where the type needs to be
+   * preserved, such as database union columns or RPC responses.
+   */
+  includeTag?: boolean;
+}
+
 type MessageFromEntries<T extends DataObject> = Message<T> & {
   $fromEntries(entries: Record<string, unknown>): T;
 };
@@ -480,8 +495,11 @@ export abstract class Message<T extends DataObject> {
     }, {} as T);
   }
 
-  serialize(): string {
-    if (this.#serialized !== undefined) {
+  serialize(options?: SerializeOptions): string {
+    const includeTag = options?.includeTag ?? false;
+
+    // Only use cache for non-tagged serialization (the common case)
+    if (!includeTag && this.#serialized !== undefined) {
       return this.#serialized;
     }
 
@@ -514,10 +532,13 @@ export abstract class Message<T extends DataObject> {
       expectedIndex = fieldNumber + 1;
     }
 
-    const serialized = `:${serializeObjectLiteral(entries)}`;
+    const objectLiteral = serializeObjectLiteral(entries);
+    const serialized = includeTag
+      ? `:$${this.#typeName}${objectLiteral}`
+      : `:${objectLiteral}`;
 
-    // Avoid retaining excessively large payloads to protect memory usage.
-    if (serialized.length <= Message.MAX_CACHED_SERIALIZE) {
+    // Only cache non-tagged serialization and avoid retaining excessively large payloads
+    if (!includeTag && serialized.length <= Message.MAX_CACHED_SERIALIZE) {
       this.#serialized = serialized;
     }
 

@@ -22,7 +22,13 @@ export type ComparisonOperator =
   | { startsWith: string }
   | { endsWith: string }
   | { isNull: boolean }
-  | { between: [unknown, unknown] };
+  | { between: [unknown, unknown] }
+  // JSONB union operators
+  | { jsonbIsNull: boolean }      // Check if JSONB union value is explicit null ({"$v": null})
+  | { jsonbIsUndefined: boolean } // Check if JSONB union value is undefined ({})
+  | { jsonbHasType: string }      // Check $t value (e.g., "message", "string")
+  | { jsonbValueEquals: unknown } // Check $v value
+  | { jsonbValueIn: unknown[] };  // Check if $v is in array
 
 /**
  * A where clause condition.
@@ -222,6 +228,61 @@ class WhereBuilder {
       return `${columnName} BETWEEN $${this.paramIndex++} AND $${this.paramIndex++}`;
     }
 
+    // JSONB union operators
+    if ('jsonbIsNull' in op) {
+      // Check if JSONB union value is explicit null: {"$v": null}
+      if (op.jsonbIsNull) {
+        return `${columnName} = '{"$v": null}'::jsonb`;
+      }
+      return `${columnName} != '{"$v": null}'::jsonb AND ${columnName} IS NOT NULL`;
+    }
+
+    if ('jsonbIsUndefined' in op) {
+      // Check if JSONB union value is undefined: {}
+      if (op.jsonbIsUndefined) {
+        return `${columnName} = '{}'::jsonb`;
+      }
+      return `${columnName} != '{}'::jsonb AND ${columnName} IS NOT NULL`;
+    }
+
+    if ('jsonbHasType' in op) {
+      // Check $t value (e.g., "message", "string")
+      this.params.push(op.jsonbHasType);
+      return `${columnName}->>'$t' = $${this.paramIndex++}`;
+    }
+
+    if ('jsonbValueEquals' in op) {
+      // Check $v value - supports various types
+      const val = op.jsonbValueEquals;
+      if (val === null) {
+        return `${columnName}->'$v' = 'null'::jsonb`;
+      }
+      if (typeof val === 'string') {
+        this.params.push(val);
+        return `${columnName}->>'$v' = $${this.paramIndex++}`;
+      }
+      if (typeof val === 'number' || typeof val === 'boolean') {
+        this.params.push(val);
+        return `(${columnName}->'$v')::text = $${this.paramIndex++}::text`;
+      }
+      // For objects/arrays, compare as JSONB
+      this.params.push(JSON.stringify(val));
+      return `${columnName}->'$v' = $${this.paramIndex++}::jsonb`;
+    }
+
+    if ('jsonbValueIn' in op) {
+      // Check if $v is in array
+      if (op.jsonbValueIn.length === 0) {
+        return 'FALSE'; // Empty IN is always false
+      }
+      const placeholders = op.jsonbValueIn.map((v) => {
+        this.params.push(v);
+        return `$${this.paramIndex++}`;
+      });
+      // Use text comparison for simple scalar values
+      return `${columnName}->>'$v' IN (${placeholders.join(', ')})`;
+    }
+
     // If we get here, it might be a nested object for JSONB queries
     // Just use simple equality for now
     this.params.push(value);
@@ -283,3 +344,130 @@ export function buildOrderBy<T>(orderBy: OrderBy<T>): string {
 function toSnakeCase(str: string): string {
   return str.replaceAll(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
+
+// ============================================================================
+// JSONB Union Query Helpers
+// ============================================================================
+
+/**
+ * Helper functions for querying JSONB union columns.
+ *
+ * JSONB union storage format:
+ * - Values: {"$v": value} or {"$t": "type", "$v": value}
+ * - Explicit null: {"$v": null}
+ * - Undefined: {}
+ * - Messages: {"$t": "message", "$v": ":$TypeName{...}"}
+ *
+ * @example
+ * ```typescript
+ * // Find records where 'data' is explicit null
+ * repo.findMany({ where: { data: jsonb.isNull() } });
+ *
+ * // Find records where 'data' is undefined
+ * repo.findMany({ where: { data: jsonb.isUndefined() } });
+ *
+ * // Find records where 'data' is a message type
+ * repo.findMany({ where: { data: jsonb.hasType('message') } });
+ *
+ * // Find records where 'data' value equals 'hello'
+ * repo.findMany({ where: { data: jsonb.valueEquals('hello') } });
+ * ```
+ */
+export const jsonb = {
+  /**
+   * Check if a JSONB union column contains explicit null ({"$v": null}).
+   * This is different from SQL NULL which represents undefined in union columns.
+   */
+  isNull(): { jsonbIsNull: true } {
+    return { jsonbIsNull: true };
+  },
+
+  /**
+   * Check if a JSONB union column contains non-null value.
+   */
+  isNotNull(): { jsonbIsNull: false } {
+    return { jsonbIsNull: false };
+  },
+
+  /**
+   * Check if a JSONB union column contains undefined ({}).
+   * Note: SQL NULL could also represent undefined depending on context.
+   */
+  isUndefined(): { jsonbIsUndefined: true } {
+    return { jsonbIsUndefined: true };
+  },
+
+  /**
+   * Check if a JSONB union column has a value (not undefined).
+   */
+  isNotUndefined(): { jsonbIsUndefined: false } {
+    return { jsonbIsUndefined: false };
+  },
+
+  /**
+   * Check if a JSONB union column has a specific type discriminator.
+   *
+   * @param type - The $t value to check (e.g., "message", "string", "number")
+   *
+   * @example
+   * ```typescript
+   * // Find all message types
+   * jsonb.hasType('message')
+   *
+   * // Find all string values in a mixed union
+   * jsonb.hasType('string')
+   * ```
+   */
+  hasType(type: string): { jsonbHasType: string } {
+    return { jsonbHasType: type };
+  },
+
+  /**
+   * Check if a JSONB union column's $v equals a specific value.
+   *
+   * @param value - The value to compare against $v
+   *
+   * @example
+   * ```typescript
+   * // Find where value is "hello"
+   * jsonb.valueEquals('hello')
+   *
+   * // Find where value is 42
+   * jsonb.valueEquals(42)
+   * ```
+   */
+  valueEquals(value: unknown): { jsonbValueEquals: unknown } {
+    return { jsonbValueEquals: value };
+  },
+
+  /**
+   * Check if a JSONB union column's $v is in a list of values.
+   *
+   * @param values - Array of values to check against $v
+   *
+   * @example
+   * ```typescript
+   * // Find where value is one of several strings
+   * jsonb.valueIn(['active', 'pending', 'completed'])
+   * ```
+   */
+  valueIn(values: unknown[]): { jsonbValueIn: unknown[] } {
+    return { jsonbValueIn: values };
+  },
+
+  /**
+   * Check if a JSONB union column contains a message value.
+   * Equivalent to hasType('message').
+   */
+  isMessage(): { jsonbHasType: 'message' } {
+    return { jsonbHasType: 'message' };
+  },
+
+  /**
+   * Check if a JSONB union column has a non-null, non-undefined value.
+   * This uses AND conditions internally.
+   */
+  hasValue(): { jsonbIsNull: false; jsonbIsUndefined: false } {
+    return { jsonbIsNull: false, jsonbIsUndefined: false };
+  },
+};

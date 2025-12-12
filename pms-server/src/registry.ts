@@ -124,10 +124,8 @@ export class HandlerRegistry {
       response = result;
     }
 
-    // Serialize response with type tag
-    // The serialize() method returns `:{ ... }`, so we insert the type tag after `:`
-    const serialized = response.serialize();
-    const serializedBody = `:$${response.$typeName}${serialized.slice(1)}`;
+    // Serialize response with type tag for RPC responses
+    const serializedBody = response.serialize({ includeTag: true });
 
     return { body: serializedBody, headers };
   }

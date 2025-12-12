@@ -16,6 +16,8 @@
  * | ArrayBuffer     | BYTEA              | ArrayBuffer| byte[]     | std::vector<uint8_t>                 | bytes                      |
  */
 
+import type { PmtType } from '@/tools/parser/types.js';
+
 /**
  * PostgreSQL column type.
  */
@@ -245,4 +247,213 @@ export function postgresTypeToJs(sqlType: string): string {
   }
 
   return 'unknown';
+}
+
+// ============================================================================
+// Union Type Analysis
+// ============================================================================
+
+/**
+ * Message constructor interface for deserialization.
+ */
+export interface MessageConstructor {
+  $typeName: string;
+  deserialize(cereal: string): unknown;
+}
+
+/**
+ * Result of analyzing a union type for PostgreSQL storage.
+ */
+export interface UnionAnalysis {
+  /** Storage strategy: 'native' for simple types, 'jsonb' for complex unions */
+  strategy: 'native' | 'jsonb';
+  /** Base scalar type for native strategy */
+  baseType?: ScalarType;
+  /** Whether the union includes null */
+  hasNull: boolean;
+  /** Whether the union includes undefined */
+  hasUndefined: boolean;
+  /** Literal values for CHECK constraint (for literal unions) */
+  literalValues?: (string | number)[];
+  /** Non-null/undefined union members (for JSONB strategy) */
+  unionMembers?: PmtType[];
+  /** Whether the union contains message types */
+  hasMessages: boolean;
+  /** Whether the union contains scalar types (non-message) */
+  hasScalars: boolean;
+  /** Message constructors mapped by type name (populated at runtime for deserialization) */
+  messageClasses?: Map<string, MessageConstructor>;
+}
+
+/**
+ * Analyzes a union type to determine the PostgreSQL storage strategy.
+ *
+ * Storage strategies:
+ * - Native: Single scalar type with optional null/undefined (but not both)
+ * - Native + CHECK: Literal union ('a' | 'b' | 'c')
+ * - JSONB: Complex unions requiring type discrimination
+ *
+ * @param type - The PmtType to analyze
+ * @param messageTypeNames - Set of known message type names for discriminating messages from scalars
+ * @returns UnionAnalysis with storage strategy and metadata
+ */
+export function analyzeUnionType(
+  type: PmtType,
+  messageTypeNames: Set<string>
+): UnionAnalysis {
+  // Non-union types use native storage
+  if (type.kind !== 'union') {
+    return {
+      strategy: 'native',
+      hasNull: false,
+      hasUndefined: false,
+      hasMessages: false,
+      hasScalars: true,
+    };
+  }
+
+  let hasNull = false;
+  let hasUndefined = false;
+  const literals: (string | number)[] = [];
+  const otherTypes: PmtType[] = [];
+
+  // Categorize union members
+  for (const t of type.types) {
+    if (t.kind === 'primitive' && t.primitive === 'null') {
+      hasNull = true;
+    } else if (t.kind === 'primitive' && t.primitive === 'undefined') {
+      hasUndefined = true;
+    } else if (t.kind === 'literal') {
+      literals.push(t.value as string | number);
+      otherTypes.push(t);
+    } else {
+      otherTypes.push(t);
+    }
+  }
+
+  // Case: T | null | undefined - need JSONB to distinguish null from undefined
+  if (hasNull && hasUndefined && otherTypes.length > 0) {
+    const { hasMessages, hasScalars } = classifyTypes(otherTypes, messageTypeNames);
+    return {
+      strategy: 'jsonb',
+      hasNull,
+      hasUndefined,
+      unionMembers: otherTypes,
+      hasMessages,
+      hasScalars,
+    };
+  }
+
+  // Case: All literals (possibly + null or undefined, but not both)
+  if (literals.length > 0 && otherTypes.every(t => t.kind === 'literal')) {
+    const firstLiteral = otherTypes[0];
+    const isNumeric = firstLiteral?.kind === 'literal' && typeof firstLiteral.value === 'number';
+    return {
+      strategy: 'native',
+      baseType: isNumeric ? 'int32' : 'string',
+      hasNull,
+      hasUndefined,
+      literalValues: literals,
+      hasMessages: false,
+      hasScalars: true,
+    };
+  }
+
+  // Case: Single base type + null/undefined (but not both)
+  if (otherTypes.length === 1 && !(hasNull && hasUndefined)) {
+    const baseScalar = pmtTypeToScalarType(otherTypes[0]!);
+    if (baseScalar !== 'object' && baseScalar !== 'union') {
+      return {
+        strategy: 'native',
+        baseType: baseScalar,
+        hasNull,
+        hasUndefined,
+        hasMessages: false,
+        hasScalars: true,
+      };
+    }
+  }
+
+  // Case: Multiple different types - need JSONB
+  const { hasMessages, hasScalars } = classifyTypes(otherTypes, messageTypeNames);
+  return {
+    strategy: 'jsonb',
+    hasNull,
+    hasUndefined,
+    unionMembers: otherTypes,
+    hasMessages,
+    hasScalars,
+  };
+}
+
+/**
+ * Classifies union member types into messages vs scalars.
+ */
+function classifyTypes(
+  types: PmtType[],
+  messageTypeNames: Set<string>
+): { hasMessages: boolean; hasScalars: boolean } {
+  let hasMessages = false;
+  let hasScalars = false;
+
+  for (const t of types) {
+    if (t.kind === 'reference' && messageTypeNames.has(t.name)) {
+      hasMessages = true;
+    } else if (t.kind === 'literal') {
+      hasScalars = true;
+    } else if (t.kind === 'primitive' && t.primitive !== 'null' && t.primitive !== 'undefined') {
+      hasScalars = true;
+    } else if (t.kind === 'date' || t.kind === 'url' || t.kind === 'arraybuffer') {
+      hasScalars = true;
+    } else if (t.kind === 'reference' && !messageTypeNames.has(t.name)) {
+      // Non-message reference (e.g., type alias for scalar)
+      hasScalars = true;
+    }
+  }
+
+  return { hasMessages, hasScalars };
+}
+
+/**
+ * Converts a PmtType to a ScalarType.
+ */
+export function pmtTypeToScalarType(type: PmtType): ScalarType {
+  switch (type.kind) {
+    case 'primitive':
+      switch (type.primitive) {
+        case 'string': return 'string';
+        case 'number': return 'number';
+        case 'boolean': return 'boolean';
+        case 'bigint': return 'bigint';
+        case 'null': return 'null';
+        case 'undefined': return 'undefined';
+      }
+      break;
+    case 'date': return 'Date';
+    case 'url': return 'URL';
+    case 'arraybuffer': return 'ArrayBuffer';
+    case 'array': return 'array';
+    case 'map': return 'map';
+    case 'set': return 'set';
+    case 'union': return 'union';
+    case 'literal':
+      return typeof type.value === 'number' ? 'int32' : 'string';
+    case 'reference':
+      // References to other types - could be message or scalar alias
+      // For now, treat as object (message)
+      return 'object';
+  }
+  return 'object';
+}
+
+/**
+ * Extracts the type name from a tagged cereal string.
+ * Format: ":$TypeName{...}" -> "TypeName"
+ */
+export function extractTypeName(taggedCereal: string): string {
+  const match = /^:\$([^{]+)/.exec(taggedCereal);
+  if (!match) {
+    throw new Error(`Invalid tagged cereal format: ${taggedCereal}`);
+  }
+  return match[1]!;
 }

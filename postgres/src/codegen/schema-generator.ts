@@ -8,7 +8,13 @@
 import type { PmtFile, PmtMessage, PmtProperty, PmtType } from '@/tools/parser/types.js';
 import type { DatabaseSchema, TableDefinition, IndexDefinition } from '../schema/types.js';
 import { SchemaBuilder, TableBuilder, ColumnBuilder } from '../schema/builder.js';
-import { mapScalarType, type ScalarType } from '../mapping/type-mapper.js';
+import {
+  mapScalarType,
+  analyzeUnionType,
+  generateUnionCheckConstraint,
+  type ScalarType,
+  type UnionAnalysis,
+} from '../mapping/type-mapper.js';
 
 /**
  * Known database wrapper types from @propanejs/postgres.
@@ -213,26 +219,6 @@ function extractDecimalOptions(type: PmtType): { precision?: number; scale?: num
   return {};
 }
 
-/**
- * Check if a union type consists only of string literals.
- */
-function isStringLiteralUnion(type: PmtType): string[] | null {
-  if (type.kind !== 'union') return null;
-
-  const literals: string[] = [];
-  for (const t of type.types) {
-    if (t.kind === 'literal' && typeof t.value === 'string') {
-      literals.push(t.value);
-    } else if (t.kind === 'primitive' && t.primitive === 'null') {
-      // Allow null in unions (makes column nullable)
-      continue;
-    } else {
-      return null; // Not a pure string literal union
-    }
-  }
-
-  return literals.length > 0 ? literals : null;
-}
 
 /**
  * Check if a type contains null (making it nullable).
@@ -274,42 +260,82 @@ function toTableName(typeName: string): string {
  * @param prop - The property definition
  * @param unwrapped - The unwrapped type info
  * @param isCompositePk - Whether this table has a composite primary key
+ * @param messageTypeNames - Set of known message type names for union analysis
+ * @param tableName - Table name for generating CHECK constraint names
  */
 function configureColumn(
   builder: ColumnBuilder,
   prop: PmtProperty,
   unwrapped: UnwrappedType,
-  isCompositePk: boolean
-): void {
+  isCompositePk: boolean,
+  messageTypeNames: Set<string>,
+  tableName: string
+): { checkConstraint?: { name: string; expression: string } } {
   const baseType = unwrapped.baseType;
-  const scalarType = toScalarType(baseType);
+  const columnName = toSnakeCase(prop.name);
 
   // Handle field number for rename detection
   if (prop.fieldNumber !== null) {
     builder.fieldNumber(prop.fieldNumber);
   }
 
-  // Handle decimal precision/scale
-  const decimalOptions = extractDecimalOptions(baseType);
+  // Analyze union type to determine storage strategy
+  const unionAnalysis = analyzeUnionType(baseType, messageTypeNames);
 
-  // Map to PostgreSQL type
-  const pgType = mapScalarType(scalarType, decimalOptions);
-
-  // Handle auto-increment
+  // Handle auto-increment (takes precedence)
   if (unwrapped.isAutoIncrement) {
+    const scalarType = toScalarType(baseType);
     if (scalarType === 'bigint') {
       builder.bigserial();
     } else {
       builder.serial();
     }
-  } else if (unwrapped.forceJson || pgType.isJsonb) {
+    // Auto-increment columns are not null by default via SERIAL/BIGSERIAL
+    if (unwrapped.isPrimaryKey && !isCompositePk) {
+      builder.primaryKey();
+    }
+    if (unwrapped.isUnique) {
+      builder.unique();
+    }
+    return {};
+  }
+
+  // Handle JSONB strategy for complex unions
+  if (unionAnalysis.strategy === 'jsonb' || unwrapped.forceJson) {
+    builder.jsonb();
+    // JSONB columns are nullable if union has null OR undefined
+    // (both map to database NULL, but we use JSONB format to distinguish)
+    if (unionAnalysis.hasNull || unionAnalysis.hasUndefined || prop.optional) {
+      builder.nullable();
+    } else {
+      builder.notNull();
+    }
+    if (unwrapped.isPrimaryKey && !isCompositePk) {
+      builder.primaryKey();
+    }
+    if (unwrapped.isUnique) {
+      builder.unique();
+    }
+    return {};
+  }
+
+  // Native storage strategy
+  const scalarType = unionAnalysis.baseType ?? toScalarType(baseType);
+  const decimalOptions = extractDecimalOptions(baseType);
+  const pgType = mapScalarType(scalarType, decimalOptions);
+
+  if (pgType.isJsonb) {
     builder.jsonb();
   } else {
     builder.type(pgType.sqlType);
   }
 
-  // Handle nullability
-  const nullable = prop.optional || isNullable(baseType);
+  // Handle nullability for native storage
+  // Native columns are nullable if:
+  // - prop.optional is true (declared as optional via '?')
+  // - union includes null (T | null)
+  // - union includes undefined (T | undefined)
+  const nullable = prop.optional || unionAnalysis.hasNull || unionAnalysis.hasUndefined;
   if (nullable) {
     builder.nullable();
   } else {
@@ -326,6 +352,16 @@ function configureColumn(
   if (unwrapped.isUnique) {
     builder.unique();
   }
+
+  // Generate CHECK constraint for literal unions
+  let checkConstraint: { name: string; expression: string } | undefined;
+  if (unionAnalysis.literalValues && unionAnalysis.literalValues.length > 0) {
+    const constraintName = `${tableName}_${columnName}_check`;
+    const expression = generateUnionCheckConstraint(columnName, unionAnalysis.literalValues.map(String));
+    checkConstraint = { name: constraintName, expression };
+  }
+
+  return { checkConstraint };
 }
 
 /**
@@ -344,12 +380,15 @@ function generateTable(
   indexes: IndexDefinition[],
   tableName: string,
   pkInfo: PrimaryKeyInfo | null,
-  typeRegistry?: Map<string, PmtMessage>
+  typeRegistry?: Map<string, PmtMessage>,
+  messageTypeNames?: Set<string>
 ): GenerateTableResult {
   tableBuilder.sourceType(message.name);
 
   const childTables: TableDefinition[] = [];
   const isCompositePk = pkInfo?.isComposite ?? false;
+  // Build messageTypeNames from registry if not provided
+  const msgTypeNames = messageTypeNames ?? buildMessageTypeNames(typeRegistry);
 
   for (const prop of message.properties) {
     const columnName = toSnakeCase(prop.name);
@@ -424,10 +463,17 @@ function generateTable(
       continue;
     }
 
-    // Regular column
+    // Regular column - configureColumn handles union analysis and CHECK constraints
+    let checkConstraint: { name: string; expression: string } | undefined;
     tableBuilder.column(columnName, col => {
-      configureColumn(col, prop, unwrapped, isCompositePk);
+      const result = configureColumn(col, prop, unwrapped, isCompositePk, msgTypeNames, tableName);
+      checkConstraint = result.checkConstraint;
     });
+
+    // Add CHECK constraint if generated by configureColumn
+    if (checkConstraint) {
+      tableBuilder.check(checkConstraint.name, checkConstraint.expression);
+    }
 
     // Generate index if Index<T> wrapper was used
     if (unwrapped.createIndex) {
@@ -437,15 +483,6 @@ function generateTable(
         columns: [columnName],
         unique: unwrapped.isUnique,
       });
-    }
-
-    // Generate CHECK constraint for string literal unions
-    const literals = isStringLiteralUnion(unwrapped.baseType);
-    if (literals) {
-      const constraintName = `${tableName}_${columnName}_check`;
-      const escapedLiterals = literals.map(l => `'${l.replaceAll("'", "''")}'`);
-      const expression = `${columnName} IN (${escapedLiterals.join(', ')})`;
-      tableBuilder.check(constraintName, expression);
     }
   }
 
@@ -461,6 +498,20 @@ function generateTable(
   }
 
   return { childTables };
+}
+
+/**
+ * Build a set of message type names from the type registry.
+ */
+function buildMessageTypeNames(typeRegistry?: Map<string, PmtMessage>): Set<string> {
+  const names = new Set<string>();
+  if (typeRegistry) {
+    for (const message of typeRegistry.values()) {
+      // Include both Table and Message types
+      names.add(message.name);
+    }
+  }
+  return names;
 }
 
 /**
