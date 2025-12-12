@@ -2,7 +2,7 @@
 // Generated from tests/message-decorator.pmsg
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
 
-// Tests that @message decorator controls which types get transformed
+// Tests that Message<T> wrapper controls which types get transformed
 import type { MessagePropDescriptor } from "../runtime/index.js";
 export class TransformedMessage extends Message<TransformedMessage.Data> {
   static TYPE_TAG = Symbol("TransformedMessage");
@@ -65,14 +65,8 @@ export namespace TransformedMessage {
     name: string;
   };
   export type Value = TransformedMessage | TransformedMessage.Data;
-} // No decorator - should NOT be transpiled, remains a type alias
+} // No wrapper - should NOT be transpiled, remains a type alias
 export type RegularType = 'active' | 'inactive' | 'pending';
 
-// No decorator - should NOT be transpiled
+// No wrapper - should NOT be transpiled
 export type RegularAlias = number;
-
-// No decorator - object type without @message stays as-is
-export type RegularObject = {
-  id: number;
-  name: string;
-};

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
+import { codeFrameColumns } from '@babel/code-frame';
 import { pathTransform, computeRelativePath } from './utils.js';
 import { registerTypeAlias } from './validation.js';
 import { ensureBaseImport, DEFAULT_RUNTIME_SOURCE } from './base-import.js';
@@ -13,6 +14,8 @@ import {
   trackBrandImport,
   transformBrandInTypeAlias,
 } from './brand-transform.js';
+import { parseFromAst } from '@/tools/parser/parse-ast.js';
+import type { PmtFile, PmtMessage } from '@/tools/parser/types.js';
 
 export interface PropanePluginOptions {
   /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
@@ -51,12 +54,16 @@ export interface PropaneState {
   needsImmutableSetType: boolean;
   needsImmutableMapType: boolean;
   runtimeImportPath: string;
-  file?: { opts?: { filename?: string | null } };
+  file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
   /** Map of type name to extension info for types with @extend decorator */
   extendedTypes: Map<string, ExtendInfo>;
   /** Tracks Brand imports for auto-namespace transformation */
   brandTracker: BrandImportTracker;
+  /** Parsed PMT file from shared parser (used for validation and property extraction) */
+  pmtFile?: PmtFile;
+  /** Map of message name to PmtMessage for quick lookup */
+  pmtMessages?: Map<string, PmtMessage>;
 }
 
 /**
@@ -113,24 +120,6 @@ const MAX_SUGGESTION_DISTANCE = 3;
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
- * Known message wrapper types and their source packages.
- */
-const MESSAGE_WRAPPER_SOURCES: Record<string, Set<string>> = {
-  '@propanejs/runtime': new Set(['Message']),
-  '@propanejs/postgres': new Set(['Table']),
-  '@propanejs/pms-core': new Set(['Endpoint']),
-};
-
-/**
- * Internal path patterns that map to package names.
- */
-const INTERNAL_PATH_PATTERNS: Record<string, string> = {
-  '@/runtime': '@propanejs/runtime',
-  '@/postgres': '@propanejs/postgres',
-  '@/pms-core': '@propanejs/pms-core',
-};
-
-/**
  * Check if a comment line starts with a decorator (@ at line start).
  */
 function isDecoratorLine(line: string): boolean {
@@ -155,130 +144,6 @@ function findClosestDecorator(unknown: string): string | null {
   }
 
   return closest;
-}
-
-/**
- * Result of wrapper detection.
- */
-interface WrapperDetectionResult {
-  isMessageWrapper: boolean;
-  wrapperName: string | null;
-  innerType: t.TSTypeLiteral | null;
-  secondTypeArg: t.TSType | null;
-}
-
-/**
- * Get the type name from a TSEntityName.
- */
-function getTypeName(typeName: t.TSEntityName): string {
-  if (t.isIdentifier(typeName)) {
-    return typeName.name;
-  }
-  return `${getTypeName(typeName.left)}.${typeName.right.name}`;
-}
-
-/**
- * Check if a local name is imported as a message wrapper from a known package.
- */
-function isMessageWrapperImport(
-  localName: string,
-  path: NodePath<t.TSTypeAliasDeclaration>
-): boolean {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const program = (path as any).findParent(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (p: any) => p.isProgram()
-  ) as NodePath<t.Program> | null;
-  if (!program) return false;
-
-  for (const stmt of program.node.body) {
-    if (!t.isImportDeclaration(stmt)) continue;
-
-    const source = stmt.source.value;
-
-    // Check direct package imports
-    const wrappers = MESSAGE_WRAPPER_SOURCES[source];
-    if (wrappers) {
-      for (const spec of stmt.specifiers) {
-        if (t.isImportSpecifier(spec)) {
-          const imported = t.isIdentifier(spec.imported)
-            ? spec.imported.name
-            : spec.imported.value;
-          if (spec.local.name === localName && wrappers.has(imported)) {
-            return true;
-          }
-        }
-      }
-    }
-
-    // Check internal path patterns
-    for (const [pattern, packageName] of Object.entries(INTERNAL_PATH_PATTERNS)) {
-      if (source.startsWith(pattern)) {
-        const pkgWrappers = MESSAGE_WRAPPER_SOURCES[packageName];
-        if (pkgWrappers) {
-          for (const spec of stmt.specifiers) {
-            if (t.isImportSpecifier(spec)) {
-              const imported = t.isIdentifier(spec.imported)
-                ? spec.imported.name
-                : spec.imported.value;
-              if (spec.local.name === localName && pkgWrappers.has(imported)) {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return false;
-}
-
-/**
- * Detect if a type alias is a message wrapper (Message<T>, Table<T>, or Endpoint<P, R>).
- */
-function detectMessageWrapper(
-  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>
-): WrapperDetectionResult {
-  const result: WrapperDetectionResult = {
-    isMessageWrapper: false,
-    wrapperName: null,
-    innerType: null,
-    secondTypeArg: null,
-  };
-
-  const typeAnnotation = typeAliasPath.node.typeAnnotation;
-
-  // Must be a type reference
-  if (!t.isTSTypeReference(typeAnnotation)) {
-    return result;
-  }
-
-  // Must have type parameters
-  const typeParams = typeAnnotation.typeParameters;
-  if (!typeParams || typeParams.params.length === 0) {
-    return result;
-  }
-
-  const localName = getTypeName(typeAnnotation.typeName);
-  const firstArg = typeParams.params[0];
-
-  // Check if first argument is an object literal
-  if (!firstArg || !t.isTSTypeLiteral(firstArg)) {
-    return result;
-  }
-
-  // Check if this is imported as a message wrapper
-  if (!isMessageWrapperImport(localName, typeAliasPath)) {
-    return result;
-  }
-
-  result.isMessageWrapper = true;
-  result.wrapperName = localName;
-  result.innerType = firstArg;
-  result.secondTypeArg = typeParams.params[1] ?? null;
-
-  return result;
 }
 
 /**
@@ -473,11 +338,41 @@ export default function propanePlugin() {
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
 
+          // Parse the file using the shared parser for validation
           const fileOpts = state.file?.opts ?? {};
-          const filename = fileOpts.filename ?? '';
-          const relative = filename
-            ? pathTransform(filename)
-            : 'unknown';
+          const filename = fileOpts.filename ?? 'unknown.pmsg';
+          const sourceCode = state.file?.code ?? '';
+
+          const { file: pmtFile, diagnostics } = parseFromAst(
+            path.parent as t.File,
+            filename
+          );
+
+          // Check for errors from the shared parser
+          const errors = diagnostics.filter((d) => d.severity === 'error');
+          if (errors.length > 0 && sourceCode) {
+            // Format errors with code frames
+            const formatted = errors
+              .map((e) => {
+                const frame = codeFrameColumns(
+                  sourceCode,
+                  { start: e.location.start, end: e.location.end },
+                  { message: e.message }
+                );
+                return `[${e.code}] ${frame}`;
+              })
+              .join('\n\n');
+
+            throw new Error(formatted);
+          }
+
+          // Store PMT for use in type alias visitors
+          state.pmtFile = pmtFile;
+          state.pmtMessages = new Map(
+            pmtFile.messages.map((m) => [m.name, m])
+          );
+
+          const relative = filename ? pathTransform(filename) : 'unknown';
           const commentText = `Generated from ${relative}`;
 
           const existing = (path.node.leadingComments ?? []).some(
@@ -549,14 +444,15 @@ export default function propanePlugin() {
         // Register the type alias for reference tracking (even if not a message)
         registerTypeAlias(declarationPath.node, declaredTypeNames);
 
-        // Check for Message<T>/Table<T>/Endpoint<P,R> wrapper or implicit message flag
+        // Check if this is a message type using PMT (parsed by shared parser in Program.enter)
         type ImplicitNode = t.TSTypeAliasDeclaration & {
           [IMPLICIT_MESSAGE]?: boolean;
         };
         const isImplicitMessage =
           (declarationPath.node as ImplicitNode)[IMPLICIT_MESSAGE];
-        const wrapperResult = detectMessageWrapper(declarationPath);
-        const isMessage = isImplicitMessage || wrapperResult.isMessageWrapper;
+        const typeName = declarationPath.node.id.name;
+        const pmtMessage = state.pmtMessages?.get(typeName);
+        const isMessage = isImplicitMessage || (pmtMessage?.isMessageType ?? false);
 
         // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
@@ -588,7 +484,6 @@ export default function propanePlugin() {
         const extendInfo = extractExtendDecorator(
           declarationPath, path, true, state.opts
         );
-        const typeName = declarationPath.node.id.name;
 
         // Track extended types for re-export generation
         if (extendInfo) {
@@ -629,12 +524,13 @@ export default function propanePlugin() {
         // Register the type alias for reference tracking (even if not a message)
         registerTypeAlias(path.node, declaredTypeNames);
 
-        // Check for Message<T>/Table<T>/Endpoint<P,R> wrapper or implicit message flag
+        // Check if this is a message type using PMT (parsed by shared parser in Program.enter)
         const isImplicitMessage = (path.node as t.TSTypeAliasDeclaration & {
           [IMPLICIT_MESSAGE]?: boolean;
         })[IMPLICIT_MESSAGE];
-        const wrapperResult = detectMessageWrapper(path);
-        const isMessage = isImplicitMessage || wrapperResult.isMessageWrapper;
+        const typeName = path.node.id.name;
+        const pmtMessage = state.pmtMessages?.get(typeName);
+        const isMessage = isImplicitMessage || (pmtMessage?.isMessageType ?? false);
 
         // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
@@ -662,7 +558,6 @@ export default function propanePlugin() {
 
         // Extract @extend decorator if present
         const extendInfo = extractExtendDecorator(path, path, true, state.opts);
-        const typeName = path.node.id.name;
 
         // Track extended types for re-export generation
         if (extendInfo) {

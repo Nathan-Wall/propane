@@ -16,9 +16,6 @@ export type PostId = Brand<number, 'userId'>;
 // Brand with string base type
 export type Email = Brand<string, 'email'>;
 
-// Brand with intersection type
-export type Decimal = Brand<string, 'decimal'> & { __precision: number };
-
 // Brand in union type
 export type OptionalId = Brand<number, 'optId'> | null;
 

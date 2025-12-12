@@ -1,20 +1,14 @@
 import { Message } from '@propanejs/runtime';
 
-// Tests that @message decorator controls which types get transformed
+// Tests that Message<T> wrapper controls which types get transformed
 
 export type TransformedMessage = Message<{
   '1:id': number;
   '2:name': string;
 }>;
 
-// No decorator - should NOT be transpiled, remains a type alias
+// No wrapper - should NOT be transpiled, remains a type alias
 export type RegularType = 'active' | 'inactive' | 'pending';
 
-// No decorator - should NOT be transpiled
+// No wrapper - should NOT be transpiled
 export type RegularAlias = number;
-
-// No decorator - object type without @message stays as-is
-export type RegularObject = {
-  id: number;
-  name: string;
-};

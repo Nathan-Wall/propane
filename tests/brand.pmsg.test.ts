@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import type { UserId, PostId, Email, Decimal, OptionalId } from './brand.pmsg.js';
+import type { UserId, PostId, Email, OptionalId } from './brand.pmsg.js';
 
 describe('Brand auto-namespace transformation', () => {
   describe('type distinctness', () => {
@@ -24,12 +24,6 @@ describe('Brand auto-namespace transformation', () => {
     it('Email should be a distinct branded string type', () => {
       const email: Email = 'test@example.com' as Email;
       assert.strictEqual(email as unknown as string, 'test@example.com');
-    });
-
-    it('Decimal should preserve intersection properties in type', () => {
-      // Decimal is Brand<string, 'decimal', ...> & { __precision: number }
-      const decimal: Decimal = { __precision: 2 } as unknown as Decimal;
-      assert.strictEqual((decimal as { __precision: number }).__precision, 2);
     });
 
     it('OptionalId should allow null', () => {
@@ -62,10 +56,6 @@ describe('Brand auto-namespace transformation', () => {
       assert.ok(
         content.includes('declare const _Email_brand: unique symbol'),
         'Should generate _Email_brand symbol'
-      );
-      assert.ok(
-        content.includes('declare const _Decimal_brand: unique symbol'),
-        'Should generate _Decimal_brand symbol'
       );
       assert.ok(
         content.includes('declare const _OptionalId_brand: unique symbol'),

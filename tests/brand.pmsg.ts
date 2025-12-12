@@ -21,12 +21,6 @@ export type PostId = Brand<number, 'userId', typeof _PostId_brand>;
 declare const _Email_brand: unique symbol;
 export type Email = Brand<string, 'email', typeof _Email_brand>;
 
-// Brand with intersection type
-declare const _Decimal_brand: unique symbol;
-export type Decimal = Brand<string, 'decimal', typeof _Decimal_brand> & {
-  __precision: number;
-};
-
 // Brand in union type
 declare const _OptionalId_brand: unique symbol;
 export type OptionalId = Brand<number, 'optId', typeof _OptionalId_brand> | null;

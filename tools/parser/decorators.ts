@@ -26,9 +26,11 @@ export interface DecoratorInfo {
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
- * Pattern to detect any decorator-like syntax.
+ * Pattern to detect any decorator-like syntax at the start of a line.
+ * Only matches decorators that are at the beginning of a comment line
+ * (after optional whitespace and asterisk).
  */
-const DECORATOR_PATTERN = /@(\w+)/g;
+const DECORATOR_LINE_PATTERN = /^\s*\*?\s*@(\w+)/;
 
 /**
  * Known decorators for validation.
@@ -102,9 +104,10 @@ export function extractDecorators(
       }
 
       // Check for unknown decorators (including deprecated @message)
-      const decoratorMatches = cleanLine.matchAll(DECORATOR_PATTERN);
-      for (const match of decoratorMatches) {
-        const decoratorName = match[1]?.toLowerCase();
+      // Only match decorators at the start of a line, not in prose text
+      const decoratorMatch = DECORATOR_LINE_PATTERN.exec(line);
+      if (decoratorMatch) {
+        const decoratorName = decoratorMatch[1]?.toLowerCase();
         if (decoratorName && !KNOWN_DECORATORS.has(decoratorName)) {
           // Special message for @message which is now deprecated
           if (decoratorName === 'message') {
@@ -124,7 +127,7 @@ export function extractDecorators(
                 location: getCommentLocation(comment),
                 severity: 'warning',
                 code: 'PMT033',
-                message: `Unknown decorator '@${match[1]}'. Did you mean '@${suggestion}'?`,
+                message: `Unknown decorator '@${decoratorMatch[1]}'. Did you mean '@${suggestion}'?`,
               });
             }
           }

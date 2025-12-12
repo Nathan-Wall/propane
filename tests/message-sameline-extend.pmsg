@@ -1,6 +1,6 @@
 import { Message } from '@propanejs/runtime';
 
-// Test same-line syntax: @message @extend('...')
+// Test type with extend decorator
 // @extend('./message-sameline-extend.pmsg.ext.ts')
 export type SameLineExtend = Message<{
   '1:firstName': string;

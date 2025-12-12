@@ -6,8 +6,8 @@ import {
   RegularAlias,
 } from './message-decorator.pmsg.js';
 
-describe('@message decorator', () => {
-  it('transpiles types with @message to classes', () => {
+describe('Message<T> wrapper', () => {
+  it('transpiles types with Message<T> wrapper to classes', () => {
     const msg = new TransformedMessage({ id: 1, name: 'Alice' });
     assert.strictEqual(msg.id, 1);
     assert.strictEqual(msg.name, 'Alice');
@@ -15,7 +15,7 @@ describe('@message decorator', () => {
     assert.ok(typeof msg.hashCode === 'function');
   });
 
-  it('leaves union types without @message as type aliases', () => {
+  it('leaves union types without Message<T> wrapper as type aliases', () => {
     // RegularType should be a type alias for the union
     const status: RegularType = 'active';
     assert.strictEqual(status, 'active');
@@ -25,7 +25,7 @@ describe('@message decorator', () => {
     assert.ok(validStatuses.includes('active'));
   });
 
-  it('leaves primitive type aliases without @message unchanged', () => {
+  it('leaves primitive type aliases without Message<T> wrapper unchanged', () => {
     const id: RegularAlias = 42;
     assert.strictEqual(id, 42);
   });
