@@ -498,6 +498,7 @@ export default function propanePlugin() {
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
           brandTracker: state.brandTracker,
+          pmtMessage,
         });
 
         if (replacement) {
@@ -572,6 +573,7 @@ export default function propanePlugin() {
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
           brandTracker: state.brandTracker,
+          pmtMessage,
         });
 
         if (replacement) {

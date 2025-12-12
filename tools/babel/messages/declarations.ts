@@ -11,6 +11,8 @@ import {
   createSymbolDeclaration,
   transformBrandToThreeParam,
 } from './brand-transform.js';
+import type { PmtMessage } from '@/tools/parser/types.js';
+import { pmtTypeParametersToTypeParameters } from './pmt-adapter.js';
 
 /**
  * Known message wrapper types.
@@ -147,6 +149,8 @@ interface BuildDeclarationsOptions {
   extendInfo?: ExtendInfo;
   /** Brand import tracker for auto-namespace transformation */
   brandTracker?: BrandImportTracker;
+  /** PMT message data from shared parser (if available) */
+  pmtMessage?: PmtMessage;
 }
 
 export function buildDeclarations(
@@ -159,6 +163,7 @@ export function buildDeclarations(
     getMessageReferenceName,
     extendInfo,
     brandTracker,
+    pmtMessage,
   }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -171,20 +176,30 @@ export function buildDeclarations(
 
   const typeLiteralPath = typeAliasPath.get('typeAnnotation');
 
-  // Check for Endpoint wrapper: Endpoint<{ ... }, ResponseType>
+  // Check for Message/Table/Endpoint wrapper using PMT data
   let wrapperInfo: WrapperInfo | undefined;
   let actualTypeLiteralPath: NodePath<t.TSType> = typeLiteralPath;
 
-  if (typeLiteralPath.isTSTypeReference()) {
+  // Use PMT wrapper info if available, otherwise fall back to AST-based detection
+  if (pmtMessage?.wrapper) {
+    wrapperInfo = {
+      wrapperName: pmtMessage.wrapper.localName,
+      responseTypeName: pmtMessage.wrapper.responseType?.kind === 'reference'
+        ? pmtMessage.wrapper.responseType.name
+        : undefined,
+    };
+  } else if (typeLiteralPath.isTSTypeReference()) {
+    // Fallback to AST-based detection (for non-PMT paths)
     wrapperInfo = extractWrapperInfo(typeLiteralPath) ?? undefined;
-    if (wrapperInfo) {
-      // Get the payload type literal from the first type argument
-      const typeParamsPath = typeLiteralPath.get('typeParameters');
-      if (!Array.isArray(typeParamsPath) && typeParamsPath.node) {
-        const paramsPath = typeParamsPath.get('params');
-        if (Array.isArray(paramsPath) && paramsPath.length > 0) {
-          actualTypeLiteralPath = paramsPath[0]!;
-        }
+  }
+
+  // If there's a wrapper, extract the payload type literal from the first type argument
+  if (wrapperInfo && typeLiteralPath.isTSTypeReference()) {
+    const typeParamsPath = typeLiteralPath.get('typeParameters');
+    if (!Array.isArray(typeParamsPath) && typeParamsPath.node) {
+      const paramsPath = typeParamsPath.get('params');
+      if (Array.isArray(paramsPath) && paramsPath.length > 0) {
+        actualTypeLiteralPath = paramsPath[0]!;
       }
     }
   }
@@ -252,10 +267,28 @@ export function buildDeclarations(
   }
 
   // Extract type parameters (e.g., T, U from Container<T extends Message, U extends Message>)
-  const typeParameters = extractTypeParameters(
-    typeAlias.typeParameters,
-    declaredMessageTypeNames
-  );
+  let typeParameters: TypeParameter[];
+  if (pmtMessage) {
+    // Use PMT type parameters
+    typeParameters = pmtTypeParametersToTypeParameters(pmtMessage.typeParameters);
+
+    // Validate constraints (keep existing validation logic)
+    for (const param of typeParameters) {
+      const baseConstraint = param.constraint.split('.')[0]!;
+      if (baseConstraint !== 'Message' && !declaredMessageTypeNames.has(baseConstraint)) {
+        throw typeAliasPath.buildCodeFrameError(
+          `Generic type parameter "${param.name}" must extend Message or a message type, `
+          + `but extends "${param.constraint}".`
+        );
+      }
+    }
+  } else {
+    // Fallback to AST-based extraction (for non-PMT paths)
+    typeParameters = extractTypeParameters(
+      typeAlias.typeParameters,
+      declaredMessageTypeNames
+    );
+  }
 
   // Create a set of type parameter names for validation
   const typeParamNames = new Set(typeParameters.map((p) => p.name));
