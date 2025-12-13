@@ -1,12 +1,12 @@
-// @message
-export type Todo = {
+import { Message } from '@propanejs/runtime';
+
+export type Todo = Message<{
   id: string;
   text: string;
   completed: boolean;
-}
+}>;
 
-// @message
-export type AppState = {
+export type AppState = Message<{
   todos: Todo[];
   filter: 'all' | 'active' | 'completed';
-}
+}>;

@@ -1,15 +1,15 @@
+import { Message } from '@propanejs/runtime';
+
 // A single cell can be empty (null), X, or O
 export type Cell = 'X' | 'O' | null;
 
-// @message
 // A snapshot of the board at a point in time
-export type BoardState = {
+export type BoardState = Message<{
   '1:cells': Cell[];
-}
+}>;
 
-// @message
 // The complete game state with history for undo/time-travel
-export type GameState = {
+export type GameState = Message<{
   '1:history': BoardState[];
   '2:currentMove': number;
-}
+}>;

@@ -21,12 +21,13 @@ npm i @propanejs/pms-server @propanejs/pms-client
 **Define a type** in `person.pmsg`:
 
 ```typescript
-// @message
-export type Person = {
+import { Message } from '@propanejs/runtime';
+
+export type Person = Message<{
   id: number;
   name: string;
   email?: string;
-};
+}>;
 ```
 
 **Compile propane files**:

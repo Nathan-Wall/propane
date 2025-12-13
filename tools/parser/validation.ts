@@ -31,7 +31,7 @@ export function validateNoInterfaces(
         location: getSourceLocation(stmt),
         severity: 'error',
         code: 'PMT010',
-        message: `Interfaces are not allowed in .pmsg files. Use 'type ${stmt.id.name} = { ... }' with @message decorator instead.`,
+        message: `Interfaces are not allowed in .pmsg files. Use 'type ${stmt.id.name} = Message<{ ... }>' instead.`,
       });
     }
 
@@ -45,7 +45,7 @@ export function validateNoInterfaces(
         location: getSourceLocation(stmt.declaration),
         severity: 'error',
         code: 'PMT010',
-        message: `Interfaces are not allowed in .pmsg files. Use 'type ${stmt.declaration.id.name} = { ... }' with @message decorator instead.`,
+        message: `Interfaces are not allowed in .pmsg files. Use 'type ${stmt.declaration.id.name} = Message<{ ... }>' instead.`,
       });
     }
   }

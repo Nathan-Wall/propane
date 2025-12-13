@@ -2,11 +2,27 @@
  * RPC Endpoint Parser
  *
  * Parses .pmsg files to extract RPC endpoint definitions using @propanejs/parser.
- * Looks for types decorated with @message that use Endpoint<Payload, Response>.
+ * Looks for types using Endpoint<Payload, Response> wrapper.
  */
 
 import { parseFile as pmtParseFile, findEndpoints, getResponseTypeName } from '@/tools/parser/index.js';
-import type { PmtEndpointInfo } from '@/tools/parser/types.js';
+import type { PmtDiagnostic, PmtEndpointInfo } from '@/tools/parser/types.js';
+
+/**
+ * Error thrown when parsing a .pmsg file fails.
+ */
+export class ParseError extends Error {
+  constructor(
+    public readonly filePath: string,
+    public readonly diagnostics: PmtDiagnostic[],
+  ) {
+    const messages = diagnostics
+      .map((d) => `[${d.code}] ${d.message} (${d.location.start.line}:${d.location.start.column})`)
+      .join('\n');
+    super(`Failed to parse ${filePath}:\n${messages}`);
+    this.name = 'ParseError';
+  }
+}
 
 /**
  * Represents an RPC endpoint extracted from a .pmsg file.
@@ -33,18 +49,32 @@ export interface ParseResult {
 /**
  * Parse a .pmsg file and extract RPC endpoints.
  *
- * Looks for types decorated with @message that use Endpoint<Payload, Response>:
+ * Looks for types using Endpoint<Payload, Response> wrapper:
  * ```typescript
+ * import { Message } from '@propanejs/runtime';
  * import { Endpoint } from '@propanejs/pms-core';
  *
- * // @message
  * export type GetUser = Endpoint<{
  *   '1:id': number;
  * }, GetUserResponse>;
+ *
+ * export type GetUserResponse = Message<{
+ *   '1:id': number;
+ *   '2:name': string;
+ * }>;
  * ```
+ *
+ * @throws {ParseError} If the file contains syntax or validation errors
  */
 export function parseFile(filePath: string): RpcEndpoint[] {
-  const { file } = pmtParseFile(filePath);
+  const { file, diagnostics } = pmtParseFile(filePath);
+
+  // Check for errors
+  const errors = diagnostics.filter((d) => d.severity === 'error');
+  if (errors.length > 0) {
+    throw new ParseError(filePath, errors);
+  }
+
   const pmtEndpoints = findEndpoints(file);
 
   return pmtEndpoints.map(toRpcEndpoint);

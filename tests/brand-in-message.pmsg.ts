@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/brand-in-message.pmsg
 /**
- * Test Brand types used as properties in @message types.
+ * Test Brand types used as properties in Message types.
  */
 
 import type { Brand, MessagePropDescriptor, Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";

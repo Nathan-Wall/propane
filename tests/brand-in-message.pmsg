@@ -1,5 +1,5 @@
 /**
- * Test Brand types used as properties in @message types.
+ * Test Brand types used as properties in Message types.
  */
 
 import type { Brand } from '@propanejs/runtime';

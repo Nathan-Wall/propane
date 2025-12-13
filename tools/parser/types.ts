@@ -174,10 +174,10 @@ export interface PmtFile {
   /** Absolute path to the source file */
   path: string;
 
-  /** All @message types found in this file */
+  /** All Message<{...}>/Table<{...}>/Endpoint<{...}> types found in this file */
   messages: PmtMessage[];
 
-  /** Non-@message type aliases (restricted shapes) */
+  /** Non-message type aliases (restricted shapes) */
   typeAliases: PmtTypeAlias[];
 
   /** Import statements */

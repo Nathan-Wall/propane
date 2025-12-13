@@ -16,8 +16,6 @@
 import { ensure } from '../../common/assert/index.js';
 import { emsg } from '../../common/strings/msg/index.js';
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString } from "../../runtime/index.js";
-
-// @message
 import type { MessagePropDescriptor, MessageConstructor, DataObject, ImmutableArray, ImmutableSet } from "../../runtime/index.js";
 export class Response<
   T extends Message<any>,

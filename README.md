@@ -20,12 +20,13 @@ working with immutable instances
 **Define a type** in `person.pmsg`:
 
 ```typescript
-// @message
-export type Person = {
+import { Message } from '@propanejs/runtime';
+
+export type Person = Message<{
   id: number;
   name: string;
   email?: string;
-};
+}>;
 ```
 
 **Use the generated class**:

@@ -4,22 +4,21 @@ import type { Message, DataObject } from '@/runtime/index.js';
  * Endpoint type for .pmsg source files.
  * Links a payload shape to a response message type.
  *
- * Used with the @message decorator to define RPC endpoints:
+ * Used with Message<{...}> wrapper to define RPC endpoints:
  *
  * @example
  * ```typescript
+ * import { Message } from '@propanejs/runtime';
  * import { Endpoint } from '@propanejs/pms-core';
  *
- * // @message
  * export type GetUser = Endpoint<{
  *   '1:id': number;
  * }, GetUserResponse>;
  *
- * // @message
- * export type GetUserResponse = {
+ * export type GetUserResponse = Message<{
  *   '1:id': number;
  *   '2:name': string;
- * };
+ * }>;
  * ```
  */
 export type Endpoint<

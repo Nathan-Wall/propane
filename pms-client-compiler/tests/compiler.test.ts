@@ -26,28 +26,25 @@ describe('PMS Client Compiler', () => {
   before(() => {
     mkdirSync(tempDir, { recursive: true });
     standardFile = createTestFile('standard.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
 export type GetUserRequest = Endpoint<{
   '1:id': number;
 }, GetUserResponse>;
 
-// @message
-export type GetUserResponse = {
+export type GetUserResponse = Message<{
   '1:id': number;
   '2:name': string;
-};
+}>;
 
-// @message
 export type CreateUserRequest = Endpoint<{
   '1:name': string;
 }, CreateUserResponse>;
 
-// @message
-export type CreateUserResponse = {
+export type CreateUserResponse = Message<{
   '1:user': GetUserResponse;
-};
+}>;
 `);
   });
 
@@ -76,22 +73,20 @@ export type CreateUserResponse = {
 
     it('ignores non-endpoint message types', () => {
       const file = createTestFile('non-endpoint.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
-export type RegularType = {
+export type RegularType = Message<{
   '1:value': string;
-};
+}>;
 
-// @message
 export type ActualRequest = Endpoint<{
   '1:id': number;
 }, ActualResponse>;
 
-// @message
-export type ActualResponse = {
+export type ActualResponse = Message<{
   '1:result': string;
-};
+}>;
 `);
 
       const endpoints = parseFile(file);
@@ -107,11 +102,12 @@ export type ActualResponse = {
 
     it('handles file with no endpoints', () => {
       const file = createTestFile('no-endpoints.pmsg', `
-// @message
-export type User = {
+import { Message } from '@propanejs/runtime';
+
+export type User = Message<{
   '1:id': number;
   '2:name': string;
-};
+}>;
 `);
       const endpoints = parseFile(file);
       assert.strictEqual(endpoints.length, 0);
@@ -119,17 +115,16 @@ export type User = {
 
     it('handles types without Request suffix', () => {
       const file = createTestFile('no-suffix.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
 export type FetchUser = Endpoint<{
   '1:id': number;
 }, UserData>;
 
-// @message
-export type UserData = {
+export type UserData = Message<{
   '1:name': string;
-};
+}>;
 `);
 
       const endpoints = parseFile(file);
@@ -140,22 +135,17 @@ export type UserData = {
 
     it('handles multiple endpoints in one file', () => {
       const file = createTestFile('many-endpoints.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
 export type Req1 = Endpoint<{ '1:a': number }, Res1>;
-// @message
-export type Res1 = { '1:b': number };
+export type Res1 = Message<{ '1:b': number }>;
 
-// @message
 export type Req2 = Endpoint<{ '1:c': string }, Res2>;
-// @message
-export type Res2 = { '1:d': string };
+export type Res2 = Message<{ '1:d': string }>;
 
-// @message
 export type Req3 = Endpoint<{ '1:e': boolean }, Res3>;
-// @message
-export type Res3 = { '1:f': boolean };
+export type Res3 = Message<{ '1:f': boolean }>;
 `);
 
       const endpoints = parseFile(file);
@@ -164,19 +154,17 @@ export type Res3 = { '1:f': boolean };
 
     it('aggregates results from multiple files', () => {
       const file1 = createTestFile('multi/file1.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type ReqA = Endpoint<{ '1:a': number }, ResA>;
-// @message
-export type ResA = { '1:b': number };
+export type ResA = Message<{ '1:b': number }>;
 `);
 
       const file2 = createTestFile('multi/file2.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type ReqB = Endpoint<{ '1:c': string }, ResB>;
-// @message
-export type ResB = { '1:d': string };
+export type ResB = Message<{ '1:d': string }>;
 `);
 
       const result = parseFiles([file1, file2]);
@@ -290,19 +278,17 @@ export type ResB = { '1:d': string };
 
     it('groups imports by source file', () => {
       const file1 = createTestFile('imports/users.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type GetUserReq = Endpoint<{ '1:id': number }, GetUserRes>;
-// @message
-export type GetUserRes = { '1:name': string };
+export type GetUserRes = Message<{ '1:name': string }>;
 `);
 
       const file2 = createTestFile('imports/orders.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type GetOrderReq = Endpoint<{ '1:id': number }, GetOrderRes>;
-// @message
-export type GetOrderRes = { '1:total': number };
+export type GetOrderRes = Message<{ '1:total': number }>;
 `);
 
       const result = parseFiles([file1, file2]);
@@ -425,19 +411,17 @@ export type GetOrderRes = { '1:total': number };
       mkdirSync(subDir, { recursive: true });
 
       createTestFile('cli-dir-scan/a.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type ReqA = Endpoint<{ '1:x': number }, ResA>;
-// @message
-export type ResA = { '1:y': number };
+export type ResA = Message<{ '1:y': number }>;
 `);
 
       createTestFile('cli-dir-scan/b.pmsg', `
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
-// @message
 export type ReqB = Endpoint<{ '1:x': string }, ResB>;
-// @message
-export type ResB = { '1:y': string };
+export type ResB = Message<{ '1:y': string }>;
 `);
 
       const outputFile = path.resolve(tempDir, 'cli-output/from-dir.ts');
@@ -472,8 +456,8 @@ export type ResB = { '1:y': string };
 
     it('handles file with no endpoints', () => {
       const noEndpointFile = createTestFile('cli-no-endpoint.pmsg', `
-// @message
-export type NotAnEndpoint = { '1:value': string };
+import { Message } from '@propanejs/runtime';
+export type NotAnEndpoint = Message<{ '1:value': string }>;
 `);
 
       const outputFile = path.resolve(tempDir, 'cli-output/no-endpoint.ts');

@@ -195,7 +195,7 @@ function compile(options: CliOptions, verbose = true): boolean {
 
   if (parseResult.endpoints.length === 0) {
     console.error('Error: No RPC endpoints found');
-    console.error('Make sure your types use @message decorator with Endpoint<Payload, Response>');
+    console.error('Make sure your types use Endpoint<Payload, Response> with Message<{...}> response types');
     return false;
   }
 

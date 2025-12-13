@@ -2,8 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { SameLineExtend } from './message-sameline-extend.pmsg.ext.js';
 
-describe('@message @extend same-line syntax', () => {
-  it('works with decorators on same line', () => {
+describe('Message<{...}> with @extend decorator', () => {
+  it('works with Message wrapper and @extend decorator', () => {
     const person = new SameLineExtend({ firstName: 'John', lastName: 'Doe' });
     assert.strictEqual(person.fullName, 'John Doe');
     assert.strictEqual(person.firstName, 'John');

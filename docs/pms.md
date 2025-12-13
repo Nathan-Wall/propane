@@ -29,35 +29,32 @@ npm i -D @propanejs/pms-client-compiler
 
 ## Defining Messages
 
-Define request/response pairs in `.pmsg` files. Use the `@message` decorator
-and `Endpoint<Payload, Response>` type to define RPC endpoints:
+Define request/response pairs in `.pmsg` files. Use `Message<{...}>` for response
+types and `Endpoint<Payload, Response>` for RPC endpoints:
 
 ```typescript
 // messages.pmsg
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
 export type GetUser = Endpoint<{
   '1:id': number;
 }, GetUserResponse>;
 
-// @message
-export type GetUserResponse = {
+export type GetUserResponse = Message<{
   '1:id': number;
   '2:name': string;
   '3:email': string;
-};
+}>;
 
-// @message
 export type CreateUser = Endpoint<{
   '1:name': string;
   '2:email': string;
 }, CreateUserResponse>;
 
-// @message
-export type CreateUserResponse = {
+export type CreateUserResponse = Message<{
   '1:user': GetUserResponse;
-};
+}>;
 ```
 
 ## Server
@@ -224,18 +221,17 @@ Given these message definitions:
 
 ```typescript
 // messages.pmsg
+import { Message } from '@propanejs/runtime';
 import { Endpoint } from '@propanejs/pms-core';
 
-// @message
 export type GetUser = Endpoint<{
   '1:id': number;
 }, GetUserResponse>;
 
-// @message
-export type GetUserResponse = {
+export type GetUserResponse = Message<{
   '1:id': number;
   '2:name': string;
-};
+}>;
 ```
 
 The compiler generates a client class with a `getUser` method.

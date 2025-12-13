@@ -1,38 +1,40 @@
 # Writing Propane Files
 
-## The @message Decorator
+## The Message Wrapper
 
-Types in `.pmsg` files must be marked with `// @message` to be transformed into
-runtime classes. This is required for all message types:
+Types in `.pmsg` files must be wrapped with `Message<{...}>` to be transformed into
+runtime classes. Import `Message` from `@propanejs/runtime`:
 
 ```typescript
-// @message
-export type User = {
+import { Message } from '@propanejs/runtime';
+
+export type User = Message<{
   id: number;
   name: string;
-};
+}>;
 ```
 
-Types without `@message` are left as plain TypeScript type aliases:
+Types without `Message<{...}>` wrapper remain as plain TypeScript type aliases:
 
 ```typescript
-// No @message - remains a type alias
+// No wrapper - remains a type alias
 export type UserId = number;
 
-// Union types without @message are also left as-is
+// Union types without wrapper are also left as-is
 export type Status = 'active' | 'inactive';
 ```
 
 ## Basic Syntax
 
 ```typescript
-// @message
-export type User = {
+import { Message } from '@propanejs/runtime';
+
+export type User = Message<{
   id: number;
   name: string;
   email: string;
   role?: string;       // Optional field
-};
+}>;
 ```
 
 ## Field Numbers
@@ -45,13 +47,14 @@ as the project develops. This also enables compact serialization for smaller
 message sizes.
 
 ```typescript
-// @message
-export type User = {
+import { Message } from '@propanejs/runtime';
+
+export type User = Message<{
   '1:id': number;
   '2:name': string;
   '3:email': string;
   '4:role'?: string;       // Optional field
-};
+}>;
 ```
 
 ## Supported Types
@@ -76,17 +79,17 @@ export type User = {
 ## Nested Messages
 
 ```typescript
-// @message
-export type Address = {
+import { Message } from '@propanejs/runtime';
+
+export type Address = Message<{
   '1:street': string;
   '2:city': string;
-};
+}>;
 
-// @message
-export type Person = {
+export type Person = Message<{
   '1:name': string;
   '2:address': Address;
-};
+}>;
 ```
 
 ## Inline Objects
@@ -94,10 +97,11 @@ export type Person = {
 Inline object types are auto-generated as nested classes:
 
 ```typescript
-// @message
-export type Order = {
+import { Message } from '@propanejs/runtime';
+
+export type Order = Message<{
   '1:item': { name: string; price: number };
-};
+}>;
 ```
 
 Generates class accessible as `Order.Item`.
@@ -105,12 +109,13 @@ Generates class accessible as `Order.Item`.
 ## Collections
 
 ```typescript
-// @message
-export type Team = {
+import { Message } from '@propanejs/runtime';
+
+export type Team = Message<{
   '1:members': string[];                    // Array
   '2:scores': Map<string, number>;          // Map
   '3:tags': Set<string>;                    // Set
-};
+}>;
 ```
 
 Generated mutation methods:
@@ -142,11 +147,12 @@ team = team.deleteTags('important');
 Maps support complex keys with structural equality:
 
 ```typescript
-// @message
-export type Cache = {
+import { Message } from '@propanejs/runtime';
+
+export type Cache = Message<{
   data: Map<Date, string>;                // Date keys
   coords: Map<[number, number], string>;  // Tuple keys
-};
+}>;
 ```
 
 ## Reserved Field Names
@@ -175,12 +181,14 @@ This lets you keep business logic alongside your data definitions.
 
 ```typescript
 // person.pmsg
-// @message @extend('./person.pmsg.ext.ts')
-export type Person = {
+import { Message } from '@propanejs/runtime';
+
+// @extend('./person.pmsg.ext.ts')
+export type Person = Message<{
   '1:firstName': string;
   '2:lastName': string;
   '3:age': number;
-};
+}>;
 ```
 
 2. Create the extension file that extends the generated base class:

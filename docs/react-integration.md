@@ -69,16 +69,16 @@ When you modify a nested message or collection, parent components re-render:
 
 ```typescript
 // types.pmsg
-// @message
-export type GameState = {
+import { Message } from '@propanejs/runtime';
+
+export type GameState = Message<{
   '1:history': BoardState[];
   '2:currentMove': number;
-};
+}>;
 
-// @message
-export type BoardState = {
+export type BoardState = Message<{
   '1:cells': Cell[];
-};
+}>;
 ```
 
 ```typescript
