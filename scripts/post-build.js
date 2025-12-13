@@ -8,7 +8,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const buildDir = path.join(projectRoot, 'build');
 const distDir = path.join(projectRoot, 'dist');
 
-const packages = ['runtime', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'tools/babel/messages', 'cli', 'react', 'postgres'];
+const packages = ['runtime', 'types', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'tools/babel/messages', 'cli', 'react', 'postgres'];
 
 // 0. Fix tsc-alias incorrect transformation of 'react' import
 // tsc-alias transforms 'react' to a relative path to @types/react, but at runtime
@@ -52,7 +52,7 @@ if (fs.existsSync(postgresDir)) {
 }
 
 // Packages with src/ subdirectory have different output structure
-const packagesWithSrc = new Set(['pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'postgres']);
+const packagesWithSrc = new Set(['types', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'postgres']);
 
 // 1. Copy package.json to build/ and update main
 for (const pkgDir of packages) {

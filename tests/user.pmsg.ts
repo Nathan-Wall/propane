@@ -3,8 +3,8 @@
 import { Distance } from './distance.pmsg.js';
 import { Email } from './email.pmsg.js';
 import { Hash } from './hash.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -134,6 +134,15 @@ export class User extends Message<User.Data> {
   }
   get height(): Distance {
     return this.#height;
+  }
+  set(updates: Partial<SetUpdates<User.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof User)(data));
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof User)({

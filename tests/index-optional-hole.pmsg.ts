@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static readonly $typeName = "OptionalHole";
@@ -76,6 +76,15 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       created: this.#created,
       name: this.#name
     }));
+  }
+  set(updates: Partial<SetUpdates<OptionalHole.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof OptionalHole)(data));
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof OptionalHole)({

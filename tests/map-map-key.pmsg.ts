@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-map-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapMapKey extends Message<MapMapKey.Data> {
   static TYPE_TAG = Symbol("MapMapKey");
   static readonly $typeName = "MapMapKey";
@@ -208,6 +208,15 @@ export class MapMapKey extends Message<MapMapKey.Data> {
       nested: this.#nested,
       optional: optionalMapNext
     }));
+  }
+  set(updates: Partial<SetUpdates<MapMapKey.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapMapKey)(data));
   }
   setNested(value: Map<Map<string, number>, string> | Iterable<[Map<string, number>, string]>) {
     return this.$update(new (this.constructor as typeof MapMapKey)({

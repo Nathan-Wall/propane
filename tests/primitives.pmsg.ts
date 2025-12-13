@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
   static readonly $typeName = "Primitives";
@@ -95,6 +95,15 @@ export class Primitives extends Message<Primitives.Data> {
   }
   get missing(): undefined {
     return this.#missing;
+  }
+  set(updates: Partial<SetUpdates<Primitives.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Primitives)(data));
   }
   setCount(value: number) {
     return this.$update(new (this.constructor as typeof Primitives)({

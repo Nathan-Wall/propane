@@ -48,11 +48,13 @@ export interface PropaneState {
   usesDataValue: boolean;
   usesParseCerealString: boolean;
   usesDataObject: boolean;
+  usesSkip: boolean;
   hasGenericTypes: boolean;
   // Type-only import flags for GET_MESSAGE_CHILDREN yield type
   needsImmutableArrayType: boolean;
   needsImmutableSetType: boolean;
   needsImmutableMapType: boolean;
+  needsSetUpdatesType: boolean;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -330,10 +332,12 @@ export default function propanePlugin() {
           state.usesDataValue = false;
           state.usesParseCerealString = false;
           state.usesDataObject = false;
+          state.usesSkip = false;
           state.hasGenericTypes = false;
           state.needsImmutableArrayType = false;
           state.needsImmutableSetType = false;
           state.needsImmutableMapType = false;
+          state.needsSetUpdatesType = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();

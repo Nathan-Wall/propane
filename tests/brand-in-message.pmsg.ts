@@ -4,7 +4,7 @@
  * Test Brand types used as properties in Message types.
  */
 
-import type { Brand, MessagePropDescriptor, Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import type { Brand, MessagePropDescriptor, SetUpdates, Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
 import { Message } from "../runtime/index.js";
 
 // A standalone Brand type (should transform)
@@ -65,6 +65,15 @@ export class User extends Message<User.Data> {
   }
   get ref(): UserId {
     return this.#ref;
+  }
+  set(updates: Partial<SetUpdates<User.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof User)(data));
   }
   setId(value: Brand<number, 'userId', typeof _User_id_brand>) {
     return this.$update(new (this.constructor as typeof User)({

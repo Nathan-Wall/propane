@@ -6,3 +6,8 @@ export * from './common/web/url.js';
 export * from './common/time/date.js';
 export * from './message.js';
 export * from './common/numbers/scalars.js';
+
+// Validation
+export { ValidationError } from './validation-error.js';
+export { SKIP } from './skip.js';
+export type { SetUpdates } from './set-updates.js';

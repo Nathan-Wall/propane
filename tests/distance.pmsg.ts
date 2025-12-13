@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export type DistanceUnit = 'm' | 'ft';
 export class Distance extends Message<Distance.Data> {
   static TYPE_TAG = Symbol("Distance");
@@ -43,6 +43,15 @@ export class Distance extends Message<Distance.Data> {
   }
   get value(): number {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<Distance.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Distance)(data));
   }
   setUnit(value: DistanceUnit) {
     return this.$update(new (this.constructor as typeof Distance)({

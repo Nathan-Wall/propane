@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/extend-basic.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
 
 // @extend('./extend-basic.pmsg.ext.ts')
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Person$Base extends Message<Person.Data> {
   static TYPE_TAG = Symbol("Person");
   static readonly $typeName = "Person";
@@ -58,6 +58,15 @@ export class Person$Base extends Message<Person.Data> {
   }
   get age(): number {
     return this.#age;
+  }
+  set(updates: Partial<SetUpdates<Person.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Person)(data));
   }
   setAge(value: number) {
     return this.$update(new (this.constructor as typeof Person)({

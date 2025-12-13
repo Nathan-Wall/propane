@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/object-only.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class ObjectOnly extends Message<ObjectOnly.Data> {
   static TYPE_TAG = Symbol("ObjectOnly");
   static readonly $typeName = "ObjectOnly";
@@ -69,6 +69,15 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   }
   get active(): boolean {
     return this.#active;
+  }
+  set(updates: Partial<SetUpdates<ObjectOnly.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ObjectOnly)(data));
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof ObjectOnly)({

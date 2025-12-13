@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static readonly $typeName = "Cat";
@@ -43,6 +43,15 @@ export class Cat extends Message<Cat.Data> {
   }
   get meows(): boolean {
     return this.#meows;
+  }
+  set(updates: Partial<SetUpdates<Cat.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Cat)(data));
   }
   setMeows(value: boolean) {
     return this.$update(new (this.constructor as typeof Cat)({
@@ -105,6 +114,15 @@ export class Dog extends Message<Dog.Data> {
   }
   get barks(): boolean {
     return this.#barks;
+  }
+  set(updates: Partial<SetUpdates<Dog.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Dog)(data));
   }
   setBarks(value: boolean) {
     return this.$update(new (this.constructor as typeof Dog)({
@@ -206,6 +224,15 @@ export class PetOwner extends Message<PetOwner.Data> {
       ownerName: this.#ownerName,
       pet: this.#pet
     }));
+  }
+  set(updates: Partial<SetUpdates<PetOwner.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof PetOwner)(data));
   }
   setOptionalPet(value: Cat | Dog) {
     return this.$update(new (this.constructor as typeof PetOwner)({

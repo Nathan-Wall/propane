@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from pms-server/tests/messages.pmsg
 import { Endpoint } from '@/pms-core/src/index.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../../runtime/index.js";
-import type { MessagePropDescriptor } from "../../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../../runtime/index.js";
 export class EchoRequest extends Message<EchoRequest.Data> {
   static TYPE_TAG = Symbol("EchoRequest");
   static readonly $typeName = "EchoRequest";
@@ -32,6 +32,15 @@ export class EchoRequest extends Message<EchoRequest.Data> {
   declare readonly __responseType: EchoResponse | undefined;
   get message(): string {
     return this.#message;
+  }
+  set(updates: Partial<SetUpdates<EchoRequest.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof EchoRequest)(data));
   }
   setMessage(value: string) {
     return this.$update(new (this.constructor as typeof EchoRequest)({
@@ -86,6 +95,15 @@ export class EchoResponse extends Message<EchoResponse.Data> {
   }
   get timestamp(): number {
     return this.#timestamp;
+  }
+  set(updates: Partial<SetUpdates<EchoResponse.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof EchoResponse)(data));
   }
   setEcho(value: string) {
     return this.$update(new (this.constructor as typeof EchoResponse)({
@@ -150,6 +168,15 @@ export class AddRequest extends Message<AddRequest.Data> {
   get b(): number {
     return this.#b;
   }
+  set(updates: Partial<SetUpdates<AddRequest.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof AddRequest)(data));
+  }
   setA(value: number) {
     return this.$update(new (this.constructor as typeof AddRequest)({
       a: value,
@@ -198,6 +225,15 @@ export class AddResponse extends Message<AddResponse.Data> {
   }
   get sum(): number {
     return this.#sum;
+  }
+  set(updates: Partial<SetUpdates<AddResponse.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof AddResponse)(data));
   }
   setSum(value: number) {
     return this.$update(new (this.constructor as typeof AddResponse)({

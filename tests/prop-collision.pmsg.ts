@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/prop-collision.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Foo extends Message<Foo.Data> {
   static TYPE_TAG = Symbol("Foo");
   static readonly $typeName = "Foo";
@@ -43,6 +43,15 @@ export class Foo extends Message<Foo.Data> {
   }
   get _name(): string {
     return this.#_name;
+  }
+  set(updates: Partial<SetUpdates<Foo.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Foo)(data));
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Foo)({

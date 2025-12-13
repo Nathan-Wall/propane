@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
   static readonly $typeName = "UnionStringBool";
@@ -48,6 +48,15 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     return this.$update(new (this.constructor as typeof UnionStringBool)({
       value: this.#value
     }));
+  }
+  set(updates: Partial<SetUpdates<UnionStringBool.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof UnionStringBool)(data));
   }
   setOptional(value: string | boolean) {
     return this.$update(new (this.constructor as typeof UnionStringBool)({

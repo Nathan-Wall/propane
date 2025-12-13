@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/array-buffer.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
   static readonly $typeName = "ArrayBufferMessage";
@@ -151,6 +151,15 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       extra: this.#extra,
       chunks: chunksNext
     }));
+  }
+  set(updates: Partial<SetUpdates<ArrayBufferMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ArrayBufferMessage)(data));
   }
   setChunks(value: ArrayBuffer[] | Iterable<ArrayBuffer>) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({

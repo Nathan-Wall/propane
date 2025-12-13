@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static readonly $typeName = "SetMessage";
@@ -262,6 +262,15 @@ export class SetMessage extends Message<SetMessage.Data> {
       tags: tagsSetNext,
       ids: this.#ids
     }));
+  }
+  set(updates: Partial<SetUpdates<SetMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof SetMessage)(data));
   }
   setIds(value: Set<number> | Iterable<number>) {
     return this.$update(new (this.constructor as typeof SetMessage)({

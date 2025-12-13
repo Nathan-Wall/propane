@@ -75,6 +75,9 @@ export function ensureBaseImport(
   if (state.usesParseCerealString && !hasImportBinding('parseCerealString')) {
     requiredSpecifiers.push('parseCerealString');
   }
+  if (state.usesSkip && !hasImportBinding('SKIP')) {
+    requiredSpecifiers.push('SKIP');
+  }
   // MessageConstructor, MessagePropDescriptor, DataValue, and DataObject are type-only imports
   const typeOnlyImports: string[] = ['MessagePropDescriptor'];
   if (state.usesMessageConstructor && !hasImportBinding('MessageConstructor')) {
@@ -108,6 +111,9 @@ export function ensureBaseImport(
     && !hasImportBinding('ImmutableMap')
   ) {
     typeOnlyImports.push('ImmutableMap');
+  }
+  if (state.needsSetUpdatesType && !hasImportBinding('SetUpdates')) {
+    typeOnlyImports.push('SetUpdates');
   }
 
   if (typeOnlyImports.length > 0) {

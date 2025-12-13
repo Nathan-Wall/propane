@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-decorator.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
 
 // Tests that Message<T> wrapper controls which types get transformed
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class TransformedMessage extends Message<TransformedMessage.Data> {
   static TYPE_TAG = Symbol("TransformedMessage");
   static readonly $typeName = "TransformedMessage";
@@ -45,6 +45,15 @@ export class TransformedMessage extends Message<TransformedMessage.Data> {
   }
   get name(): string {
     return this.#name;
+  }
+  set(updates: Partial<SetUpdates<TransformedMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof TransformedMessage)(data));
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof TransformedMessage)({

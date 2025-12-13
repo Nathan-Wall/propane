@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-order.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static readonly $typeName = "StringFirst";
@@ -30,6 +30,15 @@ export class StringFirst extends Message<StringFirst.Data> {
   }
   get value(): string | number {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<StringFirst.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof StringFirst)(data));
   }
   setValue(value: string | number) {
     return this.$update(new (this.constructor as typeof StringFirst)({
@@ -71,6 +80,15 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   }
   get value(): number | string {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<NumberFirst.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof NumberFirst)(data));
   }
   setValue(value: number | string) {
     return this.$update(new (this.constructor as typeof NumberFirst)({

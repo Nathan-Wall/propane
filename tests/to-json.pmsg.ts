@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static readonly $typeName = "ToJson_Nested";
@@ -287,6 +287,15 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
       map: this.#map,
       imap: this.#imap
     }));
+  }
+  set(updates: Partial<SetUpdates<ToJson_Nested.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ToJson_Nested)(data));
   }
   setArray(value: (number | undefined)[] | Iterable<(number | undefined)>) {
     return this.$update(new (this.constructor as typeof ToJson_Nested)({
@@ -766,6 +775,15 @@ export class ToJson extends Message<ToJson.Data> {
       nonFinite: this.#nonFinite,
       nested: this.#nested
     }));
+  }
+  set(updates: Partial<SetUpdates<ToJson.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ToJson)(data));
   }
   setBig(value: bigint) {
     return this.$update(new (this.constructor as typeof ToJson)({

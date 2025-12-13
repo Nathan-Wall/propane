@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
 
 // Nested message types for testing memo behavior with state persistence
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
   static readonly $typeName = "InnerMessage";
@@ -32,6 +32,15 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   }
   get value(): string {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<InnerMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof InnerMessage)(data));
   }
   setValue(value: string) {
     return this.$update(new (this.constructor as typeof InnerMessage)({
@@ -100,6 +109,15 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   }
   get inner(): InnerMessage {
     return this.#inner;
+  }
+  set(updates: Partial<SetUpdates<OuterMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof OuterMessage)(data));
   }
   setCounter(value: number) {
     return this.$update(new (this.constructor as typeof OuterMessage)({

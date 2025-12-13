@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
   static readonly $typeName = "Wrapper";
@@ -34,6 +34,15 @@ export class Wrapper extends Message<Wrapper.Data> {
     d: Date;
   } {
     return this.#payload;
+  }
+  set(updates: Partial<SetUpdates<Wrapper.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Wrapper)(data));
   }
   setPayload(value: Date | {
     d: Date;

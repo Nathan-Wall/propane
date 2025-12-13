@@ -1,0 +1,29 @@
+{
+  "name": "@propanejs/types",
+  "version": "0.1.0",
+  "description": "Type definitions and registry for Propane",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf src/*.js src/*.d.ts"
+  },
+  "keywords": [
+    "propane",
+    "types",
+    "validators",
+    "schema"
+  ],
+  "author": "Nathan Wall",
+  "license": "ISC"
+}

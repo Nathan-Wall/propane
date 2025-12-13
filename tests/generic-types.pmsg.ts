@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/no-explicit-any*/
 // Generated from tests/generic-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, SKIP } from "../runtime/index.js";
 
 /**
  * Test file for generic message types.
  */
 
 // Basic item type for testing
-import type { MessagePropDescriptor, MessageConstructor, DataObject } from "../runtime/index.js";
+import type { MessagePropDescriptor, MessageConstructor, DataObject, SetUpdates } from "../runtime/index.js";
 export class Item extends Message<Item.Data> {
   static TYPE_TAG = Symbol("Item");
   static readonly $typeName = "Item";
@@ -49,6 +49,15 @@ export class Item extends Message<Item.Data> {
   }
   get name(): string {
     return this.#name;
+  }
+  set(updates: Partial<SetUpdates<Item.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Item)(data));
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof Item)({
@@ -119,6 +128,15 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
   get inner(): T {
     return this.#inner;
   }
+  set(updates: Partial<SetUpdates<Container.Data<T>>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new Container(this.#tClass, data) as this);
+  }
   setInner(value: T) {
     return this.$update(new Container(this.#tClass, {
       inner: value
@@ -183,6 +201,15 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
   }
   deleteValue() {
     return this.$update(new Optional(this.#tClass, {}) as this);
+  }
+  set(updates: Partial<SetUpdates<Optional.Data<T>>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new Optional(this.#tClass, data) as this);
   }
   setValue(value: T) {
     return this.$update(new Optional(this.#tClass, {
@@ -263,6 +290,15 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
   get second(): U {
     return this.#second;
   }
+  set(updates: Partial<SetUpdates<Pair.Data<T, U>>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new Pair(this.#tClass, this.#uClass, data) as this);
+  }
   setFirst(value: T) {
     return this.$update(new Pair(this.#tClass, this.#uClass, {
       first: value,
@@ -311,6 +347,15 @@ export class Parent extends Message<Parent.Data> {
   }
   get name(): string {
     return this.#name;
+  }
+  set(updates: Partial<SetUpdates<Parent.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Parent)(data));
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Parent)({

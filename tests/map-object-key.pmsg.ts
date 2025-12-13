@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-object-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys_Key.Data> {
   static TYPE_TAG = Symbol("MapObjectKey_ObjectKeys_Key");
   static readonly $typeName = "MapObjectKey_ObjectKeys_Key";
@@ -43,6 +43,15 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
   }
   get version(): number {
     return this.#version;
+  }
+  set(updates: Partial<SetUpdates<MapObjectKey_ObjectKeys_Key.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapObjectKey_ObjectKeys_Key)(data));
   }
   setId(value: string) {
     return this.$update(new (this.constructor as typeof MapObjectKey_ObjectKeys_Key)({
@@ -92,6 +101,15 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   }
   get name(): string {
     return this.#name;
+  }
+  set(updates: Partial<SetUpdates<MapObjectKey_OptionalObjectMap_Key.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapObjectKey_OptionalObjectMap_Key)(data));
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof MapObjectKey_OptionalObjectMap_Key)({
@@ -311,6 +329,15 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
       objectKeys: this.#objectKeys,
       optionalObjectMap: optionalObjectMapMapNext
     }));
+  }
+  set(updates: Partial<SetUpdates<MapObjectKey.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapObjectKey)(data));
   }
   setObjectKeys(value: Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>) {
     return this.$update(new (this.constructor as typeof MapObjectKey)({

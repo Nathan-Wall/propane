@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/endpoint-types.pmsg
 import { Endpoint } from '@/pms-core/src/index.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class TestResponse extends Message<TestResponse.Data> {
   static TYPE_TAG = Symbol("TestResponse");
   static readonly $typeName = "TestResponse";
@@ -31,6 +31,15 @@ export class TestResponse extends Message<TestResponse.Data> {
   }
   get value(): string {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<TestResponse.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof TestResponse)(data));
   }
   setValue(value: string) {
     return this.$update(new (this.constructor as typeof TestResponse)({
@@ -73,6 +82,15 @@ export class TestRequest extends Message<TestRequest.Data> {
   declare readonly __responseType: TestResponse | undefined;
   get id(): number {
     return this.#id;
+  }
+  set(updates: Partial<SetUpdates<TestRequest.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof TestRequest)(data));
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof TestRequest)({

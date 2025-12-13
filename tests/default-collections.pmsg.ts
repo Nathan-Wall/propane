@@ -3,10 +3,10 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals, SKIP } from "../runtime/index.js";
 
 // Test message with non-optional collection fields to verify defaults
-import type { MessagePropDescriptor, DataObject } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export class DefaultCollections extends Message<DefaultCollections.Data> {
   static TYPE_TAG = Symbol("DefaultCollections");
   static readonly $typeName = "DefaultCollections";
@@ -321,6 +321,15 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       map: this.#map,
       tags: this.#tags
     }));
+  }
+  set(updates: Partial<SetUpdates<DefaultCollections.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof DefaultCollections)(data));
   }
   setArr(value: number[] | Iterable<number>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({

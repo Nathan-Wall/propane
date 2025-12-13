@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.pmsg
 import { Email } from './email.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static readonly $typeName = "Unions";
@@ -65,6 +65,15 @@ export class Unions extends Message<Unions.Data> {
     updated: Date;
   } {
     return this.#metadata;
+  }
+  set(updates: Partial<SetUpdates<Unions.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions)(data));
   }
   setEmail(value: Email | null) {
     return this.$update(new (this.constructor as typeof Unions)({

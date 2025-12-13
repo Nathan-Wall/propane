@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-array-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapArrayKey extends Message<MapArrayKey.Data> {
   static TYPE_TAG = Symbol("MapArrayKey");
   static readonly $typeName = "MapArrayKey";
@@ -316,6 +316,15 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
       numberArrayMap: this.#numberArrayMap,
       optionalArrayMap: optionalArrayMapMapNext
     }));
+  }
+  set(updates: Partial<SetUpdates<MapArrayKey.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapArrayKey)(data));
   }
   setArrayValues(value: Map<string[], number> | Iterable<[string[], number]>) {
     return this.$update(new (this.constructor as typeof MapArrayKey)({

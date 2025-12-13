@@ -32,11 +32,13 @@ export interface PluginStateFlags {
   usesMessageConstructor: boolean;
   usesParseCerealString: boolean;
   usesDataObject: boolean;
+  usesSkip: boolean;
   hasGenericTypes: boolean;
   // Type-only import flags for GET_MESSAGE_CHILDREN yield type
   needsImmutableArrayType: boolean;
   needsImmutableSetType: boolean;
   needsImmutableMapType: boolean;
+  needsSetUpdatesType: boolean;
 }
 
 /**

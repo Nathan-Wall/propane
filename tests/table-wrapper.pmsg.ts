@@ -6,8 +6,8 @@ import { Table } from '@propanejs/postgres';
  * Test Table<T> wrapper for database types.
  * Table types are message types that also generate database schema.
  */
-import type { MessagePropDescriptor } from "../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -88,6 +88,15 @@ export class User extends Message<User.Data> {
   }
   get created(): ImmutableDate {
     return this.#created;
+  }
+  set(updates: Partial<SetUpdates<User.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof User)(data));
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof User)({
@@ -251,6 +260,15 @@ export class Post extends Message<Post.Data> {
   }
   get updated(): ImmutableDate {
     return this.#updated;
+  }
+  set(updates: Partial<SetUpdates<Post.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Post)(data));
   }
   setContent(value: string) {
     return this.$update(new (this.constructor as typeof Post)({

@@ -1095,6 +1095,11 @@ export function buildClassFromProperties(
     typeParameters
   );
 
+  // Build batch set() method for updating multiple fields at once
+  const batchSetMethod = buildBatchSetMethod(typeName, typeParameters);
+  state.usesSkip = true;
+  state.needsSetUpdatesType = true;
+
   // Build hybrid approach methods
   const withChildMethod = buildWithChildMethod(
     typeName,
@@ -1158,6 +1163,7 @@ export function buildClassFromProperties(
 
   classBodyMembers.push(...getters,
     ...[
+      batchSetMethod,
       ...setterMethods,
       ...deleteMethods,
       ...arrayMethods,
@@ -1830,6 +1836,127 @@ function buildDeleteMethod(
 
   const methodName = `delete${capitalize(targetProp.name)}`;
   const method = t.classMethod('method', t.identifier(methodName), [], body);
+  return method;
+}
+
+/**
+ * Builds the batch set() method that allows updating multiple fields at once.
+ *
+ * Generated code:
+ * ```typescript
+ * set(updates: Partial<SetUpdates<TypeName.Data>>): this {
+ *   const data = this.toData();
+ *   for (const [key, value] of Object.entries(updates)) {
+ *     if (value !== SKIP) {
+ *       (data as Record<string, unknown>)[key] = value;
+ *     }
+ *   }
+ *   return this.$update(new TypeName(data) as this);
+ * }
+ * ```
+ */
+function buildBatchSetMethod(
+  typeName: string,
+  typeParameters: TypeParameter[] = []
+): t.ClassMethod {
+  const updatesId = t.identifier('updates');
+  const dataId = t.identifier('data');
+  const keyId = t.identifier('key');
+  const valueId = t.identifier('value');
+
+  // Build type annotation: Partial<SetUpdates<TypeName.Data>>
+  const dataTypeRef = buildGenericQualifiedTypeReference(typeName, 'Data', typeParameters);
+  const setUpdatesType = t.tsTypeReference(
+    t.identifier('SetUpdates'),
+    t.tsTypeParameterInstantiation([dataTypeRef])
+  );
+  const partialType = t.tsTypeReference(
+    t.identifier('Partial'),
+    t.tsTypeParameterInstantiation([setUpdatesType])
+  );
+  updatesId.typeAnnotation = t.tsTypeAnnotation(partialType);
+
+  // const data = this.toData();
+  const toDataCall = t.callExpression(
+    t.memberExpression(t.thisExpression(), t.identifier('toData')),
+    []
+  );
+  const dataDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(dataId, toDataCall),
+  ]);
+
+  // for (const [key, value] of Object.entries(updates))
+  const entriesCall = t.callExpression(
+    t.memberExpression(t.identifier('Object'), t.identifier('entries')),
+    [updatesId]
+  );
+
+  // if (value !== SKIP) { (data as Record<string, unknown>)[key] = value; }
+  const skipCheck = t.binaryExpression(
+    '!==',
+    valueId,
+    t.identifier('SKIP')
+  );
+  const recordType = t.tsTypeReference(
+    t.identifier('Record'),
+    t.tsTypeParameterInstantiation([
+      t.tsStringKeyword(),
+      t.tsUnknownKeyword(),
+    ])
+  );
+  const dataAsRecord = t.tsAsExpression(dataId, recordType);
+  const assignment = t.assignmentExpression(
+    '=',
+    t.memberExpression(dataAsRecord, keyId, true),
+    valueId
+  );
+  const ifStatement = t.ifStatement(
+    skipCheck,
+    t.blockStatement([t.expressionStatement(assignment)])
+  );
+
+  const forOfStatement = t.forOfStatement(
+    t.variableDeclaration('const', [
+      t.variableDeclarator(t.arrayPattern([keyId, valueId])),
+    ]),
+    entriesCall,
+    t.blockStatement([ifStatement])
+  );
+
+  // Build constructor arguments: for generics, include constructor refs before props
+  const constructorArgs: t.Expression[] = [];
+  if (typeParameters.length > 0) {
+    for (const param of typeParameters) {
+      const fieldName = getConstructorFieldName(param.name);
+      constructorArgs.push(
+        t.memberExpression(
+          t.thisExpression(),
+          t.privateName(t.identifier(fieldName))
+        )
+      );
+    }
+  }
+  constructorArgs.push(dataId);
+
+  // For generic messages, use direct construction: new TypeName(...)
+  // For non-generic messages, use this.constructor pattern to support subclassing
+  const newExpr: t.Expression = typeParameters.length > 0
+    ? t.tsAsExpression(
+        t.newExpression(t.identifier(typeName), constructorArgs),
+        t.tsThisType()
+      )
+    : buildThisConstructorNewExpression(typeName, constructorArgs);
+
+  const returnStatement = t.returnStatement(
+    t.callExpression(
+      t.memberExpression(t.thisExpression(), t.identifier('$update')),
+      [newExpr]
+    )
+  );
+
+  const body = t.blockStatement([dataDecl, forOfStatement, returnStatement]);
+
+  const method = t.classMethod('method', t.identifier('set'), [updatesId], body);
   return method;
 }
 

@@ -2,8 +2,8 @@
 // Generated from tests/compound.pmsg
 import { Indexed } from './indexed.pmsg.js';
 import { User } from './user.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static readonly $typeName = "Compound_Inline";
@@ -32,6 +32,15 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   }
   get value(): string {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<Compound_Inline.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Compound_Inline)(data));
   }
   setValue(value: string) {
     return this.$update(new (this.constructor as typeof Compound_Inline)({
@@ -112,6 +121,15 @@ export class Compound extends Message<Compound.Data> {
   }
   get inline(): Compound_Inline {
     return this.#inline;
+  }
+  set(updates: Partial<SetUpdates<Compound.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Compound)(data));
   }
   setIndexed(value: Indexed) {
     return this.$update(new (this.constructor as typeof Compound)({

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-sameline-extend.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
 
 // Test type with extend decorator
 // @extend('./message-sameline-extend.pmsg.ext.ts')
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   static TYPE_TAG = Symbol("SameLineExtend");
   static readonly $typeName = "SameLineExtend";
@@ -46,6 +46,15 @@ export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   }
   get lastName(): string {
     return this.#lastName;
+  }
+  set(updates: Partial<SetUpdates<SameLineExtend.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof SameLineExtend)(data));
   }
   setFirstName(value: string) {
     return this.$update(new (this.constructor as typeof SameLineExtend)({

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static readonly $typeName = "MapBigintKey";
@@ -108,6 +108,15 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     return this.$update(new (this.constructor as typeof MapBigintKey)({
       values: valuesMapNext
     }));
+  }
+  set(updates: Partial<SetUpdates<MapBigintKey.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapBigintKey)(data));
   }
   setValues(value: Map<bigint, string> | Iterable<[bigint, string]>) {
     return this.$update(new (this.constructor as typeof MapBigintKey)({

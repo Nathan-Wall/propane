@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-date-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapDateKey extends Message<MapDateKey.Data> {
   static TYPE_TAG = Symbol("MapDateKey");
   static readonly $typeName = "MapDateKey";
@@ -316,6 +316,15 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       urlValues: urlValuesMapNext,
       optionalDateMap: this.#optionalDateMap
     }));
+  }
+  set(updates: Partial<SetUpdates<MapDateKey.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapDateKey)(data));
   }
   setDateValues(value: Map<Date, number> | Iterable<[Date, number]>) {
     return this.$update(new (this.constructor as typeof MapDateKey)({

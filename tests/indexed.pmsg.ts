@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
   static readonly $typeName = "Indexed";
@@ -142,6 +142,15 @@ export class Indexed extends Message<Indexed.Data> {
       alias: this.#alias,
       status: this.#status
     }));
+  }
+  set(updates: Partial<SetUpdates<Indexed.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Indexed)(data));
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof Indexed)({

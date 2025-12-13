@@ -2,8 +2,8 @@
 // Generated from tests/immutable-array-set.pmsg
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static readonly $typeName = "ImmutableArraySet";
@@ -209,6 +209,15 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
       arr: arrNext,
       items: this.#items
     }));
+  }
+  set(updates: Partial<SetUpdates<ImmutableArraySet.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ImmutableArraySet)(data));
   }
   setArr(value: number[] | Iterable<number>) {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({

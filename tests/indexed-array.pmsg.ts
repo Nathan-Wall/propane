@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static readonly $typeName = "ArrayMessage_Labels_Item";
@@ -30,6 +30,15 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   }
   get name(): string {
     return this.#name;
+  }
+  set(updates: Partial<SetUpdates<ArrayMessage_Labels_Item.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ArrayMessage_Labels_Item)(data));
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof ArrayMessage_Labels_Item)({
@@ -385,6 +394,15 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       flags: this.#flags,
       labels: this.#labels
     }));
+  }
+  set(updates: Partial<SetUpdates<ArrayMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof ArrayMessage)(data));
   }
   setFlags(value: boolean[] | Iterable<boolean>) {
     return this.$update(new (this.constructor as typeof ArrayMessage)({

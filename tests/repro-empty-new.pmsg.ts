@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static readonly $typeName = "UnionFirstNumber";
@@ -30,6 +30,15 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   }
   get val(): number | string {
     return this.#val;
+  }
+  set(updates: Partial<SetUpdates<UnionFirstNumber.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof UnionFirstNumber)(data));
   }
   setVal(value: number | string) {
     return this.$update(new (this.constructor as typeof UnionFirstNumber)({
@@ -71,6 +80,15 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   }
   get val(): string | number {
     return this.#val;
+  }
+  set(updates: Partial<SetUpdates<UnionFirstString.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof UnionFirstString)(data));
   }
   setVal(value: string | number) {
     return this.$update(new (this.constructor as typeof UnionFirstString)({
@@ -115,6 +133,15 @@ export class OptionalField extends Message<OptionalField.Data> {
   }
   deleteVal() {
     return this.$update(new (this.constructor as typeof OptionalField)({}));
+  }
+  set(updates: Partial<SetUpdates<OptionalField.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof OptionalField)(data));
   }
   setVal(value: string) {
     return this.$update(new (this.constructor as typeof OptionalField)({
@@ -169,6 +196,15 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   }
   get sub(): UnionFirstNumber {
     return this.#sub;
+  }
+  set(updates: Partial<SetUpdates<RequiredMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof RequiredMessage)(data));
   }
   setSub(value: UnionFirstNumber.Value) {
     return this.$update(new (this.constructor as typeof RequiredMessage)({

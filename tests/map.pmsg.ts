@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static readonly $typeName = "MapMessage_Metadata_Value";
@@ -30,6 +30,15 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   }
   get value(): string {
     return this.#value;
+  }
+  set(updates: Partial<SetUpdates<MapMessage_Metadata_Value.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapMessage_Metadata_Value)(data));
   }
   setValue(value: string) {
     return this.$update(new (this.constructor as typeof MapMessage_Metadata_Value)({
@@ -71,6 +80,15 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   }
   get note(): string | null {
     return this.#note;
+  }
+  set(updates: Partial<SetUpdates<MapMessage_Extras_Value.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapMessage_Extras_Value)(data));
   }
   setNote(value: string | null) {
     return this.$update(new (this.constructor as typeof MapMessage_Extras_Value)({
@@ -398,6 +416,15 @@ export class MapMessage extends Message<MapMessage.Data> {
       metadata: metadataMapNext,
       extras: this.#extras
     }));
+  }
+  set(updates: Partial<SetUpdates<MapMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof MapMessage)(data));
   }
   setExtras(value: Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>) {
     return this.$update(new (this.constructor as typeof MapMessage)({

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
   static readonly $typeName = "UrlMessage";
@@ -149,6 +149,15 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       secondary: this.#secondary,
       links: linksNext
     }));
+  }
+  set(updates: Partial<SetUpdates<UrlMessage.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof UrlMessage)(data));
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
