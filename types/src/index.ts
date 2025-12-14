@@ -47,6 +47,8 @@ export type {
 
 // Validators
 export type {
+  numeric,
+  NumericBound,
   Positive,
   Negative,
   NonNegative,
@@ -60,6 +62,9 @@ export type {
   MinLength,
   MaxLength,
   Length,
+  MinCharLength,
+  MaxCharLength,
+  CharLength,
   Check,
   Validator,
 } from './validators.js';

@@ -38,6 +38,9 @@ export type int53 = number & { readonly __int53: unique symbol };
 /**
  * Fixed-precision decimal type.
  *
+ * At runtime, decimal values are represented as strings to preserve
+ * exact precision (avoiding floating-point errors).
+ *
  * @typeParam P - Precision (total number of digits)
  * @typeParam S - Scale (digits after decimal point)
  *
@@ -50,6 +53,8 @@ export type int53 = number & { readonly __int53: unique symbol };
  * '3:percentage': decimal<5, 2>;  // Up to 999.99
  * ```
  */
-export type decimal<P extends number, S extends number> = number & {
-  readonly __decimal: [P, S];
+export type decimal<P extends number, S extends number> = string & {
+  readonly __decimal: unique symbol;
+  readonly __precision: P;
+  readonly __scale: S;
 };

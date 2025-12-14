@@ -7,15 +7,26 @@
  */
 
 /**
+ * Union of all numeric types that can be validated.
+ *
+ * Covers:
+ * - `number` (including branded types like int32, int53)
+ * - `bigint`
+ * - `string` (for decimal values which are string-based at runtime)
+ */
+export type numeric = number | bigint | string;
+
+/**
  * Value must be greater than zero.
  *
  * @example
  * ```typescript
  * '1:price': Positive<number>;
  * '2:quantity': Positive<bigint>;
+ * '3:amount': Positive<decimal<10,2>>;
  * ```
  */
-export type Positive<T extends number | bigint> = T & {
+export type Positive<T extends numeric> = T & {
   readonly __positive: unique symbol;
 };
 
@@ -27,7 +38,7 @@ export type Positive<T extends number | bigint> = T & {
  * '1:debt': Negative<number>;
  * ```
  */
-export type Negative<T extends number | bigint> = T & {
+export type Negative<T extends numeric> = T & {
   readonly __negative: unique symbol;
 };
 
@@ -39,7 +50,7 @@ export type Negative<T extends number | bigint> = T & {
  * '1:count': NonNegative<number>;
  * ```
  */
-export type NonNegative<T extends number | bigint> = T & {
+export type NonNegative<T extends numeric> = T & {
   readonly __nonNegative: unique symbol;
 };
 
@@ -51,9 +62,15 @@ export type NonNegative<T extends number | bigint> = T & {
  * '1:balance': NonPositive<number>;
  * ```
  */
-export type NonPositive<T extends number | bigint> = T & {
+export type NonPositive<T extends numeric> = T & {
   readonly __nonPositive: unique symbol;
 };
+
+/**
+ * Bound type for numeric validators.
+ * Allows number literals for number/bigint, string literals for decimals.
+ */
+export type NumericBound = number | string;
 
 /**
  * Value must be greater than or equal to the minimum.
@@ -62,9 +79,10 @@ export type NonPositive<T extends number | bigint> = T & {
  * ```typescript
  * '1:age': Min<number, 0>;
  * '2:year': Min<number, 1900>;
+ * '3:price': Min<decimal<10,2>, '0.00'>;
  * ```
  */
-export type Min<T extends number | bigint, MinValue extends number> = T & {
+export type Min<T extends numeric, MinValue extends NumericBound> = T & {
   readonly __min: MinValue;
 };
 
@@ -75,9 +93,10 @@ export type Min<T extends number | bigint, MinValue extends number> = T & {
  * ```typescript
  * '1:percentage': Max<number, 100>;
  * '2:hour': Max<number, 23>;
+ * '3:price': Max<decimal<10,2>, '999.99'>;
  * ```
  */
-export type Max<T extends number | bigint, MaxValue extends number> = T & {
+export type Max<T extends numeric, MaxValue extends NumericBound> = T & {
   readonly __max: MaxValue;
 };
 
@@ -87,11 +106,12 @@ export type Max<T extends number | bigint, MaxValue extends number> = T & {
  * @example
  * ```typescript
  * '1:id': GreaterThan<number, 0>;
+ * '2:amount': GreaterThan<decimal<10,2>, '0.00'>;
  * ```
  */
 export type GreaterThan<
-  T extends number | bigint,
-  Bound extends number,
+  T extends numeric,
+  Bound extends NumericBound,
 > = T & {
   readonly __greaterThan: Bound;
 };
@@ -102,9 +122,10 @@ export type GreaterThan<
  * @example
  * ```typescript
  * '1:discount': LessThan<number, 100>;
+ * '2:fee': LessThan<decimal<5,2>, '100.00'>;
  * ```
  */
-export type LessThan<T extends number | bigint, Bound extends number> = T & {
+export type LessThan<T extends numeric, Bound extends NumericBound> = T & {
   readonly __lessThan: Bound;
 };
 
@@ -115,12 +136,13 @@ export type LessThan<T extends number | bigint, Bound extends number> = T & {
  * ```typescript
  * '1:rating': Range<number, 1, 5>;
  * '2:month': Range<number, 1, 12>;
+ * '3:price': Range<decimal<10,2>, '0.00', '999.99'>;
  * ```
  */
 export type Range<
-  T extends number | bigint,
-  MinValue extends number,
-  MaxValue extends number,
+  T extends numeric,
+  MinValue extends NumericBound,
+  MaxValue extends NumericBound,
 > = T & {
   readonly __range: [MinValue, MaxValue];
 };
@@ -185,6 +207,55 @@ export type Length<
   MaxLen extends number,
 > = T & {
   readonly __length: [MinLen, MaxLen];
+};
+
+/**
+ * String must have at least N unicode code points.
+ *
+ * Uses `[...v].length` in JS which matches PostgreSQL's `char_length()`.
+ * For byte length, use `MinLength` instead.
+ *
+ * @example
+ * ```typescript
+ * '1:bio': MinCharLength<string, 10>;
+ * ```
+ */
+export type MinCharLength<T extends string, N extends number> = T & {
+  readonly __minCharLength: N;
+};
+
+/**
+ * String must have at most N unicode code points.
+ *
+ * Uses `[...v].length` in JS which matches PostgreSQL's `char_length()`.
+ * For byte length, use `MaxLength` instead.
+ *
+ * @example
+ * ```typescript
+ * '1:title': MaxCharLength<string, 100>;
+ * ```
+ */
+export type MaxCharLength<T extends string, N extends number> = T & {
+  readonly __maxCharLength: N;
+};
+
+/**
+ * String must have unicode code point count within range [Min, Max] (inclusive).
+ *
+ * Uses `[...v].length` in JS which matches PostgreSQL's `char_length()`.
+ * For byte length, use `Length` instead.
+ *
+ * @example
+ * ```typescript
+ * '1:username': CharLength<string, 3, 30>;
+ * ```
+ */
+export type CharLength<
+  T extends string,
+  Min extends number,
+  Max extends number,
+> = T & {
+  readonly __charLength: [Min, Max];
 };
 
 /**

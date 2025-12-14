@@ -387,12 +387,193 @@ export const propaneTypes: AnyTypeRegistration[] = [
   // ============================================
   // Branded types
   // ============================================
-  // Note: Validator definitions will be added in Phase 1A
-  // For now, just register the types without definitions
+  {
+    package: '@propanejs/types',
+    name: 'int32',
+    category: 'brand',
+    runtimePackage: '@propanejs/runtime',
+    definition: {
+      sqlType: () => 'INTEGER',
+      generateJs({ valueExpr, imports }) {
+        imports.add('isInt32', '@propanejs/runtime');
+        return { condition: `isInt32(${valueExpr})` };
+      },
+      generateSql({ columnName }) {
+        return `${columnName} >= -2147483648 AND ${columnName} <= 2147483647`;
+      },
+      generateMessage: () => 'must be a 32-bit integer',
+    },
+  } as BrandRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'int53',
+    category: 'brand',
+    runtimePackage: '@propanejs/runtime',
+    definition: {
+      sqlType: () => 'BIGINT',
+      generateJs({ valueExpr, imports }) {
+        imports.add('isInt53', '@propanejs/runtime');
+        return { condition: `isInt53(${valueExpr})` };
+      },
+      generateSql({ columnName }) {
+        return `${columnName} >= -9007199254740991 AND ${columnName} <= 9007199254740991`;
+      },
+      generateMessage: () => 'must be a safe integer (int53)',
+    },
+  } as BrandRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'decimal',
+    category: 'brand',
+    runtimePackage: '@propanejs/runtime',
+    definition: {
+      sqlType([precision, scale]) {
+        return `NUMERIC(${precision},${scale})`;
+      },
+      // No additional JS/SQL validation - the SQL type enforces precision/scale
+    },
+  } as BrandRegistration,
 
   // ============================================
-  // Validators (definitions added in Phase 1A)
+  // Validators
+  // Note: Full ValidatorDefinition implementations with generateJs/generateSql
+  // will be completed in Phase 1A. These are stub registrations.
   // ============================================
-  // Note: Full ValidatorDefinition implementations will be added in Phase 1A
-  // For now, the type wrappers are defined in validators.ts
+  {
+    package: '@propanejs/types',
+    name: 'Positive',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('Positive', 'must be positive', 'POSITIVE'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Negative',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('Negative', 'must be negative', 'NEGATIVE'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'NonNegative',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('NonNegative', 'must be non-negative', 'NON_NEGATIVE'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'NonPositive',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('NonPositive', 'must be non-positive', 'NON_POSITIVE'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Min',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('Min', 'must be at least minimum', 'MIN'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Max',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('Max', 'must be at most maximum', 'MAX'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'GreaterThan',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('GreaterThan', 'must be greater than bound', 'GREATER_THAN'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'LessThan',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('LessThan', 'must be less than bound', 'LESS_THAN'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Range',
+    category: 'validator',
+    runtimePackage: '@propanejs/runtime',
+    definition: stubValidator('Range', 'must be within range', 'RANGE'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'NonEmpty',
+    category: 'validator',
+    definition: stubValidator('NonEmpty', 'must not be empty', 'NON_EMPTY'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'MinLength',
+    category: 'validator',
+    definition: stubValidator('MinLength', 'must have minimum length', 'MIN_LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'MaxLength',
+    category: 'validator',
+    definition: stubValidator('MaxLength', 'must have maximum length', 'MAX_LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Length',
+    category: 'validator',
+    definition: stubValidator('Length', 'must have length within range', 'LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'MinCharLength',
+    category: 'validator',
+    definition: stubValidator('MinCharLength', 'must have minimum character length', 'MIN_CHAR_LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'MaxCharLength',
+    category: 'validator',
+    definition: stubValidator('MaxCharLength', 'must have maximum character length', 'MAX_CHAR_LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'CharLength',
+    category: 'validator',
+    definition: stubValidator('CharLength', 'must have character length within range', 'CHAR_LENGTH'),
+  } as ValidatorRegistration,
+  {
+    package: '@propanejs/types',
+    name: 'Check',
+    category: 'validator',
+    definition: stubValidator('Check', 'custom validation failed', 'CHECK'),
+  } as ValidatorRegistration,
 ];
+
+// ============================================
+// Stub validator helper (Phase 0)
+// Full implementations will be added in Phase 1A
+// ============================================
+
+function stubValidator(
+  name: string,
+  message: string,
+  code: string,
+): ValidatorDefinition {
+  return {
+    name,
+    generateJs() {
+      // Stub: returns null (no validation generated yet)
+      // Phase 1A will implement actual validation logic
+      return null;
+    },
+    generateMessage() {
+      return message;
+    },
+    generateCode() {
+      return code;
+    },
+  };
+}
