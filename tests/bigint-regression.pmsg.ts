@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/bigint-regression.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
@@ -9,10 +9,15 @@ export class Wrapper extends Message<Wrapper.Data> {
   #payload: bigint | {
     id: bigint;
   };
-  constructor(props?: Wrapper.Value) {
+  constructor(props?: Wrapper.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Wrapper.EMPTY) return Wrapper.EMPTY;
     super(Wrapper.TYPE_TAG, "Wrapper");
     this.#payload = props ? props.payload : 0n;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -29,6 +34,14 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!(typeof payloadValue === "bigint" || typeof payloadValue === "object" && payloadValue !== null && payloadValue.id !== undefined && typeof payloadValue.id === "bigint")) throw new Error("Invalid value for property \"payload\".");
     props.payload = payloadValue;
     return props as Wrapper.Data;
+  }
+  #validate() {}
+  static validateAll(data: Wrapper.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get payload(): bigint | {
     id: bigint;

@@ -299,6 +299,29 @@ export function buildRegistry(
 }
 
 // ============================================
+// Validator Definitions Import
+// ============================================
+
+import {
+  PositiveDefinition,
+  NegativeDefinition,
+  NonNegativeDefinition,
+  NonPositiveDefinition,
+  MinDefinition,
+  MaxDefinition,
+  GreaterThanDefinition,
+  LessThanDefinition,
+  RangeDefinition,
+  NonEmptyDefinition,
+  MinLengthDefinition,
+  MaxLengthDefinition,
+  LengthDefinition,
+  MinCharLengthDefinition,
+  MaxCharLengthDefinition,
+  CharLengthDefinition,
+} from './validator-definitions/index.js';
+
+// ============================================
 // Built-in Registrations
 // ============================================
 
@@ -436,144 +459,141 @@ export const propaneTypes: AnyTypeRegistration[] = [
 
   // ============================================
   // Validators
-  // Note: Full ValidatorDefinition implementations with generateJs/generateSql
-  // will be completed in Phase 1A. These are stub registrations.
   // ============================================
+
+  // Numeric sign validators
   {
     package: '@propanejs/types',
     name: 'Positive',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('Positive', 'must be positive', 'POSITIVE'),
+    definition: PositiveDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'Negative',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('Negative', 'must be negative', 'NEGATIVE'),
+    definition: NegativeDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'NonNegative',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('NonNegative', 'must be non-negative', 'NON_NEGATIVE'),
+    definition: NonNegativeDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'NonPositive',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('NonPositive', 'must be non-positive', 'NON_POSITIVE'),
+    definition: NonPositiveDefinition,
   } as ValidatorRegistration,
+
+  // Numeric bound validators
   {
     package: '@propanejs/types',
     name: 'Min',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('Min', 'must be at least minimum', 'MIN'),
+    definition: MinDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'Max',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('Max', 'must be at most maximum', 'MAX'),
+    definition: MaxDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'GreaterThan',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('GreaterThan', 'must be greater than bound', 'GREATER_THAN'),
+    definition: GreaterThanDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'LessThan',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('LessThan', 'must be less than bound', 'LESS_THAN'),
+    definition: LessThanDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'Range',
     category: 'validator',
     runtimePackage: '@propanejs/runtime',
-    definition: stubValidator('Range', 'must be within range', 'RANGE'),
+    definition: RangeDefinition,
   } as ValidatorRegistration,
+
+  // Length validators (string/array)
   {
     package: '@propanejs/types',
     name: 'NonEmpty',
     category: 'validator',
-    definition: stubValidator('NonEmpty', 'must not be empty', 'NON_EMPTY'),
+    definition: NonEmptyDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'MinLength',
     category: 'validator',
-    definition: stubValidator('MinLength', 'must have minimum length', 'MIN_LENGTH'),
+    definition: MinLengthDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'MaxLength',
     category: 'validator',
-    definition: stubValidator('MaxLength', 'must have maximum length', 'MAX_LENGTH'),
+    definition: MaxLengthDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'Length',
     category: 'validator',
-    definition: stubValidator('Length', 'must have length within range', 'LENGTH'),
+    definition: LengthDefinition,
   } as ValidatorRegistration,
+
+  // Character length validators (Unicode-aware)
   {
     package: '@propanejs/types',
     name: 'MinCharLength',
     category: 'validator',
-    definition: stubValidator('MinCharLength', 'must have minimum character length', 'MIN_CHAR_LENGTH'),
+    runtimePackage: '@propanejs/runtime',
+    definition: MinCharLengthDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'MaxCharLength',
     category: 'validator',
-    definition: stubValidator('MaxCharLength', 'must have maximum character length', 'MAX_CHAR_LENGTH'),
+    runtimePackage: '@propanejs/runtime',
+    definition: MaxCharLengthDefinition,
   } as ValidatorRegistration,
   {
     package: '@propanejs/types',
     name: 'CharLength',
     category: 'validator',
-    definition: stubValidator('CharLength', 'must have character length within range', 'CHAR_LENGTH'),
+    runtimePackage: '@propanejs/runtime',
+    definition: CharLengthDefinition,
   } as ValidatorRegistration,
+
+  // Custom validator (Phase 2 - stub for now)
   {
     package: '@propanejs/types',
     name: 'Check',
     category: 'validator',
-    definition: stubValidator('Check', 'custom validation failed', 'CHECK'),
+    definition: {
+      name: 'Check',
+      generateJs() {
+        // Phase 2 will implement custom validator support
+        return null;
+      },
+      generateMessage() {
+        return 'custom validation failed';
+      },
+      generateCode() {
+        return 'CHECK';
+      },
+    },
   } as ValidatorRegistration,
 ];
-
-// ============================================
-// Stub validator helper (Phase 0)
-// Full implementations will be added in Phase 1A
-// ============================================
-
-function stubValidator(
-  name: string,
-  message: string,
-  code: string,
-): ValidatorDefinition {
-  return {
-    name,
-    generateJs() {
-      // Stub: returns null (no validation generated yet)
-      // Phase 1A will implement actual validation logic
-      return null;
-    },
-    generateMessage() {
-      return message;
-    },
-    generateCode() {
-      return code;
-    },
-  };
-}

@@ -33,6 +33,7 @@ const RESERVED_NAMES = new Set([
 
   // Message static methods
   'deserialize',
+  'validateAll',
 
   // Generated methods
   'set',

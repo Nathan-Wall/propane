@@ -6,6 +6,7 @@ export * from './common/web/url.js';
 export * from './common/time/date.js';
 export * from './message.js';
 export * from './common/numbers/scalars.js';
+export { charLength } from './common/strings/char-length.js';
 
 // Validation
 export { ValidationError } from './validation-error.js';

@@ -1,16 +1,21 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static readonly $typeName = "UnionFirstNumber";
   static EMPTY: UnionFirstNumber;
   #val: number | string;
-  constructor(props?: UnionFirstNumber.Value) {
+  constructor(props?: UnionFirstNumber.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
     super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber");
     this.#val = props ? props.val : 0;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) UnionFirstNumber.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
@@ -27,6 +32,14 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     if (!(typeof valValue === "number" || typeof valValue === "string")) throw new Error("Invalid value for property \"val\".");
     props.val = valValue;
     return props as UnionFirstNumber.Data;
+  }
+  #validate() {}
+  static validateAll(data: UnionFirstNumber.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get val(): number | string {
     return this.#val;
@@ -57,10 +70,15 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static readonly $typeName = "UnionFirstString";
   static EMPTY: UnionFirstString;
   #val: string | number;
-  constructor(props?: UnionFirstString.Value) {
+  constructor(props?: UnionFirstString.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
     super(UnionFirstString.TYPE_TAG, "UnionFirstString");
     this.#val = props ? props.val : "";
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) UnionFirstString.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
@@ -77,6 +95,14 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     if (!(typeof valValue === "string" || typeof valValue === "number")) throw new Error("Invalid value for property \"val\".");
     props.val = valValue;
     return props as UnionFirstString.Data;
+  }
+  #validate() {}
+  static validateAll(data: UnionFirstString.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get val(): string | number {
     return this.#val;

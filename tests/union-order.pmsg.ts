@@ -1,16 +1,21 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-order.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static readonly $typeName = "StringFirst";
   static EMPTY: StringFirst;
   #value: string | number;
-  constructor(props?: StringFirst.Value) {
+  constructor(props?: StringFirst.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && StringFirst.EMPTY) return StringFirst.EMPTY;
     super(StringFirst.TYPE_TAG, "StringFirst");
     this.#value = props ? props.value : "";
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) StringFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
@@ -27,6 +32,14 @@ export class StringFirst extends Message<StringFirst.Data> {
     if (!(typeof valueValue === "string" || typeof valueValue === "number")) throw new Error("Invalid value for property \"value\".");
     props.value = valueValue;
     return props as StringFirst.Data;
+  }
+  #validate() {}
+  static validateAll(data: StringFirst.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get value(): string | number {
     return this.#value;
@@ -57,10 +70,15 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   static readonly $typeName = "NumberFirst";
   static EMPTY: NumberFirst;
   #value: number | string;
-  constructor(props?: NumberFirst.Value) {
+  constructor(props?: NumberFirst.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && NumberFirst.EMPTY) return NumberFirst.EMPTY;
     super(NumberFirst.TYPE_TAG, "NumberFirst");
     this.#value = props ? props.value : 0;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) NumberFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
@@ -77,6 +95,14 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     if (!(typeof valueValue === "number" || typeof valueValue === "string")) throw new Error("Invalid value for property \"value\".");
     props.value = valueValue;
     return props as NumberFirst.Data;
+  }
+  #validate() {}
+  static validateAll(data: NumberFirst.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get value(): number | string {
     return this.#value;

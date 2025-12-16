@@ -61,3 +61,23 @@ export function toInt53(value: number): int53 {
   }
   return value as int53;
 }
+
+/**
+ * Check if a number is a valid 53-bit safe integer.
+ *
+ * @param value - The number to check
+ * @returns true if the value is an integer within JavaScript's safe integer range
+ *
+ * @example
+ * ```typescript
+ * isInt53(Date.now());                    // true
+ * isInt53(Number.MAX_SAFE_INTEGER);       // true
+ * isInt53(1.5);                           // false (not an integer)
+ * isInt53(Number.MAX_SAFE_INTEGER + 1);   // false (out of range)
+ * ```
+ */
+export function isInt53(value: number): boolean {
+  return Number.isInteger(value)
+    && value >= Number.MIN_SAFE_INTEGER
+    && value <= Number.MAX_SAFE_INTEGER;
+}

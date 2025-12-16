@@ -8,8 +8,8 @@
  * This module re-exports all scalar types for convenience.
  */
 
-export { int32, toInt32 } from './int32.js';
-export { int53, toInt53 } from './int53.js';
+export { int32, toInt32, isInt32 } from './int32.js';
+export { int53, toInt53, isInt53 } from './int53.js';
 export {
   decimal,
   type AnyDecimal,
@@ -27,6 +27,7 @@ export {
   decimalIsNonPositive,
   decimalInRange,
   decimalInRangeExclusive,
+  isDecimal,
   type ComparisonResult,
 } from './decimal.js';
 export {

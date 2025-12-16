@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/user.pmsg
-import { Distance } from './distance.pmsg';
-import { Email } from './email.pmsg';
-import { Hash } from './hash.pmsg';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import { Distance } from './distance.pmsg.js';
+import { Email } from './email.pmsg.js';
+import { Hash } from './hash.pmsg.js';
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
@@ -18,7 +18,9 @@ export class User extends Message<User.Data> {
   #active: boolean;
   #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
   #height: Distance;
-  constructor(props?: User.Value) {
+  constructor(props?: User.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");
     this.#id = props ? props.id : 0;
@@ -30,6 +32,9 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height : new Distance();
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -107,6 +112,14 @@ export class User extends Message<User.Data> {
     if (heightValue === undefined) throw new Error("Missing required property \"height\".");
     props.height = heightValue;
     return props as User.Data;
+  }
+  #validate() {}
+  static validateAll(data: User.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get id(): number {
     return this.#id;

@@ -129,7 +129,7 @@ type MessageFromEntries<T extends DataObject> = Message<T> & {
 };
 
 interface InternalMessageConstructor<T extends DataObject> {
-  new(props: T): Message<T>;
+  new(props: T, options?: { skipValidation?: boolean }): Message<T>;
   prototype: MessageFromEntries<T>;
 }
 
@@ -559,7 +559,8 @@ export abstract class Message<T extends DataObject> {
 
   static deserialize<T extends DataObject>(
     this: InternalMessageConstructor<T>,
-    message: string
+    message: string,
+    options?: { skipValidation?: boolean }
   ) {
     const payload = ensure.simpleObject(
       parseCerealString(message),
@@ -567,7 +568,8 @@ export abstract class Message<T extends DataObject> {
     );
     const proto = this.prototype;
     const props = proto.$fromEntries(payload);
-    return new this(props);
+    // Pass options to constructor; generated classes use skipValidation
+    return new this(props, options);
   }
 
   /**

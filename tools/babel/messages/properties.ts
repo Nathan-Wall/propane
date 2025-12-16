@@ -39,6 +39,21 @@ export interface PluginStateFlags {
   needsImmutableSetType: boolean;
   needsImmutableMapType: boolean;
   needsSetUpdatesType: boolean;
+  // Validation imports
+  usesValidationError: boolean;
+  usesCharLength: boolean;
+  usesIsInt32: boolean;
+  usesIsInt53: boolean;
+  usesIsDecimal: boolean;
+  usesIsPositive: boolean;
+  usesIsNegative: boolean;
+  usesIsNonNegative: boolean;
+  usesIsNonPositive: boolean;
+  usesGreaterThan: boolean;
+  usesGreaterThanOrEqual: boolean;
+  usesLessThan: boolean;
+  usesLessThanOrEqual: boolean;
+  usesInRange: boolean;
 }
 
 /**
@@ -144,6 +159,7 @@ const RESERVED_PROPERTY_NAMES = new Set([
 
   // Message static methods
   'deserialize',
+  'validateAll',
 
   // Generated methods
   'set',

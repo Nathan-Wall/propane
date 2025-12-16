@@ -78,6 +78,49 @@ export function ensureBaseImport(
   if (state.usesSkip && !hasImportBinding('SKIP')) {
     requiredSpecifiers.push('SKIP');
   }
+  // Validation-related imports
+  if (state.usesValidationError && !hasImportBinding('ValidationError')) {
+    requiredSpecifiers.push('ValidationError');
+  }
+  if (state.usesCharLength && !hasImportBinding('charLength')) {
+    requiredSpecifiers.push('charLength');
+  }
+  if (state.usesIsInt32 && !hasImportBinding('isInt32')) {
+    requiredSpecifiers.push('isInt32');
+  }
+  if (state.usesIsInt53 && !hasImportBinding('isInt53')) {
+    requiredSpecifiers.push('isInt53');
+  }
+  if (state.usesIsDecimal && !hasImportBinding('isDecimal')) {
+    requiredSpecifiers.push('isDecimal');
+  }
+  if (state.usesIsPositive && !hasImportBinding('isPositive')) {
+    requiredSpecifiers.push('isPositive');
+  }
+  if (state.usesIsNegative && !hasImportBinding('isNegative')) {
+    requiredSpecifiers.push('isNegative');
+  }
+  if (state.usesIsNonNegative && !hasImportBinding('isNonNegative')) {
+    requiredSpecifiers.push('isNonNegative');
+  }
+  if (state.usesIsNonPositive && !hasImportBinding('isNonPositive')) {
+    requiredSpecifiers.push('isNonPositive');
+  }
+  if (state.usesGreaterThan && !hasImportBinding('greaterThan')) {
+    requiredSpecifiers.push('greaterThan');
+  }
+  if (state.usesGreaterThanOrEqual && !hasImportBinding('greaterThanOrEqual')) {
+    requiredSpecifiers.push('greaterThanOrEqual');
+  }
+  if (state.usesLessThan && !hasImportBinding('lessThan')) {
+    requiredSpecifiers.push('lessThan');
+  }
+  if (state.usesLessThanOrEqual && !hasImportBinding('lessThanOrEqual')) {
+    requiredSpecifiers.push('lessThanOrEqual');
+  }
+  if (state.usesInRange && !hasImportBinding('inRange')) {
+    requiredSpecifiers.push('inRange');
+  }
   // MessageConstructor, MessagePropDescriptor, DataValue, and DataObject are type-only imports
   const typeOnlyImports: string[] = ['MessagePropDescriptor'];
   if (state.usesMessageConstructor && !hasImportBinding('MessageConstructor')) {

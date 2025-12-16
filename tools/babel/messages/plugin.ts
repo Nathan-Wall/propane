@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { codeFrameColumns } from '@babel/code-frame';
@@ -16,6 +17,16 @@ import {
 } from './brand-transform.js';
 import { parseFromAst } from '@/tools/parser/parse-ast.js';
 import type { PmtFile, PmtMessage } from '@/tools/parser/types.js';
+import {
+  buildRegistry,
+  type TypeRegistry,
+  type AnyTypeRegistration,
+} from '@/types/src/registry.js';
+import {
+  type ValidatorImportTracker,
+  createValidatorImportTracker,
+  trackValidatorImport,
+} from './validator-import-tracker.js';
 
 export interface PropanePluginOptions {
   /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
@@ -26,6 +37,24 @@ export interface PropanePluginOptions {
   paths?: Record<string, string[]>;
   /** Base directory for resolving paths (typically the project root). */
   baseUrl?: string;
+  /**
+   * Paths to registry modules for validators and branded types.
+   * Defaults to ['@propanejs/types'].
+   *
+   * Registry modules must export a `propaneTypes` array of type registrations.
+   * Modules must have a CommonJS entry point (Babel plugins are synchronous).
+   *
+   * @example
+   * ```javascript
+   * // babel.config.js
+   * plugins: [
+   *   ['@propanejs/babel-plugin', {
+   *     types: ['@propanejs/types', './my-custom-validators']
+   *   }]
+   * ]
+   * ```
+   */
+  types?: string[];
 }
 
 export interface ExtendInfo {
@@ -55,6 +84,21 @@ export interface PropaneState {
   needsImmutableSetType: boolean;
   needsImmutableMapType: boolean;
   needsSetUpdatesType: boolean;
+  // Validation-related flags
+  usesValidationError: boolean;
+  usesCharLength: boolean;
+  usesIsInt32: boolean;
+  usesIsInt53: boolean;
+  usesIsDecimal: boolean;
+  usesIsPositive: boolean;
+  usesIsNegative: boolean;
+  usesIsNonNegative: boolean;
+  usesIsNonPositive: boolean;
+  usesGreaterThan: boolean;
+  usesGreaterThanOrEqual: boolean;
+  usesLessThan: boolean;
+  usesLessThanOrEqual: boolean;
+  usesInRange: boolean;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -66,6 +110,10 @@ export interface PropaneState {
   pmtFile?: PmtFile;
   /** Map of message name to PmtMessage for quick lookup */
   pmtMessages?: Map<string, PmtMessage>;
+  /** Type registry for validators and branded types (loaded once at plugin initialization) */
+  typeRegistry?: TypeRegistry;
+  /** Tracks validator imports for recognition during type extraction */
+  validatorTracker: ValidatorImportTracker;
 }
 
 /**
@@ -108,6 +156,84 @@ function computeRuntimeImportPath(state: PropaneState): string {
   // Normalize to forward slashes for consistency
   return relativePath.replaceAll('\\', '/');
 }
+
+// ============================================
+// Registry Loading
+// ============================================
+
+/**
+ * Default registry module paths.
+ */
+const DEFAULT_TYPE_MODULES = ['@propanejs/types'];
+
+/**
+ * Module-level cache for the type registry.
+ * Loaded once per Babel process (not per-file).
+ */
+let cachedRegistry: TypeRegistry | null = null;
+let cachedRegistryOptions: string[] | null = null;
+
+/**
+ * Load the type registry from configured modules.
+ *
+ * Uses Node.js require() for synchronous loading (Babel plugins are synchronous).
+ * The registry is cached at module level for performance.
+ *
+ * @param options - Plugin options containing `types` array
+ * @returns The built TypeRegistry, or undefined if not available
+ */
+function loadRegistry(options?: PropanePluginOptions): TypeRegistry | undefined {
+  const typePaths = options?.types ?? DEFAULT_TYPE_MODULES;
+
+  // Check if we can use the cached registry
+  const cacheKey = JSON.stringify(typePaths);
+  if (cachedRegistry && cachedRegistryOptions && JSON.stringify(cachedRegistryOptions) === cacheKey) {
+    return cachedRegistry;
+  }
+
+  const allRegistrations: AnyTypeRegistration[][] = [];
+
+  // Create a require function for loading modules
+  // This is needed because ESM doesn't have a built-in require
+  const requireModule = createRequire(import.meta.url);
+
+  for (const typePath of typePaths) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const module = requireModule(typePath);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (module.propaneTypes) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        allRegistrations.push(module.propaneTypes as AnyTypeRegistration[]);
+      }
+    } catch (err) {
+      // During initial build, @propanejs/types may not be available yet
+      // (symlinks are created in post-build.js)
+      // Return undefined to indicate registry is not available
+      if (typePath === '@propanejs/types') {
+        // This is expected during build - return undefined gracefully
+        return undefined;
+      }
+
+      // For custom type modules, throw an error
+      throw new Error(
+        `Failed to load type registry from '${typePath}'.\n` +
+        `Ensure the module exports a 'propaneTypes' array and has a CommonJS entry point.\n` +
+        `Original error: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
+  // Build and cache the registry
+  cachedRegistry = buildRegistry(allRegistrations);
+  cachedRegistryOptions = typePaths;
+
+  return cachedRegistry;
+}
+
+// ============================================
+// Decorator Handling
+// ============================================
 
 /** Known decorators for suggestion matching */
 const KNOWN_DECORATORS = ['extend'];
@@ -338,9 +464,28 @@ export default function propanePlugin() {
           state.needsImmutableSetType = false;
           state.needsImmutableMapType = false;
           state.needsSetUpdatesType = false;
+          // Validation-related flags
+          state.usesValidationError = false;
+          state.usesCharLength = false;
+          state.usesIsInt32 = false;
+          state.usesIsInt53 = false;
+          state.usesIsDecimal = false;
+          state.usesIsPositive = false;
+          state.usesIsNegative = false;
+          state.usesIsNonNegative = false;
+          state.usesIsNonPositive = false;
+          state.usesGreaterThan = false;
+          state.usesGreaterThanOrEqual = false;
+          state.usesLessThan = false;
+          state.usesLessThanOrEqual = false;
+          state.usesInRange = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
+          state.validatorTracker = createValidatorImportTracker();
+
+          // Load the type registry (cached at module level for performance)
+          state.typeRegistry = loadRegistry(state.opts);
 
           // Parse the file using the shared parser for validation
           const fileOpts = state.file?.opts ?? {};
@@ -420,6 +565,8 @@ export default function propanePlugin() {
       ) {
         // Track Brand imports for auto-namespace transformation
         trackBrandImport(path.node, state.brandTracker);
+        // Track validator imports for type extraction
+        trackValidatorImport(path.node, state.validatorTracker, state.typeRegistry);
       },
       ExportNamedDeclaration(
         path: NodePath<t.ExportNamedDeclaration>,

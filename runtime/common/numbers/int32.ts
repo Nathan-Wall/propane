@@ -59,3 +59,23 @@ export function toInt32(value: number): int32 {
   }
   return value as int32;
 }
+
+/**
+ * Check if a number is a valid 32-bit signed integer.
+ *
+ * @param value - The number to check
+ * @returns true if the value is an integer within the 32-bit signed range
+ *
+ * @example
+ * ```typescript
+ * isInt32(42);           // true
+ * isInt32(2147483647);   // true (max value)
+ * isInt32(1.5);          // false (not an integer)
+ * isInt32(3000000000);   // false (out of range)
+ * ```
+ */
+export function isInt32(value: number): boolean {
+  return Number.isInteger(value)
+    && value >= -2_147_483_648
+    && value <= 2_147_483_647;
+}

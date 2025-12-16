@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
@@ -151,12 +151,17 @@ export class PetOwner extends Message<PetOwner.Data> {
   #ownerName: string;
   #pet: Cat | Dog;
   #optionalPet: Cat | Dog;
-  constructor(props?: PetOwner.Value) {
+  constructor(props?: PetOwner.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && PetOwner.EMPTY) return PetOwner.EMPTY;
     super(PetOwner.TYPE_TAG, "PetOwner");
     this.#ownerName = props ? props.ownerName : "";
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -209,6 +214,17 @@ export class PetOwner extends Message<PetOwner.Data> {
     }
     props.optionalPet = optionalPetUnionValue;
     return props as PetOwner.Data;
+  }
+  #validate() {}
+  static validateAll(data: PetOwner.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get ownerName(): string {
     return this.#ownerName;

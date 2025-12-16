@@ -321,6 +321,74 @@ export function decimalIsNonPositive(value: AnyDecimal): boolean {
   return !decimalIsPositive(value);
 }
 
+/**
+ * Check if a value is a valid decimal with the given precision and scale.
+ *
+ * This is a non-throwing predicate version of toDecimal(), suitable for
+ * use in generated validation code that needs boolean conditions.
+ *
+ * @param value - The value to check
+ * @param precision - Total number of significant digits (P in NUMERIC(P,S))
+ * @param scale - Number of digits after the decimal point (S in NUMERIC(P,S))
+ * @returns true if the value is a valid decimal string fitting the constraints
+ *
+ * @example
+ * ```typescript
+ * isDecimal('123.45', 10, 2);     // true: 5 digits, 2 after decimal
+ * isDecimal('12345678.90', 10, 2); // true: 10 digits total
+ * isDecimal('123456789.00', 10, 2); // false: 11 digits exceeds precision
+ * isDecimal('123.456', 10, 2);     // false: 3 decimal places exceeds scale
+ * isDecimal(123.45, 10, 2);        // false: must be a string
+ * ```
+ */
+export function isDecimal(value: unknown, precision: number, scale: number): boolean {
+  // Must be a string
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  // Validate precision and scale
+  if (!Number.isInteger(precision) || precision < 1) {
+    return false;
+  }
+  if (!Number.isInteger(scale) || scale < 0) {
+    return false;
+  }
+  if (scale > precision) {
+    return false;
+  }
+
+  // Validate format
+  if (!/^-?\d+(\.\d+)?$/.test(value)) {
+    return false;
+  }
+
+  // Parse parts
+  const isNegative = value.startsWith('-');
+  const absolute = isNegative ? value.slice(1) : value;
+  const parts = absolute.split('.');
+  const integerPart = parts[0] ?? '0';
+  const decimalPart = parts[1] ?? '';
+
+  // Check scale (digits after decimal point)
+  if (decimalPart.length > scale) {
+    return false;
+  }
+
+  // Count significant digits (exclude leading zeros from integer part)
+  const trimmedInteger = integerPart.replace(/^0+/, '') || '0';
+  const totalDigits = trimmedInteger === '0' && decimalPart.length > 0
+    ? decimalPart.replace(/^0+/, '').length  // For 0.00123, count significant decimal digits
+    : trimmedInteger.length + decimalPart.length;
+
+  // Check precision (total significant digits)
+  if (totalDigits > precision) {
+    return false;
+  }
+
+  return true;
+}
+
 // -----------------------------------------------------------------------------
 // Decimal Range Check Functions
 // -----------------------------------------------------------------------------

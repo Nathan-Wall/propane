@@ -300,17 +300,26 @@ export function buildMessageNormalizationExpression(
   className: string,
   {
     allowUndefined = false,
-    allowNull = false
-  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+    allowNull = false,
+    optionsExpr,
+  }: {
+    allowUndefined?: boolean;
+    allowNull?: boolean;
+    /** Expression for constructor options (e.g., options identifier for skipValidation propagation) */
+    optionsExpr?: t.Expression;
+  } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
     t.cloneNode(valueExpr),
     t.identifier(className)
   );
-  const newInstance = t.newExpression(t.identifier(className), [
-    t.cloneNode(valueExpr),
-  ]);
+  // Pass options to nested message constructor if provided
+  const newInstanceArgs: t.Expression[] = [t.cloneNode(valueExpr)];
+  if (optionsExpr) {
+    newInstanceArgs.push(t.cloneNode(optionsExpr));
+  }
+  const newInstance = t.newExpression(t.identifier(className), newInstanceArgs);
 
   let normalized: t.Expression = t.conditionalExpression(
     instanceCheck,

@@ -3,7 +3,7 @@ import type { NodePath } from '@babel/traverse';
 import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
 import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
-import { buildClassFromProperties, type WrapperInfo } from './class-builder.js';
+import { buildClassFromProperties, type WrapperInfo, type ClassValidationContext } from './class-builder.js';
 import type { PropaneState, ExtendInfo } from './plugin.js';
 import {
   type BrandImportTracker,
@@ -359,7 +359,10 @@ export function buildDeclarations(
     state,
     typeParameters,
     isExtended,
-    wrapperInfo
+    wrapperInfo,
+    state.validatorTracker
+      ? { registry: state.typeRegistry, tracker: state.validatorTracker }
+      : undefined
   );
 
   state.usesPropaneBase = true;

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.pmsg
-import { Email } from './email.pmsg';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import { Email } from './email.pmsg.js';
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
@@ -14,12 +14,17 @@ export class Unions extends Message<Unions.Data> {
   } | {
     updated: Date;
   };
-  constructor(props?: Unions.Value) {
+  constructor(props?: Unions.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Unions.EMPTY) return Unions.EMPTY;
     super(Unions.TYPE_TAG, "Unions");
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -52,6 +57,14 @@ export class Unions extends Message<Unions.Data> {
     if (!(typeof metadataValue === "object" && metadataValue !== null && metadataValue.created !== undefined && (metadataValue.created instanceof Date || metadataValue.created instanceof ImmutableDate) || typeof metadataValue === "object" && metadataValue !== null && metadataValue.updated !== undefined && (metadataValue.updated instanceof Date || metadataValue.updated instanceof ImmutableDate))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataValue;
     return props as Unions.Data;
+  }
+  #validate() {}
+  static validateAll(data: Unions.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get username(): string | null {
     return this.#username;

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/union-string-bool.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
@@ -8,11 +8,16 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   static EMPTY: UnionStringBool;
   #value: string | boolean;
   #optional: string | boolean;
-  constructor(props?: UnionStringBool.Value) {
+  constructor(props?: UnionStringBool.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
     super(UnionStringBool.TYPE_TAG, "UnionStringBool");
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
+    if (!options?.skipValidation) {
+      this.#validate();
+    }
     if (!props) UnionStringBool.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
@@ -37,6 +42,17 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     if (optionalNormalized !== undefined && !(typeof optionalNormalized === "string" || typeof optionalNormalized === "boolean")) throw new Error("Invalid value for property \"optional\".");
     props.optional = optionalNormalized;
     return props as UnionStringBool.Data;
+  }
+  #validate() {}
+  static validateAll(data: UnionStringBool.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
   }
   get value(): string | boolean {
     return this.#value;

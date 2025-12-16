@@ -29,6 +29,16 @@ import {
   isDateReference,
   isUrlReference,
 } from './type-guards.js';
+import type { TypeRegistry } from '@/types/src/registry.js';
+import type { ValidatorImportTracker } from './validator-import-tracker.js';
+import {
+  buildValidateMethod,
+  buildValidateAllMethod,
+  buildValidateCall,
+  extractPropertyValidations,
+  hasAnyValidation,
+  type ValidationBuildContext,
+} from './validation-builder.js';
 
 /**
  * Unwrap parenthesized types to avoid unnecessary parens in generated code.
@@ -739,6 +749,14 @@ export interface WrapperInfo {
   responseTypeName?: string;
 }
 
+/** Validation context for code generation */
+export interface ClassValidationContext {
+  /** Type registry for validator definitions */
+  registry: TypeRegistry | undefined;
+  /** Import tracker for resolving validator references */
+  tracker: ValidatorImportTracker;
+}
+
 export function buildClassFromProperties(
   typeName: string,
   properties: PropDescriptor[],
@@ -746,7 +764,8 @@ export function buildClassFromProperties(
   state: PluginStateFlags,
   typeParameters: TypeParameter[] = [],
   isExtended = false,
-  wrapperInfo?: WrapperInfo
+  wrapperInfo?: WrapperInfo,
+  validationContext?: ClassValidationContext
 ): t.ClassDeclaration {
   // Use $Base suffix for extended types
   const className = isExtended ? `${typeName}$Base` : typeName;
@@ -763,6 +782,15 @@ export function buildClassFromProperties(
   }));
   const propsTypeRef = buildGenericQualifiedTypeReference(typeName, 'Data', typeParameters);
   const valueTypeRef = buildGenericQualifiedTypeReference(typeName, 'Value', typeParameters);
+
+  // Extract validation information if validation context is provided
+  const validationBuildContext: ValidationBuildContext | null = validationContext
+    ? { state, registry: validationContext.registry, tracker: validationContext.tracker }
+    : null;
+  const propertyValidations = validationBuildContext
+    ? extractPropertyValidations(propDescriptors, validationBuildContext)
+    : new Map();
+  const needsValidation = hasAnyValidation(propertyValidations);
 
   for (const prop of propDescriptors) {
     const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
@@ -827,6 +855,21 @@ export function buildClassFromProperties(
     t.cloneNode(valueTypeRef)
   );
   constructorParam.optional = true;
+
+  // Create options parameter: options?: { skipValidation?: boolean }
+  const optionsParam = t.identifier('options');
+  optionsParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeLiteral([
+      t.tsPropertySignature(
+        t.identifier('skipValidation'),
+        t.tsTypeAnnotation(t.tsBooleanKeyword())
+      ),
+    ].map((sig) => {
+      sig.optional = true;
+      return sig;
+    }))
+  );
+  optionsParam.optional = true;
 
   const constructorAssignments = propDescriptors.map((prop) => {
     const propsAccess = t.memberExpression(
@@ -914,6 +957,8 @@ export function buildClassFromProperties(
         {
           allowUndefined: Boolean(prop.optional),
           allowNull: typeAllowsNull(prop.typeAnnotation),
+          // Propagate options (skipValidation) to nested messages when validation is enabled
+          optionsExpr: needsValidation ? t.identifier('options') : undefined,
         }
       );
     }
@@ -981,7 +1026,10 @@ export function buildClassFromProperties(
   const constructorClassParams = isGeneric
     ? buildConstructorClassParams(typeParameters)
     : [];
-  const allConstructorParams = [...constructorClassParams, constructorParam];
+  // Only include options parameter if validation is needed
+  const allConstructorParams = needsValidation
+    ? [...constructorClassParams, constructorParam, optionsParam]
+    : [...constructorClassParams, constructorParam];
 
   // Build constructor body
   const constructorBody: t.Statement[] = [];
@@ -1012,6 +1060,25 @@ export function buildClassFromProperties(
 
   // Add property assignments
   constructorBody.push(...constructorAssignments);
+
+  // Add validation call if any properties have validators
+  // Wrapped in: if (!options?.skipValidation) { this.#validate(); }
+  if (needsValidation && validationBuildContext) {
+    constructorBody.push(
+      t.ifStatement(
+        t.unaryExpression(
+          '!',
+          t.optionalMemberExpression(
+            t.identifier('options'),
+            t.identifier('skipValidation'),
+            false,
+            true
+          )
+        ),
+        t.blockStatement([buildValidateCall()])
+      )
+    );
+  }
 
   // Add memoization set (only for non-generic)
   if (memoizationSet) {
@@ -1112,13 +1179,38 @@ export function buildClassFromProperties(
     state
   );
 
-  const classBodyMembers = [
+  // Build #validate() method if needed
+  const validateMethod = needsValidation && validationBuildContext
+    ? buildValidateMethod(propertyValidations, validationBuildContext)
+    : null;
+
+  // Build static validateAll() method if needed
+  const validateAllMethod = needsValidation && validationBuildContext
+    ? buildValidateAllMethod(typeName, propertyValidations, validationBuildContext)
+    : null;
+
+  const classBodyMembers: (
+    | t.ClassMethod
+    | t.ClassPrivateMethod
+    | t.ClassPrivateProperty
+    | t.ClassProperty
+  )[] = [
     ...staticFields,
     ...backingFields,
     constructor,
     descriptorMethod,
     fromEntriesMethod,
   ];
+
+  // Add #validate() method if generated
+  if (validateMethod) {
+    classBodyMembers.push(validateMethod);
+  }
+
+  // Add static validateAll() method if generated
+  if (validateAllMethod) {
+    classBodyMembers.push(validateAllMethod);
+  }
 
   // Add hybrid approach methods
   if (withChildMethod) {
