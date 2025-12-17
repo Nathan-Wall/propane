@@ -19,12 +19,12 @@ export class Unions extends Message<Unions.Data> {
   }) {
     if (!props && Unions.EMPTY) return Unions.EMPTY;
     super(Unions.TYPE_TAG, "Unions");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
     this.#username = props ? props.username : "";
     this.#email = props ? props.email : new Email();
     this.#metadata = props ? props.metadata : undefined;
-    if (!options?.skipValidation) {
-      this.#validate();
-    }
     if (!props) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -58,7 +58,7 @@ export class Unions extends Message<Unions.Data> {
     props.metadata = metadataValue;
     return props as Unions.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: Unions.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

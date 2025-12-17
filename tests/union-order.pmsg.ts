@@ -12,10 +12,10 @@ export class StringFirst extends Message<StringFirst.Data> {
   }) {
     if (!props && StringFirst.EMPTY) return StringFirst.EMPTY;
     super(StringFirst.TYPE_TAG, "StringFirst");
-    this.#value = props ? props.value : "";
     if (!options?.skipValidation) {
-      this.#validate();
+      this.#validate(props);
     }
+    this.#value = props ? props.value : "";
     if (!props) StringFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringFirst.Data>[] {
@@ -33,7 +33,7 @@ export class StringFirst extends Message<StringFirst.Data> {
     props.value = valueValue;
     return props as StringFirst.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: StringFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -75,10 +75,10 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   }) {
     if (!props && NumberFirst.EMPTY) return NumberFirst.EMPTY;
     super(NumberFirst.TYPE_TAG, "NumberFirst");
-    this.#value = props ? props.value : 0;
     if (!options?.skipValidation) {
-      this.#validate();
+      this.#validate(props);
     }
+    this.#value = props ? props.value : 0;
     if (!props) NumberFirst.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumberFirst.Data>[] {
@@ -96,7 +96,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     props.value = valueValue;
     return props as NumberFirst.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: NumberFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

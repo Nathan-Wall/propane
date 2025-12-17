@@ -322,27 +322,30 @@ export function decimalIsNonPositive(value: AnyDecimal): boolean {
 }
 
 /**
- * Check if a value is a valid decimal with the given precision and scale.
+ * Strict validation: checks if value is already in normalized decimal form.
  *
- * This is a non-throwing predicate version of toDecimal(), suitable for
- * use in generated validation code that needs boolean conditions.
+ * Requires exact scale match (e.g., '100.00' for scale 2, not '100').
+ * Only accepts strings (normalized decimal values are always strings).
+ *
+ * Use this for validating stored/normalized values.
+ * For validating user input before normalization, use `canBeDecimal`.
  *
  * @param value - The value to check
  * @param precision - Total number of significant digits (P in NUMERIC(P,S))
  * @param scale - Number of digits after the decimal point (S in NUMERIC(P,S))
- * @returns true if the value is a valid decimal string fitting the constraints
+ * @returns true if the value is a valid normalized decimal string
  *
  * @example
  * ```typescript
- * isDecimal('123.45', 10, 2);     // true: 5 digits, 2 after decimal
- * isDecimal('12345678.90', 10, 2); // true: 10 digits total
- * isDecimal('123456789.00', 10, 2); // false: 11 digits exceeds precision
- * isDecimal('123.456', 10, 2);     // false: 3 decimal places exceeds scale
- * isDecimal(123.45, 10, 2);        // false: must be a string
+ * isDecimal('123.45', 10, 2);      // true: exact scale match
+ * isDecimal('100.00', 10, 2);      // true: exact scale match
+ * isDecimal('100', 10, 2);         // false: missing decimal places
+ * isDecimal('100.0', 10, 2);       // false: wrong scale (1 != 2)
+ * isDecimal(100, 10, 2);           // false: must be a string
  * ```
  */
 export function isDecimal(value: unknown, precision: number, scale: number): boolean {
-  // Must be a string
+  // Must be a string (normalized decimals are always strings)
   if (typeof value !== 'string') {
     return false;
   }
@@ -370,8 +373,8 @@ export function isDecimal(value: unknown, precision: number, scale: number): boo
   const integerPart = parts[0] ?? '0';
   const decimalPart = parts[1] ?? '';
 
-  // Check scale (digits after decimal point)
-  if (decimalPart.length > scale) {
+  // Strict scale check: exact match required
+  if (decimalPart.length !== scale) {
     return false;
   }
 
@@ -387,6 +390,99 @@ export function isDecimal(value: unknown, precision: number, scale: number): boo
   }
 
   return true;
+}
+
+/**
+ * Lenient validation: checks if value CAN BE converted to the decimal type.
+ *
+ * Accepts string | number to match toDecimal()'s input type.
+ * - Numbers: validates precision after rounding to scale (mirrors toDecimal behavior)
+ * - Strings: accepts fewer decimal places (e.g., '100' for scale 2 is valid)
+ *
+ * Use this for validating user input before normalization (runtime brand validation,
+ * compile-time bound validation).
+ * For validating already-normalized values, use `isDecimal`.
+ *
+ * @param value - The value to check
+ * @param precision - Total number of significant digits (P in NUMERIC(P,S))
+ * @param scale - Number of digits after the decimal point (S in NUMERIC(P,S))
+ * @returns true if the value can be converted to a valid decimal
+ *
+ * @example
+ * ```typescript
+ * canBeDecimal(100, 10, 2);        // true: number accepted
+ * canBeDecimal('100', 10, 2);      // true: fewer decimal places OK
+ * canBeDecimal('100.00', 10, 2);   // true: exact scale OK
+ * canBeDecimal('100.0', 10, 2);    // true: fewer decimal places OK
+ * canBeDecimal('100.123', 10, 2);  // false: too many decimal places
+ * canBeDecimal(Infinity, 10, 2);   // false: not finite
+ * ```
+ */
+export function canBeDecimal(value: unknown, precision: number, scale: number): boolean {
+  // Validate precision and scale
+  if (!Number.isInteger(precision) || precision < 1) {
+    return false;
+  }
+  if (!Number.isInteger(scale) || scale < 0) {
+    return false;
+  }
+  if (scale > precision) {
+    return false;
+  }
+
+  // Accept numbers (will be rounded by toDecimal)
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) {
+      return false;
+    }
+    // Convert to string to check precision (mirrors toDecimal logic)
+    const str = value.toFixed(scale);
+    // Parse and check precision on the converted string
+    const isNegative = str.startsWith('-');
+    const absolute = isNegative ? str.slice(1) : str;
+    const parts = absolute.split('.');
+    const integerPart = parts[0] ?? '0';
+    const decimalPart = parts[1] ?? '';
+
+    // Count significant digits
+    const trimmedInteger = integerPart.replace(/^0+/, '') || '0';
+    const totalDigits = trimmedInteger === '0' && decimalPart.length > 0
+      ? decimalPart.replace(/^0+/, '').length
+      : trimmedInteger.length + decimalPart.length;
+
+    return totalDigits <= precision;
+  }
+
+  // Accept strings with lenient scale check
+  if (typeof value === 'string') {
+    // Validate format
+    if (!/^-?\d+(\.\d+)?$/.test(value)) {
+      return false;
+    }
+
+    // Parse parts
+    const isNegative = value.startsWith('-');
+    const absolute = isNegative ? value.slice(1) : value;
+    const parts = absolute.split('.');
+    const integerPart = parts[0] ?? '0';
+    const decimalPart = parts[1] ?? '';
+
+    // Lenient scale check: allows fewer digits
+    if (decimalPart.length > scale) {
+      return false;
+    }
+
+    // Count significant digits (exclude leading zeros from integer part)
+    const trimmedInteger = integerPart.replace(/^0+/, '') || '0';
+    const totalDigits = trimmedInteger === '0' && decimalPart.length > 0
+      ? decimalPart.replace(/^0+/, '').length
+      : trimmedInteger.length + decimalPart.length;
+
+    // Check precision
+    return totalDigits <= precision;
+  }
+
+  return false;
 }
 
 // -----------------------------------------------------------------------------

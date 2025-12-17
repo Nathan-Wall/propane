@@ -19,6 +19,7 @@ import { parseFromAst } from '@/tools/parser/parse-ast.js';
 import type { PmtFile, PmtMessage } from '@/tools/parser/types.js';
 import {
   buildRegistry,
+  propaneTypes,
   type TypeRegistry,
   type AnyTypeRegistration,
 } from '@/types/src/registry.js';
@@ -90,6 +91,7 @@ export interface PropaneState {
   usesIsInt32: boolean;
   usesIsInt53: boolean;
   usesIsDecimal: boolean;
+  usesCanBeDecimal: boolean;
   usesIsPositive: boolean;
   usesIsNegative: boolean;
   usesIsNonNegative: boolean;
@@ -162,28 +164,35 @@ function computeRuntimeImportPath(state: PropaneState): string {
 // ============================================
 
 /**
- * Default registry module paths.
+ * Default registry built from statically imported propaneTypes.
+ * This avoids the need to dynamically require @propanejs/types which
+ * doesn't work for ESM-only packages with synchronous Babel plugins.
  */
-const DEFAULT_TYPE_MODULES = ['@propanejs/types'];
+const defaultRegistry = buildRegistry([propaneTypes]);
 
 /**
- * Module-level cache for the type registry.
+ * Module-level cache for custom registries.
  * Loaded once per Babel process (not per-file).
  */
 let cachedRegistry: TypeRegistry | null = null;
 let cachedRegistryOptions: string[] | null = null;
 
 /**
- * Load the type registry from configured modules.
+ * Load the type registry.
  *
- * Uses Node.js require() for synchronous loading (Babel plugins are synchronous).
- * The registry is cached at module level for performance.
+ * Uses the statically imported propaneTypes as the default.
+ * Custom type modules specified in options are loaded via require().
  *
  * @param options - Plugin options containing `types` array
- * @returns The built TypeRegistry, or undefined if not available
+ * @returns The built TypeRegistry
  */
-function loadRegistry(options?: PropanePluginOptions): TypeRegistry | undefined {
-  const typePaths = options?.types ?? DEFAULT_TYPE_MODULES;
+function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
+  // If no custom types specified, use the default registry
+  if (!options?.types) {
+    return defaultRegistry;
+  }
+
+  const typePaths = options.types;
 
   // Check if we can use the cached registry
   const cacheKey = JSON.stringify(typePaths);
@@ -193,11 +202,16 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry | undefined 
 
   const allRegistrations: AnyTypeRegistration[][] = [];
 
-  // Create a require function for loading modules
-  // This is needed because ESM doesn't have a built-in require
+  // Create a require function for loading custom type modules
   const requireModule = createRequire(import.meta.url);
 
   for (const typePath of typePaths) {
+    // Handle the default @propanejs/types specially using static import
+    if (typePath === '@propanejs/types') {
+      allRegistrations.push(propaneTypes);
+      continue;
+    }
+
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const module = requireModule(typePath);
@@ -207,14 +221,6 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry | undefined 
         allRegistrations.push(module.propaneTypes as AnyTypeRegistration[]);
       }
     } catch (err) {
-      // During initial build, @propanejs/types may not be available yet
-      // (symlinks are created in post-build.js)
-      // Return undefined to indicate registry is not available
-      if (typePath === '@propanejs/types') {
-        // This is expected during build - return undefined gracefully
-        return undefined;
-      }
-
       // For custom type modules, throw an error
       throw new Error(
         `Failed to load type registry from '${typePath}'.\n` +
@@ -470,6 +476,7 @@ export default function propanePlugin() {
           state.usesIsInt32 = false;
           state.usesIsInt53 = false;
           state.usesIsDecimal = false;
+          state.usesCanBeDecimal = false;
           state.usesIsPositive = false;
           state.usesIsNegative = false;
           state.usesIsNonNegative = false;

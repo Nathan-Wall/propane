@@ -13,11 +13,11 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   }) {
     if (!props && UnionStringBool.EMPTY) return UnionStringBool.EMPTY;
     super(UnionStringBool.TYPE_TAG, "UnionStringBool");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
     this.#value = props ? props.value : "";
     this.#optional = props ? props.optional : undefined;
-    if (!options?.skipValidation) {
-      this.#validate();
-    }
     if (!props) UnionStringBool.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionStringBool.Data>[] {
@@ -43,7 +43,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     props.optional = optionalNormalized;
     return props as UnionStringBool.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: UnionStringBool.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

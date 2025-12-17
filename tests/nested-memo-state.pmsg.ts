@@ -60,11 +60,13 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   static EMPTY: OuterMessage;
   #counter: number;
   #inner: InnerMessage;
-  constructor(props?: OuterMessage.Value) {
+  constructor(props?: OuterMessage.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && OuterMessage.EMPTY) return OuterMessage.EMPTY;
     super(OuterMessage.TYPE_TAG, "OuterMessage");
     this.#counter = props ? props.counter : 0;
-    this.#inner = props ? props.inner instanceof InnerMessage ? props.inner : new InnerMessage(props.inner) : new InnerMessage();
+    this.#inner = props ? props.inner instanceof InnerMessage ? props.inner : new InnerMessage(props.inner, options) : new InnerMessage();
     if (!props) OuterMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OuterMessage.Data>[] {

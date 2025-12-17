@@ -14,10 +14,10 @@ export class Wrapper extends Message<Wrapper.Data> {
   }) {
     if (!props && Wrapper.EMPTY) return Wrapper.EMPTY;
     super(Wrapper.TYPE_TAG, "Wrapper");
-    this.#payload = props ? props.payload : new ImmutableDate(0);
     if (!options?.skipValidation) {
-      this.#validate();
+      this.#validate(props);
     }
+    this.#payload = props ? props.payload : new ImmutableDate(0);
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -35,7 +35,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     props.payload = payloadValue;
     return props as Wrapper.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

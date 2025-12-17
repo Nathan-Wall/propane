@@ -439,7 +439,9 @@ export class ToJson extends Message<ToJson.Data> {
   #optional: string;
   #nonFinite: number;
   #nested: ToJson_Nested;
-  constructor(props?: ToJson.Value) {
+  constructor(props?: ToJson.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && ToJson.EMPTY) return ToJson.EMPTY;
     super(ToJson.TYPE_TAG, "ToJson");
     this.#map = props ? props.map === undefined || props.map === null ? new ImmutableMap() : props.map instanceof ImmutableMap ? props.map : new ImmutableMap(props.map) : new ImmutableMap();
@@ -448,7 +450,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date) : new ImmutableDate(0);
     this.#optional = props ? props.optional : undefined;
     this.#nonFinite = props ? props.nonFinite : 0;
-    this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested) : new ToJson_Nested();
+    this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested, options) : new ToJson_Nested();
     if (!props) ToJson.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {

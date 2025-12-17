@@ -61,12 +61,14 @@ export class Compound extends Message<Compound.Data> {
   #user: User;
   #indexed: Indexed;
   #inline: Compound_Inline;
-  constructor(props?: Compound.Value) {
+  constructor(props?: Compound.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Compound.EMPTY) return Compound.EMPTY;
     super(Compound.TYPE_TAG, "Compound");
     this.#user = props ? props.user : new User();
     this.#indexed = props ? props.indexed : new Indexed();
-    this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline) : new Compound_Inline();
+    this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline, options) : new Compound_Inline();
     if (!props) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {

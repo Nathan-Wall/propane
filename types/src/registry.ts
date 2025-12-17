@@ -109,6 +109,10 @@ export interface MessageGeneratorContext {
 /** Information about a value's type */
 export interface TypeInfo {
   kind: 'number' | 'bigint' | 'string' | 'array' | 'decimal' | 'unknown';
+  /** For decimal types: precision (total digits) */
+  precision?: number;
+  /** For decimal types: scale (digits after decimal point) */
+  scale?: number;
 }
 
 /** Collects imports needed by generated code */
@@ -218,6 +222,12 @@ export interface BrandDefinition {
    * Generate error message for validation failure.
    */
   generateMessage?(context: { params: unknown[] }): string;
+
+  /**
+   * Generate error code for validation failure (e.g., 'INT32', 'DECIMAL').
+   * Defaults to brand name uppercased if not provided.
+   */
+  generateCode?(): string;
 }
 
 // ============================================
@@ -453,7 +463,18 @@ export const propaneTypes: AnyTypeRegistration[] = [
       sqlType([precision, scale]) {
         return `NUMERIC(${precision},${scale})`;
       },
-      // No additional JS/SQL validation - the SQL type enforces precision/scale
+      generateJs({ valueExpr, params, imports }) {
+        imports.add('canBeDecimal', '@propanejs/runtime');
+        const [precision, scale] = params as [number, number];
+        return { condition: `canBeDecimal(${valueExpr}, ${precision}, ${scale})` };
+      },
+      generateMessage({ params }) {
+        const [precision, scale] = params as [number, number];
+        return `must be a valid decimal(${precision},${scale})`;
+      },
+      generateCode() {
+        return 'DECIMAL';
+      },
     },
   } as BrandRegistration,
 

@@ -45,6 +45,7 @@ export interface PluginStateFlags {
   usesIsInt32: boolean;
   usesIsInt53: boolean;
   usesIsDecimal: boolean;
+  usesCanBeDecimal: boolean;
   usesIsPositive: boolean;
   usesIsNegative: boolean;
   usesIsNonNegative: boolean;

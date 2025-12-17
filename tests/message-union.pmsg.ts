@@ -156,12 +156,12 @@ export class PetOwner extends Message<PetOwner.Data> {
   }) {
     if (!props && PetOwner.EMPTY) return PetOwner.EMPTY;
     super(PetOwner.TYPE_TAG, "PetOwner");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
     this.#ownerName = props ? props.ownerName : "";
     this.#pet = props ? props.pet : new Cat();
     this.#optionalPet = props ? props.optionalPet : undefined;
-    if (!options?.skipValidation) {
-      this.#validate();
-    }
     if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -215,7 +215,7 @@ export class PetOwner extends Message<PetOwner.Data> {
     props.optionalPet = optionalPetUnionValue;
     return props as PetOwner.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: PetOwner.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

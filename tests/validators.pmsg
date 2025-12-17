@@ -1,0 +1,80 @@
+/**
+ * Validator Integration Tests
+ *
+ * Tests validation code generation for various validator types.
+ */
+
+import { Message } from '@propanejs/runtime';
+import type {
+  Positive,
+  Negative,
+  NonNegative,
+  NonPositive,
+  Min,
+  Max,
+  Range,
+  NonEmpty,
+  MinLength,
+  MaxLength,
+  Length,
+  int32,
+  int53,
+  decimal,
+} from '@propanejs/types';
+
+// Test: Numeric sign validators
+export type NumericSignValidators = Message<{
+  '1:positiveNumber': Positive<number>;
+  '2:negativeNumber': Negative<number>;
+  '3:nonNegativeNumber': NonNegative<number>;
+  '4:nonPositiveNumber': NonPositive<number>;
+}>;
+
+// Test: Numeric bound validators
+export type NumericBoundValidators = Message<{
+  '1:minValue': Min<number, 0>;
+  '2:maxValue': Max<number, 100>;
+  '3:rangeValue': Range<number, 0, 100>;
+}>;
+
+// Test: String validators
+// Note: Matches validator not yet implemented in Phase 1A
+export type StringValidators = Message<{
+  '1:nonEmptyString': NonEmpty<string>;
+  '2:minLengthString': MinLength<string, 3>;
+  '3:maxLengthString': MaxLength<string, 100>;
+  '4:exactLengthString': Length<string, 5, 10>;
+}>;
+
+// Test: Branded type validators
+export type BrandedValidators = Message<{
+  '1:positiveInt32': Positive<int32>;
+  '2:positiveInt53': Positive<int53>;
+  '3:positiveDecimal': Positive<decimal<10, 2>>;
+  '4:minDecimal': Min<decimal<10, 2>, "100">;
+  '5:maxDecimal': Max<decimal<10, 2>, "1000">;
+  '6:rangeDecimal': Range<decimal<10, 2>, "0", "999.99">;
+}>;
+
+// Test: Optional validated fields
+export type OptionalValidators = Message<{
+  '1:requiredPositive': Positive<number>;
+  '2:optionalPositive'?: Positive<number>;
+  '3:nullablePositive': Positive<number> | null;
+  '4:optionalNullablePositive'?: Positive<number> | null;
+}>;
+
+// Test: Array validators
+export type ArrayValidators = Message<{
+  '1:nonEmptyArray': NonEmpty<string[]>;
+  '2:minLengthArray': MinLength<number[], 1>;
+  '3:maxLengthArray': MaxLength<number[], 10>;
+}>;
+
+// Test: Bigint validators
+export type BigintValidators = Message<{
+  '1:positiveBigint': Positive<bigint>;
+  '2:minBigint': Min<bigint, 0n>;
+  '3:maxBigint': Max<bigint, 1000000n>;
+  '4:rangeBigint': Range<bigint, 0n, 100n>;
+}>;

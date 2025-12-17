@@ -28,6 +28,7 @@ export {
   decimalInRange,
   decimalInRangeExclusive,
   isDecimal,
+  canBeDecimal,
   type ComparisonResult,
 } from './decimal.js';
 export {

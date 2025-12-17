@@ -792,6 +792,10 @@ export function buildClassFromProperties(
     : new Map();
   const needsValidation = hasAnyValidation(propertyValidations);
 
+  // Check if any nested message types exist that might need validation propagation
+  // This ensures skipValidation can be passed to nested message constructors
+  const hasNestedMessageTypes = propDescriptors.some(prop => prop.isMessageType);
+
   for (const prop of propDescriptors) {
     const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
 
@@ -951,14 +955,16 @@ export function buildClassFromProperties(
     }
 
     if (prop.isMessageType && prop.messageTypeName) {
+      // Include options param if parent needs validation OR has nested messages
+      const needsOptionsParam = needsValidation || hasNestedMessageTypes;
       valueExpr = buildMessageNormalizationExpression(
         valueExpr,
         prop.messageTypeName,
         {
           allowUndefined: Boolean(prop.optional),
           allowNull: typeAllowsNull(prop.typeAnnotation),
-          // Propagate options (skipValidation) to nested messages when validation is enabled
-          optionsExpr: needsValidation ? t.identifier('options') : undefined,
+          // Propagate options (skipValidation) to nested messages
+          optionsExpr: needsOptionsParam ? t.identifier('options') : undefined,
         }
       );
     }
@@ -1026,8 +1032,10 @@ export function buildClassFromProperties(
   const constructorClassParams = isGeneric
     ? buildConstructorClassParams(typeParameters)
     : [];
-  // Only include options parameter if validation is needed
-  const allConstructorParams = needsValidation
+  // Include options parameter if validation is needed OR has nested messages
+  // (nested messages need options to propagate skipValidation)
+  const needsOptionsParam = needsValidation || hasNestedMessageTypes;
+  const allConstructorParams = needsOptionsParam
     ? [...constructorClassParams, constructorParam, optionsParam]
     : [...constructorClassParams, constructorParam];
 
@@ -1058,11 +1066,11 @@ export function buildClassFromProperties(
     constructorBody.push(...buildConstructorRefAssignments(typeParameters));
   }
 
-  // Add property assignments
-  constructorBody.push(...constructorAssignments);
-
-  // Add validation call if any properties have validators
-  // Wrapped in: if (!options?.skipValidation) { this.#validate(); }
+  // Add validation call BEFORE property assignments (pre-assignment validation)
+  // This validates user input before normalization, enabling:
+  // 1. Better error messages showing user's actual input
+  // 2. validateAll() can collect all errors before any normalization throws
+  // Wrapped in: if (!options?.skipValidation) { this.#validate(data); }
   if (needsValidation && validationBuildContext) {
     constructorBody.push(
       t.ifStatement(
@@ -1079,6 +1087,9 @@ export function buildClassFromProperties(
       )
     );
   }
+
+  // Add property assignments AFTER validation
+  constructorBody.push(...constructorAssignments);
 
   // Add memoization set (only for non-generic)
   if (memoizationSet) {

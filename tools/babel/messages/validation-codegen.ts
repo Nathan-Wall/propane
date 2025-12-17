@@ -323,6 +323,9 @@ function generateBrandCheck(
   // Generate error message
   const message = definition.generateMessage?.({ params: brand.params }) ?? 'invalid brand value';
 
+  // Generate error code (use brand-specific code or default to uppercased brand name)
+  const code = definition.generateCode?.() ?? brand.registration.name.toUpperCase();
+
   // Import ValidationError
   imports.add('ValidationError', '@propanejs/runtime');
 
@@ -336,7 +339,7 @@ function generateBrandCheck(
             t.stringLiteral(fieldName),
             t.stringLiteral(message),
             t.identifier(valueExpr),
-            t.stringLiteral('BRAND'),
+            t.stringLiteral(code),
           ])
         ),
       ])

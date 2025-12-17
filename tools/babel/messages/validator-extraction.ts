@@ -117,6 +117,14 @@ function extractSingleTypeValidation(
     );
 
     if (validatorReg) {
+      // Check for unsupported Check validator
+      if (validatorReg.name === 'Check') {
+        throw new Error(
+          'Check<T, fn> custom validators are not yet supported. ' +
+          'Custom validation will be available in Phase 2.'
+        );
+      }
+
       const extracted = extractValidatorFromTypeRef(typeNode, validatorReg);
       if (extracted) {
         result.validators.push(extracted);
@@ -215,6 +223,16 @@ function extractUnionValidation(
     }
   }
 
+  // Check for validators on union branches - not yet supported
+  const branchesWithValidators = result.unionBranches.filter(b => b.validators.length > 0);
+  if (branchesWithValidators.length > 0) {
+    throw new Error(
+      'Validators on union types are not yet supported. ' +
+      'This feature will be available in Phase 1B. ' +
+      'Consider using separate validated types or validating after type narrowing.'
+    );
+  }
+
   return result;
 }
 
@@ -275,14 +293,88 @@ function extractValidatorFromTypeRef(
   const params = extractTypeParams(typeRef);
   const innerType = extractInnerType(typeRef);
 
+  // Compile-time validation for type compatibility
+  validateValidatorTypeCompatibility(registration.name, innerType);
+
   // Compile-time validation for bounds
   validateValidatorParams(registration.name, params);
 
+  // Normalize decimal bounds if applicable
+  const normalizedParams = normalizeDecimalBounds(registration.name, params, innerType);
+
   return {
     registration,
-    params,
+    params: normalizedParams,
     innerType,
   };
+}
+
+/**
+ * Validate that a validator is compatible with its inner type.
+ * Throws descriptive errors for type mismatches.
+ */
+function validateValidatorTypeCompatibility(validatorName: string, innerType: TypeInfo): void {
+  // Numeric validators: Positive, Negative, NonNegative, NonPositive, Min, Max, GreaterThan, LessThan, Range
+  const numericValidators = [
+    'Positive', 'Negative', 'NonNegative', 'NonPositive',
+    'Min', 'Max', 'GreaterThan', 'LessThan', 'Range'
+  ];
+
+  // String validators: NonEmpty, Matches, MinLength, MaxLength, Length, MinCharLength, MaxCharLength, CharLength
+  const stringValidators = [
+    'NonEmpty', 'Matches', 'MinLength', 'MaxLength', 'Length',
+    'MinCharLength', 'MaxCharLength', 'CharLength'
+  ];
+
+  // Array validators: NonEmpty (also applies), MinLength, MaxLength, Length (also apply)
+  const arrayValidators = ['MinLength', 'MaxLength', 'Length'];
+
+  // Skip check for unknown types - TypeScript will catch type errors at usage sites
+  if (innerType.kind === 'unknown') {
+    return;
+  }
+
+  if (numericValidators.includes(validatorName)) {
+    const validNumericTypes = ['number', 'bigint', 'decimal'];
+    if (!validNumericTypes.includes(innerType.kind)) {
+      throw new Error(
+        `Type mismatch: ${validatorName}<T> requires a numeric type (number, bigint, or decimal). ` +
+        `Found: ${validatorName}<${innerType.kind}>.`
+      );
+    }
+  }
+
+  if (stringValidators.includes(validatorName) && !arrayValidators.includes(validatorName)) {
+    // Pure string validators (NonEmpty for strings, Matches, CharLength variants)
+    if (validatorName === 'Matches' || validatorName.includes('Char')) {
+      if (innerType.kind !== 'string') {
+        throw new Error(
+          `Type mismatch: ${validatorName}<T> requires a string type. ` +
+          `Found: ${validatorName}<${innerType.kind}>.`
+        );
+      }
+    }
+  }
+
+  // NonEmpty works with both string and array
+  if (validatorName === 'NonEmpty') {
+    if (innerType.kind !== 'string' && innerType.kind !== 'array') {
+      throw new Error(
+        `Type mismatch: NonEmpty<T> requires a string or array type. ` +
+        `Found: NonEmpty<${innerType.kind}>.`
+      );
+    }
+  }
+
+  // Length validators work with both string and array
+  if (['MinLength', 'MaxLength', 'Length'].includes(validatorName)) {
+    if (innerType.kind !== 'string' && innerType.kind !== 'array') {
+      throw new Error(
+        `Type mismatch: ${validatorName}<T> requires a string or array type. ` +
+        `Found: ${validatorName}<${innerType.kind}>.`
+      );
+    }
+  }
 }
 
 /**
@@ -369,14 +461,131 @@ function validateValidatorParams(validatorName: string, params: unknown[]): void
 }
 
 /**
+ * Normalize decimal bounds at compile time.
+ *
+ * For validators on decimal types (Min, Max, Range, etc.), this normalizes
+ * string bounds to match the decimal's scale. For example, "100" becomes
+ * "100.00" for decimal<10,2>.
+ *
+ * @param validatorName - The validator name (e.g., 'Min', 'Max', 'Range')
+ * @param params - The validator parameters (bounds)
+ * @param innerType - The inner type info (includes precision/scale for decimals)
+ * @returns The params array with normalized decimal bounds
+ */
+function normalizeDecimalBounds(
+  validatorName: string,
+  params: unknown[],
+  innerType: TypeInfo
+): unknown[] {
+  // Only apply to decimal types with known precision and scale
+  if (innerType.kind !== 'decimal' || innerType.scale === undefined) {
+    return params;
+  }
+
+  const { precision, scale } = innerType;
+
+  // Validators that have numeric bounds
+  const boundValidators = ['Min', 'Max', 'GreaterThan', 'LessThan', 'Range'];
+  if (!boundValidators.includes(validatorName)) {
+    return params;
+  }
+
+  // Normalize each string bound in params
+  return params.map((param, index) => {
+    if (typeof param !== 'string') {
+      return param; // Only normalize string bounds
+    }
+
+    // Validate and normalize the decimal bound
+    return normalizeDecimalBound(param, precision!, scale, validatorName, index);
+  });
+}
+
+/**
+ * Normalize a single decimal bound string to exact scale.
+ *
+ * @param bound - The bound value as a string (e.g., "100")
+ * @param precision - The decimal precision
+ * @param scale - The decimal scale
+ * @param validatorName - The validator name (for error messages)
+ * @param paramIndex - The parameter index (for error messages)
+ * @returns The normalized bound string (e.g., "100.00" for scale 2)
+ */
+function normalizeDecimalBound(
+  bound: string,
+  precision: number,
+  scale: number,
+  validatorName: string,
+  paramIndex: number
+): string {
+  // Validate format
+  if (!/^-?\d+(\.\d+)?$/.test(bound)) {
+    throw new Error(
+      `Invalid decimal bound '${bound}' in ${validatorName}: must be a valid decimal number.`
+    );
+  }
+
+  // Parse parts
+  const isNegative = bound.startsWith('-');
+  const absolute = isNegative ? bound.slice(1) : bound;
+  const parts = absolute.split('.');
+  const integerPart = parts[0] ?? '0';
+  const decimalPart = parts[1] ?? '';
+
+  // Check that decimal places don't exceed scale
+  if (decimalPart.length > scale) {
+    throw new Error(
+      `Decimal bound '${bound}' has more decimal places than scale ${scale}.`
+    );
+  }
+
+  // Check precision (total significant digits)
+  const trimmedInteger = integerPart.replace(/^0+/, '') || '0';
+  const totalDigits = trimmedInteger === '0' && decimalPart.length > 0
+    ? decimalPart.replace(/^0+/, '').length
+    : trimmedInteger.length + decimalPart.length;
+
+  if (totalDigits > precision) {
+    throw new Error(
+      `Decimal bound '${bound}' exceeds precision ${precision} for decimal<${precision},${scale}>.`
+    );
+  }
+
+  // Normalize: pad decimal part to exact scale
+  const normalizedDecimal = decimalPart.padEnd(scale, '0');
+  const normalized = scale > 0
+    ? `${isNegative ? '-' : ''}${integerPart}.${normalizedDecimal}`
+    : `${isNegative ? '-' : ''}${integerPart}`;
+
+  return normalized;
+}
+
+/**
  * Extract brand info from a type reference.
  */
 function extractBrandFromTypeRef(
   typeRef: t.TSTypeReference,
   registration: BrandRegistration
 ): ExtractedBrand {
-  const params = extractTypeParams(typeRef);
+  // Brands use ALL type parameters as data (unlike validators which skip the first)
+  const params = extractBrandTypeParams(typeRef);
   return { registration, params };
+}
+
+/**
+ * Extract ALL type parameters from a brand type reference.
+ * Unlike validators, brands use all params as data (e.g., decimal<10, 2> → [10, 2]).
+ */
+function extractBrandTypeParams(typeRef: t.TSTypeReference): unknown[] {
+  if (!typeRef.typeParameters?.params) {
+    return [];
+  }
+
+  const params: unknown[] = [];
+  for (const param of typeRef.typeParameters.params) {
+    params.push(extractLiteralValue(param));
+  }
+  return params;
 }
 
 /**
@@ -466,7 +675,21 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
     if (t.isIdentifier(node.typeName)) {
       const name = node.typeName.name.toLowerCase();
       if (name === 'decimal') {
-        return { kind: 'decimal' };
+        // Extract precision and scale from decimal<P, S>
+        const typeParams = node.typeParameters?.params;
+        let precision: number | undefined;
+        let scale: number | undefined;
+        if (typeParams && typeParams.length >= 2) {
+          const precisionNode = typeParams[0];
+          const scaleNode = typeParams[1];
+          if (t.isTSLiteralType(precisionNode) && t.isNumericLiteral(precisionNode.literal)) {
+            precision = precisionNode.literal.value;
+          }
+          if (t.isTSLiteralType(scaleNode) && t.isNumericLiteral(scaleNode.literal)) {
+            scale = scaleNode.literal.value;
+          }
+        }
+        return { kind: 'decimal', precision, scale };
       }
       if (name === 'array') {
         return { kind: 'array' };

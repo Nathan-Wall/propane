@@ -12,10 +12,10 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   }) {
     if (!props && UnionFirstNumber.EMPTY) return UnionFirstNumber.EMPTY;
     super(UnionFirstNumber.TYPE_TAG, "UnionFirstNumber");
-    this.#val = props ? props.val : 0;
     if (!options?.skipValidation) {
-      this.#validate();
+      this.#validate(props);
     }
+    this.#val = props ? props.val : 0;
     if (!props) UnionFirstNumber.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstNumber.Data>[] {
@@ -33,7 +33,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     props.val = valValue;
     return props as UnionFirstNumber.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: UnionFirstNumber.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -75,10 +75,10 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   }) {
     if (!props && UnionFirstString.EMPTY) return UnionFirstString.EMPTY;
     super(UnionFirstString.TYPE_TAG, "UnionFirstString");
-    this.#val = props ? props.val : "";
     if (!options?.skipValidation) {
-      this.#validate();
+      this.#validate(props);
     }
+    this.#val = props ? props.val : "";
     if (!props) UnionFirstString.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UnionFirstString.Data>[] {
@@ -96,7 +96,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     props.val = valValue;
     return props as UnionFirstString.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: UnionFirstString.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -186,10 +186,12 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static readonly $typeName = "RequiredMessage";
   static EMPTY: RequiredMessage;
   #sub: UnionFirstNumber;
-  constructor(props?: RequiredMessage.Value) {
+  constructor(props?: RequiredMessage.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
     super(RequiredMessage.TYPE_TAG, "RequiredMessage");
-    this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub) : new UnionFirstNumber();
+    this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub, options) : new UnionFirstNumber();
     if (!props) RequiredMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {

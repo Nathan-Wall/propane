@@ -41,6 +41,12 @@ export function extractPropertyValidations(
       ctx.registry
     );
 
+    // Optional fields should bypass validation on null/undefined
+    // (even if the type annotation doesn't include | null | undefined)
+    if (prop.optional) {
+      validation.nullable = true;
+    }
+
     // Only store if there's actual validation to do
     if (
       validation.validators.length > 0 ||
@@ -62,10 +68,16 @@ export function hasAnyValidation(validations: Map<string, FieldValidation>): boo
 }
 
 /**
- * Build the private #validate() method for a message class.
+ * Build the private #validate(data) method for a message class.
  *
  * Generates a method that validates all fields with validators/brands.
  * Returns null if no validation is needed.
+ *
+ * The method takes a data parameter and validates data.propName (pre-assignment)
+ * rather than this.#propName (post-assignment). This enables:
+ * 1. Better error messages showing user's actual input
+ * 2. validateAll() can collect all errors before any normalization throws
+ * 3. Clean separation: validation gates, normalization transforms
  */
 export function buildValidateMethod(
   validations: Map<string, FieldValidation>,
@@ -86,16 +98,20 @@ export function buildValidateMethod(
   // Mark that we need ValidationError import
   ctx.state.usesValidationError = true;
 
+  // Method signature: #validate(data: T.Data): void
+  const dataParam = t.identifier('data');
+
   return t.classPrivateMethod(
     'method',
     t.privateName(t.identifier('validate')),
-    [],
+    [dataParam],
     t.blockStatement(body)
   );
 }
 
 /**
  * Build validation statements for a single property.
+ * Validates data.propName (pre-assignment) for better error messages.
  */
 function buildPropertyValidation(
   propName: string,
@@ -103,7 +119,8 @@ function buildPropertyValidation(
   ctx: ValidationBuildContext
 ): t.Statement[] {
   const statements: t.Statement[] = [];
-  const valueExpr = `this.#${propName}`;
+  // Use data.propName for pre-assignment validation
+  const valueExpr = `data.${propName}`;
 
   // Handle nullable fields - wrap validation in null check
   if (validation.nullable) {
@@ -115,14 +132,14 @@ function buildPropertyValidation(
     );
 
     if (innerStatements.length > 0) {
-      // if (this.#prop != null) { ... validation ... }
+      // if (data.prop != null) { ... validation ... }
       statements.push(
         t.ifStatement(
           t.binaryExpression(
             '!=',
             t.memberExpression(
-              t.thisExpression(),
-              t.privateName(t.identifier(propName))
+              t.identifier('data'),
+              t.identifier(propName)
             ),
             t.nullLiteral()
           ),
@@ -150,7 +167,34 @@ function buildNonNullableValidation(
 ): t.Statement[] {
   const statements: t.Statement[] = [];
 
-  // Handle simple validators
+  // Handle brand validation FIRST - ensures value is valid branded type
+  if (validation.brand) {
+    const brandDef = validation.brand.registration.definition;
+    if (brandDef.generateJs) {
+      const result = brandDef.generateJs({
+        valueExpr,
+        params: validation.brand.params,
+        imports: {
+          add: (name: string, _from: string) => {
+            trackValidationImport(name, ctx.state);
+          },
+        },
+      });
+
+      if (result) {
+        const message = brandDef.generateMessage?.({ params: validation.brand.params })
+          ?? 'invalid brand value';
+        const code = brandDef.generateCode?.()
+          ?? validation.brand.registration.name.toUpperCase();
+
+        statements.push(
+          buildValidationCheck(propName, result.condition, message, code, valueExpr)
+        );
+      }
+    }
+  }
+
+  // Handle validators SECOND - applies additional semantic constraints
   for (const validator of validation.validators) {
     const definition = validator.registration.definition;
 
@@ -177,31 +221,6 @@ function buildNonNullableValidation(
       statements.push(
         buildValidationCheck(propName, result.condition, message, code, valueExpr)
       );
-    }
-  }
-
-  // Handle brand validation
-  if (validation.brand) {
-    const brandDef = validation.brand.registration.definition;
-    if (brandDef.generateJs) {
-      const result = brandDef.generateJs({
-        valueExpr,
-        params: validation.brand.params,
-        imports: {
-          add: (name: string, _from: string) => {
-            trackValidationImport(name, ctx.state);
-          },
-        },
-      });
-
-      if (result) {
-        const message = brandDef.generateMessage?.({ params: validation.brand.params })
-          ?? 'invalid brand value';
-
-        statements.push(
-          buildValidationCheck(propName, result.condition, message, 'BRAND', valueExpr)
-        );
-      }
     }
   }
 
@@ -243,6 +262,15 @@ function buildValidationCheck(
  * Handles common patterns from validators.
  */
 function parseSimpleCondition(expr: string): t.Expression {
+  // Handle logical AND first (before binary comparisons to avoid consuming && in right side)
+  if (expr.includes(' && ')) {
+    const parts = expr.split(' && ');
+    return parts.slice(1).reduce<t.Expression>(
+      (acc, part) => t.logicalExpression('&&', acc, parseSimpleCondition(part.trim())),
+      parseSimpleCondition(parts[0]!.trim())
+    );
+  }
+
   // Handle member expressions like "this.#foo"
   if (expr.startsWith('this.#')) {
     const propName = expr.slice(6); // Remove "this.#"
@@ -268,15 +296,6 @@ function parseSimpleCondition(expr: string): t.Expression {
       op as t.BinaryExpression['operator'],
       parseSimpleCondition(left!.trim()),
       parseSimpleCondition(right!.trim())
-    );
-  }
-
-  // Handle logical AND
-  if (expr.includes(' && ')) {
-    const parts = expr.split(' && ');
-    return parts.slice(1).reduce<t.Expression>(
-      (acc, part) => t.logicalExpression('&&', acc, parseSimpleCondition(part.trim())),
-      parseSimpleCondition(parts[0]!.trim())
     );
   }
 
@@ -325,6 +344,9 @@ function trackValidationImport(name: string, state: PluginStateFlags): void {
     case 'isDecimal':
       state.usesIsDecimal = true;
       break;
+    case 'canBeDecimal':
+      state.usesCanBeDecimal = true;
+      break;
     case 'isPositive':
       state.usesIsPositive = true;
       break;
@@ -365,7 +387,7 @@ export function buildValidateCall(): t.ExpressionStatement {
         t.thisExpression(),
         t.privateName(t.identifier('validate'))
       ),
-      []
+      [t.identifier('props')]
     )
   );
 }
@@ -528,7 +550,34 @@ function buildNonNullableValidationForData(
 ): t.Statement[] {
   const statements: t.Statement[] = [];
 
-  // Handle simple validators
+  // Handle brand validation FIRST - ensures value is valid branded type
+  if (validation.brand) {
+    const brandDef = validation.brand.registration.definition;
+    if (brandDef.generateJs) {
+      const result = brandDef.generateJs({
+        valueExpr,
+        params: validation.brand.params,
+        imports: {
+          add: (name: string, _from: string) => {
+            trackValidationImport(name, ctx.state);
+          },
+        },
+      });
+
+      if (result) {
+        const message = brandDef.generateMessage?.({ params: validation.brand.params })
+          ?? 'invalid brand value';
+        const code = brandDef.generateCode?.()
+          ?? validation.brand.registration.name.toUpperCase();
+
+        statements.push(
+          buildValidationCheckForData(propName, result.condition, message, code, valueExpr)
+        );
+      }
+    }
+  }
+
+  // Handle validators SECOND - applies additional semantic constraints
   for (const validator of validation.validators) {
     const definition = validator.registration.definition;
 
@@ -554,31 +603,6 @@ function buildNonNullableValidationForData(
       statements.push(
         buildValidationCheckForData(propName, result.condition, message, code, valueExpr)
       );
-    }
-  }
-
-  // Handle brand validation
-  if (validation.brand) {
-    const brandDef = validation.brand.registration.definition;
-    if (brandDef.generateJs) {
-      const result = brandDef.generateJs({
-        valueExpr,
-        params: validation.brand.params,
-        imports: {
-          add: (name: string, _from: string) => {
-            trackValidationImport(name, ctx.state);
-          },
-        },
-      });
-
-      if (result) {
-        const message = brandDef.generateMessage?.({ params: validation.brand.params })
-          ?? 'invalid brand value';
-
-        statements.push(
-          buildValidationCheckForData(propName, result.condition, message, 'BRAND', valueExpr)
-        );
-      }
     }
   }
 
@@ -618,6 +642,15 @@ function buildValidationCheckForData(
  * Parse a condition string into AST, handling data.propName patterns.
  */
 function parseDataCondition(expr: string): t.Expression {
+  // Handle logical AND first (before binary comparisons to avoid consuming && in right side)
+  if (expr.includes(' && ')) {
+    const parts = expr.split(' && ');
+    return parts.slice(1).reduce<t.Expression>(
+      (acc, part) => t.logicalExpression('&&', acc, parseDataCondition(part.trim())),
+      parseDataCondition(parts[0]!.trim())
+    );
+  }
+
   // Handle member expressions like "data.foo"
   if (expr.startsWith('data.')) {
     const propName = expr.slice(5); // Remove "data."
@@ -643,15 +676,6 @@ function parseDataCondition(expr: string): t.Expression {
       op as t.BinaryExpression['operator'],
       parseDataCondition(left!.trim()),
       parseDataCondition(right!.trim())
-    );
-  }
-
-  // Handle logical AND
-  if (expr.includes(' && ')) {
-    const parts = expr.split(' && ');
-    return parts.slice(1).reduce<t.Expression>(
-      (acc, part) => t.logicalExpression('&&', acc, parseDataCondition(part.trim())),
-      parseDataCondition(parts[0]!.trim())
     );
   }
 

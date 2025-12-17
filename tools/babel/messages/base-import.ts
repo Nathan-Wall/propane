@@ -94,6 +94,9 @@ export function ensureBaseImport(
   if (state.usesIsDecimal && !hasImportBinding('isDecimal')) {
     requiredSpecifiers.push('isDecimal');
   }
+  if (state.usesCanBeDecimal && !hasImportBinding('canBeDecimal')) {
+    requiredSpecifiers.push('canBeDecimal');
+  }
   if (state.usesIsPositive && !hasImportBinding('isPositive')) {
     requiredSpecifiers.push('isPositive');
   }

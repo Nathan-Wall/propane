@@ -1,0 +1,14 @@
+/**
+ * Validator Compile-Time Error Tests
+ *
+ * These should all fail to compile with descriptive error messages.
+ * This file is expected to fail transformation.
+ */
+
+import { Message } from '@propanejs/runtime';
+import type { Positive, Range, Check } from '@propanejs/types';
+
+// ERROR: Nested validators are not allowed
+export type NestedValidators = Message<{
+  '1:value': Positive<Range<number, 0, 100>>;
+}>;

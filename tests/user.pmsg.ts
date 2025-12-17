@@ -23,6 +23,9 @@ export class User extends Message<User.Data> {
   }) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
     this.#id = props ? props.id : 0;
     this.#name = props ? props.name : "";
     this.#email = props ? props.email : new Email();
@@ -32,9 +35,6 @@ export class User extends Message<User.Data> {
     this.#active = props ? props.active : false;
     this.#eyeColor = props ? props.eyeColor : undefined;
     this.#height = props ? props.height : new Distance();
-    if (!options?.skipValidation) {
-      this.#validate();
-    }
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -113,7 +113,7 @@ export class User extends Message<User.Data> {
     props.height = heightValue;
     return props as User.Data;
   }
-  #validate() {}
+  #validate(data) {}
   static validateAll(data: User.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
