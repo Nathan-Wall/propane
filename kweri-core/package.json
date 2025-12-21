@@ -1,0 +1,13 @@
+{
+  "name": "@kweri/core",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "../dist/kweri-core/index.js",
+  "types": "../dist/kweri-core/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "../dist/kweri-core/index.d.ts",
+      "import": "../dist/kweri-core/index.js"
+    }
+  }
+}

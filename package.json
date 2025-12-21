@@ -13,6 +13,8 @@
     "cli",
     "react",
     "postgres",
+    "kweri-core",
+    "kweri-postgres",
     "examples/react-todo"
   ],
   "scripts": {

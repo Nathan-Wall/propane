@@ -1,0 +1,16 @@
+{
+  "name": "@kweri/postgres",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "../dist/kweri-postgres/index.js",
+  "types": "../dist/kweri-postgres/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "../dist/kweri-postgres/index.d.ts",
+      "import": "../dist/kweri-postgres/index.js"
+    }
+  },
+  "dependencies": {
+    "@kweri/core": "*"
+  }
+}
