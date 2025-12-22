@@ -28,7 +28,7 @@ if (!version) {
   let currentVersion = null;
   try {
     currentVersion = execSync(
-      'npm view @propanejs/runtime version',
+      'npm view @propane/runtime version',
       { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
     ).trim();
   } catch {
@@ -53,7 +53,7 @@ try {
   console.log('Checking previous version on NPM...');
   // Use runtime as the reference package
   const currentVersion = execSync(
-    'npm view @propanejs/runtime version',
+    'npm view @propane/runtime version',
     { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }
   ).trim();
   console.log(`Current published version: ${currentVersion}`);
@@ -108,7 +108,7 @@ function updatePackageJson(pkgName, version) {
   // Update dependencies
   if (pkg.dependencies) {
     for (const dep in pkg.dependencies) {
-      if (dep.startsWith('@propanejs/')) {
+      if (dep.startsWith('@propane/')) {
         pkg.dependencies[dep] = version; // Strict version match for monorepo
       }
     }
@@ -117,7 +117,7 @@ function updatePackageJson(pkgName, version) {
   // Update peerDependencies
   if (pkg.peerDependencies) {
     for (const dep in pkg.peerDependencies) {
-      if (dep.startsWith('@propanejs/')) {
+      if (dep.startsWith('@propane/')) {
         pkg.peerDependencies[dep] = version;
       }
     }

@@ -7,7 +7,7 @@
  */
 
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError, isInt32, isInt53, canBeDecimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
-import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53, decimal } from '@propanejs/types';
+import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53, decimal } from '@propane/types';
 
 // Test: Numeric sign validators
 import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";

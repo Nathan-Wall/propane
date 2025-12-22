@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 // This should fail because 'detach' is a reserved name
 export type BadMessage = Message<{

@@ -164,7 +164,7 @@ function loadPropaneModule({
   const dir = path.dirname(normalized);
 
   const moduleExports = evaluateModule(js, (id) => {
-    if (id === '@propanejs/runtime') {
+    if (id === '@propane/runtime') {
       return runtimeExports;
     }
 

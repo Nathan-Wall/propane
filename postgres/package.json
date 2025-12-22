@@ -1,5 +1,5 @@
 {
-  "name": "@propanejs/postgres",
+  "name": "@propane/postgres",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@propanejs/runtime": "*",
+    "@propane/runtime": "*",
     "postgres": "^3.4.4"
   },
   "license": "ISC"

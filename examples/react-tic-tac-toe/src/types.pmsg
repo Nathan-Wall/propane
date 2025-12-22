@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 // A single cell can be empty (null), X, or O
 export type Cell = 'X' | 'O' | null;

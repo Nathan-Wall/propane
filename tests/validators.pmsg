@@ -4,7 +4,7 @@
  * Tests validation code generation for various validator types.
  */
 
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 import type {
   Positive,
   Negative,
@@ -20,7 +20,7 @@ import type {
   int32,
   int53,
   decimal,
-} from '@propanejs/types';
+} from '@propane/types';
 
 // Test: Numeric sign validators
 export type NumericSignValidators = Message<{

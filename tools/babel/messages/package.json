@@ -1,5 +1,5 @@
 {
-  "name": "@propanejs/babel-messages",
+  "name": "@propane/babel-messages",
   "version": "0.0.0",
   "private": true,
   "type": "module",

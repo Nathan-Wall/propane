@@ -46,7 +46,7 @@ for (const pkgName of packages) {
   // Rewrite dependencies to point to file:../<pkg> for local testing of dist packages
   if (distPkgJson.dependencies) {
     for (const dep in distPkgJson.dependencies) {
-      if (dep.startsWith('@propanejs/')) {
+      if (dep.startsWith('@propane/')) {
         const depName = dep.split('/')[1];
         distPkgJson.dependencies[dep] = `file:../${depName}`;
       }
@@ -81,7 +81,7 @@ for (const pkgName of packages) {
   }
 }
 
-// Ensure node_modules/@propanejs/dist symlink exists for local resolution
+// Ensure node_modules/@propane/dist symlink exists for local resolution
 const nodeModulesScope = path.join(projectRoot, 'node_modules', '@propanejs');
 if (fs.existsSync(nodeModulesScope)) {
     const distLink = path.join(nodeModulesScope, 'dist');
@@ -89,7 +89,7 @@ if (fs.existsSync(nodeModulesScope)) {
         try {
             // Symlink to ../../dist
             fs.symlinkSync('../../dist', distLink, 'dir');
-            console.log('Created symlink node_modules/@propanejs/dist -> ../../dist');
+            console.log('Created symlink node_modules/@propane/dist -> ../../dist');
         } catch (e) {
             console.warn('Failed to create dist symlink in node_modules:', e.message);
         }

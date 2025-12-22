@@ -1,13 +1,13 @@
 {
-  "name": "@propanejs/pms-client",
+  "name": "@propane/pms-client",
   "version": "0.0.0",
   "type": "module",
   "main": "../build/pms-client/src/index.js",
   "types": "../build/pms-client/src/index.d.ts",
   "license": "ISC",
   "dependencies": {
-    "@propanejs/runtime": "*",
-    "@propanejs/pms-core": "*",
+    "@propane/runtime": "*",
+    "@propane/pms-core": "*",
     "ws": "^8.18.0"
   }
 }

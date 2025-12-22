@@ -6,7 +6,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { ValidationError } from '@propanejs/runtime';
+import { ValidationError } from '@propane/runtime';
 import {
   NumericSignValidators,
   NumericBoundValidators,

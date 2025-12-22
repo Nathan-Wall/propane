@@ -1,6 +1,6 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type ImmutableArraySet = Message<{
   arr: ImmutableArray<number>;

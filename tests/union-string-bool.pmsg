@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type UnionStringBool = Message<{
   '1:value': string | boolean;

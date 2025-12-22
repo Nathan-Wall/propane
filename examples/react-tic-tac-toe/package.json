@@ -12,8 +12,8 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@propanejs/runtime": "*",
-    "@propanejs/react": "*"
+    "@propane/runtime": "*",
+    "@propane/react": "*"
   },
   "devDependencies": {
     "@types/react": "^18.2.66",

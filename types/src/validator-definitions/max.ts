@@ -19,7 +19,7 @@ export const MaxDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} <= ${bigintLiteral}` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('lessThanOrEqual', '@propanejs/runtime');
+    imports.add('lessThanOrEqual', '@propane/runtime');
     const maxArg = typeof max === 'string' ? `'${max}'` : String(max);
     return { condition: `lessThanOrEqual(${valueExpr}, ${maxArg})` };
   },

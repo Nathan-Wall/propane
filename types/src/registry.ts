@@ -264,7 +264,7 @@ export interface BuildRegistryOptions {
  *
  * @example
  * ```typescript
- * import { propaneTypes, buildRegistry } from '@propanejs/types';
+ * import { propaneTypes, buildRegistry } from '@propane/types';
  *
  * const registry = buildRegistry([propaneTypes]);
  * ```
@@ -343,7 +343,7 @@ import {
  * @example
  * ```typescript
  * // propane.config.ts
- * import { propaneTypes } from '@propanejs/types';
+ * import { propaneTypes } from '@propane/types';
  *
  * export default {
  *   types: [propaneTypes],
@@ -355,63 +355,63 @@ export const propaneTypes: AnyTypeRegistration[] = [
   // Message wrapper
   // ============================================
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Message',
     category: 'message',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
   } as MessageRegistration,
 
   // ============================================
   // Table wrapper
   // ============================================
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Table',
     category: 'table',
-    runtimePackage: '@propanejs/runtime', // Table extends Message
+    runtimePackage: '@propane/runtime', // Table extends Message
   } as TableRegistration,
 
   // ============================================
   // DB wrappers (no runtime code needed)
   // ============================================
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Normalize',
     category: 'db-wrapper',
     kind: 'normalize',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Json',
     category: 'db-wrapper',
     kind: 'json',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Index',
     category: 'db-wrapper',
     kind: 'index',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Unique',
     category: 'db-wrapper',
     kind: 'unique',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'PrimaryKey',
     category: 'db-wrapper',
     kind: 'primary-key',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Auto',
     category: 'db-wrapper',
     kind: 'auto',
   } as DbWrapperRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'References',
     category: 'db-wrapper',
     kind: 'references',
@@ -421,14 +421,14 @@ export const propaneTypes: AnyTypeRegistration[] = [
   // Branded types
   // ============================================
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'int32',
     category: 'brand',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: {
       sqlType: () => 'INTEGER',
       generateJs({ valueExpr, imports }) {
-        imports.add('isInt32', '@propanejs/runtime');
+        imports.add('isInt32', '@propane/runtime');
         return { condition: `isInt32(${valueExpr})` };
       },
       generateSql({ columnName }) {
@@ -438,14 +438,14 @@ export const propaneTypes: AnyTypeRegistration[] = [
     },
   } as BrandRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'int53',
     category: 'brand',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: {
       sqlType: () => 'BIGINT',
       generateJs({ valueExpr, imports }) {
-        imports.add('isInt53', '@propanejs/runtime');
+        imports.add('isInt53', '@propane/runtime');
         return { condition: `isInt53(${valueExpr})` };
       },
       generateSql({ columnName }) {
@@ -455,16 +455,16 @@ export const propaneTypes: AnyTypeRegistration[] = [
     },
   } as BrandRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'decimal',
     category: 'brand',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: {
       sqlType([precision, scale]) {
         return `NUMERIC(${precision},${scale})`;
       },
       generateJs({ valueExpr, params, imports }) {
-        imports.add('canBeDecimal', '@propanejs/runtime');
+        imports.add('canBeDecimal', '@propane/runtime');
         const [precision, scale] = params as [number, number];
         return { condition: `canBeDecimal(${valueExpr}, ${precision}, ${scale})` };
       },
@@ -484,92 +484,92 @@ export const propaneTypes: AnyTypeRegistration[] = [
 
   // Numeric sign validators
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Positive',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: PositiveDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Negative',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: NegativeDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'NonNegative',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: NonNegativeDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'NonPositive',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: NonPositiveDefinition,
   } as ValidatorRegistration,
 
   // Numeric bound validators
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Min',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: MinDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Max',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: MaxDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'GreaterThan',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: GreaterThanDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'LessThan',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: LessThanDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Range',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: RangeDefinition,
   } as ValidatorRegistration,
 
   // Length validators (string/array)
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'NonEmpty',
     category: 'validator',
     definition: NonEmptyDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'MinLength',
     category: 'validator',
     definition: MinLengthDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'MaxLength',
     category: 'validator',
     definition: MaxLengthDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Length',
     category: 'validator',
     definition: LengthDefinition,
@@ -577,30 +577,30 @@ export const propaneTypes: AnyTypeRegistration[] = [
 
   // Character length validators (Unicode-aware)
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'MinCharLength',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: MinCharLengthDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'MaxCharLength',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: MaxCharLengthDefinition,
   } as ValidatorRegistration,
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'CharLength',
     category: 'validator',
-    runtimePackage: '@propanejs/runtime',
+    runtimePackage: '@propane/runtime',
     definition: CharLengthDefinition,
   } as ValidatorRegistration,
 
   // Custom validator (Phase 2 - stub for now)
   {
-    package: '@propanejs/types',
+    package: '@propane/types',
     name: 'Check',
     category: 'validator',
     definition: {

@@ -19,7 +19,7 @@ export const LessThanDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} < ${bigintLiteral}` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('lessThan', '@propanejs/runtime');
+    imports.add('lessThan', '@propane/runtime');
     const boundArg = typeof bound === 'string' ? `'${bound}'` : String(bound);
     return { condition: `lessThan(${valueExpr}, ${boundArg})` };
   },

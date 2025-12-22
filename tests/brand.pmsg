@@ -5,7 +5,7 @@
  * with a unique symbol declaration generated for each type.
  */
 
-import type { Brand } from '@propanejs/runtime';
+import type { Brand } from '@propane/runtime';
 
 // Simple Brand type (should transform)
 export type UserId = Brand<number, 'userId'>;

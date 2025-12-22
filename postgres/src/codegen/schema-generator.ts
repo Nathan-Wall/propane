@@ -17,7 +17,7 @@ import {
 } from '../mapping/type-mapper.js';
 
 /**
- * Known database wrapper types from @propanejs/postgres.
+ * Known database wrapper types from @propane/postgres.
  * These modify how a field is stored in the database.
  */
 const DB_WRAPPER_TYPES = new Set([
@@ -695,8 +695,8 @@ export interface SchemaGeneratorOptions {
  *
  * @example
  * ```typescript
- * import { parseFiles } from '@propanejs/parser';
- * import { generateSchema } from '@propanejs/postgres';
+ * import { parseFiles } from '@propane/parser';
+ * import { generateSchema } from '@propane/postgres';
  *
  * const { files } = parseFiles(['./src/models/*.pmsg']);
  * const schema = generateSchema(files, { schemaName: 'public' });

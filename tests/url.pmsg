@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type UrlMessage = Message<{
   '1:id': number;

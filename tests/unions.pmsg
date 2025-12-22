@@ -1,5 +1,5 @@
 import { Email } from './email.pmsg';
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Unions = Message<{
   username: string | null;

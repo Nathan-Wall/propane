@@ -114,7 +114,7 @@ export interface PmtMessage {
   /** True if wrapped with Message<{...}>, Table<{...}>, or Endpoint<{...}, R> */
   isMessageType: boolean;
 
-  /** True if wrapped with Table<{...}> from @propanejs/postgres */
+  /** True if wrapped with Table<{...}> from @propane/postgres */
   isTableType: boolean;
 
   /** Path from // @extend('<path>') decorator, if present */
@@ -161,7 +161,7 @@ export interface PmtImportSpecifier {
 }
 
 export interface PmtImport {
-  /** Module source, e.g. '@propanejs/core', './foo' */
+  /** Module source, e.g. '@propane/core', './foo' */
   source: string;
   specifiers: PmtImportSpecifier[];
 }

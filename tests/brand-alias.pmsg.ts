@@ -4,7 +4,7 @@
  * Test Brand transformation with aliased imports.
  */
 
-import type { Brand as B } from '@propanejs/runtime';
+import type { Brand as B } from '@propane/runtime';
 
 // Should transform even with aliased Brand import
 declare const _AliasedId_brand: unique symbol;

@@ -1,5 +1,5 @@
 /**
- * @propanejs/postgres - PostgreSQL storage for Propane messages
+ * @propane/postgres - PostgreSQL storage for Propane messages
  *
  * Provides database storage, migrations, and TypeScript APIs for
  * working with Propane messages in PostgreSQL.

@@ -4,16 +4,16 @@
 
 ```bash
 # Runtime dependencies
-npm i @propanejs/runtime
+npm i @propane/runtime
 
 # Development dependencies (CLI)
-npm i -D @propanejs/cli
+npm i -D @propane/cli
 
 # Optional: React integration
-npm i @propanejs/react
+npm i @propane/react
 
 # Optional: RPC server/client
-npm i @propanejs/pms-server @propanejs/pms-client
+npm i @propane/pms-server @propane/pms-client
 ```
 
 ## Quick Example
@@ -21,7 +21,7 @@ npm i @propanejs/pms-server @propanejs/pms-client
 **Define a type** in `person.pmsg`:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Person = Message<{
   id: number;

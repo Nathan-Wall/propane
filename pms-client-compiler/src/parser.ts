@@ -1,7 +1,7 @@
 /**
  * RPC Endpoint Parser
  *
- * Parses .pmsg files to extract RPC endpoint definitions using @propanejs/parser.
+ * Parses .pmsg files to extract RPC endpoint definitions using @propane/parser.
  * Looks for types using Endpoint<Payload, Response> wrapper.
  */
 
@@ -51,8 +51,8 @@ export interface ParseResult {
  *
  * Looks for types using Endpoint<Payload, Response> wrapper:
  * ```typescript
- * import { Message } from '@propanejs/runtime';
- * import { Endpoint } from '@propanejs/pms-core';
+ * import { Message } from '@propane/runtime';
+ * import { Endpoint } from '@propane/pms-core';
  *
  * export type GetUser = Endpoint<{
  *   '1:id': number;

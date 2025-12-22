@@ -1,10 +1,10 @@
 /**
- * @propanejs/types - Type definitions and registry for Propane
+ * @propane/types - Type definitions and registry for Propane
  *
  * This package provides:
  * - Type definitions for use in .pmsg files
  * - The registry for compiler configuration
- * - No runtime dependencies on other @propanejs/* packages
+ * - No runtime dependencies on other @propane/* packages
  *
  * @example
  * ```typescript
@@ -19,7 +19,7 @@
  *   Range,
  *   int32,
  *   decimal,
- * } from '@propanejs/types';
+ * } from '@propane/types';
  *
  * export type User = Table<{
  *   '1:id': PrimaryKey<Auto<bigint>>;

@@ -1,5 +1,5 @@
 {
-  "name": "@propanejs/types",
+  "name": "@propane/types",
   "version": "0.1.0",
   "description": "Type definitions and registry for Propane",
   "type": "module",

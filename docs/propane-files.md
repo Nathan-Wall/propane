@@ -3,10 +3,10 @@
 ## The Message Wrapper
 
 Types in `.pmsg` files must be wrapped with `Message<{...}>` to be transformed into
-runtime classes. Import `Message` from `@propanejs/runtime`:
+runtime classes. Import `Message` from `@propane/runtime`:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type User = Message<{
   id: number;
@@ -27,7 +27,7 @@ export type Status = 'active' | 'inactive';
 ## Basic Syntax
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type User = Message<{
   id: number;
@@ -47,7 +47,7 @@ as the project develops. This also enables compact serialization for smaller
 message sizes.
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type User = Message<{
   '1:id': number;
@@ -79,7 +79,7 @@ export type User = Message<{
 ## Nested Messages
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Address = Message<{
   '1:street': string;
@@ -97,7 +97,7 @@ export type Person = Message<{
 Inline object types are auto-generated as nested classes:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Order = Message<{
   '1:item': { name: string; price: number };
@@ -109,7 +109,7 @@ Generates class accessible as `Order.Item`.
 ## Collections
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Team = Message<{
   '1:members': string[];                    // Array
@@ -147,7 +147,7 @@ team = team.deleteTags('important');
 Maps support complex keys with structural equality:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Cache = Message<{
   data: Map<Date, string>;                // Date keys
@@ -181,7 +181,7 @@ This lets you keep business logic alongside your data definitions.
 
 ```typescript
 // person.pmsg
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 // @extend('./person.pmsg.ext.ts')
 export type Person = Message<{

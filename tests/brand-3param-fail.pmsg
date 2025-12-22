@@ -3,7 +3,7 @@
  * 3-param Brand is not allowed in .pmsg files.
  */
 
-import type { Brand } from '@propanejs/runtime';
+import type { Brand } from '@propane/runtime';
 
 declare const customSymbol: unique symbol;
 

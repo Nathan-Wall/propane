@@ -1,5 +1,5 @@
 {
-  "name": "@propanejs/cli",
+  "name": "@propane/cli",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.26.0",
-    "@propanejs/babel-messages": "*",
+    "@propane/babel-messages": "*",
     "chokidar": "^3.6.0"
   },
   "license": "ISC"

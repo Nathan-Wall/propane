@@ -97,7 +97,7 @@ export function trackValidatorImport(
         }
       }
     } else if (t.isImportNamespaceSpecifier(specifier)) {
-      // Namespace import: import * as Types from '@propanejs/types'
+      // Namespace import: import * as Types from '@propane/types'
       // Check if this package has any validators or brands
       const validators = registry.getByCategory('validator');
       const brands = registry.getByCategory('brand');

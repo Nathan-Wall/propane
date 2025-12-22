@@ -20,7 +20,7 @@ export const RangeDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} >= ${minLiteral} && ${valueExpr} <= ${maxLiteral}` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('inRange', '@propanejs/runtime');
+    imports.add('inRange', '@propane/runtime');
     const minArg = typeof min === 'string' ? `'${min}'` : String(min);
     const maxArg = typeof max === 'string' ? `'${max}'` : String(max);
     return { condition: `inRange(${valueExpr}, ${minArg}, ${maxArg})` };

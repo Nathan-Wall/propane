@@ -11,28 +11,28 @@ import type { PmtImport } from './types.js';
  * Known message wrapper types and their source packages.
  *
  * These wrapper types are recognized as message type indicators:
- * - Message<T> from @propanejs/runtime - standard message wrapper
- * - Table<T> from @propanejs/postgres - database table wrapper (implies Message)
- * - Endpoint<P, R> from @propanejs/pms-core - RPC endpoint wrapper (implies Message)
+ * - Message<T> from @propane/runtime - standard message wrapper
+ * - Table<T> from @propane/postgres - database table wrapper (implies Message)
+ * - Endpoint<P, R> from @propane/pms-core - RPC endpoint wrapper (implies Message)
  */
 const MESSAGE_WRAPPERS: Record<string, Set<string>> = {
-  '@propanejs/runtime': new Set(['Message']),
-  '@propanejs/postgres': new Set(['Table']),
-  '@propanejs/pms-core': new Set(['Endpoint']),
+  '@propane/runtime': new Set(['Message']),
+  '@propane/postgres': new Set(['Table']),
+  '@propane/pms-core': new Set(['Endpoint']),
 };
 
 /**
  * Table wrapper types and their source packages.
  */
 const TABLE_WRAPPERS: Record<string, Set<string>> = {
-  '@propanejs/postgres': new Set(['Table']),
+  '@propane/postgres': new Set(['Table']),
 };
 
 /**
  * Endpoint wrapper types for RPC detection.
  */
 const ENDPOINT_WRAPPERS: Record<string, Set<string>> = {
-  '@propanejs/pms-core': new Set(['Endpoint']),
+  '@propane/pms-core': new Set(['Endpoint']),
 };
 
 /**
@@ -85,9 +85,9 @@ function isWrapperImportInternal(
 ): boolean {
   // Map internal paths to their package names
   const internalPathPatterns: Record<string, string> = {
-    '@/runtime': '@propanejs/runtime',
-    '@/postgres': '@propanejs/postgres',
-    '@/pms-core': '@propanejs/pms-core',
+    '@/runtime': '@propane/runtime',
+    '@/postgres': '@propane/postgres',
+    '@/pms-core': '@propane/pms-core',
   };
 
   for (const imp of imports) {
@@ -123,9 +123,9 @@ function getTypeName(typeName: t.TSEntityName): string {
  * Detect if a type annotation is a message wrapper.
  *
  * This function checks if the type is:
- * - Message<{...}> from @propanejs/runtime
- * - Table<{...}> from @propanejs/postgres
- * - Endpoint<{...}, R> from @propanejs/pms-core
+ * - Message<{...}> from @propane/runtime
+ * - Table<{...}> from @propane/postgres
+ * - Endpoint<{...}, R> from @propane/pms-core
  */
 export function detectWrapper(
   typeAnnotation: t.TSType,

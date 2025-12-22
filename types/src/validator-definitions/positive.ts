@@ -16,7 +16,7 @@ export const PositiveDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} > 0n` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('isPositive', '@propanejs/runtime');
+    imports.add('isPositive', '@propane/runtime');
     return { condition: `isPositive(${valueExpr})` };
   },
 

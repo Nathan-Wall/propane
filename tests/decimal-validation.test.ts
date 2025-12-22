@@ -6,7 +6,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { isDecimal, canBeDecimal } from '@propanejs/runtime';
+import { isDecimal, canBeDecimal } from '@propane/runtime';
 
 describe('isDecimal (strict)', () => {
   describe('valid normalized decimals', () => {

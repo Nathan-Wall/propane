@@ -30,7 +30,7 @@ import {
 } from './validator-import-tracker.js';
 
 export interface PropanePluginOptions {
-  /** Custom import path for @propanejs/runtime. Defaults to '@propanejs/runtime'. */
+  /** Custom import path for @propane/runtime. Defaults to '@propane/runtime'. */
   runtimeImportPath?: string;
   /** Base directory for resolving runtimeImportPath (typically the config file directory). */
   runtimeImportBase?: string;
@@ -40,7 +40,7 @@ export interface PropanePluginOptions {
   baseUrl?: string;
   /**
    * Paths to registry modules for validators and branded types.
-   * Defaults to ['@propanejs/types'].
+   * Defaults to ['@propane/types'].
    *
    * Registry modules must export a `propaneTypes` array of type registrations.
    * Modules must have a CommonJS entry point (Babel plugins are synchronous).
@@ -49,8 +49,8 @@ export interface PropanePluginOptions {
    * ```javascript
    * // babel.config.js
    * plugins: [
-   *   ['@propanejs/babel-plugin', {
-   *     types: ['@propanejs/types', './my-custom-validators']
+   *   ['@propane/babel-plugin', {
+   *     types: ['@propane/types', './my-custom-validators']
    *   }]
    * ]
    * ```
@@ -165,7 +165,7 @@ function computeRuntimeImportPath(state: PropaneState): string {
 
 /**
  * Default registry built from statically imported propaneTypes.
- * This avoids the need to dynamically require @propanejs/types which
+ * This avoids the need to dynamically require @propane/types which
  * doesn't work for ESM-only packages with synchronous Babel plugins.
  */
 const defaultRegistry = buildRegistry([propaneTypes]);
@@ -206,8 +206,8 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
   const requireModule = createRequire(import.meta.url);
 
   for (const typePath of typePaths) {
-    // Handle the default @propanejs/types specially using static import
-    if (typePath === '@propanejs/types') {
+    // Handle the default @propane/types specially using static import
+    if (typePath === '@propane/types') {
       allRegistrations.push(propaneTypes);
       continue;
     }
@@ -328,8 +328,8 @@ function extractExtendDecorator(
 ): ExtendInfo | null {
   const comments = commentSourcePath.node.leadingComments ?? [];
   const extendInfos: { comment: t.Comment; path: string }[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  const sourceFilename = (typeAliasPath.hub?.file?.opts?.filename ?? '') as string;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  const sourceFilename = ((typeAliasPath.hub as any)?.file?.opts?.filename ?? '') as string;
 
   for (const comment of comments) {
     const lines = comment.type === 'CommentLine'

@@ -1,4 +1,4 @@
-import { usePropaneState, update } from '@propanejs/react';
+import { usePropaneState, update } from '@propane/react';
 import { GameState, BoardState, Cell } from './types.pmsg.ts';
 
 // Calculate winner from cells array

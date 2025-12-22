@@ -20,7 +20,7 @@ working with immutable instances
 **Define a type** in `person.pmsg`:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type Person = Message<{
   id: number;
@@ -57,16 +57,16 @@ console.log(updated.equals(restored));  // true
 
 ```bash
 # Runtime dependencies
-npm i @propanejs/runtime
+npm i @propane/runtime
 
 # Development dependencies (CLI)
-npm i -D @propanejs/cli
+npm i -D @propane/cli
 
 # Optional: React integration
-npm i @propanejs/react
+npm i @propane/react
 
 # Optional: RPC server/client
-npm i @propanejs/pms-server @propanejs/pms-client
+npm i @propane/pms-server @propane/pms-client
 ```
 
 ## Compile Propane Files
@@ -94,12 +94,12 @@ npx propanec src/models --watch
 
 | Package | Description |
 |---------|-------------|
-| `@propanejs/runtime` | Core runtime classes (Message, ImmutableArray, etc.) |
-| `@propanejs/cli` | CLI for compiling `.pmsg` files |
-| `@propanejs/react` | React hooks and utilities |
-| `@propanejs/pms-core` | PMS shared types and errors |
-| `@propanejs/pms-server` | PMS RPC server |
-| `@propanejs/pms-client` | PMS RPC client |
+| `@propane/runtime` | Core runtime classes (Message, ImmutableArray, etc.) |
+| `@propane/cli` | CLI for compiling `.pmsg` files |
+| `@propane/react` | React hooks and utilities |
+| `@propane/pms-core` | PMS shared types and errors |
+| `@propane/pms-server` | PMS RPC server |
+| `@propane/pms-client` | PMS RPC client |
 
 ## License
 

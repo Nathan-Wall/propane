@@ -3,7 +3,7 @@
  * Migration script to convert @message decorator syntax to Message<T> wrapper.
  *
  * This script:
- * 1. Adds `import { Message } from '@propanejs/runtime';` if not present
+ * 1. Adds `import { Message } from '@propane/runtime';` if not present
  * 2. Converts `// @message\nexport type Foo = { ... };` to `export type Foo = Message<{ ... }>;`
  * 3. Removes `// @message` from Endpoint<{...}, R> types (they're already wrappers)
  */
@@ -31,7 +31,7 @@ function migrateFile(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
   let modified = false;
 
-  // Check if already has Message import from @propanejs/runtime
+  // Check if already has Message import from @propane/runtime
   const hasMessageImport = /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@propanejs\/runtime['"]/.test(content)
     || /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@\/runtime/.test(content);
 
@@ -105,11 +105,11 @@ function migrateFile(filePath) {
         // Add after existing imports
         content = content.replace(
           importPattern,
-          `${importMatch[0]}import { Message } from '@propanejs/runtime';\n`
+          `${importMatch[0]}import { Message } from '@propane/runtime';\n`
         );
       } else {
         // Add at the very top
-        content = `import { Message } from '@propanejs/runtime';\n\n${content}`;
+        content = `import { Message } from '@propane/runtime';\n\n${content}`;
       }
     }
     modified = true;

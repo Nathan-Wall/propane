@@ -5,8 +5,8 @@
  * This file is expected to fail transformation.
  */
 
-import { Message } from '@propanejs/runtime';
-import type { Positive, Range, Check } from '@propanejs/types';
+import { Message } from '@propane/runtime';
+import type { Positive, Range, Check } from '@propane/types';
 
 // ERROR: Nested validators are not allowed
 export type NestedValidators = Message<{

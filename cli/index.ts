@@ -22,7 +22,7 @@ interface PropaneConfig {
   include?: string[];
   watch?: boolean;
   outputDir?: string;
-  /** Custom import path for @propanejs/runtime in generated files. */
+  /** Custom import path for @propane/runtime in generated files. */
   runtimeImportPath?: string;
 }
 
@@ -113,7 +113,7 @@ Configuration:
     "exclude": [],
     "outputDir": "dist",
     "watch": false,
-    "runtimeImportPath": "@propanejs/runtime"
+    "runtimeImportPath": "@propane/runtime"
   }
 
 Examples:

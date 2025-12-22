@@ -197,7 +197,7 @@ function generateUnionValidation(
 
   // Add dev-only unexpected type check
   if (ctx.devMode && currentIf) {
-    imports.add('ValidationError', '@propanejs/runtime');
+    imports.add('ValidationError', '@propane/runtime');
     currentIf.alternate = t.ifStatement(
       // typeof process !== 'undefined' && process.env?.NODE_ENV !== 'production'
       t.logicalExpression(
@@ -272,7 +272,7 @@ function generateValidatorCheck(
   const code = definition.generateCode?.() ?? definition.name.toUpperCase();
 
   // Import ValidationError
-  imports.add('ValidationError', '@propanejs/runtime');
+  imports.add('ValidationError', '@propane/runtime');
 
   // Generate: if (!(condition)) throw new ValidationError(...)
   return [
@@ -327,7 +327,7 @@ function generateBrandCheck(
   const code = definition.generateCode?.() ?? brand.registration.name.toUpperCase();
 
   // Import ValidationError
-  imports.add('ValidationError', '@propanejs/runtime');
+  imports.add('ValidationError', '@propane/runtime');
 
   // Generate: if (!(condition)) throw new ValidationError(...)
   return [
@@ -409,7 +409,7 @@ export function generateValidationErrorImport(
   imports: Map<string, Set<string>>,
   runtimePath: string
 ): t.ImportDeclaration | null {
-  const runtimeImports = imports.get('@propanejs/runtime');
+  const runtimeImports = imports.get('@propane/runtime');
   if (!runtimeImports?.has('ValidationError')) {
     return null;
   }

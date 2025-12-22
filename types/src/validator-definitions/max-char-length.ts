@@ -11,7 +11,7 @@ export const MaxCharLengthDefinition: ValidatorDefinition = {
 
   generateJs({ valueExpr, params, imports }) {
     const [maxLen] = params as [number];
-    imports.add('charLength', '@propanejs/runtime');
+    imports.add('charLength', '@propane/runtime');
     return { condition: `charLength(${valueExpr}) <= ${maxLen}` };
   },
 

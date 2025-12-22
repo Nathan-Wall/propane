@@ -17,7 +17,7 @@ import { pluralize } from '@/common/strings/pluralize.js';
 export interface RepositoryGeneratorOptions {
   /** Schema name (default: 'public') */
   schemaName?: string;
-  /** Import path for @propanejs/postgres (default: '@propanejs/postgres') */
+  /** Import path for @propane/postgres (default: '@propane/postgres') */
   postgresImport?: string;
   /** Import path prefix for source types (e.g., '../models') */
   typesImportPrefix?: string;
@@ -299,7 +299,7 @@ function generateRepositorySource(
 ): string {
   const { message, table, tableName } = info;
   const className = toRepositoryClassName(message.name);
-  const postgresImport = options.postgresImport ?? '@propanejs/postgres';
+  const postgresImport = options.postgresImport ?? '@propane/postgres';
   const schemaName = options.schemaName ?? 'public';
 
   const columns = Object.keys(table.columns);
@@ -496,8 +496,8 @@ function findTableInfos(
  *
  * @example
  * ```typescript
- * import { parseFiles } from '@propanejs/parser';
- * import { generateSchema, generateRepositories } from '@propanejs/postgres';
+ * import { parseFiles } from '@propane/parser';
+ * import { generateSchema, generateRepositories } from '@propane/postgres';
  *
  * const { files } = parseFiles(['./src/models/*.pmsg']);
  * const schema = generateSchema(files);

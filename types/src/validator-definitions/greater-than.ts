@@ -19,7 +19,7 @@ export const GreaterThanDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} > ${bigintLiteral}` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('greaterThan', '@propanejs/runtime');
+    imports.add('greaterThan', '@propane/runtime');
     const boundArg = typeof bound === 'string' ? `'${bound}'` : String(bound);
     return { condition: `greaterThan(${valueExpr}, ${boundArg})` };
   },

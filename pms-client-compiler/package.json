@@ -1,5 +1,5 @@
 {
-  "name": "@propanejs/pms-client-compiler",
+  "name": "@propane/pms-client-compiler",
   "version": "0.0.0",
   "description": "Compiler for generating typed PMS clients from .pmsg files",
   "type": "module",
@@ -25,7 +25,7 @@
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
-    "@propanejs/pms-client": "*",
-    "@propanejs/pms-core": "*"
+    "@propane/pms-client": "*",
+    "@propane/pms-core": "*"
   }
 }

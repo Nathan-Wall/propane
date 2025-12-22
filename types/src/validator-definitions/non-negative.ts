@@ -16,7 +16,7 @@ export const NonNegativeDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} >= 0n` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('isNonNegative', '@propanejs/runtime');
+    imports.add('isNonNegative', '@propane/runtime');
     return { condition: `isNonNegative(${valueExpr})` };
   },
 

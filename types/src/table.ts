@@ -7,7 +7,7 @@
  *
  * @example
  * ```typescript
- * import { Table, PrimaryKey, Auto, Index } from '@propanejs/types';
+ * import { Table, PrimaryKey, Auto, Index } from '@propane/types';
  *
  * export type User = Table<{
  *   '1:id': PrimaryKey<Auto<bigint>>;

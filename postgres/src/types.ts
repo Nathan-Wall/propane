@@ -23,7 +23,7 @@ declare const REFERENCES_BRAND: unique symbol;
  *
  * @example
  * ```typescript
- * import { Table, PrimaryKey, Auto, Unique } from '@propanejs/postgres';
+ * import { Table, PrimaryKey, Auto, Unique } from '@propane/postgres';
  *
  * export type User = Table<{
  *   '1:id': PrimaryKey<Auto<bigint>>;  // BIGSERIAL PRIMARY KEY

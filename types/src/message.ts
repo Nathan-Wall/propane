@@ -7,7 +7,7 @@
  *
  * @example
  * ```typescript
- * import { Message } from '@propanejs/types';
+ * import { Message } from '@propane/types';
  *
  * export type User = Message<{
  *   '1:id': number;

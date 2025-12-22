@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/table-wrapper.pmsg
-import { Table } from '@propanejs/postgres';
+import { Table } from '@propane/postgres';
 
 /**
  * Test Table<T> wrapper for database types.

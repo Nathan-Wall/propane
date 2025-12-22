@@ -1,5 +1,5 @@
 import { Endpoint } from '@/pms-core/src/index.js';
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type TestResponse = Message<{
   '1:value': string;

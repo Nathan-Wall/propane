@@ -2,8 +2,8 @@
  * Test Brand types used as properties in Message types.
  */
 
-import type { Brand } from '@propanejs/runtime';
-import { Message } from '@propanejs/runtime';
+import type { Brand } from '@propane/runtime';
+import { Message } from '@propane/runtime';
 
 // A standalone Brand type (should transform)
 export type UserId = Brand<number, 'userId'>;

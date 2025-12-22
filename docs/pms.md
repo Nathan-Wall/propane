@@ -18,13 +18,13 @@ compile-time type safety between requests and responses.
 
 ```bash
 # Server
-npm i @propanejs/pms-server
+npm i @propane/pms-server
 
 # Client
-npm i @propanejs/pms-client
+npm i @propane/pms-client
 
 # Client Code Generator (optional)
-npm i -D @propanejs/pms-client-compiler
+npm i -D @propane/pms-client-compiler
 ```
 
 ## Defining Messages
@@ -34,8 +34,8 @@ types and `Endpoint<Payload, Response>` for RPC endpoints:
 
 ```typescript
 // messages.pmsg
-import { Message } from '@propanejs/runtime';
-import { Endpoint } from '@propanejs/pms-core';
+import { Message } from '@propane/runtime';
+import { Endpoint } from '@propane/pms-core';
 
 export type GetUser = Endpoint<{
   '1:id': number;
@@ -62,7 +62,7 @@ export type CreateUserResponse = Message<{
 Create a server and register handlers for each request type:
 
 ```typescript
-import { PmsServer, HandlerError } from '@propanejs/pms-server';
+import { PmsServer, HandlerError } from '@propane/pms-server';
 import {
   GetUser,
   GetUserResponse,
@@ -107,7 +107,7 @@ response in a `Response` object. The Response constructor takes the response
 class as the first argument:
 
 ```typescript
-import { Response } from '@propanejs/pms-server';
+import { Response } from '@propane/pms-server';
 
 server.handle(Login, async (req) => {
   const session = await createSession(req.username, req.password);
@@ -132,7 +132,7 @@ server.handle(GetUser, async (req) => {
 The client provides type-safe RPC calls:
 
 ```typescript
-import { PmsClient } from '@propanejs/pms-client';
+import { PmsClient } from '@propane/pms-client';
 import {
   GetUser,
   GetUserResponse,
@@ -166,7 +166,7 @@ you can generate a typed client with methods for each RPC endpoint.
 Install the compiler as a dev dependency:
 
 ```bash
-npm i -D @propanejs/pms-client-compiler
+npm i -D @propane/pms-client-compiler
 ```
 
 Generate a client from your `.pmsg` files:
@@ -221,8 +221,8 @@ Given these message definitions:
 
 ```typescript
 // messages.pmsg
-import { Message } from '@propanejs/runtime';
-import { Endpoint } from '@propanejs/pms-core';
+import { Message } from '@propane/runtime';
+import { Endpoint } from '@propane/pms-core';
 
 export type GetUser = Endpoint<{
   '1:id': number;
@@ -289,7 +289,7 @@ up any new files, then regenerates the output.
 Throw `HandlerError` to return structured errors to clients:
 
 ```typescript
-import { HandlerError } from '@propanejs/pms-server';
+import { HandlerError } from '@propane/pms-server';
 
 server.handle(GetUser, async (req) => {
   if (req.id <= 0) {
@@ -309,7 +309,7 @@ The `HandlerError` constructor takes:
 Catch `PmsProtocolError` to handle server errors:
 
 ```typescript
-import { PmsClient, PmsProtocolError } from '@propanejs/pms-client';
+import { PmsClient, PmsProtocolError } from '@propane/pms-client';
 
 try {
   const user = await client.request(new GetUser({ id: -1 }), GetUserResponse);
@@ -408,7 +408,7 @@ await server.listen({
 Enable CORS for browser clients:
 
 ```typescript
-import { HttpTransport } from '@propanejs/pms-server';
+import { HttpTransport } from '@propane/pms-server';
 
 // Simple: allow all origins
 const transport = new HttpTransport({
@@ -486,7 +486,7 @@ Enable HTTPS by providing TLS options:
 
 ```typescript
 import { readFileSync } from 'node:fs';
-import { HttpTransport } from '@propanejs/pms-server';
+import { HttpTransport } from '@propane/pms-server';
 
 const transport = new HttpTransport({
   port: 8443,
@@ -589,7 +589,7 @@ Use PMWS when you need:
 Use `WsTransport` instead of the default `HttpTransport`:
 
 ```typescript
-import { PmsServer, WsTransport } from '@propanejs/pms-server';
+import { PmsServer, WsTransport } from '@propane/pms-server';
 
 const server = new PmsServer();
 
@@ -611,7 +611,7 @@ console.log('WebSocket server running on port 8080');
 Use `PmwsClient` for WebSocket connections:
 
 ```typescript
-import { PmwsClient } from '@propanejs/pms-client';
+import { PmwsClient } from '@propane/pms-client';
 
 const client = new PmwsClient({ url: 'ws://localhost:8080' });
 
@@ -671,7 +671,7 @@ if (client.connected) {
 WebSocket-specific errors use `PmwsConnectionError`:
 
 ```typescript
-import { PmwsClient, PmwsProtocolError, PmwsConnectionError } from '@propanejs/pms-client';
+import { PmwsClient, PmwsProtocolError, PmwsConnectionError } from '@propane/pms-client';
 
 try {
   await client.request(request, ResponseClass);
@@ -717,7 +717,7 @@ Enable encrypted WebSocket connections by providing TLS options:
 
 ```typescript
 import { readFileSync } from 'node:fs';
-import { PmsServer, WsTransport } from '@propanejs/pms-server';
+import { PmsServer, WsTransport } from '@propane/pms-server';
 
 const transport = new WsTransport({
   port: 8443,

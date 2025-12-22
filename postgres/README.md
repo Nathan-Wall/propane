@@ -1,4 +1,4 @@
-# @propanejs/postgres
+# @propane/postgres
 
 PostgreSQL storage for Propane messages with analyst-friendly tables, type-safe queries, and declarative migrations.
 
@@ -13,7 +13,7 @@ PostgreSQL storage for Propane messages with analyst-friendly tables, type-safe 
 ## Installation
 
 ```bash
-npm install @propanejs/postgres postgres
+npm install @propane/postgres postgres
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ Use the `Table<{...}>` wrapper in your `.pmsg` files to mark types as database t
 
 ```typescript
 // user.pmsg
-import { Table, PrimaryKey, Auto, Index, Unique, Json } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, Index, Unique, Json } from '@propane/postgres';
 
 export type User = Table<{
   '1:id': PrimaryKey<Auto<bigint>>;  // BIGSERIAL PRIMARY KEY
@@ -40,7 +40,7 @@ Types wrapped with `Table<{...}>` are transformed into runtime classes (like `Me
 ### Connect to the database
 
 ```typescript
-import { createPool } from '@propanejs/postgres';
+import { createPool } from '@propane/postgres';
 
 const pool = createPool({
   host: 'localhost',
@@ -71,7 +71,7 @@ const users = new UserRepository(pool);
 **Option 2: Manual configuration**
 
 ```typescript
-import { BaseRepository } from '@propanejs/postgres';
+import { BaseRepository } from '@propane/postgres';
 
 const users = new BaseRepository<User>(pool, {
   tableName: 'users',
@@ -159,7 +159,7 @@ const upserted = await users.upsert(
 ### Transactions
 
 ```typescript
-import { withTransaction } from '@propanejs/postgres';
+import { withTransaction } from '@propane/postgres';
 
 await withTransaction(pool, async (tx) => {
   const user = await users.create({ ... }, { connection: tx });
@@ -191,7 +191,7 @@ await withTransaction(pool, async (tx) => {
 Use `References<T>` to create foreign key relationships:
 
 ```typescript
-import { Table, PrimaryKey, Auto, References } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, References } from '@propane/postgres';
 
 export type Post = Table<{
   '1:id': PrimaryKey<Auto<bigint>>;
@@ -210,7 +210,7 @@ The column type is automatically inferred from the referenced table's primary ke
 Tables can have composite (multi-column) primary keys:
 
 ```typescript
-import { Table, PrimaryKey } from '@propanejs/postgres';
+import { Table, PrimaryKey } from '@propane/postgres';
 
 // Composite key ordered by declaration order
 export type UserRole = Table<{
@@ -298,7 +298,7 @@ export class UserRoleRepository extends BaseRepository<UserRole & Record<string,
 Use `decimal<Precision, Scale>` for exact numeric values (e.g., money):
 
 ```typescript
-import { Table, PrimaryKey, Auto, decimal } from '@propanejs/postgres';
+import { Table, PrimaryKey, Auto, decimal } from '@propane/postgres';
 
 export type Product = Table<{
   '1:id': PrimaryKey<Auto<bigint>>;
@@ -434,7 +434,7 @@ This creates repository files like:
 
 ```typescript
 // generated/user-repository.ts
-import { BaseRepository } from '@propanejs/postgres';
+import { BaseRepository } from '@propane/postgres';
 import type { User } from '../models/user.pmsg';
 
 export class UserRepository extends BaseRepository<User & Record<string, unknown>> {
@@ -565,7 +565,7 @@ export default {
 Use PostgreSQL schemas for feature branch isolation:
 
 ```typescript
-import { createSchemaManager } from '@propanejs/postgres';
+import { createSchemaManager } from '@propane/postgres';
 
 const schemas = createSchemaManager(pool);
 
@@ -588,7 +588,7 @@ await schemas.dropBranch('feature/new-auth');
 The package can introspect an existing PostgreSQL database to compare against your `.pmsg` schema:
 
 ```typescript
-import { createPool, introspectDatabase, compareSchemas } from '@propanejs/postgres';
+import { createPool, introspectDatabase, compareSchemas } from '@propane/postgres';
 
 const pool = createPool({ ... });
 

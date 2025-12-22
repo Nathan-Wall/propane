@@ -11,7 +11,7 @@ export const MinCharLengthDefinition: ValidatorDefinition = {
 
   generateJs({ valueExpr, params, imports }) {
     const [minLen] = params as [number];
-    imports.add('charLength', '@propanejs/runtime');
+    imports.add('charLength', '@propane/runtime');
     return { condition: `charLength(${valueExpr}) >= ${minLen}` };
   },
 

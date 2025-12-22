@@ -1,11 +1,11 @@
 # React Integration
 
-Propane provides first-class React support via `@propanejs/react`.
+Propane provides first-class React support via `@propane/react`.
 
 ## Installation
 
 ```bash
-npm i @propanejs/react
+npm i @propane/react
 ```
 
 ## Basic Usage
@@ -13,7 +13,7 @@ npm i @propanejs/react
 Use `usePropaneState` to manage Propane messages as React state:
 
 ```typescript
-import { usePropaneState, update } from '@propanejs/react';
+import { usePropaneState, update } from '@propane/react';
 import { AppState } from './types.pmsg.ts';
 
 function App() {
@@ -69,7 +69,7 @@ When you modify a nested message or collection, parent components re-render:
 
 ```typescript
 // types.pmsg
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type GameState = Message<{
   '1:history': BoardState[];
@@ -99,7 +99,7 @@ Use `usePropaneSelector` to derive values from state with automatic memoization.
 The component only re-renders when the selected value changes (using structural equality):
 
 ```typescript
-import { usePropaneState, usePropaneSelector, update } from '@propanejs/react';
+import { usePropaneState, usePropaneSelector, update } from '@propane/react';
 import { AppState } from './types.pmsg.ts';
 
 function UserName() {
@@ -156,7 +156,7 @@ Use `memoPropane` instead of `React.memo` for components receiving Propane props
 It uses structural equality via `equals()` to prevent unnecessary re-renders:
 
 ```typescript
-import { memoPropane } from '@propanejs/react';
+import { memoPropane } from '@propane/react';
 
 const TodoItem = memoPropane(({ todo }: { todo: Todo }) => {
   return <li>{todo.text}</li>;
@@ -329,7 +329,7 @@ const likePost = (postId: number) => {
 Update any object directly - changes propagate up automatically:
 
 ```typescript
-import { usePropaneState, update } from '@propanejs/react';
+import { usePropaneState, update } from '@propane/react';
 
 const [state] = usePropaneState<State>(initialState);
 
@@ -485,7 +485,7 @@ needing to anticipate every possible mutation.
 ## Complete Example
 
 ```typescript
-import { usePropaneState, usePropaneSelector, update, memoPropane } from '@propanejs/react';
+import { usePropaneState, usePropaneSelector, update, memoPropane } from '@propane/react';
 import { GameState, BoardState } from './types.pmsg.ts';
 
 const Square = memoPropane(({ value, onClick }: SquareProps) => (

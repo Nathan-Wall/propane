@@ -15,8 +15,8 @@ This dual validation prevents invalid data from entering your system, whether th
 
 ```typescript
 // models/product.pmsg
-import { Table, PrimaryKey, Auto } from '@propanejs/postgres';
-import { Positive, Range, NonEmpty, MinLength } from '@propanejs/validate';
+import { Table, PrimaryKey, Auto } from '@propane/postgres';
+import { Positive, Range, NonEmpty, MinLength } from '@propane/validate';
 
 export type Product = Table<{
   '1:id': PrimaryKey<Auto<bigint>>;
@@ -100,7 +100,7 @@ For strings with multi-byte characters (emoji, CJK, etc.), use `CharLength` vari
 For complex validation logic, define a custom validator:
 
 ```typescript
-import { Check, Validator } from '@propanejs/validate';
+import { Check, Validator } from '@propane/validate';
 
 // Define the validator
 const validSku: Validator<string> = (v) => v.length >= 3 && v.length <= 20;
@@ -148,7 +148,7 @@ Add a custom error message as the last type parameter:
 Use `int32` and `int53` when you need integer validation:
 
 ```typescript
-import { int32, int53 } from '@propanejs/runtime';
+import { int32, int53 } from '@propane/runtime';
 
 export type Counter = Table<{
   '1:count': Positive<int32>;   // Integer in range -2^31 to 2^31-1, must be > 0
@@ -208,8 +208,8 @@ status TEXT NOT NULL CHECK (status IN ('pending', 'shipped', 'delivered'))
 Validators work with `Message` types too, just without SQL generation:
 
 ```typescript
-import { Message } from '@propanejs/runtime';
-import { Positive, NonEmpty } from '@propanejs/validate';
+import { Message } from '@propane/runtime';
+import { Positive, NonEmpty } from '@propane/validate';
 
 export type OrderItem = Message<{
   '1:quantity': Positive<number>;
@@ -236,12 +236,12 @@ export type OrderItem = Message<{
 
 ```typescript
 // models/product.pmsg
-import { Table, PrimaryKey, Auto, Index, Unique } from '@propanejs/postgres';
-import { int53 } from '@propanejs/runtime';
+import { Table, PrimaryKey, Auto, Index, Unique } from '@propane/postgres';
+import { int53 } from '@propane/runtime';
 import {
   Positive, Range, NonEmpty, Length, MaxLength,
   Check, Validator
-} from '@propanejs/validate';
+} from '@propane/validate';
 
 const validSku: Validator<string> = (v) =>
   v.length >= 3 && v.length <= 20;

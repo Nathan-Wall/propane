@@ -102,7 +102,7 @@ for (const pkgDir of packages) {
 }
 
 // 2. Re-link node_modules to point to build/
-const nodeModulesScope = path.join(projectRoot, 'node_modules', '@propanejs');
+const nodeModulesScope = path.join(projectRoot, 'node_modules', '@propane');
 if (fs.existsSync(nodeModulesScope)) {
   for (const pkgDir of packages) {
     const srcDir = path.join(projectRoot, pkgDir);
@@ -110,7 +110,7 @@ if (fs.existsSync(nodeModulesScope)) {
     const pkgName = pkgJson.name.split('/')[1]; // e.g. babel-messages
 
     const linkPath = path.join(nodeModulesScope, pkgName);
-    // Link: node_modules/@propanejs/babel-messages
+    // Link: node_modules/@propane/babel-messages
     // Target: build/tools/babel/messages
     // Path: ../../build/tools/babel/messages
     // This assumes scope dir is one level deep in node_modules.
@@ -136,7 +136,7 @@ if (fs.existsSync(nodeModulesScope)) {
       }
       
       fs.symlinkSync(targetPath, linkPath, 'dir');
-      console.log(`Linked node_modules/@propanejs/${pkgName} -> build/${pkgDir}`);
+      console.log(`Linked node_modules/@propane/${pkgName} -> build/${pkgDir}`);
     } catch (e) {
       console.error(`Failed to link ${pkgName}: ${e.message}`);
     }

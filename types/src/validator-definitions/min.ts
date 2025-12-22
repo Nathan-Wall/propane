@@ -19,7 +19,7 @@ export const MinDefinition: ValidatorDefinition = {
       return { condition: `${valueExpr} >= ${bigintLiteral}` };
     }
     // For decimal or mixed numeric types, use runtime helper
-    imports.add('greaterThanOrEqual', '@propanejs/runtime');
+    imports.add('greaterThanOrEqual', '@propane/runtime');
     const minArg = typeof min === 'string' ? `'${min}'` : String(min);
     return { condition: `greaterThanOrEqual(${valueExpr}, ${minArg})` };
   },

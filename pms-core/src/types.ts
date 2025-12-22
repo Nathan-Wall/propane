@@ -8,8 +8,8 @@ import type { Message, DataObject } from '@/runtime/index.js';
  *
  * @example
  * ```typescript
- * import { Message } from '@propanejs/runtime';
- * import { Endpoint } from '@propanejs/pms-core';
+ * import { Message } from '@propane/runtime';
+ * import { Endpoint } from '@propane/pms-core';
  *
  * export type GetUser = Endpoint<{
  *   '1:id': number;

@@ -1,7 +1,7 @@
 import { Distance } from './distance.pmsg';
 import { Email } from './email.pmsg';
 import { Hash } from './hash.pmsg';
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type User = Message<{
   '1:id': number;

@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 // This should fail because 'set' is a reserved name (for set() method)
 export type BadMessage = Message<{

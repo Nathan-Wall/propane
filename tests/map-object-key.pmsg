@@ -1,4 +1,4 @@
-import { Message } from '@propanejs/runtime';
+import { Message } from '@propane/runtime';
 
 export type MapObjectKey = Message<{
   objectKeys: Map<{ id: string; version: number }, string>;

@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/babel-messages",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "common/strings/levenshtein.ts",
+    "tools/parser/types.ts",
+    "tools/parser/babel-config.ts",
+    "tools/parser/type-parser.ts",
+    "tools/parser/validation.ts",
+    "tools/parser/decorators.ts",
+    "tools/parser/properties.ts",
+    "tools/parser/wrapper-detection.ts",
+    "tools/parser/parse-ast.ts",
+    "tools/babel/messages/**/*.ts",
+    "types/src/registry.ts",
+    "types/src/validators.ts",
+    "types/src/brands.ts",
+    "types/src/db-wrappers.ts",
+    "types/src/message.ts",
+    "types/src/table.ts",
+    "types/src/validator-definitions/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts"
+  ]
+}

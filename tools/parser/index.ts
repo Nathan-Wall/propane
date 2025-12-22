@@ -1,5 +1,5 @@
 /**
- * @propanejs/parser
+ * @propane/parser
  *
  * Shared parser library for .pmsg (Propane Message) files.
  *
@@ -9,7 +9,7 @@
  *
  * @example
  * ```typescript
- * import { parseFile, getEndpointInfo, isTransformableMessage } from '@propanejs/parser';
+ * import { parseFile, getEndpointInfo, isTransformableMessage } from '@propane/parser';
  *
  * const { file, diagnostics } = parseFile('./api.pmsg');
  *

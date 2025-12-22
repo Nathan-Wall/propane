@@ -1,4 +1,4 @@
-import { usePropaneState, update } from '@propanejs/react';
+import { usePropaneState, update } from '@propane/react';
 import { Todo, AppState } from './types.pmsg.ts';
 
 const uuid = () => crypto.randomUUID();

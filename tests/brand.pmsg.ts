@@ -7,7 +7,7 @@
  * with a unique symbol declaration generated for each type.
  */
 
-import type { Brand } from '@propanejs/runtime';
+import type { Brand } from '@propane/runtime';
 
 // Simple Brand type (should transform)
 declare const _UserId_brand: unique symbol;
