@@ -6,10 +6,10 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   static TYPE_TAG = Symbol("OptionalHole");
   static readonly $typeName = "OptionalHole";
   static EMPTY: OptionalHole;
-  #id: number;
-  #created: ImmutableDate;
-  #note: string;
-  #name: string;
+  #id!: number;
+  #created!: ImmutableDate;
+  #note!: string;
+  #name!: string;
   constructor(props?: OptionalHole.Value) {
     if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(OptionalHole.TYPE_TAG, "OptionalHole");

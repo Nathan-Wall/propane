@@ -6,14 +6,14 @@ export class Indexed extends Message<Indexed.Data> {
   static TYPE_TAG = Symbol("Indexed");
   static readonly $typeName = "Indexed";
   static EMPTY: Indexed;
-  #id: number;
-  #name: string;
-  #age: number;
-  #active: boolean;
-  #nickname: string;
-  #score: number | null;
-  #alias: string | null;
-  #status: string;
+  #id!: number;
+  #name!: string;
+  #age!: number;
+  #active!: boolean;
+  #nickname!: string;
+  #score!: number | null;
+  #alias!: string | null;
+  #status!: string;
   constructor(props?: Indexed.Value) {
     if (!props && Indexed.EMPTY) return Indexed.EMPTY;
     super(Indexed.TYPE_TAG, "Indexed");

@@ -6,8 +6,8 @@ export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static readonly $typeName = "Cat";
   static EMPTY: Cat;
-  #name: string;
-  #meows: boolean;
+  #name!: string;
+  #meows!: boolean;
   constructor(props?: Cat.Value) {
     if (!props && Cat.EMPTY) return Cat.EMPTY;
     super(Cat.TYPE_TAG, "Cat");
@@ -77,8 +77,8 @@ export class Dog extends Message<Dog.Data> {
   static TYPE_TAG = Symbol("Dog");
   static readonly $typeName = "Dog";
   static EMPTY: Dog;
-  #name: string;
-  #barks: boolean;
+  #name!: string;
+  #barks!: boolean;
   constructor(props?: Dog.Value) {
     if (!props && Dog.EMPTY) return Dog.EMPTY;
     super(Dog.TYPE_TAG, "Dog");
@@ -148,9 +148,9 @@ export class PetOwner extends Message<PetOwner.Data> {
   static TYPE_TAG = Symbol("PetOwner");
   static readonly $typeName = "PetOwner";
   static EMPTY: PetOwner;
-  #ownerName: string;
-  #pet: Cat | Dog;
-  #optionalPet: Cat | Dog;
+  #ownerName!: string;
+  #pet!: Cat | Dog;
+  #optionalPet!: Cat | Dog;
   constructor(props?: PetOwner.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -215,7 +215,7 @@ export class PetOwner extends Message<PetOwner.Data> {
     props.optionalPet = optionalPetUnionValue;
     return props as PetOwner.Data;
   }
-  #validate(data) {}
+  #validate(data: PetOwner.Value | undefined) {}
   static validateAll(data: PetOwner.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

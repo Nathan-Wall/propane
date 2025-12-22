@@ -7,10 +7,10 @@ import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class Person$Base extends Message<Person.Data> {
   static TYPE_TAG = Symbol("Person");
   static readonly $typeName = "Person";
-  static EMPTY: Person;
-  #firstName: string;
-  #lastName: string;
-  #age: number;
+  static EMPTY: Person$Base;
+  #firstName!: string;
+  #lastName!: string;
+  #age!: number;
   constructor(props?: Person.Value) {
     if (!props && Person$Base.EMPTY) return Person$Base.EMPTY;
     super(Person$Base.TYPE_TAG, "Person");
@@ -66,24 +66,24 @@ export class Person$Base extends Message<Person.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Person)(data));
+    return this.$update(new (this.constructor as typeof Person$Base)(data));
   }
   setAge(value: number) {
-    return this.$update(new (this.constructor as typeof Person)({
+    return this.$update(new (this.constructor as typeof Person$Base)({
       firstName: this.#firstName,
       lastName: this.#lastName,
       age: value
     }));
   }
   setFirstName(value: string) {
-    return this.$update(new (this.constructor as typeof Person)({
+    return this.$update(new (this.constructor as typeof Person$Base)({
       firstName: value,
       lastName: this.#lastName,
       age: this.#age
     }));
   }
   setLastName(value: string) {
-    return this.$update(new (this.constructor as typeof Person)({
+    return this.$update(new (this.constructor as typeof Person$Base)({
       firstName: this.#firstName,
       lastName: value,
       age: this.#age
@@ -96,5 +96,5 @@ export namespace Person {
     lastName: string;
     age: number;
   };
-  export type Value = Person | Person.Data;
+  export type Value = Person$Base | Person.Data;
 }

@@ -6,10 +6,10 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
   static readonly $typeName = "UrlMessage";
   static EMPTY: UrlMessage;
-  #id: number;
-  #primary: ImmutableUrl;
-  #secondary: ImmutableUrl;
-  #links: ImmutableArray<ImmutableUrl>;
+  #id!: number;
+  #primary!: ImmutableUrl;
+  #secondary!: ImmutableUrl;
+  #links!: ImmutableArray<ImmutableUrl>;
   constructor(props?: UrlMessage.Value) {
     if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
     super(UrlMessage.TYPE_TAG, "UrlMessage");

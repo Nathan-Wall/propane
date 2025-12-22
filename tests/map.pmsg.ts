@@ -6,7 +6,7 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   static TYPE_TAG = Symbol("MapMessage_Metadata_Value");
   static readonly $typeName = "MapMessage_Metadata_Value";
   static EMPTY: MapMessage_Metadata_Value;
-  #value: string;
+  #value!: string;
   constructor(props?: MapMessage_Metadata_Value.Value) {
     if (!props && MapMessage_Metadata_Value.EMPTY) return MapMessage_Metadata_Value.EMPTY;
     super(MapMessage_Metadata_Value.TYPE_TAG, "MapMessage_Metadata_Value");
@@ -56,7 +56,7 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   static TYPE_TAG = Symbol("MapMessage_Extras_Value");
   static readonly $typeName = "MapMessage_Extras_Value";
   static EMPTY: MapMessage_Extras_Value;
-  #note: string | null;
+  #note!: string | null;
   constructor(props?: MapMessage_Extras_Value.Value) {
     if (!props && MapMessage_Extras_Value.EMPTY) return MapMessage_Extras_Value.EMPTY;
     super(MapMessage_Extras_Value.TYPE_TAG, "MapMessage_Extras_Value");
@@ -106,9 +106,9 @@ export class MapMessage extends Message<MapMessage.Data> {
   static TYPE_TAG = Symbol("MapMessage");
   static readonly $typeName = "MapMessage";
   static EMPTY: MapMessage;
-  #labels: ImmutableMap<string | number, number>;
-  #metadata: ImmutableMap<string, MapMessage_Metadata_Value> | undefined;
-  #extras: ImmutableMap<string, MapMessage_Extras_Value>;
+  #labels!: ImmutableMap<string | number, number>;
+  #metadata!: ImmutableMap<string, MapMessage_Metadata_Value> | undefined;
+  #extras!: ImmutableMap<string, MapMessage_Extras_Value>;
   constructor(props?: MapMessage.Value) {
     if (!props && MapMessage.EMPTY) return MapMessage.EMPTY;
     super(MapMessage.TYPE_TAG, "MapMessage");

@@ -8,9 +8,9 @@ import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
 export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   static TYPE_TAG = Symbol("SameLineExtend");
   static readonly $typeName = "SameLineExtend";
-  static EMPTY: SameLineExtend;
-  #firstName: string;
-  #lastName: string;
+  static EMPTY: SameLineExtend$Base;
+  #firstName!: string;
+  #lastName!: string;
   constructor(props?: SameLineExtend.Value) {
     if (!props && SameLineExtend$Base.EMPTY) return SameLineExtend$Base.EMPTY;
     super(SameLineExtend$Base.TYPE_TAG, "SameLineExtend");
@@ -54,16 +54,16 @@ export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof SameLineExtend)(data));
+    return this.$update(new (this.constructor as typeof SameLineExtend$Base)(data));
   }
   setFirstName(value: string) {
-    return this.$update(new (this.constructor as typeof SameLineExtend)({
+    return this.$update(new (this.constructor as typeof SameLineExtend$Base)({
       firstName: value,
       lastName: this.#lastName
     }));
   }
   setLastName(value: string) {
-    return this.$update(new (this.constructor as typeof SameLineExtend)({
+    return this.$update(new (this.constructor as typeof SameLineExtend$Base)({
       firstName: this.#firstName,
       lastName: value
     }));
@@ -74,5 +74,5 @@ export namespace SameLineExtend {
     firstName: string;
     lastName: string;
   };
-  export type Value = SameLineExtend | SameLineExtend.Data;
+  export type Value = SameLineExtend$Base | SameLineExtend.Data;
 }

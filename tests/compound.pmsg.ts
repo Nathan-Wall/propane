@@ -8,7 +8,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   static TYPE_TAG = Symbol("Compound_Inline");
   static readonly $typeName = "Compound_Inline";
   static EMPTY: Compound_Inline;
-  #value: string;
+  #value!: string;
   constructor(props?: Compound_Inline.Value) {
     if (!props && Compound_Inline.EMPTY) return Compound_Inline.EMPTY;
     super(Compound_Inline.TYPE_TAG, "Compound_Inline");
@@ -58,9 +58,9 @@ export class Compound extends Message<Compound.Data> {
   static TYPE_TAG = Symbol("Compound");
   static readonly $typeName = "Compound";
   static EMPTY: Compound;
-  #user: User;
-  #indexed: Indexed;
-  #inline: Compound_Inline;
+  #user!: User;
+  #indexed!: Indexed;
+  #inline!: Compound_Inline;
   constructor(props?: Compound.Value, options?: {
     skipValidation?: boolean;
   }) {

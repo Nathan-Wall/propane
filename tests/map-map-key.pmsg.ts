@@ -6,8 +6,8 @@ export class MapMapKey extends Message<MapMapKey.Data> {
   static TYPE_TAG = Symbol("MapMapKey");
   static readonly $typeName = "MapMapKey";
   static EMPTY: MapMapKey;
-  #nested: ImmutableMap<ImmutableMap<string, number>, string>;
-  #optional: ImmutableMap<ImmutableMap<string, number>, number> | undefined;
+  #nested!: ImmutableMap<ImmutableMap<string, number>, string>;
+  #optional!: ImmutableMap<ImmutableMap<string, number>, number> | undefined;
   constructor(props?: MapMapKey.Value) {
     if (!props && MapMapKey.EMPTY) return MapMapKey.EMPTY;
     super(MapMapKey.TYPE_TAG, "MapMapKey");

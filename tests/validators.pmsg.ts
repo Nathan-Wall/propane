@@ -15,10 +15,10 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
   static TYPE_TAG = Symbol("NumericSignValidators");
   static readonly $typeName = "NumericSignValidators";
   static EMPTY: NumericSignValidators;
-  #positiveNumber: Positive<number>;
-  #negativeNumber: Negative<number>;
-  #nonNegativeNumber: NonNegative<number>;
-  #nonPositiveNumber: NonPositive<number>;
+  #positiveNumber!: Positive<number>;
+  #negativeNumber!: Negative<number>;
+  #nonNegativeNumber!: NonNegative<number>;
+  #nonPositiveNumber!: NonPositive<number>;
   constructor(props?: NumericSignValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -68,7 +68,7 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
     props.nonPositiveNumber = nonPositiveNumberValue;
     return props as NumericSignValidators.Data;
   }
-  #validate(data) {
+  #validate(data: NumericSignValidators.Value | undefined) {
     if (!(data.positiveNumber > 0)) {
       throw new ValidationError("positiveNumber", "must be positive", data.positiveNumber, "POSITIVE");
     }
@@ -181,9 +181,9 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
   static TYPE_TAG = Symbol("NumericBoundValidators");
   static readonly $typeName = "NumericBoundValidators";
   static EMPTY: NumericBoundValidators;
-  #minValue: Min<number, 0>;
-  #maxValue: Max<number, 100>;
-  #rangeValue: Range<number, 0, 100>;
+  #minValue!: Min<number, 0>;
+  #maxValue!: Max<number, 100>;
+  #rangeValue!: Range<number, 0, 100>;
   constructor(props?: NumericBoundValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -225,7 +225,7 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
     props.rangeValue = rangeValueValue;
     return props as NumericBoundValidators.Data;
   }
-  #validate(data) {
+  #validate(data: NumericBoundValidators.Value | undefined) {
     if (!(data.minValue >= 0)) {
       throw new ValidationError("minValue", "must be at least 0", data.minValue, "MIN");
     }
@@ -314,10 +314,10 @@ export class StringValidators extends Message<StringValidators.Data> {
   static TYPE_TAG = Symbol("StringValidators");
   static readonly $typeName = "StringValidators";
   static EMPTY: StringValidators;
-  #nonEmptyString: NonEmpty<string>;
-  #minLengthString: MinLength<string, 3>;
-  #maxLengthString: MaxLength<string, 100>;
-  #exactLengthString: Length<string, 5, 10>;
+  #nonEmptyString!: NonEmpty<string>;
+  #minLengthString!: MinLength<string, 3>;
+  #maxLengthString!: MaxLength<string, 100>;
+  #exactLengthString!: Length<string, 5, 10>;
   constructor(props?: StringValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -367,7 +367,7 @@ export class StringValidators extends Message<StringValidators.Data> {
     props.exactLengthString = exactLengthStringValue;
     return props as StringValidators.Data;
   }
-  #validate(data) {
+  #validate(data: StringValidators.Value | undefined) {
     if (!(data.nonEmptyString.length > 0)) {
       throw new ValidationError("nonEmptyString", "must not be empty", data.nonEmptyString, "NON_EMPTY");
     }
@@ -480,12 +480,12 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   static TYPE_TAG = Symbol("BrandedValidators");
   static readonly $typeName = "BrandedValidators";
   static EMPTY: BrandedValidators;
-  #positiveInt32: Positive<int32>;
-  #positiveInt53: Positive<int53>;
-  #positiveDecimal: Positive<decimal<10, 2>>;
-  #minDecimal: Min<decimal<10, 2>, "100">;
-  #maxDecimal: Max<decimal<10, 2>, "1000">;
-  #rangeDecimal: Range<decimal<10, 2>, "0", "999.99">;
+  #positiveInt32!: Positive<int32>;
+  #positiveInt53!: Positive<int53>;
+  #positiveDecimal!: Positive<decimal<10, 2>>;
+  #minDecimal!: Min<decimal<10, 2>, "100">;
+  #maxDecimal!: Max<decimal<10, 2>, "1000">;
+  #rangeDecimal!: Range<decimal<10, 2>, "0", "999.99">;
   constructor(props?: BrandedValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -551,7 +551,7 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
     props.rangeDecimal = rangeDecimalValue;
     return props as BrandedValidators.Data;
   }
-  #validate(data) {
+  #validate(data: BrandedValidators.Value | undefined) {
     if (!(isInt32(data.positiveInt32))) {
       throw new ValidationError("positiveInt32", "must be a 32-bit integer", data.positiveInt32, "INT32");
     }
@@ -756,10 +756,10 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
   static TYPE_TAG = Symbol("OptionalValidators");
   static readonly $typeName = "OptionalValidators";
   static EMPTY: OptionalValidators;
-  #requiredPositive: Positive<number>;
-  #optionalPositive: Positive<number>;
-  #nullablePositive: Positive<number> | null;
-  #optionalNullablePositive: Positive<number> | null;
+  #requiredPositive!: Positive<number>;
+  #optionalPositive!: Positive<number>;
+  #nullablePositive!: Positive<number> | null;
+  #optionalNullablePositive!: Positive<number> | null;
   constructor(props?: OptionalValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -810,7 +810,7 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
     props.optionalNullablePositive = optionalNullablePositiveValue;
     return props as OptionalValidators.Data;
   }
-  #validate(data) {
+  #validate(data: OptionalValidators.Value | undefined) {
     if (!(data.requiredPositive > 0)) {
       throw new ValidationError("requiredPositive", "must be positive", data.requiredPositive, "POSITIVE");
     }
@@ -949,9 +949,9 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
   static TYPE_TAG = Symbol("ArrayValidators");
   static readonly $typeName = "ArrayValidators";
   static EMPTY: ArrayValidators;
-  #nonEmptyArray: NonEmpty<string[]>;
-  #minLengthArray: MinLength<number[], 1>;
-  #maxLengthArray: MaxLength<number[], 10>;
+  #nonEmptyArray!: NonEmpty<string[]>;
+  #minLengthArray!: MinLength<number[], 1>;
+  #maxLengthArray!: MaxLength<number[], 10>;
   constructor(props?: ArrayValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -993,7 +993,7 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     props.maxLengthArray = maxLengthArrayValue;
     return props as ArrayValidators.Data;
   }
-  #validate(data) {
+  #validate(data: ArrayValidators.Value | undefined) {
     if (!(data.nonEmptyArray.length > 0)) {
       throw new ValidationError("nonEmptyArray", "must not be empty", data.nonEmptyArray, "NON_EMPTY");
     }
@@ -1081,10 +1081,10 @@ export class BigintValidators extends Message<BigintValidators.Data> {
   static TYPE_TAG = Symbol("BigintValidators");
   static readonly $typeName = "BigintValidators";
   static EMPTY: BigintValidators;
-  #positiveBigint: Positive<bigint>;
-  #minBigint: Min<bigint, 0n>;
-  #maxBigint: Max<bigint, 1000000n>;
-  #rangeBigint: Range<bigint, 0n, 100n>;
+  #positiveBigint!: Positive<bigint>;
+  #minBigint!: Min<bigint, 0n>;
+  #maxBigint!: Max<bigint, 1000000n>;
+  #rangeBigint!: Range<bigint, 0n, 100n>;
   constructor(props?: BigintValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -1134,7 +1134,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     props.rangeBigint = rangeBigintValue;
     return props as BigintValidators.Data;
   }
-  #validate(data) {
+  #validate(data: BigintValidators.Value | undefined) {
     if (!(data.positiveBigint > 0n)) {
       throw new ValidationError("positiveBigint", "must be positive", data.positiveBigint, "POSITIVE");
     }

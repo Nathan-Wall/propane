@@ -6,8 +6,8 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
   static TYPE_TAG = Symbol("MapObjectKey_ObjectKeys_Key");
   static readonly $typeName = "MapObjectKey_ObjectKeys_Key";
   static EMPTY: MapObjectKey_ObjectKeys_Key;
-  #id: string;
-  #version: number;
+  #id!: string;
+  #version!: number;
   constructor(props?: MapObjectKey_ObjectKeys_Key.Value) {
     if (!props && MapObjectKey_ObjectKeys_Key.EMPTY) return MapObjectKey_ObjectKeys_Key.EMPTY;
     super(MapObjectKey_ObjectKeys_Key.TYPE_TAG, "MapObjectKey_ObjectKeys_Key");
@@ -77,7 +77,7 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   static TYPE_TAG = Symbol("MapObjectKey_OptionalObjectMap_Key");
   static readonly $typeName = "MapObjectKey_OptionalObjectMap_Key";
   static EMPTY: MapObjectKey_OptionalObjectMap_Key;
-  #name: string;
+  #name!: string;
   constructor(props?: MapObjectKey_OptionalObjectMap_Key.Value) {
     if (!props && MapObjectKey_OptionalObjectMap_Key.EMPTY) return MapObjectKey_OptionalObjectMap_Key.EMPTY;
     super(MapObjectKey_OptionalObjectMap_Key.TYPE_TAG, "MapObjectKey_OptionalObjectMap_Key");
@@ -127,8 +127,8 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   static TYPE_TAG = Symbol("MapObjectKey");
   static readonly $typeName = "MapObjectKey";
   static EMPTY: MapObjectKey;
-  #objectKeys: ImmutableMap<MapObjectKey_ObjectKeys_Key, string>;
-  #optionalObjectMap: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> | undefined;
+  #objectKeys!: ImmutableMap<MapObjectKey_ObjectKeys_Key, string>;
+  #optionalObjectMap!: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> | undefined;
   constructor(props?: MapObjectKey.Value) {
     if (!props && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
     super(MapObjectKey.TYPE_TAG, "MapObjectKey");

@@ -11,9 +11,9 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
   static TYPE_TAG = Symbol("DefaultCollections");
   static readonly $typeName = "DefaultCollections";
   static EMPTY: DefaultCollections;
-  #arr: ImmutableArray<number>;
-  #map: ImmutableMap<string, number>;
-  #tags: ImmutableSet<string>;
+  #arr!: ImmutableArray<number>;
+  #map!: ImmutableMap<string, number>;
+  #tags!: ImmutableSet<string>;
   constructor(props?: DefaultCollections.Value) {
     if (!props && DefaultCollections.EMPTY) return DefaultCollections.EMPTY;
     super(DefaultCollections.TYPE_TAG, "DefaultCollections");

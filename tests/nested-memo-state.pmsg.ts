@@ -8,7 +8,7 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   static TYPE_TAG = Symbol("InnerMessage");
   static readonly $typeName = "InnerMessage";
   static EMPTY: InnerMessage;
-  #value: string;
+  #value!: string;
   constructor(props?: InnerMessage.Value) {
     if (!props && InnerMessage.EMPTY) return InnerMessage.EMPTY;
     super(InnerMessage.TYPE_TAG, "InnerMessage");
@@ -58,8 +58,8 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   static TYPE_TAG = Symbol("OuterMessage");
   static readonly $typeName = "OuterMessage";
   static EMPTY: OuterMessage;
-  #counter: number;
-  #inner: InnerMessage;
+  #counter!: number;
+  #inner!: InnerMessage;
   constructor(props?: OuterMessage.Value, options?: {
     skipValidation?: boolean;
   }) {

@@ -7,7 +7,7 @@ export class TestResponse extends Message<TestResponse.Data> {
   static TYPE_TAG = Symbol("TestResponse");
   static readonly $typeName = "TestResponse";
   static EMPTY: TestResponse;
-  #value: string;
+  #value!: string;
   constructor(props?: TestResponse.Value) {
     if (!props && TestResponse.EMPTY) return TestResponse.EMPTY;
     super(TestResponse.TYPE_TAG, "TestResponse");
@@ -57,7 +57,7 @@ export class TestRequest extends Message<TestRequest.Data> {
   static TYPE_TAG = Symbol("TestRequest");
   static readonly $typeName = "TestRequest";
   static EMPTY: TestRequest;
-  #id: number;
+  #id!: number;
   constructor(props?: TestRequest.Value) {
     if (!props && TestRequest.EMPTY) return TestRequest.EMPTY;
     super(TestRequest.TYPE_TAG, "TestRequest");

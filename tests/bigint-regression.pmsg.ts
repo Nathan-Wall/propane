@@ -6,7 +6,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
   static readonly $typeName = "Wrapper";
   static EMPTY: Wrapper;
-  #payload: bigint | {
+  #payload!: bigint | {
     id: bigint;
   };
   constructor(props?: Wrapper.Value, options?: {
@@ -35,7 +35,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     props.payload = payloadValue;
     return props as Wrapper.Data;
   }
-  #validate(data) {}
+  #validate(data: Wrapper.Value | undefined) {}
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

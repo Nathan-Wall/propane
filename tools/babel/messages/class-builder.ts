@@ -207,6 +207,8 @@ function buildConstructorRefFields(
         ])
       )
     );
+    // Add definite assignment assertion (!) for early-return constructor pattern
+    field.definite = true;
 
     return field;
   });
@@ -785,7 +787,7 @@ export function buildClassFromProperties(
 
   // Extract validation information if validation context is provided
   const validationBuildContext: ValidationBuildContext | null = validationContext
-    ? { state, registry: validationContext.registry, tracker: validationContext.tracker }
+    ? { state, registry: validationContext.registry, tracker: validationContext.tracker, typeName }
     : null;
   const propertyValidations = validationBuildContext
     ? extractPropertyValidations(propDescriptors, validationBuildContext)
@@ -807,6 +809,8 @@ export function buildClassFromProperties(
 
     const field = t.classPrivateProperty(t.cloneNode(prop.privateName));
     field.typeAnnotation = t.tsTypeAnnotation(fieldTypeAnnotation);
+    // Add definite assignment assertion (!) for early-return constructor pattern
+    field.definite = true;
     backingFields.push(field);
 
     const getter = t.classMethod(
@@ -1120,13 +1124,15 @@ export function buildClassFromProperties(
   if (!isGeneric) {
     staticFields.push(buildStaticTypeName(typeName));
     // Add EMPTY memoization field (only for non-generic)
+    // Use className (not typeName) for the type annotation - when extended,
+    // the class is TypeName$Base but the namespace is TypeName
     // eslint-disable-next-line unicorn/prefer-single-call -- conditional pushes
     staticFields.push(
       t.classProperty(
         t.identifier('EMPTY'),
         null,
         t.tsTypeAnnotation(
-          t.tsTypeReference(t.identifier(typeName))
+          t.tsTypeReference(t.identifier(className))
         ),
         null,
         false,
@@ -1146,6 +1152,7 @@ export function buildClassFromProperties(
   const setterMethods = propDescriptors.map((prop) =>
     buildSetterMethod(
       typeName,
+      className,
       propDescriptors,
       prop,
       declaredMessageTypeNames,
@@ -1155,32 +1162,36 @@ export function buildClassFromProperties(
   const deleteMethods = propDescriptors
     .filter((prop) => prop.optional)
     .map((prop) => buildDeleteMethod(
-      typeName, propDescriptors, prop, typeParameters
+      typeName, className, propDescriptors, prop, typeParameters
     ));
   const arrayMethods = buildArrayMutatorMethods(
     typeName,
+    className,
     propDescriptors,
     typeParameters
   );
   const mapMethods = buildMapMutatorMethods(
     typeName,
+    className,
     propDescriptors,
     typeParameters
   );
   const setMethods = buildSetMutatorMethods(
     typeName,
+    className,
     propDescriptors,
     typeParameters
   );
 
   // Build batch set() method for updating multiple fields at once
-  const batchSetMethod = buildBatchSetMethod(typeName, typeParameters);
+  const batchSetMethod = buildBatchSetMethod(typeName, className, typeParameters);
   state.usesSkip = true;
   state.needsSetUpdatesType = true;
 
   // Build hybrid approach methods
   const withChildMethod = buildWithChildMethod(
     typeName,
+    className,
     propDescriptors,
     declaredMessageTypeNames,
     typeParameters
@@ -1801,6 +1812,7 @@ function buildTaggedMessageUnionHandler(
 
 function buildSetterMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   targetProp: PropDescriptor & { privateName: t.PrivateName },
   declaredMessageTypeNames: Set<string>,
@@ -1867,12 +1879,12 @@ function buildSetterMethod(
   }
   constructorArgs.push(propsObject);
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
-      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.newExpression(t.identifier(className), constructorArgs),
       t.tsThisType()
-    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+    ) : buildThisConstructorNewExpression(className, constructorArgs);
 
   const body = t.blockStatement([
     t.returnStatement(
@@ -1895,6 +1907,7 @@ function buildSetterMethod(
 
 function buildDeleteMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   targetProp: PropDescriptor & { privateName: t.PrivateName },
   typeParameters: TypeParameter[] = []
@@ -1921,12 +1934,12 @@ function buildDeleteMethod(
   }
   constructorArgs.push(propsObject);
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
-      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.newExpression(t.identifier(className), constructorArgs),
       t.tsThisType()
-    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+    ) : buildThisConstructorNewExpression(className, constructorArgs);
 
   const body = t.blockStatement([
     t.returnStatement(
@@ -1960,6 +1973,7 @@ function buildDeleteMethod(
  */
 function buildBatchSetMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const updatesId = t.identifier('updates');
@@ -2041,14 +2055,14 @@ function buildBatchSetMethod(
   }
   constructorArgs.push(dataId);
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0
     ? t.tsAsExpression(
-        t.newExpression(t.identifier(typeName), constructorArgs),
+        t.newExpression(t.identifier(className), constructorArgs),
         t.tsThisType()
       )
-    : buildThisConstructorNewExpression(typeName, constructorArgs);
+    : buildThisConstructorNewExpression(className, constructorArgs);
 
   const returnStatement = t.returnStatement(
     t.callExpression(
@@ -2065,6 +2079,7 @@ function buildBatchSetMethod(
 
 function buildArrayMutatorMethods(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
@@ -2078,6 +2093,7 @@ function buildArrayMutatorMethods(
     methods.push(
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `push${capitalize(prop.name)}`,
@@ -2090,6 +2106,7 @@ function buildArrayMutatorMethods(
       ),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `pop${capitalize(prop.name)}`,
@@ -2107,6 +2124,7 @@ function buildArrayMutatorMethods(
       ),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `shift${capitalize(prop.name)}`,
@@ -2124,6 +2142,7 @@ function buildArrayMutatorMethods(
       ),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `unshift${capitalize(prop.name)}`,
@@ -2134,9 +2153,10 @@ function buildArrayMutatorMethods(
         },
         typeParameters
       ),
-      buildSpliceMethod(typeName, propDescriptors, prop, typeParameters),
+      buildSpliceMethod(typeName, className, propDescriptors, prop, typeParameters),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `reverse${capitalize(prop.name)}`,
@@ -2152,9 +2172,10 @@ function buildArrayMutatorMethods(
         {},
         typeParameters
       ),
-      buildSortMethod(typeName, propDescriptors, prop, typeParameters),
+      buildSortMethod(typeName, className, propDescriptors, prop, typeParameters),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `fill${capitalize(prop.name)}`,
@@ -2176,6 +2197,7 @@ function buildArrayMutatorMethods(
       ),
       buildArrayMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `copyWithin${capitalize(prop.name)}`,
@@ -2204,22 +2226,22 @@ function buildArrayMutatorMethods(
 function buildArrayValuesRestParam(prop: PropDescriptor): t.RestElement {
   const valuesId = t.identifier('values');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
-  if (elementType) {
-    valuesId.typeAnnotation = t.tsTypeAnnotation(
-      t.tsArrayType(t.cloneNode(elementType))
-    );
-  }
+  // Always add type annotation - use unknown[] as fallback
+  valuesId.typeAnnotation = t.tsTypeAnnotation(
+    elementType
+      ? t.tsArrayType(t.cloneNode(elementType))
+      : t.tsArrayType(t.tsUnknownKeyword())
+  );
   return t.restElement(valuesId);
 }
 
 function buildFillParams(prop: PropDescriptor): t.Identifier[] {
   const valueId = t.identifier('value');
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
-  if (elementType) {
-    valueId.typeAnnotation = t.tsTypeAnnotation(
-      t.cloneNode(elementType)
-    );
-  }
+  // Always add type annotation - use unknown as fallback
+  valueId.typeAnnotation = t.tsTypeAnnotation(
+    elementType ? t.cloneNode(elementType) : t.tsUnknownKeyword()
+  );
   const startId = t.identifier('start');
   startId.typeAnnotation = t.tsTypeAnnotation(t.tsNumberKeyword());
   startId.optional = true;
@@ -2242,6 +2264,7 @@ function buildCopyWithinParams(): t.Identifier[] {
 
 function buildSortMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   prop: PropDescriptor & { privateName: t.PrivateName },
   typeParameters: TypeParameter[] = []
@@ -2270,6 +2293,7 @@ function buildSortMethod(
 
   return buildArrayMutationMethod(
     typeName,
+    className,
     propDescriptors,
     prop,
     `sort${capitalize(prop.name)}`,
@@ -2289,6 +2313,7 @@ function buildSortMethod(
 
 function buildSpliceMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   prop: PropDescriptor & { privateName: t.PrivateName },
   typeParameters: TypeParameter[] = []
@@ -2300,15 +2325,17 @@ function buildSpliceMethod(
   deleteCountId.optional = true;
   const elementType = unwrapParenthesizedType(prop.arrayElementType);
   const itemsId = t.identifier('items');
-  if (elementType) {
-    itemsId.typeAnnotation = t.tsTypeAnnotation(
-      t.tsArrayType(t.cloneNode(elementType))
-    );
-  }
+  // Always add type annotation - use unknown[] as fallback
+  itemsId.typeAnnotation = t.tsTypeAnnotation(
+    elementType
+      ? t.tsArrayType(t.cloneNode(elementType))
+      : t.tsArrayType(t.tsUnknownKeyword())
+  );
   const itemsParam = t.restElement(itemsId);
 
   return buildArrayMutationMethod(
     typeName,
+    className,
     propDescriptors,
     prop,
     `splice${capitalize(prop.name)}`,
@@ -2342,6 +2369,7 @@ function buildSpliceMethod(
 
 function buildArrayMutationMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   prop: PropDescriptor & { privateName: t.PrivateName },
   methodName: string,
@@ -2431,12 +2459,12 @@ function buildArrayMutationMethod(
     )
   );
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
-      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.newExpression(t.identifier(className), constructorArgs),
       t.tsThisType()
-    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+    ) : buildThisConstructorNewExpression(className, constructorArgs);
 
   const bodyStatements = [
     ...preludeStatements,
@@ -2511,6 +2539,7 @@ function buildArrayCloneSetup(
 
 function buildMapMutatorMethods(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
@@ -2524,6 +2553,7 @@ function buildMapMutatorMethods(
     methods.push(
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `set${capitalize(prop.name)}Entry`,
@@ -2541,6 +2571,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `delete${capitalize(prop.name)}Entry`,
@@ -2558,6 +2589,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `clear${capitalize(prop.name)}`,
@@ -2575,6 +2607,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `merge${capitalize(prop.name)}Entries`,
@@ -2606,6 +2639,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `update${capitalize(prop.name)}Entry`,
@@ -2642,6 +2676,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `map${capitalize(prop.name)}Entries`,
@@ -2707,6 +2742,7 @@ function buildMapMutatorMethods(
       ),
       buildMapMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `filter${capitalize(prop.name)}Entries`,
@@ -2751,6 +2787,7 @@ function buildMapMutatorMethods(
 
 function buildSetMutatorMethods(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   typeParameters: TypeParameter[] = []
 ): t.ClassMethod[] {
@@ -2764,6 +2801,7 @@ function buildSetMutatorMethods(
     methods.push(
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `add${capitalize(prop.name)}`,
@@ -2780,6 +2818,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `addAll${capitalize(prop.name)}`,
@@ -2807,6 +2846,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `delete${capitalize(prop.name)}`,
@@ -2823,6 +2863,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `deleteAll${capitalize(prop.name)}`,
@@ -2850,6 +2891,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `clear${capitalize(prop.name)}`,
@@ -2866,6 +2908,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `filter${capitalize(prop.name)}`,
@@ -2920,6 +2963,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `map${capitalize(prop.name)}`,
@@ -2978,6 +3022,7 @@ function buildSetMutatorMethods(
       ),
       buildSetMutationMethod(
         typeName,
+        className,
         propDescriptors,
         prop,
         `update${capitalize(prop.name)}`,
@@ -3023,6 +3068,7 @@ function buildSetMutatorMethods(
 
 function buildMapMutationMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   prop: PropDescriptor & { privateName: t.PrivateName },
   methodName: string,
@@ -3060,12 +3106,12 @@ function buildMapMutationMethod(
     buildPropsObjectExpression(propDescriptors, prop, nextRef())
   );
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
-      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.newExpression(t.identifier(className), constructorArgs),
       t.tsThisType()
-    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+    ) : buildThisConstructorNewExpression(className, constructorArgs);
 
   const bodyStatements = [
     ...prelude,
@@ -3154,6 +3200,7 @@ function buildMapCloneSetup(
 
 function buildSetMutationMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   prop: PropDescriptor & { privateName: t.PrivateName },
   methodName: string,
@@ -3190,12 +3237,12 @@ function buildSetMutationMethod(
     )
   );
 
-  // For generic messages, use direct construction: new TypeName(...)
+  // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
   const newExpr: t.Expression = typeParameters.length > 0 ? t.tsAsExpression(
-      t.newExpression(t.identifier(typeName), constructorArgs),
+      t.newExpression(t.identifier(className), constructorArgs),
       t.tsThisType()
-    ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+    ) : buildThisConstructorNewExpression(className, constructorArgs);
 
   const bodyStatements = [
     ...statements,
@@ -3582,6 +3629,7 @@ function buildMapPredicateParams(prop: PropDescriptor): t.Identifier[] {
  */
 function buildWithChildMethod(
   typeName: string,
+  className: string,  // For @extend, this is TypeName$Base
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   declaredMessageTypeNames: Set<string>,
   typeParameters: TypeParameter[] = []
@@ -3641,13 +3689,13 @@ function buildWithChildMethod(
     }
     constructorArgs.push(propsObject);
 
-    // For generic messages, use direct construction: new TypeName(...)
+    // For generic messages, use direct construction: new ClassName(...)
     // For non-generic messages, use this.constructor pattern
     const returnExpr: t.Expression =
       typeParameters.length > 0 ? t.tsAsExpression(
-        t.newExpression(t.identifier(typeName), constructorArgs),
+        t.newExpression(t.identifier(className), constructorArgs),
         t.tsThisType()
-      ) : buildThisConstructorNewExpression(typeName, constructorArgs);
+      ) : buildThisConstructorNewExpression(className, constructorArgs);
 
     return t.switchCase(t.stringLiteral(prop.name), [
       t.returnStatement(returnExpr),

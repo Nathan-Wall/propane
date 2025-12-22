@@ -35,9 +35,12 @@ export function buildTypeNamespace(
   typeAlias: t.TSTypeAliasDeclaration,
   properties: PropDescriptor[],
   exported: boolean,
-  generatedTypeNames: string[] = []
+  generatedTypeNames: string[] = [],
+  className?: string  // For @extend, this is TypeName$Base; otherwise same as typeAlias.id.name
 ): t.ExportNamedDeclaration | t.TSModuleDeclaration {
   const namespaceId = t.identifier(typeAlias.id.name);
+  // Use className for class references in Value type (defaults to typeName)
+  const classRef = className ?? typeAlias.id.name;
   const typeId = t.identifier('Data');
 
   const literalMembers = properties.map((prop) => {
@@ -91,7 +94,9 @@ export function buildTypeNamespace(
     t.identifier('Value'),
     fixTypeParameterConstraints(typeAlias.typeParameters),
     t.tsUnionType([
-      t.tsTypeReference(t.identifier(typeAlias.id.name), typeArgs),
+      // Use classRef for the class type (TypeName or TypeName$Base when extended)
+      t.tsTypeReference(t.identifier(classRef), typeArgs),
+      // Keep using typeAlias.id.name for the namespace (always TypeName.Data)
       t.tsTypeReference(
         t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data')),
         typeArgs ? t.cloneNode(typeArgs) : null

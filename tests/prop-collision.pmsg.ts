@@ -6,8 +6,8 @@ export class Foo extends Message<Foo.Data> {
   static TYPE_TAG = Symbol("Foo");
   static readonly $typeName = "Foo";
   static EMPTY: Foo;
-  #name: string;
-  #_name: string;
+  #name!: string;
+  #_name!: string;
   constructor(props?: Foo.Value) {
     if (!props && Foo.EMPTY) return Foo.EMPTY;
     super(Foo.TYPE_TAG, "Foo");

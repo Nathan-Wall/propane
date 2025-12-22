@@ -6,9 +6,9 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   static TYPE_TAG = Symbol("MapDateKey");
   static readonly $typeName = "MapDateKey";
   static EMPTY: MapDateKey;
-  #dateValues: ImmutableMap<ImmutableDate, number>;
-  #urlValues: ImmutableMap<ImmutableUrl, string>;
-  #optionalDateMap: ImmutableMap<ImmutableDate, boolean> | undefined;
+  #dateValues!: ImmutableMap<ImmutableDate, number>;
+  #urlValues!: ImmutableMap<ImmutableUrl, string>;
+  #optionalDateMap!: ImmutableMap<ImmutableDate, boolean> | undefined;
   constructor(props?: MapDateKey.Value) {
     if (!props && MapDateKey.EMPTY) return MapDateKey.EMPTY;
     super(MapDateKey.TYPE_TAG, "MapDateKey");

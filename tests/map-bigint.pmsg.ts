@@ -6,7 +6,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   static TYPE_TAG = Symbol("MapBigintKey");
   static readonly $typeName = "MapBigintKey";
   static EMPTY: MapBigintKey;
-  #values: ImmutableMap<bigint, string>;
+  #values!: ImmutableMap<bigint, string>;
   constructor(props?: MapBigintKey.Value) {
     if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(MapBigintKey.TYPE_TAG, "MapBigintKey");

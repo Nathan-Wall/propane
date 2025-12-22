@@ -6,7 +6,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static TYPE_TAG = Symbol("UnionFirstNumber");
   static readonly $typeName = "UnionFirstNumber";
   static EMPTY: UnionFirstNumber;
-  #val: number | string;
+  #val!: number | string;
   constructor(props?: UnionFirstNumber.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -33,7 +33,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     props.val = valValue;
     return props as UnionFirstNumber.Data;
   }
-  #validate(data) {}
+  #validate(data: UnionFirstNumber.Value | undefined) {}
   static validateAll(data: UnionFirstNumber.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -69,7 +69,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static TYPE_TAG = Symbol("UnionFirstString");
   static readonly $typeName = "UnionFirstString";
   static EMPTY: UnionFirstString;
-  #val: string | number;
+  #val!: string | number;
   constructor(props?: UnionFirstString.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -96,7 +96,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     props.val = valValue;
     return props as UnionFirstString.Data;
   }
-  #validate(data) {}
+  #validate(data: UnionFirstString.Value | undefined) {}
   static validateAll(data: UnionFirstString.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -132,7 +132,7 @@ export class OptionalField extends Message<OptionalField.Data> {
   static TYPE_TAG = Symbol("OptionalField");
   static readonly $typeName = "OptionalField";
   static EMPTY: OptionalField;
-  #val: string;
+  #val!: string;
   constructor(props?: OptionalField.Value) {
     if (!props && OptionalField.EMPTY) return OptionalField.EMPTY;
     super(OptionalField.TYPE_TAG, "OptionalField");
@@ -185,7 +185,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static TYPE_TAG = Symbol("RequiredMessage");
   static readonly $typeName = "RequiredMessage";
   static EMPTY: RequiredMessage;
-  #sub: UnionFirstNumber;
+  #sub!: UnionFirstNumber;
   constructor(props?: RequiredMessage.Value, options?: {
     skipValidation?: boolean;
   }) {

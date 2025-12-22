@@ -6,12 +6,12 @@ export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
   static readonly $typeName = "Primitives";
   static EMPTY: Primitives;
-  #flag: boolean;
-  #count: number;
-  #label: string;
-  #size: bigint;
-  #empty: null;
-  #missing: undefined;
+  #flag!: boolean;
+  #count!: number;
+  #label!: string;
+  #size!: bigint;
+  #empty!: null;
+  #missing!: undefined;
   constructor(props?: Primitives.Value) {
     if (!props && Primitives.EMPTY) return Primitives.EMPTY;
     super(Primitives.TYPE_TAG, "Primitives");

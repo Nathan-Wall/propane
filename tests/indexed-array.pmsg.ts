@@ -6,7 +6,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   static TYPE_TAG = Symbol("ArrayMessage_Labels_Item");
   static readonly $typeName = "ArrayMessage_Labels_Item";
   static EMPTY: ArrayMessage_Labels_Item;
-  #name: string;
+  #name!: string;
   constructor(props?: ArrayMessage_Labels_Item.Value) {
     if (!props && ArrayMessage_Labels_Item.EMPTY) return ArrayMessage_Labels_Item.EMPTY;
     super(ArrayMessage_Labels_Item.TYPE_TAG, "ArrayMessage_Labels_Item");
@@ -56,10 +56,10 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   static TYPE_TAG = Symbol("ArrayMessage");
   static readonly $typeName = "ArrayMessage";
   static EMPTY: ArrayMessage;
-  #names: ImmutableArray<string>;
-  #scores: ImmutableArray<number>;
-  #flags: ImmutableArray<boolean> | undefined;
-  #labels: ImmutableArray<ArrayMessage_Labels_Item>;
+  #names!: ImmutableArray<string>;
+  #scores!: ImmutableArray<number>;
+  #flags!: ImmutableArray<boolean> | undefined;
+  #labels!: ImmutableArray<ArrayMessage_Labels_Item>;
   constructor(props?: ArrayMessage.Value) {
     if (!props && ArrayMessage.EMPTY) return ArrayMessage.EMPTY;
     super(ArrayMessage.TYPE_TAG, "ArrayMessage");

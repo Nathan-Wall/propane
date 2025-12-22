@@ -345,13 +345,16 @@ export function buildDeclarations(
     )
     .filter((name): name is string => name !== null);
 
+  const isExtended = extendInfo !== undefined;
+  // When extended, the class is TypeName$Base, otherwise TypeName
+  const className = isExtended ? `${typeAlias.id.name}$Base` : typeAlias.id.name;
   const typeNamespace = buildTypeNamespace(
     typeAlias,
     properties,
     exported,
-    generatedTypeNames
+    generatedTypeNames,
+    className
   );
-  const isExtended = extendInfo !== undefined;
   const classDecl = buildClassFromProperties(
     typeAlias.id.name,
     properties,

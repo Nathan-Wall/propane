@@ -8,8 +8,8 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static TYPE_TAG = Symbol("ImmutableArraySet");
   static readonly $typeName = "ImmutableArraySet";
   static EMPTY: ImmutableArraySet;
-  #arr: ImmutableArray<number>;
-  #items: ImmutableSet<string>;
+  #arr!: ImmutableArray<number>;
+  #items!: ImmutableSet<string>;
   constructor(props?: ImmutableArraySet.Value) {
     if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
     super(ImmutableArraySet.TYPE_TAG, "ImmutableArraySet");

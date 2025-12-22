@@ -6,8 +6,8 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   static TYPE_TAG = Symbol("UnionStringBool");
   static readonly $typeName = "UnionStringBool";
   static EMPTY: UnionStringBool;
-  #value: string | boolean;
-  #optional: string | boolean;
+  #value!: string | boolean;
+  #optional!: string | boolean;
   constructor(props?: UnionStringBool.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -43,7 +43,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     props.optional = optionalNormalized;
     return props as UnionStringBool.Data;
   }
-  #validate(data) {}
+  #validate(data: UnionStringBool.Value | undefined) {}
   static validateAll(data: UnionStringBool.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

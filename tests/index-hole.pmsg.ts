@@ -6,9 +6,9 @@ export class Hole extends Message<Hole.Data> {
   static TYPE_TAG = Symbol("Hole");
   static readonly $typeName = "Hole";
   static EMPTY: Hole;
-  #id: number;
-  #value: number;
-  #name: string;
+  #id!: number;
+  #value!: number;
+  #name!: string;
   constructor(props?: Hole.Value) {
     if (!props && Hole.EMPTY) return Hole.EMPTY;
     super(Hole.TYPE_TAG, "Hole");

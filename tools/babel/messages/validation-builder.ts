@@ -23,6 +23,8 @@ export interface ValidationBuildContext {
   registry: TypeRegistry | undefined;
   /** Import tracker for resolving validator references */
   tracker: ValidatorImportTracker;
+  /** Type name for data parameter typing */
+  typeName: string;
 }
 
 /**
@@ -98,8 +100,16 @@ export function buildValidateMethod(
   // Mark that we need ValidationError import
   ctx.state.usesValidationError = true;
 
-  // Method signature: #validate(data: T.Data): void
+  // Method signature: #validate(data: T.Value | undefined): void
   const dataParam = t.identifier('data');
+  dataParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsUnionType([
+      t.tsTypeReference(
+        t.tsQualifiedName(t.identifier(ctx.typeName), t.identifier('Value'))
+      ),
+      t.tsUndefinedKeyword(),
+    ])
+  );
 
   return t.classPrivateMethod(
     'method',

@@ -6,8 +6,8 @@ export class SetMessage extends Message<SetMessage.Data> {
   static TYPE_TAG = Symbol("SetMessage");
   static readonly $typeName = "SetMessage";
   static EMPTY: SetMessage;
-  #tags: ImmutableSet<string>;
-  #ids: ImmutableSet<number> | undefined;
+  #tags!: ImmutableSet<string>;
+  #ids!: ImmutableSet<number> | undefined;
   constructor(props?: SetMessage.Value) {
     if (!props && SetMessage.EMPTY) return SetMessage.EMPTY;
     super(SetMessage.TYPE_TAG, "SetMessage");

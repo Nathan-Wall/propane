@@ -6,9 +6,9 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static TYPE_TAG = Symbol("ToJson_Nested");
   static readonly $typeName = "ToJson_Nested";
   static EMPTY: ToJson_Nested;
-  #array: ImmutableArray<(number | undefined)>;
-  #map: ImmutableMap<string, bigint>;
-  #imap: ImmutableMap<string, ImmutableDate>;
+  #array!: ImmutableArray<(number | undefined)>;
+  #map!: ImmutableMap<string, bigint>;
+  #imap!: ImmutableMap<string, ImmutableDate>;
   constructor(props?: ToJson_Nested.Value) {
     if (!props && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
     super(ToJson_Nested.TYPE_TAG, "ToJson_Nested");
@@ -432,13 +432,13 @@ export class ToJson extends Message<ToJson.Data> {
   static TYPE_TAG = Symbol("ToJson");
   static readonly $typeName = "ToJson";
   static EMPTY: ToJson;
-  #map: ImmutableMap<string, number>;
-  #imap: ImmutableMap<string, number>;
-  #big: bigint;
-  #date: ImmutableDate;
-  #optional: string;
-  #nonFinite: number;
-  #nested: ToJson_Nested;
+  #map!: ImmutableMap<string, number>;
+  #imap!: ImmutableMap<string, number>;
+  #big!: bigint;
+  #date!: ImmutableDate;
+  #optional!: string;
+  #nonFinite!: number;
+  #nested!: ToJson_Nested;
   constructor(props?: ToJson.Value, options?: {
     skipValidation?: boolean;
   }) {

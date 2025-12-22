@@ -17,9 +17,9 @@ export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
   static EMPTY: User;
-  #id: Brand<number, 'userId', typeof _User_id_brand>;
-  #name: string;
-  #ref: UserId;
+  #id!: Brand<number, 'userId', typeof _User_id_brand>;
+  #name!: string;
+  #ref!: UserId;
   constructor(props?: User.Value) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");

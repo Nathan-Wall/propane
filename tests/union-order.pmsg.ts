@@ -6,7 +6,7 @@ export class StringFirst extends Message<StringFirst.Data> {
   static TYPE_TAG = Symbol("StringFirst");
   static readonly $typeName = "StringFirst";
   static EMPTY: StringFirst;
-  #value: string | number;
+  #value!: string | number;
   constructor(props?: StringFirst.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -33,7 +33,7 @@ export class StringFirst extends Message<StringFirst.Data> {
     props.value = valueValue;
     return props as StringFirst.Data;
   }
-  #validate(data) {}
+  #validate(data: StringFirst.Value | undefined) {}
   static validateAll(data: StringFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -69,7 +69,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   static TYPE_TAG = Symbol("NumberFirst");
   static readonly $typeName = "NumberFirst";
   static EMPTY: NumberFirst;
-  #value: number | string;
+  #value!: number | string;
   constructor(props?: NumberFirst.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -96,7 +96,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     props.value = valueValue;
     return props as NumberFirst.Data;
   }
-  #validate(data) {}
+  #validate(data: NumberFirst.Value | undefined) {}
   static validateAll(data: NumberFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

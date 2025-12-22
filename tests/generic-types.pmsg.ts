@@ -12,8 +12,8 @@ export class Item extends Message<Item.Data> {
   static TYPE_TAG = Symbol("Item");
   static readonly $typeName = "Item";
   static EMPTY: Item;
-  #id: number;
-  #name: string;
+  #id!: number;
+  #name!: string;
   constructor(props?: Item.Value) {
     if (!props && Item.EMPTY) return Item.EMPTY;
     super(Item.TYPE_TAG, "Item");
@@ -81,8 +81,8 @@ export namespace Item {
 } // Simple generic container with single type parameter
 export class Container<T extends Message<any>> extends Message<Container.Data<T>> {
   static TYPE_TAG = Symbol("Container");
-  #inner: T;
-  #tClass: MessageConstructor<T>;
+  #inner!: T;
+  #tClass!: MessageConstructor<T>;
   constructor(tClass: MessageConstructor<T>, props?: Container.Value<T>) {
     super(Container.TYPE_TAG, `Container<${tClass.$typeName}>`);
     this.#tClass = tClass;
@@ -151,8 +151,8 @@ export namespace Container {
 } // Generic with optional field
 export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> {
   static TYPE_TAG = Symbol("Optional");
-  #value: T;
-  #tClass: MessageConstructor<T>;
+  #value!: T;
+  #tClass!: MessageConstructor<T>;
   constructor(tClass: MessageConstructor<T>, props?: Optional.Value<T>) {
     super(Optional.TYPE_TAG, `Optional<${tClass.$typeName}>`);
     this.#tClass = tClass;
@@ -225,10 +225,10 @@ export namespace Optional {
 } // Multiple type parameters
 export class Pair<T extends Message<any>, U extends Message<any>> extends Message<Pair.Data<T, U>> {
   static TYPE_TAG = Symbol("Pair");
-  #first: T;
-  #second: U;
-  #tClass: MessageConstructor<T>;
-  #uClass: MessageConstructor<U>;
+  #first!: T;
+  #second!: U;
+  #tClass!: MessageConstructor<T>;
+  #uClass!: MessageConstructor<U>;
   constructor(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, props?: Pair.Value<T, U>) {
     super(Pair.TYPE_TAG, `Pair<${tClass.$typeName},${uClass.$typeName}>`);
     this.#tClass = tClass;
@@ -323,7 +323,7 @@ export class Parent extends Message<Parent.Data> {
   static TYPE_TAG = Symbol("Parent");
   static readonly $typeName = "Parent";
   static EMPTY: Parent;
-  #name: string;
+  #name!: string;
   constructor(props?: Parent.Value) {
     if (!props && Parent.EMPTY) return Parent.EMPTY;
     super(Parent.TYPE_TAG, "Parent");

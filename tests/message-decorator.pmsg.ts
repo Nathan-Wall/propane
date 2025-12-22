@@ -8,8 +8,8 @@ export class TransformedMessage extends Message<TransformedMessage.Data> {
   static TYPE_TAG = Symbol("TransformedMessage");
   static readonly $typeName = "TransformedMessage";
   static EMPTY: TransformedMessage;
-  #id: number;
-  #name: string;
+  #id!: number;
+  #name!: string;
   constructor(props?: TransformedMessage.Value) {
     if (!props && TransformedMessage.EMPTY) return TransformedMessage.EMPTY;
     super(TransformedMessage.TYPE_TAG, "TransformedMessage");

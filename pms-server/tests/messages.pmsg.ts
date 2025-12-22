@@ -7,7 +7,7 @@ export class EchoRequest extends Message<EchoRequest.Data> {
   static TYPE_TAG = Symbol("EchoRequest");
   static readonly $typeName = "EchoRequest";
   static EMPTY: EchoRequest;
-  #message: string;
+  #message!: string;
   constructor(props?: EchoRequest.Value) {
     if (!props && EchoRequest.EMPTY) return EchoRequest.EMPTY;
     super(EchoRequest.TYPE_TAG, "EchoRequest");
@@ -58,8 +58,8 @@ export class EchoResponse extends Message<EchoResponse.Data> {
   static TYPE_TAG = Symbol("EchoResponse");
   static readonly $typeName = "EchoResponse";
   static EMPTY: EchoResponse;
-  #echo: string;
-  #timestamp: number;
+  #echo!: string;
+  #timestamp!: number;
   constructor(props?: EchoResponse.Value) {
     if (!props && EchoResponse.EMPTY) return EchoResponse.EMPTY;
     super(EchoResponse.TYPE_TAG, "EchoResponse");
@@ -129,8 +129,8 @@ export class AddRequest extends Message<AddRequest.Data> {
   static TYPE_TAG = Symbol("AddRequest");
   static readonly $typeName = "AddRequest";
   static EMPTY: AddRequest;
-  #a: number;
-  #b: number;
+  #a!: number;
+  #b!: number;
   constructor(props?: AddRequest.Value) {
     if (!props && AddRequest.EMPTY) return AddRequest.EMPTY;
     super(AddRequest.TYPE_TAG, "AddRequest");
@@ -201,7 +201,7 @@ export class AddResponse extends Message<AddResponse.Data> {
   static TYPE_TAG = Symbol("AddResponse");
   static readonly $typeName = "AddResponse";
   static EMPTY: AddResponse;
-  #sum: number;
+  #sum!: number;
   constructor(props?: AddResponse.Value) {
     if (!props && AddResponse.EMPTY) return AddResponse.EMPTY;
     super(AddResponse.TYPE_TAG, "AddResponse");

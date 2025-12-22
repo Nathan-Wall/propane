@@ -6,10 +6,10 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static TYPE_TAG = Symbol("ArrayBufferMessage");
   static readonly $typeName = "ArrayBufferMessage";
   static EMPTY: ArrayBufferMessage;
-  #id: number;
-  #data: ImmutableArrayBuffer;
-  #extra: ImmutableArrayBuffer | undefined;
-  #chunks: ImmutableArray<ImmutableArrayBuffer>;
+  #id!: number;
+  #data!: ImmutableArrayBuffer;
+  #extra!: ImmutableArrayBuffer | undefined;
+  #chunks!: ImmutableArray<ImmutableArrayBuffer>;
   constructor(props?: ArrayBufferMessage.Value) {
     if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
     super(ArrayBufferMessage.TYPE_TAG, "ArrayBufferMessage");

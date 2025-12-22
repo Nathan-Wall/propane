@@ -9,15 +9,15 @@ export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
   static EMPTY: User;
-  #id: number;
-  #name: string;
-  #email: Email;
-  #passwordHash: Hash;
-  #created: ImmutableDate;
-  #updated: ImmutableDate;
-  #active: boolean;
-  #eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
-  #height: Distance;
+  #id!: number;
+  #name!: string;
+  #email!: Email;
+  #passwordHash!: Hash;
+  #created!: ImmutableDate;
+  #updated!: ImmutableDate;
+  #active!: boolean;
+  #eyeColor!: 'blue' | 'green' | 'brown' | 'hazel';
+  #height!: Distance;
   constructor(props?: User.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -113,7 +113,7 @@ export class User extends Message<User.Data> {
     props.height = heightValue;
     return props as User.Data;
   }
-  #validate(data) {}
+  #validate(data: User.Value | undefined) {}
   static validateAll(data: User.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

@@ -6,10 +6,10 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   static TYPE_TAG = Symbol("ObjectOnly");
   static readonly $typeName = "ObjectOnly";
   static EMPTY: ObjectOnly;
-  #id: number;
-  #name: string;
-  #age: number;
-  #active: boolean;
+  #id!: number;
+  #name!: string;
+  #age!: number;
+  #active!: boolean;
   constructor(props?: ObjectOnly.Value) {
     if (!props && ObjectOnly.EMPTY) return ObjectOnly.EMPTY;
     super(ObjectOnly.TYPE_TAG, "ObjectOnly");

@@ -7,9 +7,9 @@ export class Unions extends Message<Unions.Data> {
   static TYPE_TAG = Symbol("Unions");
   static readonly $typeName = "Unions";
   static EMPTY: Unions;
-  #username: string | null;
-  #email: Email | null;
-  #metadata: {
+  #username!: string | null;
+  #email!: Email | null;
+  #metadata!: {
     created: Date;
   } | {
     updated: Date;
@@ -58,7 +58,7 @@ export class Unions extends Message<Unions.Data> {
     props.metadata = metadataValue;
     return props as Unions.Data;
   }
-  #validate(data) {}
+  #validate(data: Unions.Value | undefined) {}
   static validateAll(data: Unions.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {

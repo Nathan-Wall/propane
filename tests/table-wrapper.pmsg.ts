@@ -12,11 +12,11 @@ export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
   static EMPTY: User;
-  #id: bigint;
-  #email: string;
-  #name: string;
-  #active: boolean;
-  #created: ImmutableDate;
+  #id!: bigint;
+  #email!: string;
+  #name!: string;
+  #active!: boolean;
+  #created!: ImmutableDate;
   constructor(props?: User.Value) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");
@@ -158,13 +158,13 @@ export class Post extends Message<Post.Data> {
   static TYPE_TAG = Symbol("Post");
   static readonly $typeName = "Post";
   static EMPTY: Post;
-  #id: bigint;
-  #userId: bigint;
-  #title: string;
-  #content: string;
-  #published: boolean;
-  #created: ImmutableDate;
-  #updated: ImmutableDate;
+  #id!: bigint;
+  #userId!: bigint;
+  #title!: string;
+  #content!: string;
+  #published!: boolean;
+  #created!: ImmutableDate;
+  #updated!: ImmutableDate;
   constructor(props?: Post.Value) {
     if (!props && Post.EMPTY) return Post.EMPTY;
     super(Post.TYPE_TAG, "Post");

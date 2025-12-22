@@ -6,9 +6,9 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
   static TYPE_TAG = Symbol("MapArrayKey");
   static readonly $typeName = "MapArrayKey";
   static EMPTY: MapArrayKey;
-  #arrayValues: ImmutableMap<ImmutableArray<string>, number>;
-  #numberArrayMap: ImmutableMap<ImmutableArray<number>, string>;
-  #optionalArrayMap: ImmutableMap<ImmutableArray<boolean>, ImmutableDate> | undefined;
+  #arrayValues!: ImmutableMap<ImmutableArray<string>, number>;
+  #numberArrayMap!: ImmutableMap<ImmutableArray<number>, string>;
+  #optionalArrayMap!: ImmutableMap<ImmutableArray<boolean>, ImmutableDate> | undefined;
   constructor(props?: MapArrayKey.Value) {
     if (!props && MapArrayKey.EMPTY) return MapArrayKey.EMPTY;
     super(MapArrayKey.TYPE_TAG, "MapArrayKey");
