@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { ImmutableMap } from '../runtime/common/map/immutable.ts';
+import { assert } from './assert.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { test } from 'node:test';
 
 export default function runImmutableMapTests() {
   testConstruction();
@@ -404,3 +405,7 @@ function testEdgeCases() {
   const detached = withListeners.detach();
   assert(detached.get('key') === 'value', 'detach should preserve entries');
 }
+
+test('runImmutableMapTests', () => {
+  runImmutableMapTests();
+});

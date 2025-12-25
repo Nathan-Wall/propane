@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { ImmutableArray } from '../runtime/common/array/immutable.ts';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
 
 describe('ImmutableArray', () => {
   describe('construction', () => {

@@ -1,6 +1,7 @@
-import { assert } from './assert.ts';
-import { ImmutableMap } from '../runtime/common/map/immutable.ts';
-import { ToJson } from './to-json.pmsg.ts';
+import { assert } from './assert.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { ToJson } from './to-json.pmsg.js';
+import { test } from 'node:test';
 
 export default function runToJsonTests() {
   const map = new Map<string, number>([
@@ -63,3 +64,7 @@ export default function runToJsonTests() {
     ['d', '2021-05-06T07:08:09.000Z'],
   ]), 'Nested ImmutableMap should serialize recursively and convert Date.');
 }
+
+test('runToJsonTests', () => {
+  runToJsonTests();
+});

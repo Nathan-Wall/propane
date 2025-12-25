@@ -18,6 +18,12 @@ import {
   getTypeName,
 } from './type-guards.js';
 import { capitalize } from './utils.js';
+import {
+  isTSTypeParameterInstantiation,
+  getTypeParams,
+  isTSTypeAnnotation,
+  getTypeAnnotation,
+} from './babel-helpers.js';
 
 export interface PluginStateFlags {
   usesImmutableMap: boolean;
@@ -30,8 +36,11 @@ export interface PluginStateFlags {
   usesTaggedMessageData: boolean;
   usesListeners: boolean;
   usesMessageConstructor: boolean;
+  usesMessageValue: boolean;
+  usesDataValue: boolean;
   usesParseCerealString: boolean;
   usesDataObject: boolean;
+  usesEnsure: boolean;
   usesSkip: boolean;
   hasGenericTypes: boolean;
   // Type-only import flags for GET_MESSAGE_CHILDREN yield type
@@ -55,6 +64,8 @@ export interface PluginStateFlags {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
+  // Type import for decimal bound casts
+  usesAnyDecimal: boolean;
 }
 
 /**
@@ -118,8 +129,9 @@ export function normalizePropertyKey(
       );
     }
 
-    const [, numberPart, identifierPart] =
-      match as unknown as [string, string, string];
+    // Both groups are guaranteed to exist since the regex requires them
+    const numberPart = match[1]!;
+    const identifierPart = match[2]!;
     const fieldNumber = Number(numberPart);
 
     if (!Number.isSafeInteger(fieldNumber)) {
@@ -418,10 +430,34 @@ export function extractProperties(
       );
       displayType = t.tsUnionType([setRef, iterableRef]);
     } else if (arrayType && arrayElementType) {
-      const arrayRef = t.tsArrayType(t.cloneNode(arrayElementType));
+      // Check if element type needs wrapping (ArrayBuffer, Date, URL)
+      // If so, include both mutable and immutable element variants in the union
+      // so that internal immutable arrays can be passed to the constructor
+      let elementUnionType: t.TSType | null = null;
+      if (t.isTSTypeReference(arrayElementType)) {
+        if (isArrayBufferReference(arrayElementType)) {
+          elementUnionType = t.tsUnionType([
+            t.tsTypeReference(t.identifier('ArrayBuffer')),
+            t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
+          ]);
+        } else if (isDateReference(arrayElementType)) {
+          elementUnionType = t.tsUnionType([
+            t.tsTypeReference(t.identifier('Date')),
+            t.tsTypeReference(t.identifier('ImmutableDate')),
+          ]);
+        } else if (isUrlReference(arrayElementType)) {
+          elementUnionType = t.tsUnionType([
+            t.tsTypeReference(t.identifier('URL')),
+            t.tsTypeReference(t.identifier('ImmutableUrl')),
+          ]);
+        }
+      }
+      // Use the union element type if available, otherwise use the original element type
+      const effectiveElementType = elementUnionType ?? t.cloneNode(arrayElementType);
+      const arrayRef = t.tsArrayType(t.cloneNode(effectiveElementType));
       const iterableRef = t.tsTypeReference(
         t.identifier('Iterable'),
-        t.tsTypeParameterInstantiation([t.cloneNode(arrayElementType)])
+        t.tsTypeParameterInstantiation([t.cloneNode(effectiveElementType)])
       );
       displayType = t.tsUnionType([arrayRef, iterableRef]);
     } else if (isDateType) {
@@ -621,13 +657,19 @@ function handleImplicitTypes(
   }
 }
 
-export function getDefaultValue(prop: {
-  optional: boolean;
-  isArray: boolean;
-  isMap: boolean;
-  isSet: boolean;
-  typeAnnotation: t.TSType;
-}): t.Expression {
+export function getDefaultValue(
+  prop: {
+    optional: boolean;
+    isArray: boolean;
+    isMap: boolean;
+    isSet: boolean;
+    isMessageType?: boolean;
+    messageTypeName?: string | null;
+    typeAnnotation: t.TSType;
+  },
+  declaredMessageTypeNames?: Set<string>,
+  typeAliasDefinitions?: Map<string, t.TSType>
+): t.Expression {
   if (prop.optional) {
     return t.identifier('undefined');
   }
@@ -644,12 +686,21 @@ export function getDefaultValue(prop: {
     return t.newExpression(t.identifier('ImmutableSet'), []);
   }
 
-  return getDefaultValueForType(prop.typeAnnotation);
+  // If the property is a known message type (including imports), use it
+  if (prop.isMessageType && prop.messageTypeName) {
+    return t.newExpression(t.identifier(prop.messageTypeName), []);
+  }
+
+  return getDefaultValueForType(prop.typeAnnotation, declaredMessageTypeNames, typeAliasDefinitions);
 }
 
-export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
+export function getDefaultValueForType(
+  typeNode: t.TSType,
+  declaredMessageTypeNames?: Set<string>,
+  typeAliasDefinitions?: Map<string, t.TSType>
+): t.Expression {
   if (t.isTSParenthesizedType(typeNode)) {
-    return getDefaultValueForType(typeNode.typeAnnotation);
+    return getDefaultValueForType(typeNode.typeAnnotation, declaredMessageTypeNames, typeAliasDefinitions);
   }
 
   if (t.isTSNumberKeyword(typeNode)) {
@@ -677,7 +728,30 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
   }
 
   if (t.isTSUnionType(typeNode) && typeNode.types.length > 0) {
-    return getDefaultValueForType(typeNode.types[0]!);
+    return getDefaultValueForType(typeNode.types[0]!, declaredMessageTypeNames, typeAliasDefinitions);
+  }
+
+  // Handle literal types (string, number, boolean literals)
+  if (t.isTSLiteralType(typeNode)) {
+    const literal = typeNode.literal;
+    if (t.isStringLiteral(literal)) {
+      return t.stringLiteral(literal.value);
+    }
+    if (t.isNumericLiteral(literal)) {
+      return t.numericLiteral(literal.value);
+    }
+    if (t.isBooleanLiteral(literal)) {
+      return t.booleanLiteral(literal.value);
+    }
+    if (t.isBigIntLiteral(literal)) {
+      return t.bigIntLiteral(literal.value);
+    }
+    if (t.isUnaryExpression(literal) && literal.operator === '-') {
+      // Handle negative numbers like -1
+      if (t.isNumericLiteral(literal.argument)) {
+        return t.unaryExpression('-', t.numericLiteral(literal.argument.value));
+      }
+    }
   }
 
   if (t.isTSTypeReference(typeNode)) {
@@ -699,12 +773,22 @@ export function getDefaultValueForType(typeNode: t.TSType): t.Expression {
         || typeName.name === 'ImmutableArrayBuffer') {
         return t.newExpression(t.identifier('ImmutableArrayBuffer'), []);
       }
-      // Assume it's a message type
-      return t.newExpression(t.identifier(typeName.name), []);
+      // Only instantiate if it's a known message type
+      // Type aliases (like branded types or string unions) can't be instantiated
+      if (declaredMessageTypeNames?.has(typeName.name)) {
+        return t.newExpression(t.identifier(typeName.name), []);
+      }
+      // Try to resolve type alias to get a proper default value
+      // This handles cases like `type DistanceUnit = 'm' | 'ft'`
+      if (typeAliasDefinitions?.has(typeName.name)) {
+        const resolvedType = typeAliasDefinitions.get(typeName.name)!;
+        return getDefaultValueForType(resolvedType, declaredMessageTypeNames, typeAliasDefinitions);
+      }
+      // Unknown type reference - fall through to undefined
     }
   }
 
-  // Fallback for unknown types, though validation should catch most
+  // Fallback for unknown types (including type aliases that can't be instantiated)
   return t.identifier('undefined');
 }
 
@@ -989,8 +1073,8 @@ function scanTypeForUsage(
       state.usesImmutableMap = true;
       state.usesEquals = true;
       const params = typePath.get('typeParameters');
-      if (params && (params as any).isTSTypeParameterInstantiation()) {
-        for (const p of (params as any).get('params')) {
+      if (isTSTypeParameterInstantiation(params)) {
+        for (const p of getTypeParams(params)) {
           scanTypeForUsage(p, state);
         }
       }
@@ -998,8 +1082,8 @@ function scanTypeForUsage(
     if (isSetReference(typePath.node)) {
       state.usesImmutableSet = true;
       const params = typePath.get('typeParameters');
-      if (params && (params as any).isTSTypeParameterInstantiation()) {
-        for (const p of (params as any).get('params')) {
+      if (isTSTypeParameterInstantiation(params)) {
+        for (const p of getTypeParams(params)) {
           scanTypeForUsage(p, state);
         }
       }
@@ -1024,8 +1108,8 @@ function scanTypeForUsage(
      for (const member of typePath.get('members')) {
          if (member.isTSPropertySignature()) {
              const annotation = member.get('typeAnnotation');
-             if (annotation && (annotation as any).isTSTypeAnnotation()) {
-                scanTypeForUsage((annotation as any).get('typeAnnotation'), state);
+             if (isTSTypeAnnotation(annotation)) {
+                scanTypeForUsage(getTypeAnnotation(annotation), state);
              }
          }
      }

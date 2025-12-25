@@ -15,7 +15,7 @@ import {
   decimalIsNonPositive,
   decimalInRange,
   decimalInRangeExclusive,
-} from '../runtime/common/numbers/decimal.js';
+} from '@/common/numbers/decimal.js';
 
 describe('toDecimal', () => {
   describe('valid string inputs', () => {
@@ -301,60 +301,86 @@ describe('toDecimal', () => {
 describe('decimalCompare', () => {
   describe('equal values', () => {
     it('should return 0 for identical strings', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10.50', '10.50'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('0', '0'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-5.25', '-5.25'), 0);
     });
 
     it('should return 0 for equivalent values with different formatting', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10.50', '10.5'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10.00', '10'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('007.50', '7.5'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('0.0', '0'), 0);
     });
   });
 
   describe('positive comparisons', () => {
     it('should compare positive values correctly', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10.50', '10.49'), 1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10.49', '10.50'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('100', '99.99'), 1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('99.99', '100'), -1);
     });
 
     it('should handle different integer lengths', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('1000', '999'), 1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('999', '1000'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('10', '9'), 1);
     });
   });
 
   describe('negative comparisons', () => {
     it('should compare negative values correctly', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-5.00', '-10.00'), 1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-10.00', '-5.00'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-0.01', '-0.02'), 1);
     });
   });
 
   describe('mixed sign comparisons', () => {
     it('should always order negative before positive', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-1', '1'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('1', '-1'), 1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-0.01', '0.01'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-1000', '0.001'), -1);
     });
   });
 
   describe('zero comparisons', () => {
     it('should treat different zero representations as equal', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('0', '0.00'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-0', '0'), 0);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('-0.00', '0.00'), 0);
     });
 
     it('should compare zero with positive/negative correctly', () => {
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('0', '0.01'), -1);
+      // @ts-expect-error testing decimal functions with string literals
       assert.strictEqual(decimalCompare('0', '-0.01'), 1);
     });
   });
@@ -362,179 +388,250 @@ describe('decimalCompare', () => {
 
 describe('decimalEquals', () => {
   it('should return true for equal values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalEquals('10.50', '10.5'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalEquals('100', '100.00'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalEquals('-5', '-5.0'), true);
   });
 
   it('should return false for unequal values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalEquals('10.50', '10.51'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalEquals('100', '-100'), false);
   });
 });
 
 describe('decimalGreaterThan', () => {
   it('should return true when a > b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThan('10.50', '10.49'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThan('0', '-1'), true);
   });
 
   it('should return false when a <= b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThan('10.50', '10.50'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThan('10.49', '10.50'), false);
   });
 });
 
 describe('decimalGreaterThanOrEqual', () => {
   it('should return true when a >= b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThanOrEqual('10.50', '10.49'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThanOrEqual('10.50', '10.50'), true);
   });
 
   it('should return false when a < b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalGreaterThanOrEqual('10.49', '10.50'), false);
   });
 });
 
 describe('decimalLessThan', () => {
   it('should return true when a < b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThan('10.49', '10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThan('-1', '0'), true);
   });
 
   it('should return false when a >= b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThan('10.50', '10.50'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThan('10.50', '10.49'), false);
   });
 });
 
 describe('decimalLessThanOrEqual', () => {
   it('should return true when a <= b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThanOrEqual('10.49', '10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThanOrEqual('10.50', '10.50'), true);
   });
 
   it('should return false when a > b', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalLessThanOrEqual('10.51', '10.50'), false);
   });
 });
 
 describe('decimalIsPositive', () => {
   it('should return true for positive values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('0.01'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('1'), true);
   });
 
   it('should return false for zero', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('0'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('0.00'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('0.0000'), false);
   });
 
   it('should return false for negative values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('-10.50'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsPositive('-0.01'), false);
   });
 });
 
 describe('decimalIsNegative', () => {
   it('should return true for negative values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('-10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('-0.01'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('-1'), true);
   });
 
   it('should return false for zero', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('0'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('-0'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('-0.00'), false);
   });
 
   it('should return false for positive values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('10.50'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNegative('0.01'), false);
   });
 });
 
 describe('decimalIsZero', () => {
   it('should return true for zero values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('0.00'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('-0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('-0.00'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('0.0000000'), true);
   });
 
   it('should return false for non-zero values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('0.01'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('-0.01'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsZero('1'), false);
   });
 });
 
 describe('decimalIsNonNegative', () => {
   it('should return true for positive and zero values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonNegative('10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonNegative('0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonNegative('0.00'), true);
   });
 
   it('should return false for negative values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonNegative('-0.01'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonNegative('-10.50'), false);
   });
 });
 
 describe('decimalIsNonPositive', () => {
   it('should return true for negative and zero values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonPositive('-10.50'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonPositive('0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonPositive('-0.00'), true);
   });
 
   it('should return false for positive values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonPositive('0.01'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalIsNonPositive('10.50'), false);
   });
 });
 
 describe('decimalInRange', () => {
   it('should return true for values within range (inclusive)', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('50', '0', '100'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('0', '0', '100'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('100', '0', '100'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('0.5', '0', '1'), true);
   });
 
   it('should return false for values outside range', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('-0.01', '0', '100'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('100.01', '0', '100'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('200', '0', '100'), false);
   });
 
   it('should handle negative ranges', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('-50', '-100', '0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('-100', '-100', '0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('0', '-100', '0'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRange('-101', '-100', '0'), false);
   });
 });
 
 describe('decimalInRangeExclusive', () => {
   it('should return true for values strictly within range', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('50', '0', '100'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('0.01', '0', '100'), true);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('99.99', '0', '100'), true);
   });
 
   it('should return false for boundary values', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('0', '0', '100'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('100', '0', '100'), false);
   });
 
   it('should return false for values outside range', () => {
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('-0.01', '0', '100'), false);
+    // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('100.01', '0', '100'), false);
   });
 });

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export class Primitives extends Message<Primitives.Data> {
   static TYPE_TAG = Symbol("Primitives");
   static readonly $typeName = "Primitives";
@@ -12,15 +12,17 @@ export class Primitives extends Message<Primitives.Data> {
   #size!: bigint;
   #empty!: null;
   #missing!: undefined;
-  constructor(props?: Primitives.Value) {
+  constructor(props?: Primitives.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Primitives.EMPTY) return Primitives.EMPTY;
     super(Primitives.TYPE_TAG, "Primitives");
-    this.#flag = props ? props.flag : false;
-    this.#count = props ? props.count : 0;
-    this.#label = props ? props.label : "";
-    this.#size = props ? props.size : 0n;
-    this.#empty = props ? props.empty : null;
-    this.#missing = props ? props.missing : undefined;
+    this.#flag = (props ? props.flag : false) as boolean;
+    this.#count = (props ? props.count : 0) as number;
+    this.#label = (props ? props.label : "") as string;
+    this.#size = (props ? props.size : 0n) as bigint;
+    this.#empty = (props ? props.empty : null) as null;
+    this.#missing = (props ? props.missing : undefined) as undefined;
     if (!props) Primitives.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Primitives.Data>[] {
@@ -50,33 +52,46 @@ export class Primitives extends Message<Primitives.Data> {
       getValue: () => this.#missing
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Primitives.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Primitives.Data {
     const props = {} as Partial<Primitives.Data>;
     const flagValue = entries["flag"];
     if (flagValue === undefined) throw new Error("Missing required property \"flag\".");
     if (!(typeof flagValue === "boolean")) throw new Error("Invalid value for property \"flag\".");
-    props.flag = flagValue;
+    props.flag = flagValue as boolean;
     const countValue = entries["count"];
     if (countValue === undefined) throw new Error("Missing required property \"count\".");
     if (!(typeof countValue === "number")) throw new Error("Invalid value for property \"count\".");
-    props.count = countValue;
+    props.count = countValue as number;
     const labelValue = entries["label"];
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");
     if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
-    props.label = labelValue;
+    props.label = labelValue as string;
     const sizeValue = entries["size"];
     if (sizeValue === undefined) throw new Error("Missing required property \"size\".");
     if (!(typeof sizeValue === "bigint")) throw new Error("Invalid value for property \"size\".");
-    props.size = sizeValue;
+    props.size = sizeValue as bigint;
     const emptyValue = entries["empty"];
     if (emptyValue === undefined) throw new Error("Missing required property \"empty\".");
     if (!(emptyValue === null)) throw new Error("Invalid value for property \"empty\".");
-    props.empty = emptyValue;
+    props.empty = emptyValue as null;
     const missingValue = entries["missing"];
     if (missingValue === undefined) throw new Error("Missing required property \"missing\".");
     if (!(missingValue === undefined)) throw new Error("Invalid value for property \"missing\".");
-    props.missing = missingValue;
+    props.missing = missingValue as undefined;
     return props as Primitives.Data;
+  }
+  static from(value: Primitives.Value): Primitives {
+    return value instanceof Primitives ? value : new Primitives(value);
+  }
+  static deserialize<T extends typeof Primitives>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get flag(): boolean {
     return this.#flag;
@@ -103,7 +118,7 @@ export class Primitives extends Message<Primitives.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Primitives)(data));
+    return this.$update(new (this.constructor as typeof Primitives)(data) as this);
   }
   setCount(value: number) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -113,7 +128,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }));
+    }) as this);
   }
   setEmpty(value: null) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -123,7 +138,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: value,
       missing: this.#missing
-    }));
+    }) as this);
   }
   setFlag(value: boolean) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -133,7 +148,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }));
+    }) as this);
   }
   setLabel(value: string) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -143,7 +158,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: this.#missing
-    }));
+    }) as this);
   }
   setMissing(value: undefined) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -153,7 +168,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: this.#size,
       empty: this.#empty,
       missing: value
-    }));
+    }) as this);
   }
   setSize(value: bigint) {
     return this.$update(new (this.constructor as typeof Primitives)({
@@ -163,7 +178,7 @@ export class Primitives extends Message<Primitives.Data> {
       size: value,
       empty: this.#empty,
       missing: this.#missing
-    }));
+    }) as this);
   }
 }
 export namespace Primitives {

@@ -1,38 +1,31 @@
 /**
- * Fixed-precision decimal type for Propane database storage.
+ * Decimal type and operations for Propane database storage.
  *
- * Provides a branded type that maps to PostgreSQL NUMERIC(P,S) and
- * preserves exact decimal precision using string representation.
+ * Provides functions for working with decimal values that map to
+ * PostgreSQL NUMERIC(P,S) and preserve exact decimal precision
+ * using string representation.
  */
 
-import type { Brand } from '../types/brand.js';
-
 /**
- * Module-scoped namespace symbol for decimal type brand.
- */
-declare const unused_decimal_ns: unique symbol;
-
-/**
- * A fixed-precision decimal number.
+ * Fixed-precision decimal type.
  *
- * - PostgreSQL: NUMERIC(P,S)
- * - JavaScript: string (to preserve precision)
- * - Java: BigDecimal
- * - C++: std::string
- * - Protocol Buffers: string
+ * At runtime, decimal values are represented as strings to preserve
+ * exact precision (avoiding floating-point errors).
  *
  * @typeParam P - Precision (total number of digits)
  * @typeParam S - Scale (digits after decimal point)
  *
+ * SQL: NUMERIC(P, S)
+ *
  * @example
  * ```typescript
- * export type Account = {
- *   '1:id': PK<bigint>;
- *   '2:balance': decimal<12, 2>;  // Up to 12 digits, 2 after decimal
- * };
+ * '1:price': decimal<10, 2>;      // Up to 99999999.99
+ * '2:latitude': decimal<9, 6>;    // Up to 999.999999
+ * '3:percentage': decimal<5, 2>;  // Up to 999.99
  * ```
  */
-export type decimal<P extends number, S extends number> = Brand<string, 'decimal', typeof unused_decimal_ns> & {
+export type decimal<P extends number, S extends number> = string & {
+  readonly __decimal: unique symbol;
   readonly __precision: P;
   readonly __scale: S;
 };
@@ -483,6 +476,29 @@ export function canBeDecimal(value: unknown, precision: number, scale: number): 
   }
 
   return false;
+}
+
+/**
+ * Check if a string is a valid decimal format.
+ *
+ * This is a simple format check without precision/scale validation.
+ * Use this for build-time validation of decimal string literals.
+ *
+ * @param value - The string to check
+ * @returns true if the string is a valid decimal format
+ *
+ * @example
+ * ```typescript
+ * isValidDecimalString('123.45');   // true
+ * isValidDecimalString('-100.00');  // true
+ * isValidDecimalString('100');      // true
+ * isValidDecimalString('abc');      // false
+ * isValidDecimalString('1.2.3');    // false
+ * isValidDecimalString('');         // false
+ * ```
+ */
+export function isValidDecimalString(value: string): boolean {
+  return /^-?\d+(\.\d+)?$/.test(value);
 }
 
 // -----------------------------------------------------------------------------

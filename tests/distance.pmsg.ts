@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export type DistanceUnit = 'm' | 'ft';
 export class Distance extends Message<Distance.Data> {
   static TYPE_TAG = Symbol("Distance");
@@ -9,11 +9,13 @@ export class Distance extends Message<Distance.Data> {
   static EMPTY: Distance;
   #unit!: DistanceUnit;
   #value!: number;
-  constructor(props?: Distance.Value) {
+  constructor(props?: Distance.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Distance.EMPTY) return Distance.EMPTY;
     super(Distance.TYPE_TAG, "Distance");
-    this.#unit = props ? props.unit : new DistanceUnit();
-    this.#value = props ? props.value : 0;
+    this.#unit = (props ? props.unit : "m") as DistanceUnit;
+    this.#value = (props ? props.value : 0) as number;
     if (!props) Distance.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Distance.Data>[] {
@@ -27,16 +29,29 @@ export class Distance extends Message<Distance.Data> {
       getValue: () => this.#value
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Distance.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Distance.Data {
     const props = {} as Partial<Distance.Data>;
     const unitValue = entries["unit"];
     if (unitValue === undefined) throw new Error("Missing required property \"unit\".");
-    props.unit = unitValue;
+    props.unit = unitValue as DistanceUnit;
     const valueValue = entries["value"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
     if (!(typeof valueValue === "number")) throw new Error("Invalid value for property \"value\".");
-    props.value = valueValue;
+    props.value = valueValue as number;
     return props as Distance.Data;
+  }
+  static from(value: Distance.Value): Distance {
+    return value instanceof Distance ? value : new Distance(value);
+  }
+  static deserialize<T extends typeof Distance>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get unit(): DistanceUnit {
     return this.#unit;
@@ -51,19 +66,19 @@ export class Distance extends Message<Distance.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Distance)(data));
+    return this.$update(new (this.constructor as typeof Distance)(data) as this);
   }
   setUnit(value: DistanceUnit) {
     return this.$update(new (this.constructor as typeof Distance)({
       unit: value,
       value: this.#value
-    }));
+    }) as this);
   }
   setValue(value: number) {
     return this.$update(new (this.constructor as typeof Distance)({
       unit: this.#unit,
       value: value
-    }));
+    }) as this);
   }
 }
 export namespace Distance {

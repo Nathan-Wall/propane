@@ -1,12 +1,13 @@
-import { assert } from './assert.ts';
-import { ImmutableArray } from '../runtime/common/array/immutable.ts';
+import { assert } from './assert.js';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
 import {
   SET_UPDATE_LISTENER,
   WITH_CHILD,
   PROPAGATE_UPDATE,
   REACT_LISTENER_KEY,
-} from '../runtime/symbols.ts';
-import type { Message, DataObject } from '../runtime/message.ts';
+} from '../runtime/symbols.js';
+import type { Message, DataObject } from '../runtime/message.js';
+import { test } from 'node:test';
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
@@ -142,3 +143,7 @@ function testArrayDeepUpdate() {
 
   console.log('ImmutableArray deep updates passed.');
 }
+
+test('runArrayListenerTests', () => {
+  runArrayListenerTests();
+});

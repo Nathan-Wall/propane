@@ -1,6 +1,15 @@
-import { assert } from './assert.ts';
-// Import Person from extension file (not pmsg file) to get extended class
-import { Person } from './extend-basic.pmsg.ext.ts';
+import { assert } from './assert.js';
+// Import from extension file to get the extended class with custom methods.
+// Note: Due to ES module circular dependency limitations, we can't re-export
+// from the generated file. See planning/wip/type-system-limitations.md
+import { Person } from './extend-basic.pmsg.ext.js';
+import { test } from 'node:test';
+
+// Note: We can't use `ReturnType<typeof Person.deserialize>` to verify the return type
+// because TypeScript's ReturnType doesn't capture the `this` polymorphism from
+// `static deserialize<T extends typeof Person$Base>(this: T, ...): InstanceType<T>`.
+// Instead, we verify the type works correctly at call sites in the tests below.
+// See: planning/wip/type-system-limitations.md
 
 export default function runExtendBasicTests() {
   // Test creating an extended person
@@ -46,8 +55,32 @@ export default function runExtendBasicTests() {
   assert(deserialized.firstName === 'John', 'deserialized firstName should match');
   assert(deserialized.lastName === 'Doe', 'deserialized lastName should match');
   assert(deserialized.age === 25, 'deserialized age should match');
-  // Note: deserialization returns Person$Base, not the extended Person
-  // This is expected behavior for the current implementation
+  // Verify deserialize returns the extended Person class, not Person$Base
+  assert(deserialized instanceof Person, 'deserialized should be instanceof Person');
+  assert(deserialized.fullName === 'John Doe', 'deserialized should have fullName getter');
+  assert(typeof deserialized.greet === 'function', 'deserialized should have greet method');
+
+  // Test deserialized instance can call extension methods
+  assert(deserialized.greet() === 'Hello, John Doe!', 'deserialized greet() should work');
+
+  // Test deserialized instance setters return extended type
+  const deserializedModified = deserialized.setFirstName('Modified');
+  assert(deserializedModified instanceof Person, 'setter on deserialized should return Person');
+  assert(deserializedModified.fullName === 'Modified Doe', 'modified deserialized should have fullName');
+  assert(typeof deserializedModified.greet === 'function', 'modified deserialized should have greet');
+
+  // Test re-serialization of deserialized instance
+  const reserialized = deserialized.serialize();
+  assert(reserialized === serialized, 'reserialized should equal original serialized');
+
+  // Test equality between original and deserialized
+  assert(person.equals(deserialized), 'original and deserialized should be equal');
+  assert(deserialized.equals(person), 'deserialized and original should be equal');
+
+  // Test with skipValidation option
+  const deserializedSkipValidation = Person.deserialize(serialized, { skipValidation: true });
+  assert(deserializedSkipValidation instanceof Person, 'skipValidation deserialize should return Person');
+  assert(deserializedSkipValidation.fullName === 'John Doe', 'skipValidation deserialize should have extension');
 
   // Test that instanceof works
   assert(person instanceof Person, 'person should be instanceof Person');
@@ -67,3 +100,7 @@ export default function runExtendBasicTests() {
   });
   assert(!person.equals(differentPerson), 'different persons should not be equal');
 }
+
+test('runExtendBasicTests', () => {
+  runExtendBasicTests();
+});

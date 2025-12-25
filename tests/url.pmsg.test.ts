@@ -1,6 +1,7 @@
-import { assert } from './assert.ts';
-import { UrlMessage } from './url.pmsg.ts';
-import { ImmutableUrl } from '../runtime/index.ts';
+import { assert } from './assert.js';
+import { UrlMessage } from './url.pmsg.js';
+import { ImmutableUrl } from '../runtime/index.js';
+import { test } from 'node:test';
 
 function serializeUrl(url: URL | ImmutableUrl): string {
   return `U${JSON.stringify(url.toString())}`;
@@ -35,7 +36,7 @@ export default function runUrlPropaneTests() {
 
   const roundTripLinks = [...roundTrip.links];
   assert(roundTripLinks.length === links.length, 'URL array should preserve length.');
-  assert(roundTripLinks.every((u, i) => u.toString() === links[i].toString()), 'URL array elements should round-trip as URLs.');
+  assert(roundTripLinks.every((u, i) => u.toString() === links[i]!.toString()), 'URL array elements should round-trip as URLs.');
 
   const withoutSecondary = new UrlMessage({ id: 9, primary, links: [] });
   const serializedWithout = withoutSecondary.serialize();
@@ -49,3 +50,7 @@ export default function runUrlPropaneTests() {
   assert(json.secondary === secondary.toString(), 'Optional URL should normalize to string in JSON.');
   assert(JSON.stringify(json.links) === JSON.stringify(links.map((u) => u.toString())), 'URL arrays should normalize to strings in JSON.');
 }
+
+test('runUrlPropaneTests', () => {
+  runUrlPropaneTests();
+});

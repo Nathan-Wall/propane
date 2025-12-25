@@ -3,8 +3,8 @@
 import { Distance } from './distance.pmsg.js';
 import { Email } from './email.pmsg.js';
 import { Hash } from './hash.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP, ValidationError } from "../runtime/index.js";
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -26,15 +26,15 @@ export class User extends Message<User.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#id = props ? props.id : 0;
-    this.#name = props ? props.name : "";
-    this.#email = props ? props.email : new Email();
-    this.#passwordHash = props ? props.passwordHash : new Hash();
+    this.#id = (props ? props.id : 0) as number;
+    this.#name = (props ? props.name : "") as string;
+    this.#email = (props ? props.email : undefined) as Email;
+    this.#passwordHash = (props ? props.passwordHash : undefined) as Hash;
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
-    this.#active = props ? props.active : false;
-    this.#eyeColor = props ? props.eyeColor : undefined;
-    this.#height = props ? props.height : new Distance();
+    this.#active = (props ? props.active : false) as boolean;
+    this.#eyeColor = (props ? props.eyeColor : "blue") as 'blue' | 'green' | 'brown' | 'hazel';
+    this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height, options) : new Distance();
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -57,11 +57,11 @@ export class User extends Message<User.Data> {
     }, {
       name: "created",
       fieldNumber: null,
-      getValue: () => this.#created
+      getValue: () => this.#created as ImmutableDate | Date
     }, {
       name: "updated",
       fieldNumber: null,
-      getValue: () => this.#updated
+      getValue: () => this.#updated as ImmutableDate | Date
     }, {
       name: "active",
       fieldNumber: null,
@@ -69,57 +69,94 @@ export class User extends Message<User.Data> {
     }, {
       name: "eyeColor",
       fieldNumber: null,
-      getValue: () => this.#eyeColor
+      getValue: () => this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel'
     }, {
       name: "height",
       fieldNumber: null,
-      getValue: () => this.#height
+      getValue: () => this.#height as Distance.Value
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): User.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): User.Data {
     const props = {} as Partial<User.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as number;
     const nameValue = entries["2"] === undefined ? entries["name"] : entries["2"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     const emailValue = entries["3"] === undefined ? entries["email"] : entries["3"];
     if (emailValue === undefined) throw new Error("Missing required property \"email\".");
-    props.email = emailValue;
+    props.email = emailValue as Email;
     const passwordHashValue = entries["4"] === undefined ? entries["passwordHash"] : entries["4"];
     if (passwordHashValue === undefined) throw new Error("Missing required property \"passwordHash\".");
-    props.passwordHash = passwordHashValue;
+    props.passwordHash = passwordHashValue as Hash;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue;
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue instanceof Date || updatedValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue;
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
     const activeValue = entries["active"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");
     if (!(typeof activeValue === "boolean")) throw new Error("Invalid value for property \"active\".");
-    props.active = activeValue;
+    props.active = activeValue as boolean;
     const eyeColorValue = entries["eyeColor"];
     if (eyeColorValue === undefined) throw new Error("Missing required property \"eyeColor\".");
     if (!(eyeColorValue === "blue" || eyeColorValue === "green" || eyeColorValue === "brown" || eyeColorValue === "hazel")) throw new Error("Invalid value for property \"eyeColor\".");
-    props.eyeColor = eyeColorValue;
+    props.eyeColor = eyeColorValue as 'blue' | 'green' | 'brown' | 'hazel';
     const heightValue = entries["height"];
     if (heightValue === undefined) throw new Error("Missing required property \"height\".");
-    props.height = heightValue;
+    const heightMessageValue = heightValue instanceof Distance ? heightValue : new Distance(heightValue as Distance.Value, options);
+    props.height = heightMessageValue;
     return props as User.Data;
   }
-  #validate(data: User.Value | undefined) {}
+  static from(value: User.Value): User {
+    return value instanceof User ? value : new User(value);
+  }
+  #validate(data: User.Value | undefined) {
+    if (data === undefined) return;
+  }
   static validateAll(data: User.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "height":
+        return new (this.constructor as typeof User)({
+          id: this.#id,
+          name: this.#name,
+          email: this.#email,
+          passwordHash: this.#passwordHash,
+          created: this.#created,
+          updated: this.#updated,
+          active: this.#active,
+          eyeColor: this.#eyeColor,
+          height: child as Distance
+        } as unknown as User.Value) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["height", this.#height] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof User>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): number {
     return this.#id;
@@ -155,7 +192,7 @@ export class User extends Message<User.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof User)(data));
+    return this.$update(new (this.constructor as typeof User)(data) as this);
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof User)({
@@ -163,12 +200,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: value,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof User)({
@@ -176,12 +213,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: value,
-      updated: this.#updated,
+      created: value as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setEmail(value: Email) {
     return this.$update(new (this.constructor as typeof User)({
@@ -189,12 +226,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: value,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setEyeColor(value: 'blue' | 'green' | 'brown' | 'hazel') {
     return this.$update(new (this.constructor as typeof User)({
@@ -202,25 +239,25 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: value,
-      height: this.#height
-    }));
+      eyeColor: value as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
-  setHeight(value: Distance) {
+  setHeight(value: Distance.Value) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: value
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: (value instanceof Distance ? value : new Distance(value)) as Distance.Value
+    }) as this);
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof User)({
@@ -228,12 +265,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof User)({
@@ -241,12 +278,12 @@ export class User extends Message<User.Data> {
       name: value,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setPasswordHash(value: Hash) {
     return this.$update(new (this.constructor as typeof User)({
@@ -254,12 +291,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: value,
-      created: this.#created,
-      updated: this.#updated,
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof User)({
@@ -267,12 +304,12 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: this.#created,
-      updated: value,
+      created: this.#created as ImmutableDate | Date,
+      updated: value as ImmutableDate | Date,
       active: this.#active,
-      eyeColor: this.#eyeColor,
-      height: this.#height
-    }));
+      eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      height: this.#height as Distance.Value
+    }) as this);
   }
 }
 export namespace User {
@@ -285,7 +322,7 @@ export namespace User {
     updated: ImmutableDate | Date;
     active: boolean;
     eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
-    height: Distance;
+    height: Distance.Value;
   };
   export type Value = User | User.Data;
 }

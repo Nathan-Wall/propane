@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { Cat, Dog, PetOwner } from './message-union.pmsg.ts';
+import { assert } from './assert.js';
+import { Cat, Dog, PetOwner } from './message-union.pmsg.js';
+import { test } from 'node:test';
 
 export default function runMessageUnionTests() {
   // Test with Cat as pet
@@ -123,3 +124,7 @@ export default function runMessageUnionTests() {
     `Standalone Cat serialization should NOT be tagged. Got: ${catSerialized}`
   );
 }
+
+test('runMessageUnionTests', () => {
+  runMessageUnionTests();
+});

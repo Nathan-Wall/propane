@@ -1,7 +1,8 @@
-import { UnionFirstNumber, UnionFirstString, OptionalField, RequiredMessage } from './repro-empty-new.pmsg.ts';
+import { UnionFirstNumber, UnionFirstString, OptionalField, RequiredMessage } from './repro-empty-new.pmsg.js';
 import assert from 'node:assert';
+import { test } from 'node:test';
 
-export default function () {
+export default function runReproEmptyNewTests() {
   console.log('Testing UnionFirstNumber...');
   const num = new UnionFirstNumber();
   assert.strictEqual(num.val, 0, 'UnionFirstNumber should default to 0');
@@ -40,3 +41,7 @@ export default function () {
 
   console.log('All tests passed!');
 }
+
+test('runReproEmptyNewTests', () => {
+  runReproEmptyNewTests();
+});

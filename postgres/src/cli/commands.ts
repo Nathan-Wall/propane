@@ -67,6 +67,140 @@ export interface MigrateCreateOptions {
 }
 
 /**
+ * Validation error for CLI configuration.
+ */
+export class ConfigValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ConfigValidationError';
+  }
+}
+
+/**
+ * Validate that a value is a plain object.
+ */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Validate and return a CLI configuration object.
+ * Throws ConfigValidationError with a descriptive message if validation fails.
+ */
+export function validateCliConfig(value: unknown, source: string): CliConfig {
+  if (!isPlainObject(value)) {
+    throw new ConfigValidationError(
+      `Config from ${source} must be an object, got ${typeof value}`
+    );
+  }
+
+  // Helper to check field types
+  const checkString = (obj: Record<string, unknown>, field: string, path: string) => {
+    if (obj[field] !== undefined && typeof obj[field] !== 'string') {
+      throw new ConfigValidationError(
+        `Config ${path} must be a string, got ${typeof obj[field]}`
+      );
+    }
+  };
+  const checkNumber = (obj: Record<string, unknown>, field: string, path: string) => {
+    if (obj[field] !== undefined && typeof obj[field] !== 'number') {
+      throw new ConfigValidationError(
+        `Config ${path} must be a number, got ${typeof obj[field]}`
+      );
+    }
+  };
+  const checkBoolean = (obj: Record<string, unknown>, field: string, path: string) => {
+    if (obj[field] !== undefined && typeof obj[field] !== 'boolean') {
+      throw new ConfigValidationError(
+        `Config ${path} must be a boolean, got ${typeof obj[field]}`
+      );
+    }
+  };
+
+  // Validate connection
+  if (value['connection'] !== undefined) {
+    if (!isPlainObject(value['connection'])) {
+      throw new ConfigValidationError(
+        `Config connection must be an object, got ${typeof value['connection']}`
+      );
+    }
+    const conn = value['connection'];
+    checkString(conn, 'host', 'connection.host');
+    checkNumber(conn, 'port', 'connection.port');
+    checkString(conn, 'database', 'connection.database');
+    checkString(conn, 'user', 'connection.user');
+    checkString(conn, 'password', 'connection.password');
+    checkString(conn, 'schema', 'connection.schema');
+    checkString(conn, 'connectionString', 'connection.connectionString');
+    checkNumber(conn, 'connectionTimeout', 'connection.connectionTimeout');
+    checkNumber(conn, 'idleTimeout', 'connection.idleTimeout');
+    checkNumber(conn, 'max', 'connection.max');
+    checkNumber(conn, 'min', 'connection.min');
+    if (conn['ssl'] !== undefined
+        && typeof conn['ssl'] !== 'boolean'
+        && conn['ssl'] !== 'require'
+        && conn['ssl'] !== 'prefer'
+        && !isPlainObject(conn['ssl'])) {
+      throw new ConfigValidationError(
+        `Config connection.ssl must be boolean, 'require', 'prefer', or an object`
+      );
+    }
+  }
+
+  // Validate schema
+  if (value['schema'] !== undefined) {
+    if (!isPlainObject(value['schema'])) {
+      throw new ConfigValidationError(
+        `Config schema must be an object, got ${typeof value['schema']}`
+      );
+    }
+    checkString(value['schema'], 'defaultSchema', 'schema.defaultSchema');
+  }
+
+  // Validate migration
+  if (value['migration'] !== undefined) {
+    if (!isPlainObject(value['migration'])) {
+      throw new ConfigValidationError(
+        `Config migration must be an object, got ${typeof value['migration']}`
+      );
+    }
+    checkString(value['migration'], 'directory', 'migration.directory');
+    checkString(value['migration'], 'tableName', 'migration.tableName');
+  }
+
+  // Validate codegen
+  if (value['codegen'] !== undefined) {
+    if (!isPlainObject(value['codegen'])) {
+      throw new ConfigValidationError(
+        `Config codegen must be an object, got ${typeof value['codegen']}`
+      );
+    }
+    checkString(value['codegen'], 'outputDir', 'codegen.outputDir');
+    checkBoolean(value['codegen'], 'generateRepositories', 'codegen.generateRepositories');
+    checkString(value['codegen'], 'typesImportPrefix', 'codegen.typesImportPrefix');
+  }
+
+  // Validate pmsgFiles
+  if (value['pmsgFiles'] !== undefined) {
+    if (!Array.isArray(value['pmsgFiles'])) {
+      throw new ConfigValidationError(
+        `Config pmsgFiles must be an array, got ${typeof value['pmsgFiles']}`
+      );
+    }
+    const files = value['pmsgFiles'] as unknown[];
+    for (let i = 0; i < files.length; i++) {
+      if (typeof files[i] !== 'string') {
+        throw new ConfigValidationError(
+          `Config pmsgFiles[${i}] must be a string, got ${typeof files[i]}`
+        );
+      }
+    }
+  }
+
+  return value as unknown as CliConfig;
+}
+
+/**
  * Load configuration from file.
  */
 export async function loadConfig(configPath?: string): Promise<CliConfig> {
@@ -78,11 +212,13 @@ export async function loadConfig(configPath?: string): Promise<CliConfig> {
     const fullPath = path.resolve(process.cwd(), searchPath);
     if (fs.existsSync(fullPath)) {
       if (fullPath.endsWith('.json')) {
-        return JSON.parse(fs.readFileSync(fullPath, 'utf8')) as CliConfig;
+        const content = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+        return validateCliConfig(content, fullPath);
       }
       // For TS/JS files, use dynamic import
-      const module: { default?: CliConfig } = await import(fullPath);
-      return module.default ?? (module as unknown as CliConfig);
+      const module = await import(fullPath);
+      const content = module.default ?? module;
+      return validateCliConfig(content, fullPath);
     }
   }
 

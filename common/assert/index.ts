@@ -32,6 +32,21 @@ type Constructor<T extends object> =
 
 type Container<T> = {has: (value: unknown) => value is T};
 
+// Extracts plain object types from a union, excluding arrays and
+// objects with custom toStringTag (like ImmutableMap, ImmutableSet).
+// Falls back to Record<string, unknown> if no object types found.
+type SimpleObjectType<T> = T extends readonly unknown[]
+  ? never
+  : T extends { [Symbol.toStringTag]: string }
+    ? never
+    : T extends Record<string, unknown>
+      ? T
+      : never;
+type SimpleObjectResult<T> =
+  [SimpleObjectType<T>] extends [never]
+    ? Record<string, unknown>
+    : SimpleObjectType<T>;
+
 const METHODS = defineMethods();
 
 export function assertThrow(
@@ -186,7 +201,7 @@ function defineMethods() {
     // A "simple object" is an object with tag[1] of "Object".
     //
     // https://tc39.es/ecma262/#sec-object.prototype.tostring
-    simpleObject: (value: unknown) => result<Record<string, unknown>>(
+    simpleObject: <T>(value: T) => result<SimpleObjectResult<T>>(
       emsg`Expected simple object: ${value}`,
       getStringTag(value) === 'Object',
     ),

@@ -4,6 +4,9 @@
  * These types provide type-safety and map to specific SQL types.
  */
 
+// Re-export decimal from shared location for cross-package compatibility
+export type { decimal } from '@/common/numbers/decimal.js';
+
 /**
  * 32-bit signed integer type.
  *
@@ -34,27 +37,3 @@ export type int32 = number & { readonly __int32: unique symbol };
  * ```
  */
 export type int53 = number & { readonly __int53: unique symbol };
-
-/**
- * Fixed-precision decimal type.
- *
- * At runtime, decimal values are represented as strings to preserve
- * exact precision (avoiding floating-point errors).
- *
- * @typeParam P - Precision (total number of digits)
- * @typeParam S - Scale (digits after decimal point)
- *
- * SQL: NUMERIC(P, S)
- *
- * @example
- * ```typescript
- * '1:price': decimal<10, 2>;      // Up to 99999999.99
- * '2:latitude': decimal<9, 6>;    // Up to 999.999999
- * '3:percentage': decimal<5, 2>;  // Up to 999.99
- * ```
- */
-export type decimal<P extends number, S extends number> = string & {
-  readonly __decimal: unique symbol;
-  readonly __precision: P;
-  readonly __scale: S;
-};

@@ -37,17 +37,25 @@ export function ensureBaseImport(
     }
   }
 
+  // Find existing VALUE import (not type-only import)
   const existingImport = program.body.find(
     (stmt): stmt is t.ImportDeclaration =>
       t.isImportDeclaration(stmt)
       && stmt.source.value === runtimeSource
+      && stmt.importKind !== 'type'
   );
-  const requiredSpecifiers = [
-    'Message',
-    // Hybrid approach symbols
-    'WITH_CHILD',
-    'GET_MESSAGE_CHILDREN',
-  ];
+  // Build list of required specifiers, checking if already imported
+  const requiredSpecifiers: string[] = [];
+  if (!hasImportBinding('Message')) {
+    requiredSpecifiers.push('Message');
+  }
+  // Hybrid approach symbols
+  if (!hasImportBinding('WITH_CHILD')) {
+    requiredSpecifiers.push('WITH_CHILD');
+  }
+  if (!hasImportBinding('GET_MESSAGE_CHILDREN')) {
+    requiredSpecifiers.push('GET_MESSAGE_CHILDREN');
+  }
   if (state.usesImmutableMap && !hasImportBinding('ImmutableMap')) {
     requiredSpecifiers.push('ImmutableMap');
   }
@@ -74,6 +82,9 @@ export function ensureBaseImport(
   }
   if (state.usesParseCerealString && !hasImportBinding('parseCerealString')) {
     requiredSpecifiers.push('parseCerealString');
+  }
+  if (state.usesEnsure && !hasImportBinding('ensure')) {
+    requiredSpecifiers.push('ensure');
   }
   if (state.usesSkip && !hasImportBinding('SKIP')) {
     requiredSpecifiers.push('SKIP');
@@ -132,6 +143,9 @@ export function ensureBaseImport(
   if (state.usesDataValue && !hasImportBinding('DataValue')) {
     typeOnlyImports.push('DataValue');
   }
+  if (state.usesMessageValue && !hasImportBinding('MessageValue')) {
+    typeOnlyImports.push('MessageValue');
+  }
   if (state.usesDataObject && !hasImportBinding('DataObject')) {
     typeOnlyImports.push('DataObject');
   }
@@ -161,6 +175,10 @@ export function ensureBaseImport(
   if (state.needsSetUpdatesType && !hasImportBinding('SetUpdates')) {
     typeOnlyImports.push('SetUpdates');
   }
+  // AnyDecimal is needed for type-safe decimal bound casts in validation code
+  if (state.usesAnyDecimal && !hasImportBinding('AnyDecimal')) {
+    typeOnlyImports.push('AnyDecimal');
+  }
 
   if (typeOnlyImports.length > 0) {
     // Check if type import already exists
@@ -171,7 +189,28 @@ export function ensureBaseImport(
         && stmt.importKind === 'type'
     );
 
-    if (existingTypeImport) {
+    // Find names already in value imports to avoid duplicate identifier errors
+    const valueImportNames = new Set<string>();
+    for (const stmt of program.body) {
+      if (
+        t.isImportDeclaration(stmt)
+        && stmt.source.value === runtimeSource
+        && stmt.importKind !== 'type'
+      ) {
+        for (const spec of stmt.specifiers) {
+          if (t.isImportSpecifier(spec)) {
+            valueImportNames.add(spec.local.name);
+          }
+        }
+      }
+    }
+
+    // Filter out names that are already value imports
+    const filteredTypeImports = typeOnlyImports.filter(
+      (name) => !valueImportNames.has(name)
+    );
+
+    if (existingTypeImport && filteredTypeImports.length > 0) {
       // Add to existing type import
       type ImportSpec = t.ImportSpecifier;
       const isImportSpec = (s: t.Node): s is ImportSpec =>
@@ -185,17 +224,17 @@ export function ensureBaseImport(
               : spec.imported.value
           )
       );
-      for (const name of typeOnlyImports) {
+      for (const name of filteredTypeImports) {
         if (!existingSpecifiers.has(name)) {
           existingTypeImport.specifiers.push(
             t.importSpecifier(t.identifier(name), t.identifier(name))
           );
         }
       }
-    } else {
+    } else if (filteredTypeImports.length > 0) {
       // Create new type-only import
       const typeImportDecl = t.importDeclaration(
-        typeOnlyImports.map((name) =>
+        filteredTypeImports.map((name) =>
           t.importSpecifier(t.identifier(name), t.identifier(name))
         ),
         t.stringLiteral(runtimeSource)

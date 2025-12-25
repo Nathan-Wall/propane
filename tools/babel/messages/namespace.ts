@@ -1,5 +1,5 @@
 import * as t from '@babel/types';
-import type { PropDescriptor } from './properties.js';
+import type { PropDescriptor, PluginStateFlags } from './properties.js';
 
 /**
  * Fixes type parameters to ensure Message constraints have the required type argument.
@@ -35,6 +35,7 @@ export function buildTypeNamespace(
   typeAlias: t.TSTypeAliasDeclaration,
   properties: PropDescriptor[],
   exported: boolean,
+  state: PluginStateFlags,
   generatedTypeNames: string[] = [],
   className?: string  // For @extend, this is TypeName$Base; otherwise same as typeAlias.id.name
 ): t.ExportNamedDeclaration | t.TSModuleDeclaration {
@@ -68,10 +69,6 @@ export function buildTypeNamespace(
   });
 
   const literalClone = t.tsTypeLiteral(literalMembers);
-
-  // Use type alias instead of interface - type aliases are "closed" and satisfy
-  // DataObject without needing an explicit index signature, unlike interfaces
-  // which are "open" and require [key: string]: any for generic types
   const typeDecl = t.tsTypeAliasDeclaration(
     typeId,
     fixTypeParameterConstraints(typeAlias.typeParameters),

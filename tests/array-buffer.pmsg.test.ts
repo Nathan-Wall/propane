@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { ArrayBufferMessage } from './array-buffer.pmsg.ts';
+import { assert } from './assert.js';
+import { ArrayBufferMessage } from './array-buffer.pmsg.js';
+import { test } from 'node:test';
 
 function makeBuffer(bytes: number[]): ArrayBuffer {
   return new Uint8Array(bytes).buffer;
@@ -79,3 +80,7 @@ export default function runArrayBufferTests() {
   const serializedWithoutExtra = withoutExtra.serialize();
   assert(!serializedWithoutExtra.includes('undefined'), 'Optional ArrayBuffer should be omitted when undefined.');
 }
+
+test('runArrayBufferTests', () => {
+  runArrayBufferTests();
+});

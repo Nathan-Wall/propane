@@ -1,12 +1,16 @@
-import { assert, assertThrows } from './assert.ts';
-import { Indexed } from './indexed.pmsg.ts';
+import { assert, assertThrows } from './assert.js';
+import { Indexed } from './indexed.pmsg.js';
+import { test } from 'node:test';
+
+// Note: ReturnType<typeof Indexed.deserialize> doesn't work with polymorphic static methods.
+// The type is verified at call sites instead. See: planning/wip/type-system-limitations.md
 
 export default function runIndexedPropaneTests() {
   if (typeof Indexed !== 'function') {
     throw new TypeError('Indexed class was not exported.');
   }
 
-  const instance: IndexedInstance = new Indexed({
+  const instance: Indexed = new Indexed({
     id: 1,
     name: 'Alice',
     age: 30,
@@ -31,30 +35,26 @@ export default function runIndexedPropaneTests() {
     'Serialized string did not match expected.'
   );
 
-  const cerealObj = instance.cerealize();
-  assert(cerealObj.name === 'Alice', 'cerealize lost name.');
-  assert(cerealObj.alias === 'Ace', 'cerealize lost alias.');
+  assert(instance.name === 'Alice', 'Instance lost name.');
+  assert(instance.alias === 'Ace', 'Instance lost alias.');
 
   const hydrated = Indexed.deserialize(serialized);
   assert(hydrated instanceof Indexed, 'Deserialize should produce class instance.');
-  const hydratedCereal = hydrated.cerealize();
-  assert(hydratedCereal.name === 'Alice', 'Roundtrip lost data.');
+  assert(hydrated.name === 'Alice', 'Roundtrip lost data.');
 
   const rawString = ':{3,"Chris",24,false,"CJ",99,null,"PENDING"}';
   const hydratedFromString = Indexed.deserialize(rawString);
-  const hydratedFromStringCereal = hydratedFromString.cerealize();
-  assert(hydratedFromStringCereal.name === 'Chris', 'Raw string deserialize lost name.');
-  assert(hydratedFromStringCereal.score === 99, 'Raw string deserialize lost score.');
-  assert(hydratedFromStringCereal.alias === null, 'Raw string deserialize lost alias.');
-  assert(hydratedFromStringCereal.status === 'PENDING', 'Raw string deserialize lost status.');
+  assert(hydratedFromString.name === 'Chris', 'Raw string deserialize lost name.');
+  assert(hydratedFromString.score === 99, 'Raw string deserialize lost score.');
+  assert(hydratedFromString.alias === null, 'Raw string deserialize lost alias.');
+  assert(hydratedFromString.status === 'PENDING', 'Raw string deserialize lost status.');
 
   const cerealInput = ':{2,"Bob",28,false,"B",80,null,"IDLE"}';
   const fromCereal = Indexed.deserialize(cerealInput);
-  const fromCerealPayload = fromCereal.cerealize();
-  assert(fromCerealPayload.name === 'Bob', 'Decerealize failed.');
-  assert(fromCerealPayload.score === 80, 'Decerealize lost score.');
-  assert(fromCerealPayload.alias === null, 'Decerealize lost alias.');
-  assert(fromCerealPayload.status === 'IDLE', 'Decerealize lost status.');
+  assert(fromCereal.name === 'Bob', 'Deserialize failed.');
+  assert(fromCereal.score === 80, 'Deserialize lost score.');
+  assert(fromCereal.alias === null, 'Deserialize lost alias.');
+  assert(fromCereal.status === 'IDLE', 'Deserialize lost status.');
 
   assertThrows(
     () => Indexed.deserialize(':{"name":"Charlie","age":22,"active":true}'),
@@ -81,23 +81,20 @@ export default function runIndexedPropaneTests() {
     optionalSerial === ':{4,Optional,35,false,6:0,8:MISSING}',
     'Optional slot string incorrect.'
   );
-  const optionalObject = optionalMissing.cerealize();
-  assert(optionalObject.nickname === undefined, 'Object cerealize should omit nickname.');
+  assert(optionalMissing.nickname === undefined, 'Optional should omit nickname.');
 
   const optionalRawWithValue = ':{6,"OptName",31,true,"CJ",12,"CJ-A","RUN"}';
   const optionalHydrated = Indexed.deserialize(optionalRawWithValue);
-  const optionalHydratedCereal = optionalHydrated.cerealize();
-  assert(optionalHydratedCereal.nickname === 'CJ', 'Raw optional value not preserved.');
-  assert(optionalHydratedCereal.score === 12, 'Raw score lost.');
-  assert(optionalHydratedCereal.alias === 'CJ-A', 'Raw alias lost.');
+  assert(optionalHydrated.nickname === 'CJ', 'Raw optional value not preserved.');
+  assert(optionalHydrated.score === 12, 'Raw score lost.');
+  assert(optionalHydrated.alias === 'CJ-A', 'Raw alias lost.');
 
   const optionalRawMissing =
     ':{"1":7,"2":"OptName","3":31,"4":true,"6":5,"8":"RESTING"}';
   const optionalHydratedMissing = Indexed.deserialize(optionalRawMissing);
-  const optionalHydratedMissingCereal = optionalHydratedMissing.cerealize();
-  assert(optionalHydratedMissingCereal.nickname === undefined, 'Missing optional value should stay undefined.');
-  assert(optionalHydratedMissingCereal.score === 5, 'Missing optional roundtrip lost score.');
-  assert(optionalHydratedMissingCereal.alias === undefined, 'Missing alias should stay undefined.');
+  assert(optionalHydratedMissing.nickname === undefined, 'Missing optional value should stay undefined.');
+  assert(optionalHydratedMissing.score === 5, 'Missing optional roundtrip lost score.');
+  assert(optionalHydratedMissing.alias === undefined, 'Missing alias should stay undefined.');
 
   const scoreNullInstance = new Indexed({
     id: 9,
@@ -116,9 +113,8 @@ export default function runIndexedPropaneTests() {
   );
   const scoreNullRaw = ':{10,"Score Raw",33,true,"NR",null,"AliasRaw","HALT"}';
   const scoreNullHydrated = Indexed.deserialize(scoreNullRaw);
-  const scoreNullHydratedCereal = scoreNullHydrated.cerealize();
-  assert(scoreNullHydratedCereal.score === null, 'Score null raw not preserved.');
-  assert(scoreNullHydratedCereal.alias === 'AliasRaw', 'Score raw alias lost.');
+  assert(scoreNullHydrated.score === null, 'Score null raw not preserved.');
+  assert(scoreNullHydrated.alias === 'AliasRaw', 'Score raw alias lost.');
 
   const aliasNullInstance = new Indexed({
     id: 11,
@@ -137,6 +133,9 @@ export default function runIndexedPropaneTests() {
   );
   const aliasNullRaw = ':{12,Alias Raw,41,true,AR,8,null,alias-raw}';
   const aliasNullHydrated = Indexed.deserialize(aliasNullRaw);
-  const aliasNullHydratedCereal = aliasNullHydrated.cerealize();
-  assert(aliasNullHydratedCereal.alias === null, 'Alias null raw not preserved.');
+  assert(aliasNullHydrated.alias === null, 'Alias null raw not preserved.');
 }
+
+test('runIndexedPropaneTests', () => {
+  runIndexedPropaneTests();
+});

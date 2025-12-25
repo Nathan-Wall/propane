@@ -1,11 +1,12 @@
-import { assert } from './assert.ts';
-import { SetMessage } from './set.pmsg.ts';
-import { ImmutableSet } from '../../runtime/common/set/immutable.ts';
+import { assert } from './assert.js';
+import { SetMessage } from './set.pmsg.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { test } from 'node:test';
 
 export default function runSetTests() {
   const tags = new Set(['a', 'b']);
   const ids = new ImmutableSet([1, 2]);
-  const msg: SetMessageInstance = new SetMessage({ tags, ids });
+  const msg: SetMessage = new SetMessage({ tags, ids });
 
   // ctor normalization
   assert(msg.tags instanceof ImmutableSet, 'tags should be ImmutableSet');
@@ -15,10 +16,9 @@ export default function runSetTests() {
   // fromEntries / deserialize
   const raw = ':{[a,b]}';
   const hydrated = SetMessage.deserialize(raw);
-  const data = hydrated.cerealize();
-  assert(data.tags instanceof ImmutableSet, 'deserialize should yield ImmutableSet');
-  assert(data.tags.has('a') && data.tags.has('b'), 'deserialize keeps set values');
-  assert(!data.ids, 'optional ids can be omitted');
+  assert(hydrated.tags instanceof ImmutableSet, 'deserialize should yield ImmutableSet');
+  assert(hydrated.tags.has('a') && hydrated.tags.has('b'), 'deserialize keeps set values');
+  assert(!hydrated.ids, 'optional ids can be omitted');
 
   // iterable inputs (not Set) should normalize
   const iterableTags = (function* () {
@@ -36,3 +36,7 @@ export default function runSetTests() {
   assert(JSON.stringify(json.tags) === JSON.stringify(['a', 'b']), 'toJSON should output array for Set');
   assert(JSON.stringify(json.ids) === JSON.stringify([1, 2]), 'toJSON should output array for optional Set');
 }
+
+test('runSetTests', () => {
+  runSetTests();
+});

@@ -91,6 +91,14 @@ export function buildValidateMethod(
 
   const body: t.Statement[] = [];
 
+  // Early return if data is undefined (for TypeScript type narrowing)
+  body.push(
+    t.ifStatement(
+      t.binaryExpression('===', t.identifier('data'), t.identifier('undefined')),
+      t.returnStatement()
+    )
+  );
+
   // Generate validation for each property with validators
   for (const [propName, validation] of validations) {
     const propStatements = buildPropertyValidation(propName, validation, ctx);
@@ -383,6 +391,9 @@ function trackValidationImport(name: string, state: PluginStateFlags): void {
       break;
     case 'inRange':
       state.usesInRange = true;
+      break;
+    case 'AnyDecimal':
+      state.usesAnyDecimal = true;
       break;
   }
 }

@@ -19,6 +19,9 @@
     "paths": {
       "react": ["node_modules/@types/react"],
       "@/*": ["./*"],
+      "@propane/postgres": ["./postgres/src/index.ts"],
+      "@propane/types": ["./types/src/index.ts"],
+      "@propane/runtime": ["./runtime/index.ts"],
       "postgres": ["node_modules/postgres"]
     },
     "resolveJsonModule": true,

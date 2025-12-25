@@ -17,6 +17,14 @@ export class ImmutableDate {
   #hash?: number;
   readonly [Symbol.toStringTag] = 'ImmutableDate';
 
+  /**
+   * Returns an ImmutableDate from the input.
+   * If the input is already an ImmutableDate, returns it as-is.
+   */
+  static from(input: ImmutableDate | Date | string | number): ImmutableDate {
+    return input instanceof ImmutableDate ? input : new ImmutableDate(input);
+  }
+
   constructor(input: Date | string | number = 0) {
     const date = new Date(input);
     if (Number.isNaN(date.getTime())) {

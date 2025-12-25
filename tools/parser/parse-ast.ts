@@ -199,10 +199,40 @@ function processTypeAlias(
 }
 
 /**
+ * Known package directory patterns and their canonical package names.
+ * Used to normalize relative imports to @propane/* package names.
+ */
+const PACKAGE_DIR_PATTERNS: [RegExp, string][] = [
+  [/(?:^|\/|\\)runtime(?:\/|\\|$)/, '@propane/runtime'],
+  [/(?:^|\/|\\)postgres(?:\/|\\|$)/, '@propane/postgres'],
+  [/(?:^|\/|\\)pms-core(?:\/|\\|$)/, '@propane/pms-core'],
+];
+
+/**
+ * Normalize an import source to its canonical package name.
+ * Converts relative paths like '../../runtime/index.js' to '@propane/runtime'.
+ */
+function normalizeImportSource(source: string): string {
+  // Already a package import
+  if (source.startsWith('@propane/') || source.startsWith('@/')) {
+    return source;
+  }
+
+  // Check if relative path matches a known package directory
+  for (const [pattern, packageName] of PACKAGE_DIR_PATTERNS) {
+    if (pattern.test(source)) {
+      return packageName;
+    }
+  }
+
+  return source;
+}
+
+/**
  * Parse an import declaration into a PmtImport.
  */
 function parseImport(stmt: t.ImportDeclaration): PmtImport | null {
-  const source = stmt.source.value;
+  const source = normalizeImportSource(stmt.source.value);
   const specifiers: PmtImport['specifiers'] = [];
 
   for (const spec of stmt.specifiers) {

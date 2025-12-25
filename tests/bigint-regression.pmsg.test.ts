@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
+import { assert } from './assert.js';
 import { Wrapper } from './bigint-regression.pmsg.js';
+import { test } from 'node:test';
 
 export default function runBigIntNestedTests() {
   // Top-level BigInt (should pass with current code)
@@ -20,3 +21,7 @@ export default function runBigIntNestedTests() {
     throw new Error('Regression: Nested BigInt inside plain object failed to serialize');
   }
 }
+
+test('runBigIntNestedTests', () => {
+  runBigIntNestedTests();
+});

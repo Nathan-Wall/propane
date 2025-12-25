@@ -1,24 +1,26 @@
 /* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/no-explicit-any*/
 // Generated from tests/generic-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 /**
  * Test file for generic message types.
  */
 
 // Basic item type for testing
-import type { MessagePropDescriptor, MessageConstructor, DataObject, SetUpdates } from "../runtime/index.js";
+import type { MessagePropDescriptor, MessageConstructor, MessageValue, DataObject, SetUpdates } from "../runtime/index.js";
 export class Item extends Message<Item.Data> {
   static TYPE_TAG = Symbol("Item");
   static readonly $typeName = "Item";
   static EMPTY: Item;
   #id!: number;
   #name!: string;
-  constructor(props?: Item.Value) {
+  constructor(props?: Item.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Item.EMPTY) return Item.EMPTY;
     super(Item.TYPE_TAG, "Item");
-    this.#id = props ? props.id : 0;
-    this.#name = props ? props.name : "";
+    this.#id = (props ? props.id : 0) as number;
+    this.#name = (props ? props.name : "") as string;
     if (!props) Item.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Item.Data>[] {
@@ -32,17 +34,30 @@ export class Item extends Message<Item.Data> {
       getValue: () => this.#name
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Item.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Item.Data {
     const props = {} as Partial<Item.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as number;
     const nameValue = entries["2"] === undefined ? entries["name"] : entries["2"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     return props as Item.Data;
+  }
+  static from(value: Item.Value): Item {
+    return value instanceof Item ? value : new Item(value);
+  }
+  static deserialize<T extends typeof Item>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): number {
     return this.#id;
@@ -57,19 +72,19 @@ export class Item extends Message<Item.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Item)(data));
+    return this.$update(new (this.constructor as typeof Item)(data) as this);
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof Item)({
       id: value,
       name: this.#name
-    }));
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Item)({
       id: this.#id,
       name: value
-    }));
+    }) as this);
   }
 }
 export namespace Item {
@@ -83,10 +98,12 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
   static TYPE_TAG = Symbol("Container");
   #inner!: T;
   #tClass!: MessageConstructor<T>;
-  constructor(tClass: MessageConstructor<T>, props?: Container.Value<T>) {
+  constructor(tClass: MessageConstructor<T>, props?: Container.Value<T>, options?: {
+    skipValidation?: boolean;
+  }) {
     super(Container.TYPE_TAG, `Container<${tClass.$typeName}>`);
     this.#tClass = tClass;
-    this.#inner = props ? props.inner : new this.#tClass(undefined);
+    this.#inner = (props ? props.inner : new this.#tClass(undefined)) as T;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Container.Data<T>>[] {
     return [{
@@ -95,35 +112,54 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
       getValue: () => this.#inner
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Container.Data<T> {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Container.Data<T> {
     const props = {} as Partial<Container.Data<T>>;
     const innerValue = entries["1"] === undefined ? entries["inner"] : entries["1"];
     if (innerValue === undefined) throw new Error("Missing required property \"inner\".");
     props.inner = innerValue as T;
     return props as Container.Data<T>;
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): MessageConstructor<Container<T>> {
-    const boundCtor = function (props: Container.Data<T>) {
+  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+    (props: Container.Value<T>): Container<T>;
+    new (props: Container.Value<T>): Container<T>;
+    deserialize: (data: string, options?: {
+      skipValidation: boolean;
+    }) => Container<T>;
+    $typeName: string;
+  } {
+    const boundCtor = function (props: Container.Value<T>) {
       const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
       return new Container(tClass, {
         ...props,
         inner
-      });
+      } as Container.Value<T>);
     };
-    boundCtor.deserialize = (data: string) => {
-      const payload = parseCerealString(data);
-      return boundCtor(payload as Container.Data<T>);
+    boundCtor.deserialize = (data: string, options?: {
+      skipValidation: boolean;
+    }) => {
+      return Container.deserialize(tClass, data, options);
     };
     boundCtor.$typeName = `Container<${tClass.$typeName}>`;
-    return boundCtor;
+    return boundCtor as {
+      (props: Container.Value<T>): Container<T>;
+      new (props: Container.Value<T>): Container<T>;
+      deserialize: (data: string, options?: {
+        skipValidation: boolean;
+      }) => Container<T>;
+      $typeName: string;
+    };
   }
-  static override deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string): Container<T> {
-    const payload = parseCerealString(data);
-    const inner = new tClass(payload["1"] ?? payload["inner"]);
+  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+    skipValidation: boolean;
+  }): Container<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const inner = new tClass((payload["1"] ?? payload["inner"]) as MessageValue<T>, options);
     return new Container(tClass, {
-      ...(payload as Container.Data<T>),
       inner
-    });
+    }, options);
   }
   get inner(): T {
     return this.#inner;
@@ -135,12 +171,12 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new Container(this.#tClass, data) as this);
+    return this.$update(new Container(this.#tClass, data) as this as this);
   }
   setInner(value: T) {
     return this.$update(new Container(this.#tClass, {
       inner: value
-    }) as this);
+    }) as this as this);
   }
 }
 export namespace Container {
@@ -151,12 +187,14 @@ export namespace Container {
 } // Generic with optional field
 export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> {
   static TYPE_TAG = Symbol("Optional");
-  #value!: T;
+  #value!: T | undefined;
   #tClass!: MessageConstructor<T>;
-  constructor(tClass: MessageConstructor<T>, props?: Optional.Value<T>) {
+  constructor(tClass: MessageConstructor<T>, props?: Optional.Value<T>, options?: {
+    skipValidation?: boolean;
+  }) {
     super(Optional.TYPE_TAG, `Optional<${tClass.$typeName}>`);
     this.#tClass = tClass;
-    this.#value = props ? props.value : new this.#tClass(undefined);
+    this.#value = (props ? props.value : new this.#tClass(undefined)) as T;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Optional.Data<T>>[] {
     return [{
@@ -165,42 +203,58 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
       getValue: () => this.#value
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Optional.Data<T> {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Optional.Data<T> {
     const props = {} as Partial<Optional.Data<T>>;
     const valueValue = entries["1"] === undefined ? entries["value"] : entries["1"];
     const valueNormalized = valueValue === null ? undefined : valueValue;
     props.value = valueNormalized as T;
     return props as Optional.Data<T>;
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): MessageConstructor<Optional<T>> {
-    const boundCtor = function (props: Optional.Data<T>) {
+  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+    (props: Optional.Value<T>): Optional<T>;
+    new (props: Optional.Value<T>): Optional<T>;
+    deserialize: (data: string, options?: {
+      skipValidation: boolean;
+    }) => Optional<T>;
+    $typeName: string;
+  } {
+    const boundCtor = function (props: Optional.Value<T>) {
       const value = props.value === undefined ? undefined : props.value instanceof tClass ? props.value : new tClass(props.value as any);
       return new Optional(tClass, {
         ...props,
         value
-      });
+      } as Optional.Value<T>);
     };
-    boundCtor.deserialize = (data: string) => {
-      const payload = parseCerealString(data);
-      return boundCtor(payload as Optional.Data<T>);
+    boundCtor.deserialize = (data: string, options?: {
+      skipValidation: boolean;
+    }) => {
+      return Optional.deserialize(tClass, data, options);
     };
     boundCtor.$typeName = `Optional<${tClass.$typeName}>`;
-    return boundCtor;
+    return boundCtor as {
+      (props: Optional.Value<T>): Optional<T>;
+      new (props: Optional.Value<T>): Optional<T>;
+      deserialize: (data: string, options?: {
+        skipValidation: boolean;
+      }) => Optional<T>;
+      $typeName: string;
+    };
   }
-  static override deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string): Optional<T> {
-    const payload = parseCerealString(data);
+  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+    skipValidation: boolean;
+  }): Optional<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
     const valueRaw = payload["1"] ?? payload["value"];
-    const value = valueRaw !== undefined ? new tClass(valueRaw) : undefined;
+    const value = valueRaw !== undefined ? new tClass(valueRaw as MessageValue<T>, options) : undefined;
     return new Optional(tClass, {
-      ...(payload as Optional.Data<T>),
       value
-    });
+    }, options);
   }
-  get value(): T {
+  get value(): T | undefined {
     return this.#value;
-  }
-  deleteValue() {
-    return this.$update(new Optional(this.#tClass, {}) as this);
   }
   set(updates: Partial<SetUpdates<Optional.Data<T>>>) {
     const data = this.toData();
@@ -209,12 +263,15 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new Optional(this.#tClass, data) as this);
+    return this.$update(new Optional(this.#tClass, data) as this as this);
   }
-  setValue(value: T) {
+  setValue(value: T | undefined) {
     return this.$update(new Optional(this.#tClass, {
       value: value
-    }) as this);
+    }) as this as this);
+  }
+  unsetValue() {
+    return this.$update(new Optional(this.#tClass, {}) as this as this);
   }
 }
 export namespace Optional {
@@ -229,12 +286,14 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
   #second!: U;
   #tClass!: MessageConstructor<T>;
   #uClass!: MessageConstructor<U>;
-  constructor(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, props?: Pair.Value<T, U>) {
+  constructor(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, props?: Pair.Value<T, U>, options?: {
+    skipValidation?: boolean;
+  }) {
     super(Pair.TYPE_TAG, `Pair<${tClass.$typeName},${uClass.$typeName}>`);
     this.#tClass = tClass;
     this.#uClass = uClass;
-    this.#first = props ? props.first : new this.#tClass(undefined);
-    this.#second = props ? props.second : new this.#uClass(undefined);
+    this.#first = (props ? props.first : new this.#tClass(undefined)) as T;
+    this.#second = (props ? props.second : new this.#uClass(undefined)) as U;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Pair.Data<T, U>>[] {
     return [{
@@ -247,7 +306,10 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
       getValue: () => this.#second
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Pair.Data<T, U> {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Pair.Data<T, U> {
     const props = {} as Partial<Pair.Data<T, U>>;
     const firstValue = entries["1"] === undefined ? entries["first"] : entries["1"];
     if (firstValue === undefined) throw new Error("Missing required property \"first\".");
@@ -257,32 +319,48 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
     props.second = secondValue as U;
     return props as Pair.Data<T, U>;
   }
-  static override bind<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>): MessageConstructor<Pair<T, U>> {
-    const boundCtor = function (props: Pair.Data<T, U>) {
+  static override bind<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>): {
+    (props: Pair.Value<T, U>): Pair<T, U>;
+    new (props: Pair.Value<T, U>): Pair<T, U>;
+    deserialize: (data: string, options?: {
+      skipValidation: boolean;
+    }) => Pair<T, U>;
+    $typeName: string;
+  } {
+    const boundCtor = function (props: Pair.Value<T, U>) {
       const first = props.first instanceof tClass ? props.first : new tClass(props.first as any);
       const second = props.second instanceof uClass ? props.second : new uClass(props.second as any);
       return new Pair(tClass, uClass, {
         ...props,
         first,
         second
-      });
+      } as Pair.Value<T, U>);
     };
-    boundCtor.deserialize = (data: string) => {
-      const payload = parseCerealString(data);
-      return boundCtor(payload as Pair.Data<T, U>);
+    boundCtor.deserialize = (data: string, options?: {
+      skipValidation: boolean;
+    }) => {
+      return Pair.deserialize(tClass, uClass, data, options);
     };
     boundCtor.$typeName = `Pair<${tClass.$typeName},${uClass.$typeName}>`;
-    return boundCtor;
+    return boundCtor as {
+      (props: Pair.Value<T, U>): Pair<T, U>;
+      new (props: Pair.Value<T, U>): Pair<T, U>;
+      deserialize: (data: string, options?: {
+        skipValidation: boolean;
+      }) => Pair<T, U>;
+      $typeName: string;
+    };
   }
-  static override deserialize<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string): Pair<T, U> {
-    const payload = parseCerealString(data);
-    const first = new tClass(payload["1"] ?? payload["first"]);
-    const second = new uClass(payload["2"] ?? payload["second"]);
+  static deserialize<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string, options?: {
+    skipValidation: boolean;
+  }): Pair<T, U> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const first = new tClass((payload["1"] ?? payload["first"]) as MessageValue<T>, options);
+    const second = new uClass((payload["2"] ?? payload["second"]) as MessageValue<U>, options);
     return new Pair(tClass, uClass, {
-      ...(payload as Pair.Data<T, U>),
       first,
       second
-    });
+    }, options);
   }
   get first(): T {
     return this.#first;
@@ -297,19 +375,19 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new Pair(this.#tClass, this.#uClass, data) as this);
+    return this.$update(new Pair(this.#tClass, this.#uClass, data) as this as this);
   }
   setFirst(value: T) {
     return this.$update(new Pair(this.#tClass, this.#uClass, {
       first: value,
       second: this.#second
-    }) as this);
+    }) as this as this);
   }
   setSecond(value: U) {
     return this.$update(new Pair(this.#tClass, this.#uClass, {
       first: this.#first,
       second: value
-    }) as this);
+    }) as this as this);
   }
 }
 export namespace Pair {
@@ -324,10 +402,12 @@ export class Parent extends Message<Parent.Data> {
   static readonly $typeName = "Parent";
   static EMPTY: Parent;
   #name!: string;
-  constructor(props?: Parent.Value) {
+  constructor(props?: Parent.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Parent.EMPTY) return Parent.EMPTY;
     super(Parent.TYPE_TAG, "Parent");
-    this.#name = props ? props.name : "";
+    this.#name = (props ? props.name : "") as string;
     if (!props) Parent.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Parent.Data>[] {
@@ -337,13 +417,26 @@ export class Parent extends Message<Parent.Data> {
       getValue: () => this.#name
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Parent.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Parent.Data {
     const props = {} as Partial<Parent.Data>;
     const nameValue = entries["1"] === undefined ? entries["name"] : entries["1"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     return props as Parent.Data;
+  }
+  static from(value: Parent.Value): Parent {
+    return value instanceof Parent ? value : new Parent(value);
+  }
+  static deserialize<T extends typeof Parent>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get name(): string {
     return this.#name;
@@ -355,12 +448,12 @@ export class Parent extends Message<Parent.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Parent)(data));
+    return this.$update(new (this.constructor as typeof Parent)(data) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Parent)({
       name: value
-    }));
+    }) as this);
   }
 }
 export namespace Parent {
@@ -368,4 +461,149 @@ export namespace Parent {
     name: string;
   };
   export type Value = Parent | Parent.Data;
+} // Generic with both generic and non-generic fields - tests full validation in deserialize
+export class Timestamped<T extends Message<any>> extends Message<Timestamped.Data<T>> {
+  static TYPE_TAG = Symbol("Timestamped");
+  #inner!: T;
+  #timestamp!: ImmutableDate;
+  #label!: string;
+  #tClass!: MessageConstructor<T>;
+  constructor(tClass: MessageConstructor<T>, props?: Timestamped.Value<T>, options?: {
+    skipValidation?: boolean;
+  }) {
+    super(Timestamped.TYPE_TAG, `Timestamped<${tClass.$typeName}>`);
+    this.#tClass = tClass;
+    this.#inner = (props ? props.inner : new this.#tClass(undefined)) as T;
+    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : new ImmutableDate(props.timestamp) : new ImmutableDate(0);
+    this.#label = (props ? props.label : "") as string;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Timestamped.Data<T>>[] {
+    return [{
+      name: "inner",
+      fieldNumber: 1,
+      getValue: () => this.#inner
+    }, {
+      name: "timestamp",
+      fieldNumber: 2,
+      getValue: () => this.#timestamp as ImmutableDate | Date
+    }, {
+      name: "label",
+      fieldNumber: 3,
+      getValue: () => this.#label
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Timestamped.Data<T> {
+    const props = {} as Partial<Timestamped.Data<T>>;
+    const innerValue = entries["1"] === undefined ? entries["inner"] : entries["1"];
+    if (innerValue === undefined) throw new Error("Missing required property \"inner\".");
+    props.inner = innerValue as T;
+    const timestampValue = entries["2"] === undefined ? entries["timestamp"] : entries["2"];
+    if (timestampValue === undefined) throw new Error("Missing required property \"timestamp\".");
+    if (!(timestampValue as object instanceof Date || timestampValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
+    props.timestamp = timestampValue as Date;
+    const labelValue = entries["3"] === undefined ? entries["label"] : entries["3"];
+    if (labelValue === undefined) throw new Error("Missing required property \"label\".");
+    if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
+    props.label = labelValue as string;
+    return props as Timestamped.Data<T>;
+  }
+  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+    (props: Timestamped.Value<T>): Timestamped<T>;
+    new (props: Timestamped.Value<T>): Timestamped<T>;
+    deserialize: (data: string, options?: {
+      skipValidation: boolean;
+    }) => Timestamped<T>;
+    $typeName: string;
+  } {
+    const boundCtor = function (props: Timestamped.Value<T>) {
+      const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+      return new Timestamped(tClass, {
+        ...props,
+        inner
+      } as Timestamped.Value<T>);
+    };
+    boundCtor.deserialize = (data: string, options?: {
+      skipValidation: boolean;
+    }) => {
+      return Timestamped.deserialize(tClass, data, options);
+    };
+    boundCtor.$typeName = `Timestamped<${tClass.$typeName}>`;
+    return boundCtor as {
+      (props: Timestamped.Value<T>): Timestamped<T>;
+      new (props: Timestamped.Value<T>): Timestamped<T>;
+      deserialize: (data: string, options?: {
+        skipValidation: boolean;
+      }) => Timestamped<T>;
+      $typeName: string;
+    };
+  }
+  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+    skipValidation: boolean;
+  }): Timestamped<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const timestampValue = payload["2"] === undefined ? payload["timestamp"] : payload["2"];
+    if (timestampValue === undefined) throw new Error("Missing required property \"timestamp\".");
+    if (!(timestampValue as object instanceof Date || timestampValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
+    const timestamp = timestampValue as Date;
+    const labelValue = payload["3"] === undefined ? payload["label"] : payload["3"];
+    if (labelValue === undefined) throw new Error("Missing required property \"label\".");
+    if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
+    const label = labelValue as string;
+    const inner = new tClass((payload["1"] ?? payload["inner"]) as MessageValue<T>, options);
+    return new Timestamped(tClass, {
+      timestamp,
+      label,
+      inner
+    }, options);
+  }
+  get inner(): T {
+    return this.#inner;
+  }
+  get timestamp(): ImmutableDate {
+    return this.#timestamp;
+  }
+  get label(): string {
+    return this.#label;
+  }
+  set(updates: Partial<SetUpdates<Timestamped.Data<T>>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new Timestamped(this.#tClass, data) as this as this);
+  }
+  setInner(value: T) {
+    return this.$update(new Timestamped(this.#tClass, {
+      inner: value,
+      timestamp: this.#timestamp as ImmutableDate | Date,
+      label: this.#label
+    }) as this as this);
+  }
+  setLabel(value: string) {
+    return this.$update(new Timestamped(this.#tClass, {
+      inner: this.#inner,
+      timestamp: this.#timestamp as ImmutableDate | Date,
+      label: value
+    }) as this as this);
+  }
+  setTimestamp(value: ImmutableDate | Date) {
+    return this.$update(new Timestamped(this.#tClass, {
+      inner: this.#inner,
+      timestamp: value as ImmutableDate | Date,
+      label: this.#label
+    }) as this as this);
+  }
+}
+export namespace Timestamped {
+  export type Data<T extends Message<any>> = {
+    inner: T;
+    timestamp: ImmutableDate | Date;
+    label: string;
+  };
+  export type Value<T extends Message<any>> = Timestamped<T> | Timestamped.Data<T>;
 }

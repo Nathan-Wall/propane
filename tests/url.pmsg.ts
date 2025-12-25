@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 export class UrlMessage extends Message<UrlMessage.Data> {
   static TYPE_TAG = Symbol("UrlMessage");
@@ -8,15 +8,17 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   static EMPTY: UrlMessage;
   #id!: number;
   #primary!: ImmutableUrl;
-  #secondary!: ImmutableUrl;
+  #secondary!: ImmutableUrl | undefined;
   #links!: ImmutableArray<ImmutableUrl>;
-  constructor(props?: UrlMessage.Value) {
+  constructor(props?: UrlMessage.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
     super(UrlMessage.TYPE_TAG, "UrlMessage");
-    this.#id = props ? props.id : 0;
+    this.#id = (props ? props.id : 0) as number;
     this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
     this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
-    this.#links = props ? props.links === undefined || props.links === null ? new ImmutableArray() : props.links instanceof ImmutableArray ? props.links : new ImmutableArray(props.links) : new ImmutableArray();
+    this.#links = props ? (props.links === undefined || props.links === null ? new ImmutableArray() : props.links as object instanceof ImmutableArray ? props.links : new ImmutableArray(props.links as Iterable<unknown>)) as ImmutableArray<ImmutableUrl> : new ImmutableArray();
     if (!props) UrlMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
@@ -27,39 +29,45 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     }, {
       name: "primary",
       fieldNumber: 2,
-      getValue: () => this.#primary
+      getValue: () => this.#primary as ImmutableUrl | URL
     }, {
       name: "secondary",
       fieldNumber: 3,
-      getValue: () => this.#secondary
+      getValue: () => this.#secondary as ImmutableUrl | URL
     }, {
       name: "links",
       fieldNumber: 4,
-      getValue: () => this.#links
+      getValue: () => this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): UrlMessage.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): UrlMessage.Data {
     const props = {} as Partial<UrlMessage.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "number")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as number;
     const primaryValue = entries["2"] === undefined ? entries["primary"] : entries["2"];
     if (primaryValue === undefined) throw new Error("Missing required property \"primary\".");
-    if (!(primaryValue instanceof URL || primaryValue instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
-    props.primary = primaryValue;
+    if (!(primaryValue as object instanceof URL || primaryValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
+    props.primary = primaryValue as URL;
     const secondaryValue = entries["3"] === undefined ? entries["secondary"] : entries["3"];
     const secondaryNormalized = secondaryValue === null ? undefined : secondaryValue;
-    if (secondaryNormalized !== undefined && !(secondaryNormalized instanceof URL || secondaryNormalized instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
-    props.secondary = secondaryNormalized;
+    if (secondaryNormalized !== undefined && !(secondaryNormalized as object instanceof URL || secondaryNormalized as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
+    props.secondary = secondaryNormalized as URL;
     const linksValue = entries["4"] === undefined ? entries["links"] : entries["4"];
     if (linksValue === undefined) throw new Error("Missing required property \"links\".");
-    const linksArrayValue = linksValue === undefined || linksValue === null ? new ImmutableArray() : linksValue as object instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue);
-    if (!((linksArrayValue instanceof ImmutableArray || Array.isArray(linksArrayValue)) && [...(linksArrayValue as Iterable<unknown>)].every(element => element instanceof URL || element instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
-    props.links = linksArrayValue as ImmutableArray<ImmutableUrl>;
+    const linksArrayValue = linksValue === undefined || linksValue === null ? new ImmutableArray() : linksValue as object instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue as Iterable<unknown>);
+    if (!((linksArrayValue as object instanceof ImmutableArray || Array.isArray(linksArrayValue)) && [...(linksArrayValue as Iterable<unknown>)].every(element => element as object instanceof URL || element as object instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
+    props.links = linksArrayValue as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>;
     return props as UrlMessage.Data;
   }
-  override [WITH_CHILD](key: string | number, child: unknown): UrlMessage {
+  static from(value: UrlMessage.Value): UrlMessage {
+    return value instanceof UrlMessage ? value : new UrlMessage(value);
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
       case "links":
         return new (this.constructor as typeof UrlMessage)({
@@ -67,13 +75,20 @@ export class UrlMessage extends Message<UrlMessage.Data> {
           primary: this.#primary,
           secondary: this.#secondary,
           links: child as ImmutableArray<ImmutableUrl>
-        });
+        } as unknown as UrlMessage.Value) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["links", this.#links] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["links", this.#links] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof UrlMessage>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): number {
     return this.#id;
@@ -81,7 +96,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   get primary(): ImmutableUrl {
     return this.#primary;
   }
-  get secondary(): ImmutableUrl {
+  get secondary(): ImmutableUrl | undefined {
     return this.#secondary;
   }
   get links(): ImmutableArray<ImmutableUrl> {
@@ -93,51 +108,44 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     linksNext.copyWithin(target, start, end);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
-  deleteSecondary() {
-    return this.$update(new (this.constructor as typeof UrlMessage)({
-      id: this.#id,
-      primary: this.#primary,
-      links: this.#links
-    }));
-  }
-  fillLinks(value: URL, start?: number, end?: number) {
+  fillLink(value: URL, start?: number, end?: number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
-    linksNext.fill(value, start, end);
+    (linksNext as unknown as URL[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
-  popLinks() {
+  popLink() {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.pop();
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
-  pushLinks(...values) {
+  pushLink(...values: URL[]) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray, ...values];
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
   reverseLinks() {
     const linksArray = this.#links;
@@ -145,10 +153,10 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     linksNext.reverse();
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
   set(updates: Partial<SetUpdates<UrlMessage.Data>>) {
     const data = this.toData();
@@ -157,84 +165,91 @@ export class UrlMessage extends Message<UrlMessage.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof UrlMessage)(data));
+    return this.$update(new (this.constructor as typeof UrlMessage)(data) as this);
   }
   setId(value: number) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: value,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: this.#links
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    }) as this);
   }
-  setLinks(value: URL[] | Iterable<URL>) {
+  setLinks(value: (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: value
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: value as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    }) as this);
   }
   setPrimary(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: value,
-      secondary: this.#secondary,
-      links: this.#links
-    }));
+      primary: value as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    }) as this);
   }
-  setSecondary(value: ImmutableUrl | URL) {
+  setSecondary(value: ImmutableUrl | URL | undefined) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: value,
-      links: this.#links
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: value as ImmutableUrl | URL,
+      links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    }) as this);
   }
-  shiftLinks() {
+  shiftLink() {
     if ((this.links ?? []).length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.shift();
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
   sortLinks(compareFn?: (a: URL, b: URL) => number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
-    linksNext.sort(compareFn);
+    (linksNext as unknown as URL[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
-  spliceLinks(start: number, deleteCount?: number, ...items) {
+  spliceLink(start: number, deleteCount?: number, ...items: URL[]) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
-  unshiftLinks(...values) {
+  unsetSecondary() {
+    return this.$update(new (this.constructor as typeof UrlMessage)({
+      id: this.#id,
+      primary: this.#primary as ImmutableUrl | URL,
+      links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    }) as this);
+  }
+  unshiftLink(...values: URL[]) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...values, ...linksArray];
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: this.#primary,
-      secondary: this.#secondary,
-      links: linksNext
-    }));
+      primary: this.#primary as ImmutableUrl | URL,
+      secondary: this.#secondary as ImmutableUrl | URL,
+      links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+    } as unknown as UrlMessage.Value) as this);
   }
 }
 export namespace UrlMessage {
@@ -242,7 +257,7 @@ export namespace UrlMessage {
     id: number;
     primary: ImmutableUrl | URL;
     secondary?: ImmutableUrl | URL | undefined;
-    links: URL[] | Iterable<URL>;
+    links: (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>;
   };
   export type Value = UrlMessage | UrlMessage.Data;
 }

@@ -268,10 +268,15 @@ export function isAllowedTypeReference(
 
 export function registerTypeAlias(
   typeAlias: t.TSTypeAliasDeclaration,
-  declaredTypeNames: Set<string>
+  declaredTypeNames: Set<string>,
+  typeAliasDefinitions?: Map<string, t.TSType>
 ): void {
   if (t.isIdentifier(typeAlias.id)) {
     declaredTypeNames.add(typeAlias.id.name);
+    // Store the type annotation for resolving default values
+    if (typeAliasDefinitions && typeAlias.typeAnnotation) {
+      typeAliasDefinitions.set(typeAlias.id.name, typeAlias.typeAnnotation);
+    }
   }
 }
 

@@ -99,6 +99,14 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
+  /**
+   * Returns an ImmutableSet from the input.
+   * If the input is already an ImmutableSet, returns it as-is.
+   */
+  static from<T>(input: ImmutableSet<T> | ReadonlySet<T> | Iterable<T>): ImmutableSet<T> {
+    return input instanceof ImmutableSet ? input : new ImmutableSet(input);
+  }
+
   constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[]) {
     this.#buckets = new Map();
     this.#size = 0;

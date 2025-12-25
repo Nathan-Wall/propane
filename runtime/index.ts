@@ -5,10 +5,12 @@ export * from './common/data/immutable-array-buffer.js';
 export * from './common/web/url.js';
 export * from './common/time/date.js';
 export * from './message.js';
-export * from './common/numbers/scalars.js';
+export * from '@/common/numbers/scalars.js';
 export { charLength } from './common/strings/char-length.js';
+export type { Brand } from './common/types/brand.js';
 
 // Validation
 export { ValidationError } from './validation-error.js';
 export { SKIP } from './skip.js';
+export { assert, ensure } from '@/common/assert/index.js';
 export type { SetUpdates } from './set-updates.js';

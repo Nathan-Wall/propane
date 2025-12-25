@@ -1,40 +1,12 @@
-import { assert } from './assert.ts';
-import { User } from './user.pmsg.ts';
-import { Indexed } from './indexed.pmsg.ts';
-import { Compound } from './compound.pmsg.ts';
-
-type DistanceUnit = 'm' | 'ft';
-
-interface Distance {
-  unit: DistanceUnit;
-  value: number;
-}
-
-interface UserProps {
-  id: number;
-  name: string;
-  email: string;
-  passwordHash: string;
-  created: Date;
-  updated: Date;
-  active: boolean;
-  eyeColor: 'blue' | 'green' | 'brown' | 'hazel';
-  height: Distance;
-}
-
-interface IndexedProps {
-  id: number;
-  name: string;
-  age: number;
-  active: boolean;
-  nickname?: string;
-  score: number | null;
-  alias?: string | null;
-  status: string;
-}
+import { assert } from './assert.js';
+import { User } from './user.pmsg.js';
+import { Indexed } from './indexed.pmsg.js';
+import { Compound } from './compound.pmsg.js';
+import { test } from 'node:test';
 
 export default function runCompoundTests() {
-  const simpleUser: UserProps = {
+  // Cast needed: User.Data has branded types (Email, Hash) but plain strings work at runtime
+  const simpleUser = {
     id: 99,
     name: 'CompoundUser',
     email: 'compound@example.com',
@@ -44,8 +16,8 @@ export default function runCompoundTests() {
     active: true,
     eyeColor: 'blue',
     height: { unit: 'm', value: 1.8 },
-  };
-  const simpleIndexed: IndexedProps = {
+  } as User.Data;
+  const simpleIndexed: Indexed.Data = {
     id: 88,
     name: 'CompoundIndexed',
     age: 35,
@@ -93,3 +65,7 @@ export default function runCompoundTests() {
   assert(updatedInline.inline instanceof Compound.Inline, 'Compound setInline result should expose inline message class via namespace.');
   assert(updatedInline.inline.value === 'Updated Inline', 'Compound setInline should accept plain inline data.');
 }
+
+test('runCompoundTests', () => {
+  runCompoundTests();
+});

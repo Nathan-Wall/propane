@@ -17,6 +17,14 @@ export class ImmutableUrl {
   #hash?: number;
   readonly [Symbol.toStringTag] = 'ImmutableUrl';
 
+  /**
+   * Returns an ImmutableUrl from the input.
+   * If the input is already an ImmutableUrl, returns it as-is.
+   */
+  static from(input: ImmutableUrl | URL | string): ImmutableUrl {
+    return input instanceof ImmutableUrl ? input : new ImmutableUrl(input);
+  }
+
   constructor(input: string | URL = 'about:blank', base?: string | URL) {
     const href = input instanceof URL ? input.toString() : String(input);
     this.#url = new URL(href, base ? base.toString() : undefined);

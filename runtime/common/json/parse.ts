@@ -25,10 +25,14 @@ export function isJsonValue(x: unknown): x is JsonValue {
   }
 }
 
-export function parseJson<T extends JsonValue = JsonValue>(text: string): T {
-  const parsed = JSON.parse(text) as JsonValue;
+/**
+ * Parse a JSON string and validate that it contains only JSON-compatible values.
+ * Throws if the string is not valid JSON or contains non-JSON values.
+ */
+export function parseJson(text: string): JsonValue {
+  const parsed: unknown = JSON.parse(text);
   if (!isJsonValue(parsed)) {
     throw new Error('Invalid JSON value.');
   }
-  return parsed as T;
+  return parsed;
 }

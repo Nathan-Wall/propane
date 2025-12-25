@@ -13,16 +13,20 @@
  * 3. When inner state changes, outer state changes should persist
  */
 
-import { assert } from './assert.ts';
-import { Message, DataObject } from '../runtime/message.ts';
+import { assert } from './assert.js';
+import { Message, DataObject } from '../runtime/message.js';
 import {
   SET_UPDATE_LISTENER,
   WITH_CHILD,
   GET_MESSAGE_CHILDREN,
   PROPAGATE_UPDATE,
   REACT_LISTENER_KEY,
-} from '../runtime/symbols.ts';
-import { equals } from '../runtime/common/data/equals.ts';
+} from '../runtime/symbols.js';
+import { equals } from '../runtime/common/data/equals.js';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { test } from 'node:test';
 
 // Type tags must be shared for equals() to work
 const INNER_STATE_TAG = Symbol('InnerState');
@@ -50,14 +54,14 @@ class InnerState extends Message<{ value: string }> {
     this.#value = props.value;
   }
 
-  protected $getPropDescriptors() {
+  protected override $getPropDescriptors() {
     return [
       { name: 'value' as const, fieldNumber: 1, getValue: () => this.#value },
     ];
   }
 
-  protected $fromEntries(entries: Record<string, unknown>) {
-    return { value: entries.value as string };
+  protected override $fromEntries(entries: Record<string, unknown>) {
+    return { value: entries['value'] as string };
   }
 
   get value() {
@@ -71,7 +75,7 @@ class InnerState extends Message<{ value: string }> {
   }
 
   // Hybrid approach: set up parent chain
-  public $setParentChain(
+  public override $setParentChain(
     key: symbol,
     parent: Message<DataObject>,
     parentKey: string | number
@@ -83,7 +87,7 @@ class InnerState extends Message<{ value: string }> {
   }
 
   // Hybrid approach: set listener callback
-  public [SET_UPDATE_LISTENER](
+  public override [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback
   ): void {
@@ -91,7 +95,7 @@ class InnerState extends Message<{ value: string }> {
   }
 
   // Hybrid approach: propagate updates through parent chains
-  private $propagateUpdates(newRoot: InnerState): void {
+  protected override $propagateUpdates(newRoot: InnerState): void {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
@@ -128,7 +132,7 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
     this.#inner = props.inner;
   }
 
-  protected $getPropDescriptors() {
+  protected override $getPropDescriptors() {
     return [
       {
         name: 'counter' as const,
@@ -143,10 +147,10 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
     ];
   }
 
-  protected $fromEntries(entries: Record<string, unknown>) {
+  protected override $fromEntries(entries: Record<string, unknown>) {
     return {
-      counter: entries.counter as number,
-      inner: entries.inner as InnerState,
+      counter: entries['counter'] as number,
+      inner: entries['inner'] as InnerState,
     };
   }
 
@@ -171,30 +175,30 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   // Hybrid approach: create new OuterState with a child replaced
-  public [WITH_CHILD](
+  public override [WITH_CHILD](
     key: string | number,
-    child: Message<DataObject>
-  ): OuterState {
+    child: Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>
+  ): this {
     switch (key) {
       case 'inner':
         return new OuterState({
           counter: this.#counter,
-          inner: child as InnerState,
-        });
+          inner: child as unknown as InnerState,
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
 
   // Hybrid approach: yield all message children
-  public *[GET_MESSAGE_CHILDREN](): Iterable<
+  public override *[GET_MESSAGE_CHILDREN](): Iterable<
     [string | number, Message<DataObject>]
   > {
     yield ['inner', this.#inner as unknown as Message<DataObject>];
   }
 
   // Hybrid approach: set up parent chain
-  public $setParentChain(
+  public override $setParentChain(
     key: symbol,
     parent: Message<DataObject>,
     parentKey: string | number
@@ -206,7 +210,7 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   // Hybrid approach: set listener callback and set up parent chain
-  public [SET_UPDATE_LISTENER](
+  public override [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback
   ): void {
@@ -220,7 +224,7 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   // Hybrid approach: propagate update
-  public [PROPAGATE_UPDATE](key: symbol, replacement: OuterState): void {
+  public override [PROPAGATE_UPDATE](key: symbol, replacement: Message<DataObject>): void {
     const chain = this.#parentChains.get(key);
 
     if (chain?.parent.deref()) {
@@ -245,7 +249,7 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   // Hybrid approach: propagate updates through parent chains
-  private $propagateUpdates(newRoot: OuterState): void {
+  protected override $propagateUpdates(newRoot: OuterState): void {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
@@ -674,3 +678,7 @@ function testStaleInnerRefWhenMemoSkipsRerender() {
   console.log('  RESULT: Counter persisted correctly (10)');
   console.log('Stale inner ref when memoPropane skips re-render: PASSED');
 }
+
+test('runNestedMemoRerenderTests', () => {
+  runNestedMemoRerenderTests();
+});

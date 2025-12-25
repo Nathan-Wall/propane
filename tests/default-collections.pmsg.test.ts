@@ -1,8 +1,9 @@
-import { assert } from './assert.ts';
-import { ImmutableArray } from '../../runtime/common/array/immutable.ts';
-import { ImmutableMap } from '../../runtime/common/map/immutable.ts';
-import { ImmutableSet } from '../../runtime/common/set/immutable.ts';
-import { DefaultCollections } from './default-collections.pmsg.ts';
+import { assert } from './assert.js';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { DefaultCollections } from './default-collections.pmsg.js';
+import { test } from 'node:test';
 
 export default function runDefaultCollectionsTests() {
   // Create instance without providing any values - should use defaults
@@ -42,3 +43,7 @@ export default function runDefaultCollectionsTests() {
   assert(deserialized.tags instanceof ImmutableSet, 'Deserialized tags should be ImmutableSet');
   assert(instance.equals(deserialized), 'Deserialized instance should equal original');
 }
+
+test('runDefaultCollectionsTests', () => {
+  runDefaultCollectionsTests();
+});

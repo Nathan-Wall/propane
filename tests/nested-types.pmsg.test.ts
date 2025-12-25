@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
+import { assert } from './assert.js';
 import { Wrapper } from './nested-types.pmsg.js';
+import { test } from 'node:test';
 
 export default function runNestedTypesTest() {
   const date = new Date('2025-11-25T12:00:00Z');
@@ -20,3 +21,7 @@ export default function runNestedTypesTest() {
   assert(p3.d instanceof Date, `Nested Date should be preserved as Date object after round-trip. Got: ${typeof p3.d} (${p3.d})`);
   assert((p3.d as Date).getTime() === date.getTime(), 'Nested Date value matches');
 }
+
+test('runNestedTypesTest', () => {
+  runNestedTypesTest();
+});

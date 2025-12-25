@@ -7,10 +7,11 @@
  * Uses the new hybrid approach with SET_UPDATE_LISTENER for update propagation.
  */
 
-import { assert } from './assert.ts';
-import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
-import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.ts';
-import type { Message, DataObject } from '../runtime/message.ts';
+import { assert } from './assert.js';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.js';
+import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.js';
+import type { Message, DataObject } from '../runtime/message.js';
+import { test } from 'node:test';
 
 // Type for state objects that support the hybrid listener approach
 interface HybridListenable {
@@ -152,3 +153,7 @@ function testMultipleOuterChangesPreservedAfterInnerChange() {
 
   console.log('Multiple outer changes preserved after inner change: PASSED');
 }
+
+test('runNestedMemoStateTests', () => {
+  runNestedMemoStateTests();
+});

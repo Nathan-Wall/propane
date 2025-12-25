@@ -41,11 +41,13 @@ export type Endpoint<
  * ): Promise<Response>
  * ```
  */
+// Helper type that structurally matches any Message instance
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyMessage = { $typeName: string; serialize(): string };
+
 export type EndpointMessage<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Payload extends Message<any>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Response extends Message<any>,
+  Payload extends AnyMessage,
+  Response extends AnyMessage,
 > = Payload & { readonly __responseType?: Response };
 
 /**
@@ -69,5 +71,5 @@ export interface MessageClass<T = any> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   new (props?: T): Message<any> & { readonly $typeName: string };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deserialize(message: string): Message<any>;
+  deserialize(message: string, options?: { skipValidation?: boolean }): Message<any>;
 }

@@ -15,6 +15,22 @@ import {
 } from './type-guards.js';
 import { wrapImmutableType } from './properties.js';
 
+/**
+ * Build an instanceof check expression with proper type cast.
+ * Casts valueId to 'object' first to handle 'unknown' typed values.
+ */
+function buildInstanceofCheck(
+  valueId: t.Expression,
+  className: string
+): t.BinaryExpression {
+  // Cast to 'object' to allow instanceof with 'unknown' typed values
+  const castValueId = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(t.identifier('object'))
+  );
+  return t.binaryExpression('instanceof', castValueId, t.identifier(className));
+}
+
 export function buildRuntimeTypeCheckExpression(
   typeNode: t.TSType | null,
   valueId: t.Expression
@@ -151,31 +167,15 @@ export function typeofCheck(
 export function buildDateCheckExpression(
   valueId: t.Expression
 ): t.Expression {
-  const instanceOfDate = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('Date')
-  );
-  const instanceOfImmutableDate = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier('ImmutableDate')
-  );
+  const instanceOfDate = buildInstanceofCheck(valueId, 'Date');
+  const instanceOfImmutableDate = buildInstanceofCheck(valueId, 'ImmutableDate');
 
   return t.logicalExpression('||', instanceOfDate, instanceOfImmutableDate);
 }
 
 export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
-  const instanceOfUrl = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('URL')
-  );
-  const instanceOfImmutableUrl = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier('ImmutableUrl')
-  );
+  const instanceOfUrl = buildInstanceofCheck(valueId, 'URL');
+  const instanceOfImmutableUrl = buildInstanceofCheck(valueId, 'ImmutableUrl');
 
   return t.logicalExpression('||', instanceOfUrl, instanceOfImmutableUrl);
 }
@@ -183,16 +183,8 @@ export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
 export function buildArrayBufferCheckExpression(
   valueId: t.Expression
 ): t.Expression {
-  const instanceOfArrayBuffer = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('ArrayBuffer')
-  );
-  const instanceOfImmutableArrayBuffer = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier('ImmutableArrayBuffer')
-  );
+  const instanceOfArrayBuffer = buildInstanceofCheck(valueId, 'ArrayBuffer');
+  const instanceOfImmutableArrayBuffer = buildInstanceofCheck(valueId, 'ImmutableArrayBuffer');
 
   return t.logicalExpression(
     '||',
@@ -246,16 +238,8 @@ export function buildMapTypeCheckExpression(
   typeNode: t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('ImmutableMap')
-  );
-  const mapInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier('Map')
-  );
+  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableMap');
+  const mapInstanceCheck = buildInstanceofCheck(valueId, 'Map');
   const baseCheck = t.logicalExpression('||', immutableInstanceCheck, mapInstanceCheck);
 
   const mapArgs = getMapTypeArguments(typeNode);
@@ -330,16 +314,8 @@ export function buildSetTypeCheckExpression(
   typeNode: t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('ImmutableSet')
-  );
-  const setInstanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier('Set')
-  );
+  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableSet');
+  const setInstanceCheck = buildInstanceofCheck(valueId, 'Set');
   const baseCheck = t.logicalExpression('||', immutableInstanceCheck, setInstanceCheck);
 
   const elementType = getSetTypeArguments(typeNode);
@@ -384,11 +360,7 @@ export function buildArrayTypeCheckExpression(
   typeNode: t.TSArrayType | t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = t.binaryExpression(
-    'instanceof',
-    valueId,
-    t.identifier('ImmutableArray')
-  );
+  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableArray');
   const arrayInstanceCheck = t.callExpression(
     t.memberExpression(
       t.identifier('Array'),
@@ -470,6 +442,16 @@ export function buildTypeLiteralCheckExpression(
 ): t.Expression {
   const baseCheck = buildNonNullObjectCheck(valueId);
 
+  // Cast valueId to Record<string, unknown> to allow property access
+  // after the typeof === "object" check
+  const valueAsRecord = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(
+      t.identifier('Record'),
+      t.tsTypeParameterInstantiation([t.tsStringKeyword(), t.tsUnknownKeyword()])
+    )
+  );
+
   const propertyChecks = typeLiteral.members.map((member) => {
     if (
       !t.isTSPropertySignature(member)
@@ -483,9 +465,11 @@ export function buildTypeLiteralCheckExpression(
       return null;
     }
 
+    // Use bracket notation for Record<string, unknown> to satisfy noPropertyAccessFromIndexSignature
     const propertyValue = t.memberExpression(
-      valueId,
-      t.identifier(member.key.name)
+      valueAsRecord,
+      t.stringLiteral(member.key.name),
+      true // computed = true for bracket notation
     );
 
     const typeCheck = buildRuntimeTypeCheckExpression(

@@ -1,18 +1,20 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-union.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, SKIP, ValidationError } from "../runtime/index.js";
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export class Cat extends Message<Cat.Data> {
   static TYPE_TAG = Symbol("Cat");
   static readonly $typeName = "Cat";
   static EMPTY: Cat;
   #name!: string;
   #meows!: boolean;
-  constructor(props?: Cat.Value) {
+  constructor(props?: Cat.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Cat.EMPTY) return Cat.EMPTY;
     super(Cat.TYPE_TAG, "Cat");
-    this.#name = props ? props.name : "";
-    this.#meows = props ? props.meows : false;
+    this.#name = (props ? props.name : "") as string;
+    this.#meows = (props ? props.meows : false) as boolean;
     if (!props) Cat.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Cat.Data>[] {
@@ -26,17 +28,30 @@ export class Cat extends Message<Cat.Data> {
       getValue: () => this.#meows
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Cat.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Cat.Data {
     const props = {} as Partial<Cat.Data>;
     const nameValue = entries["1"] === undefined ? entries["name"] : entries["1"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     const meowsValue = entries["2"] === undefined ? entries["meows"] : entries["2"];
     if (meowsValue === undefined) throw new Error("Missing required property \"meows\".");
     if (!(typeof meowsValue === "boolean")) throw new Error("Invalid value for property \"meows\".");
-    props.meows = meowsValue;
+    props.meows = meowsValue as boolean;
     return props as Cat.Data;
+  }
+  static from(value: Cat.Value): Cat {
+    return value instanceof Cat ? value : new Cat(value);
+  }
+  static deserialize<T extends typeof Cat>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get name(): string {
     return this.#name;
@@ -51,19 +66,19 @@ export class Cat extends Message<Cat.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Cat)(data));
+    return this.$update(new (this.constructor as typeof Cat)(data) as this);
   }
   setMeows(value: boolean) {
     return this.$update(new (this.constructor as typeof Cat)({
       name: this.#name,
       meows: value
-    }));
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Cat)({
       name: value,
       meows: this.#meows
-    }));
+    }) as this);
   }
 }
 export namespace Cat {
@@ -79,11 +94,13 @@ export class Dog extends Message<Dog.Data> {
   static EMPTY: Dog;
   #name!: string;
   #barks!: boolean;
-  constructor(props?: Dog.Value) {
+  constructor(props?: Dog.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Dog.EMPTY) return Dog.EMPTY;
     super(Dog.TYPE_TAG, "Dog");
-    this.#name = props ? props.name : "";
-    this.#barks = props ? props.barks : false;
+    this.#name = (props ? props.name : "") as string;
+    this.#barks = (props ? props.barks : false) as boolean;
     if (!props) Dog.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Dog.Data>[] {
@@ -97,17 +114,30 @@ export class Dog extends Message<Dog.Data> {
       getValue: () => this.#barks
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Dog.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Dog.Data {
     const props = {} as Partial<Dog.Data>;
     const nameValue = entries["1"] === undefined ? entries["name"] : entries["1"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     const barksValue = entries["2"] === undefined ? entries["barks"] : entries["2"];
     if (barksValue === undefined) throw new Error("Missing required property \"barks\".");
     if (!(typeof barksValue === "boolean")) throw new Error("Invalid value for property \"barks\".");
-    props.barks = barksValue;
+    props.barks = barksValue as boolean;
     return props as Dog.Data;
+  }
+  static from(value: Dog.Value): Dog {
+    return value instanceof Dog ? value : new Dog(value);
+  }
+  static deserialize<T extends typeof Dog>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get name(): string {
     return this.#name;
@@ -122,19 +152,19 @@ export class Dog extends Message<Dog.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Dog)(data));
+    return this.$update(new (this.constructor as typeof Dog)(data) as this);
   }
   setBarks(value: boolean) {
     return this.$update(new (this.constructor as typeof Dog)({
       name: this.#name,
       barks: value
-    }));
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof Dog)({
       name: value,
       barks: this.#barks
-    }));
+    }) as this);
   }
 }
 export namespace Dog {
@@ -150,7 +180,7 @@ export class PetOwner extends Message<PetOwner.Data> {
   static EMPTY: PetOwner;
   #ownerName!: string;
   #pet!: Cat | Dog;
-  #optionalPet!: Cat | Dog;
+  #optionalPet!: Cat | Dog | undefined;
   constructor(props?: PetOwner.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -159,9 +189,9 @@ export class PetOwner extends Message<PetOwner.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#ownerName = props ? props.ownerName : "";
-    this.#pet = props ? props.pet : new Cat();
-    this.#optionalPet = props ? props.optionalPet : undefined;
+    this.#ownerName = (props ? props.ownerName : "") as string;
+    this.#pet = (props ? props.pet : new Cat()) as Cat | Dog;
+    this.#optionalPet = (props ? props.optionalPet : undefined) as Cat | Dog;
     if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -172,50 +202,54 @@ export class PetOwner extends Message<PetOwner.Data> {
     }, {
       name: "pet",
       fieldNumber: 2,
-      getValue: () => this.#pet,
+      getValue: () => this.#pet as Cat | Dog,
       unionMessageTypes: ["Cat", "Dog"]
     }, {
       name: "optionalPet",
       fieldNumber: 3,
-      getValue: () => this.#optionalPet,
+      getValue: () => this.#optionalPet as Cat | Dog,
       unionMessageTypes: ["Cat", "Dog"]
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): PetOwner.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): PetOwner.Data {
     const props = {} as Partial<PetOwner.Data>;
     const ownerNameValue = entries["1"] === undefined ? entries["ownerName"] : entries["1"];
     if (ownerNameValue === undefined) throw new Error("Missing required property \"ownerName\".");
     if (!(typeof ownerNameValue === "string")) throw new Error("Invalid value for property \"ownerName\".");
-    props.ownerName = ownerNameValue;
+    props.ownerName = ownerNameValue as string;
     const petValue = entries["2"] === undefined ? entries["pet"] : entries["2"];
     if (petValue === undefined) throw new Error("Missing required property \"pet\".");
-    let petUnionValue = petValue;
+    let petUnionValue: Cat | Dog = petValue as Cat | Dog;
     if (isTaggedMessageData(petValue)) {
       if (petValue.$tag === "Cat") {
-        const petCatProps = Cat.prototype.$fromEntries(petValue.$data);
-        petUnionValue = new Cat(petCatProps);
+        petUnionValue = new Cat(Cat.prototype.$fromEntries(petValue.$data, options), options);
       } else if (petValue.$tag === "Dog") {
-        const petDogProps = Dog.prototype.$fromEntries(petValue.$data);
-        petUnionValue = new Dog(petDogProps);
+        petUnionValue = new Dog(Dog.prototype.$fromEntries(petValue.$data, options), options);
       }
     }
     props.pet = petUnionValue;
     const optionalPetValue = entries["3"] === undefined ? entries["optionalPet"] : entries["3"];
     const optionalPetNormalized = optionalPetValue === null ? undefined : optionalPetValue;
-    let optionalPetUnionValue = optionalPetNormalized;
+    let optionalPetUnionValue: Cat | Dog | undefined = optionalPetNormalized as Cat | Dog | undefined;
     if (optionalPetNormalized !== undefined && isTaggedMessageData(optionalPetNormalized)) {
       if (optionalPetNormalized.$tag === "Cat") {
-        const optionalPetCatProps = Cat.prototype.$fromEntries(optionalPetNormalized.$data);
-        optionalPetUnionValue = new Cat(optionalPetCatProps);
+        optionalPetUnionValue = new Cat(Cat.prototype.$fromEntries(optionalPetNormalized.$data, options), options);
       } else if (optionalPetNormalized.$tag === "Dog") {
-        const optionalPetDogProps = Dog.prototype.$fromEntries(optionalPetNormalized.$data);
-        optionalPetUnionValue = new Dog(optionalPetDogProps);
+        optionalPetUnionValue = new Dog(Dog.prototype.$fromEntries(optionalPetNormalized.$data, options), options);
       }
     }
     props.optionalPet = optionalPetUnionValue;
     return props as PetOwner.Data;
   }
-  #validate(data: PetOwner.Value | undefined) {}
+  static from(value: PetOwner.Value): PetOwner {
+    return value instanceof PetOwner ? value : new PetOwner(value);
+  }
+  #validate(data: PetOwner.Value | undefined) {
+    if (data === undefined) return;
+  }
   static validateAll(data: PetOwner.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
@@ -226,20 +260,21 @@ export class PetOwner extends Message<PetOwner.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof PetOwner>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get ownerName(): string {
     return this.#ownerName;
   }
   get pet(): Cat | Dog {
     return this.#pet;
   }
-  get optionalPet(): Cat | Dog {
+  get optionalPet(): Cat | Dog | undefined {
     return this.#optionalPet;
-  }
-  deleteOptionalPet() {
-    return this.$update(new (this.constructor as typeof PetOwner)({
-      ownerName: this.#ownerName,
-      pet: this.#pet
-    }));
   }
   set(updates: Partial<SetUpdates<PetOwner.Data>>) {
     const data = this.toData();
@@ -248,28 +283,34 @@ export class PetOwner extends Message<PetOwner.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof PetOwner)(data));
+    return this.$update(new (this.constructor as typeof PetOwner)(data) as this);
   }
-  setOptionalPet(value: Cat | Dog) {
+  setOptionalPet(value: Cat | Dog | undefined) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
-      pet: this.#pet,
-      optionalPet: value
-    }));
+      pet: this.#pet as Cat | Dog,
+      optionalPet: value as Cat | Dog
+    }) as this);
   }
   setOwnerName(value: string) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: value,
-      pet: this.#pet,
-      optionalPet: this.#optionalPet
-    }));
+      pet: this.#pet as Cat | Dog,
+      optionalPet: this.#optionalPet as Cat | Dog
+    }) as this);
   }
   setPet(value: Cat | Dog) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
-      pet: value,
-      optionalPet: this.#optionalPet
-    }));
+      pet: value as Cat | Dog,
+      optionalPet: this.#optionalPet as Cat | Dog
+    }) as this);
+  }
+  unsetOptionalPet() {
+    return this.$update(new (this.constructor as typeof PetOwner)({
+      ownerName: this.#ownerName,
+      pet: this.#pet as Cat | Dog
+    }) as this);
   }
 }
 export namespace PetOwner {

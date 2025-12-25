@@ -2,8 +2,10 @@
  * Tests for generic message types.
  */
 
-import { assert } from './assert.ts';
-import { Item, Container, Optional, Pair, Parent } from './generic-types.pmsg.ts';
+import { assert } from './assert.js';
+import { Item, Container, Optional, Pair, Parent, Timestamped } from './generic-types.pmsg.js';
+import { ImmutableDate } from '../runtime/index.js';
+import { test } from 'node:test';
 
 export default function runGenericTypesTests() {
   // Test 1: Basic Item type (non-generic)
@@ -74,7 +76,7 @@ export default function runGenericTypesTests() {
   // Test 8: Optional deleteValue
   {
     const opt = new Optional(Item, { value: new Item({ id: 1, name: 'test' }) });
-    const deleted = opt.deleteValue();
+    const deleted = opt.unsetValue();
     assert(deleted.value === undefined, 'deleteValue result');
     console.log('[PASS] Optional<Item> deleteValue');
   }
@@ -237,6 +239,7 @@ export default function runGenericTypesTests() {
     const innerContainer = new Container(Item, { inner: innerItem });
     const BoundContainer = Container.bind(Item);
     const outerContainer = new Container(
+      // @ts-expect-error BoundContainer is a callable function, not a class constructor
       BoundContainer, { inner: innerContainer }
     );
 
@@ -245,5 +248,61 @@ export default function runGenericTypesTests() {
     console.log('[PASS] Nested Container<Container<Item>>');
   }
 
+  // Test 15: Timestamped - generic with both generic and non-generic fields
+  {
+    const item = new Item({ id: 1, name: 'timestamped-item' });
+    const now = new Date();
+    const timestamped = new Timestamped(Item, { inner: item, timestamp: now, label: 'test' });
+    assert(timestamped.inner.id === 1, 'Timestamped inner.id');
+    assert(timestamped.inner.name === 'timestamped-item', 'Timestamped inner.name');
+    assert(timestamped.timestamp instanceof ImmutableDate, 'Timestamped timestamp is ImmutableDate');
+    assert(timestamped.timestamp.getTime() === now.getTime(), 'Timestamped timestamp value');
+    assert(timestamped.label === 'test', 'Timestamped label');
+    assert(timestamped.$typeName === 'Timestamped<Item>', 'Timestamped $typeName');
+    console.log('[PASS] Timestamped<Item> creation');
+  }
+
+  // Test 16: Timestamped deserialization with validation of non-generic fields
+  {
+    const item = new Item({ id: 42, name: 'serialize-test' });
+    const timestamp = new Date('2024-01-15T12:00:00Z');
+    const original = new Timestamped(Item, { inner: item, timestamp, label: 'serialized' });
+    const serialized = original.serialize();
+
+    const deserialized = Timestamped.deserialize(Item, serialized);
+
+    // Verify all fields were properly deserialized with validation
+    assert(deserialized.inner.id === 42, 'Timestamped deserialized inner.id');
+    assert(deserialized.inner.name === 'serialize-test', 'Timestamped deserialized inner.name');
+    assert(deserialized.inner instanceof Item, 'Timestamped deserialized inner is Item instance');
+    assert(deserialized.timestamp instanceof ImmutableDate, 'Timestamped deserialized timestamp is ImmutableDate');
+    assert(deserialized.timestamp.getTime() === timestamp.getTime(), 'Timestamped deserialized timestamp value');
+    assert(deserialized.label === 'serialized', 'Timestamped deserialized label');
+    assert(original.equals(deserialized), 'Timestamped original equals deserialized');
+    console.log('[PASS] Timestamped.deserialize(Item, data) with non-generic field validation');
+  }
+
+  // Test 17: Timestamped bind().deserialize
+  {
+    const original = new Timestamped(Item, {
+      inner: new Item({ id: 99, name: 'bound-test' }),
+      timestamp: new Date('2024-06-01T00:00:00Z'),
+      label: 'bound'
+    });
+    const serialized = original.serialize();
+
+    const BoundTimestamped = Timestamped.bind(Item);
+    const deserialized = BoundTimestamped.deserialize(serialized);
+
+    assert(deserialized.inner.id === 99, 'Bound Timestamped deserialized inner.id');
+    assert(deserialized.timestamp instanceof ImmutableDate, 'Bound Timestamped deserialized timestamp is ImmutableDate');
+    assert(deserialized.label === 'bound', 'Bound Timestamped deserialized label');
+    console.log('[PASS] Timestamped.bind(Item).deserialize()');
+  }
+
   console.log('\nAll generic type tests passed!');
 }
+
+test('runGenericTypesTests', () => {
+  runGenericTypesTests();
+});

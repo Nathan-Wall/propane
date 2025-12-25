@@ -100,6 +100,14 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
+  /**
+   * Returns an ImmutableArray from the input.
+   * If the input is already an ImmutableArray, returns it as-is.
+   */
+  static from<T>(input: ImmutableArray<T> | Iterable<T> | ArrayLike<T>): ImmutableArray<T> {
+    return input instanceof ImmutableArray ? input : new ImmutableArray(input);
+  }
+
   constructor(items?: Iterable<T> | ArrayLike<T>) {
     if (!items) {
       this.#items = [];
@@ -704,7 +712,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     return this.$update(next as unknown as this);
   }
 
-  equals(other: readonly T[] | null | undefined): boolean {
+  equals(other: ImmutableArray<T> | readonly T[] | null | undefined): boolean {
     if (!other) return false;
     const otherItems = Array.isArray(other)
       ? other

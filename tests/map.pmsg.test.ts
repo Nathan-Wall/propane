@@ -1,7 +1,8 @@
-import { assert, isMapValue } from './assert.ts';
-import { computeExpectedHashCode } from './hash-helpers.ts';
-import { MapMessage } from './map.pmsg.ts';
-import { ImmutableMap } from '../runtime/common/map/immutable.ts';
+import { assert, isMapValue } from './assert.js';
+import { computeExpectedHashCode } from './hash-helpers.js';
+import { MapMessage, MapMessage_Extras_Value, MapMessage_Metadata_Value } from './map.pmsg.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { test } from 'node:test';
 
 export default function runMapPropaneTests() {
 
@@ -10,34 +11,35 @@ export default function runMapPropaneTests() {
     [2, 4],
   ];
   const labels = new Map<string | number, number>(labelEntries);
-  const metadata = new Map([['owner', { value: 'Alice' }]]);
-  const extras = new Map([
-    ['alpha', { note: 'A' }],
+  const metadata: Map<string, MapMessage_Metadata_Value.Value> = new Map([['owner', { value: 'Alice' }]]);
+  const extras: Map<string, MapMessage_Extras_Value.Value> = new Map([
+    ['alpha', { note: 'A' as string | null }],
     ['beta', { note: null }],
   ]);
 
-  const mapInstance: MapMessageInstance = new MapMessage({
+  const mapInstance: MapMessage = new MapMessage({
     labels,
-    metadata,
-    extras,
+    // Cast needed because generated types expect class instances, not Value type
+    metadata: metadata as Map<string, MapMessage_Metadata_Value>,
+    extras: extras as Map<string, MapMessage_Extras_Value>,
   });
   assert(
     mapInstance.serialize() === ':{M[[one,1],[2,4]],M[[owner,{value:Alice}]],M[[alpha,{note:A}],[beta,{note:null}]]}',
     'Map serialization incorrect.'
   );
-  const mapCereal = mapInstance.cerealize();
-  assert(isMapValue(mapCereal.labels), 'Labels should stay Map.');
-  assert(mapCereal.labels.get('one') === 1, 'Labels map lost string key.');
-  assert(mapCereal.labels.get(2) === 4, 'Labels map lost numeric key.');
-  assert(isMapValue(mapCereal.metadata), 'Metadata should stay Map.');
-  assert(mapCereal.metadata.get('owner').value === 'Alice', 'Metadata map lost data.');
-  const mapExtrasEntries = [...mapCereal.extras.entries()];
-  assert(mapExtrasEntries[0][0] === 'alpha', 'Extras map lost string key.');
-  assert(mapExtrasEntries[1][1].note === null, 'Extras map lost null value.');
-  assert(typeof mapCereal.labels.toMap === 'function', 'Immutable map should expose toMap.');
-  const labelsCopy = mapCereal.labels.toMap();
+  assert(isMapValue(mapInstance.labels), 'Labels should stay Map.');
+  assert(mapInstance.labels.get('one') === 1, 'Labels map lost string key.');
+  assert(mapInstance.labels.get(2) === 4, 'Labels map lost numeric key.');
+  assert(isMapValue(mapInstance.metadata), 'Metadata should stay Map.');
+  assert(mapInstance.metadata!.get('owner')!.value === 'Alice', 'Metadata map lost data.');
+  const mapExtrasEntries = [...mapInstance.extras.entries()];
+  assert(mapExtrasEntries[0]![0] === 'alpha', 'Extras map lost string key.');
+  assert(mapExtrasEntries[0]![1].note === 'A', 'Extras map lost string value.');
+  assert(mapExtrasEntries[1]![1].note === null, 'Extras map lost null value.');
+  assert(typeof mapInstance.labels.toMap === 'function', 'Immutable map should expose toMap.');
+  const labelsCopy = mapInstance.labels.toMap();
   labelsCopy.set('delta', 8);
-  assert(!mapCereal.labels.has('delta'), 'Immutable map should not change when copy mutates.');
+  assert(!mapInstance.labels.has('delta'), 'Immutable map should not change when copy mutates.');
   const updatedLabelEntries: [string | number, number][] = [
     ['gamma', 7],
     [3, 9],
@@ -49,78 +51,76 @@ export default function runMapPropaneTests() {
   assert(updatedLabelsInstance.labels.has('gamma'), 'setLabels result missing new key.');
   const clearedMetadata = mapInstance.setMetadata(undefined);
   assert(clearedMetadata.metadata === undefined, 'setMetadata should allow undefined.');
-  assert(mapInstance.metadata.get('owner').value === 'Alice', 'setMetadata should not mutate original metadata.');
+  assert(mapInstance.metadata!.get('owner')!.value === 'Alice', 'setMetadata should not mutate original metadata.');
 
   const mapRaw = MapMessage.deserialize(':{[[alpha,10],[5,15]],3:[[raw,{"note":null}]]}');
-  const mapRawData = mapRaw.cerealize();
-  assert(mapRawData.labels.get('alpha') === 10, 'Raw map lost string key.');
-  assert(mapRawData.labels.get(5) === 15, 'Raw map lost numeric key.');
-  assert(mapRawData.metadata === undefined, 'Raw map optional metadata should be undefined.');
-  const rawExtrasEntries = [...mapRawData.extras.entries()];
-  assert(rawExtrasEntries[0][0] === 'raw', 'Raw map lost string key.');
-  assert(rawExtrasEntries[0][1].note === null, 'Raw map lost null value.');
+  assert(mapRaw.labels.get('alpha') === 10, 'Raw map lost string key.');
+  assert(mapRaw.labels.get(5) === 15, 'Raw map lost numeric key.');
+  assert(mapRaw.metadata === undefined, 'Raw map optional metadata should be undefined.');
+  const rawExtrasEntries = [...mapRaw.extras.entries()];
+  assert(rawExtrasEntries[0]![0] === 'raw', 'Raw map lost string key.');
+  assert(rawExtrasEntries[0]![1].note === null, 'Raw map lost null value.');
 
   const mapObjectRaw = MapMessage.deserialize(
     ':{"1":[["owner",1]],"2":[["meta",{"value":"Bob"}]],"3":[["obj",{"note":"Value"}]]}'
   );
-  const mapObjectRawData = mapObjectRaw.cerealize();
-  assert(isMapValue(mapObjectRawData.metadata), 'Object raw metadata should be Map.');
-  assert(mapObjectRawData.metadata.get('meta').value === 'Bob', 'Object raw metadata missing value.');
-  const objectExtrasEntries = [...mapObjectRawData.extras.entries()];
-  assert(objectExtrasEntries[0][0] === 'obj', 'Object raw extras lost key.');
-  assert(objectExtrasEntries[0][1].note === 'Value', 'Object raw extras lost value.');
+  assert(isMapValue(mapObjectRaw.metadata), 'Object raw metadata should be Map.');
+  assert(mapObjectRaw.metadata!.get('meta')!.value === 'Bob', 'Object raw metadata missing value.');
+  const objectExtrasEntries = [...mapObjectRaw.extras.entries()];
+  assert(objectExtrasEntries[0]![0] === 'obj', 'Object raw extras lost key.');
+  assert(objectExtrasEntries[0]![1].note === 'Value', 'Object raw extras lost value.');
 
-  const addedLabelInstance = mapInstance.setLabelsEntry('delta', 8);
-  assert(!mapInstance.labels.has('delta'), 'setLabelsEntry should not mutate original labels.');
-  assert(addedLabelInstance.labels.get('delta') === 8, 'setLabelsEntry should insert new key.');
+  const addedLabelInstance = mapInstance.setLabel('delta', 8);
+  assert(!mapInstance.labels.has('delta'), 'setLabel should not mutate original labels.');
+  assert(addedLabelInstance.labels.get('delta') === 8, 'setLabel should insert new key.');
 
-  const removedLabelInstance = mapInstance.deleteLabelsEntry('one');
-  assert(mapInstance.labels.has('one'), 'deleteLabelsEntry should not mutate original labels.');
-  assert(!removedLabelInstance.labels.has('one'), 'deleteLabelsEntry should remove specified key.');
+  const removedLabelInstance = mapInstance.deleteLabel('one');
+  assert(mapInstance.labels.has('one'), 'deleteLabel should not mutate original labels.');
+  assert(!removedLabelInstance.labels.has('one'), 'deleteLabel should remove specified key.');
 
   const clearedExtrasInstance = mapInstance.clearExtras();
   assert(clearedExtrasInstance.extras.size === 0, 'clearExtras should remove all entries.');
 
-  const mergedLabelsInstance = mapInstance.mergeLabelsEntries([
+  const mergedLabelsInstance = mapInstance.mergeLabels([
     ['epsilon', 5],
     ['zeta', 6],
   ]);
-  assert(mergedLabelsInstance.labels.get('epsilon') === 5, 'mergeLabelsEntries should merge array input.');
-  const mergedLabelsMap = mapInstance.mergeLabelsEntries(new Map([['theta', 9]]));
-  assert(mergedLabelsMap.labels.get('theta') === 9, 'mergeLabelsEntries should merge Map input.');
+  assert(mergedLabelsInstance.labels.get('epsilon') === 5, 'mergeLabels should merge array input.');
+  const mergedLabelsMap = mapInstance.mergeLabels(new Map([['theta', 9]]));
+  assert(mergedLabelsMap.labels.get('theta') === 9, 'mergeLabels should merge Map input.');
 
-  const updatedExtrasInstance = mapInstance.updateExtrasEntry('alpha', (entry) => ({
+  const updatedExtrasInstance = mapInstance.updateExtra('alpha', (entry: MapMessage_Extras_Value | undefined) => new MapMessage_Extras_Value({
     note: entry?.note ? `${entry.note}!` : 'A!',
   }));
   assert(
     updatedExtrasInstance.extras.get('alpha')?.note === 'A!',
-    'updateExtrasEntry should apply updater to existing entry.'
+    'updateExtra should apply updater to existing entry.'
   );
 
-  const mappedLabelsInstance = mapInstance.mapLabelsEntries((value, key) => [
+  const mappedLabelsInstance = mapInstance.mapLabels((value: number, key: string | number) => [
     typeof key === 'number' ? `num-${key}` : key,
     value * 10,
   ]);
   assert(
     mappedLabelsInstance.labels.get('num-2') === 40,
-    'mapLabelsEntries should remap keys and values.'
+    'mapLabels should remap keys and values.'
   );
 
-  const filteredLabelsInstance = mapInstance.filterLabelsEntries((_, key) =>
+  const filteredLabelsInstance = mapInstance.filterLabels((_: number, key: string | number) =>
     typeof key === 'string'
   );
-  assert(filteredLabelsInstance.labels.has('one'), 'filterLabelsEntries should retain matching entries.');
-  assert(!filteredLabelsInstance.labels.has(2), 'filterLabelsEntries should remove entries that fail predicate.');
+  assert(filteredLabelsInstance.labels.has('one'), 'filterLabels should retain matching entries.');
+  assert(!filteredLabelsInstance.labels.has(2), 'filterLabels should remove entries that fail predicate.');
 
   const emptyMetadataInstance = new MapMessage({
     labels,
-    extras,
-
+    extras: extras as Map<string, MapMessage_Extras_Value>,
   });
-  const metadataSet = emptyMetadataInstance.setMetadataEntry('owner', { value: 'Bob' });
+  // For uncountable words like "metadata", use mergeMetadataEntries since set{singular} conflicts with the collection setter
+  const metadataSet = emptyMetadataInstance.mergeMetadataEntries([['owner', { value: 'Bob' } as MapMessage_Metadata_Value]]);
   assert(
     metadataSet.metadata && metadataSet.metadata.get('owner')?.value === 'Bob',
-    'setMetadataEntry should initialize optional map.'
+    'mergeMetadataEntries should initialize optional map.'
   );
 
   const immutable = new ImmutableMap([
@@ -164,12 +164,11 @@ export default function runMapPropaneTests() {
   // Message keys should be compared with equals/hashCode, not identity.
   const msgKeyA = new MapMessage({
     labels: new Map([['alpha', 1]]),
-    extras: new Map([['note', { note: null }]]),
-
+    extras: new Map([['note', { note: null }]]) as Map<string, MapMessage_Extras_Value>,
   });
   const msgKeyB = new MapMessage({
     labels: new Map([['alpha', 1]]),
-    extras: new Map([['note', { note: null }]]),
+    extras: new Map([['note', { note: null }]]) as Map<string, MapMessage_Extras_Value>,
     metadata: undefined,
   });
   const msgMap = new ImmutableMap([
@@ -189,3 +188,7 @@ export default function runMapPropaneTests() {
     'ImmutableMap hashCode should hash surrogate pairs by UTF-16 code unit.'
   );
 }
+
+test('runMapPropaneTests', () => {
+  runMapPropaneTests();
+});

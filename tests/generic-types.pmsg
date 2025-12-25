@@ -30,3 +30,10 @@ export type Pair<T extends Message, U extends Message> = Message<{
 export type Parent = Message<{
   '1:name': string;
 }>;
+
+// Generic with both generic and non-generic fields - tests full validation in deserialize
+export type Timestamped<T extends Message> = Message<{
+  '1:inner': T;
+  '2:timestamp': Date;
+  '3:label': string;
+}>;

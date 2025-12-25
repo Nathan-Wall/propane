@@ -82,6 +82,16 @@ export class ImmutableArrayBuffer {
   #hash?: number;
   readonly [Symbol.toStringTag] = 'ImmutableArrayBuffer';
 
+  /**
+   * Returns an ImmutableArrayBuffer from the input.
+   * If the input is already an ImmutableArrayBuffer, returns it as-is.
+   */
+  static from(
+    input: ImmutableArrayBuffer | ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
+  ): ImmutableArrayBuffer {
+    return input instanceof ImmutableArrayBuffer ? input : new ImmutableArrayBuffer(input);
+  }
+
   constructor(
     input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
   ) {

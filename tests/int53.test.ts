@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { toInt53 } from '../runtime/common/numbers/int53.js';
+import { toInt53 } from '@/common/numbers/int53.js';
 
 describe('toInt53', () => {
   describe('valid values', () => {

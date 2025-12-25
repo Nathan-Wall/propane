@@ -1,9 +1,10 @@
-import { assert } from './assert.ts';
-import { UnionStringBool } from './union-string-bool.pmsg.ts';
+import { assert } from './assert.js';
+import { UnionStringBool } from './union-string-bool.pmsg.js';
+import { test } from 'node:test';
 
 export default function runUnionStringBoolTests() {
 
-  const unionStringInstance: UnionStringBoolInstance = new UnionStringBool({
+  const unionStringInstance: UnionStringBool = new UnionStringBool({
     value: 'true',
     optional: '42',
   });
@@ -13,7 +14,7 @@ export default function runUnionStringBoolTests() {
     `String union serialization failed. Got: ${unionStringSerialized}`
   );
 
-  const unionBoolInstance: UnionStringBoolInstance = new UnionStringBool({
+  const unionBoolInstance: UnionStringBool = new UnionStringBool({
     value: true,
     optional: false,
   });
@@ -24,12 +25,14 @@ export default function runUnionStringBoolTests() {
   );
 
   const unionStringRaw = UnionStringBool.deserialize(':{"true",false}');
-  const unionStringRawData = unionStringRaw.cerealize();
-  assert(unionStringRawData.value === 'true', 'Union string raw lost string value.');
-  assert(unionStringRawData.optional === false, 'Union string raw lost optional boolean.');
+  assert(unionStringRaw.value === 'true', 'Union string raw lost string value.');
+  assert(unionStringRaw.optional === false, 'Union string raw lost optional boolean.');
 
   const unionBoolRaw = UnionStringBool.deserialize(':{true,"false"}');
-  const unionBoolRawData = unionBoolRaw.cerealize();
-  assert(unionBoolRawData.value === true, 'Union bool raw lost boolean value.');
-  assert(unionBoolRawData.optional === 'false', 'Union bool raw lost string optional.');
+  assert(unionBoolRaw.value === true, 'Union bool raw lost boolean value.');
+  assert(unionBoolRaw.optional === 'false', 'Union bool raw lost string optional.');
 }
+
+test('runUnionStringBoolTests', () => {
+  runUnionStringBoolTests();
+});

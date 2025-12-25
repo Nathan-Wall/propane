@@ -6,8 +6,8 @@ import { Table } from '@propane/postgres';
  * Test Table<T> wrapper for database types.
  * Table types are message types that also generate database schema.
  */
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 export class User extends Message<User.Data> {
   static TYPE_TAG = Symbol("User");
   static readonly $typeName = "User";
@@ -17,13 +17,15 @@ export class User extends Message<User.Data> {
   #name!: string;
   #active!: boolean;
   #created!: ImmutableDate;
-  constructor(props?: User.Value) {
+  constructor(props?: User.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");
-    this.#id = props ? props.id : 0n;
-    this.#email = props ? props.email : "";
-    this.#name = props ? props.name : "";
-    this.#active = props ? props.active : false;
+    this.#id = (props ? props.id : 0n) as bigint;
+    this.#email = (props ? props.email : "") as string;
+    this.#name = (props ? props.name : "") as string;
+    this.#active = (props ? props.active : false) as boolean;
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     if (!props) User.EMPTY = this;
   }
@@ -47,32 +49,45 @@ export class User extends Message<User.Data> {
     }, {
       name: "created",
       fieldNumber: 5,
-      getValue: () => this.#created
+      getValue: () => this.#created as ImmutableDate | Date
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): User.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): User.Data {
     const props = {} as Partial<User.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "bigint")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as bigint;
     const emailValue = entries["2"] === undefined ? entries["email"] : entries["2"];
     if (emailValue === undefined) throw new Error("Missing required property \"email\".");
     if (!(typeof emailValue === "string")) throw new Error("Invalid value for property \"email\".");
-    props.email = emailValue;
+    props.email = emailValue as string;
     const nameValue = entries["3"] === undefined ? entries["name"] : entries["3"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     const activeValue = entries["4"] === undefined ? entries["active"] : entries["4"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");
     if (!(typeof activeValue === "boolean")) throw new Error("Invalid value for property \"active\".");
-    props.active = activeValue;
+    props.active = activeValue as boolean;
     const createdValue = entries["5"] === undefined ? entries["created"] : entries["5"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue;
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
     return props as User.Data;
+  }
+  static from(value: User.Value): User {
+    return value instanceof User ? value : new User(value);
+  }
+  static deserialize<T extends typeof User>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): bigint {
     return this.#id;
@@ -96,7 +111,7 @@ export class User extends Message<User.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof User)(data));
+    return this.$update(new (this.constructor as typeof User)(data) as this);
   }
   setActive(value: boolean) {
     return this.$update(new (this.constructor as typeof User)({
@@ -104,8 +119,8 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: this.#name,
       active: value,
-      created: this.#created
-    }));
+      created: this.#created as ImmutableDate | Date
+    }) as this);
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof User)({
@@ -113,8 +128,8 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: this.#name,
       active: this.#active,
-      created: value
-    }));
+      created: value as ImmutableDate | Date
+    }) as this);
   }
   setEmail(value: string) {
     return this.$update(new (this.constructor as typeof User)({
@@ -122,8 +137,8 @@ export class User extends Message<User.Data> {
       email: value,
       name: this.#name,
       active: this.#active,
-      created: this.#created
-    }));
+      created: this.#created as ImmutableDate | Date
+    }) as this);
   }
   setId(value: bigint) {
     return this.$update(new (this.constructor as typeof User)({
@@ -131,8 +146,8 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: this.#name,
       active: this.#active,
-      created: this.#created
-    }));
+      created: this.#created as ImmutableDate | Date
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof User)({
@@ -140,8 +155,8 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: value,
       active: this.#active,
-      created: this.#created
-    }));
+      created: this.#created as ImmutableDate | Date
+    }) as this);
   }
 }
 export namespace User {
@@ -165,14 +180,16 @@ export class Post extends Message<Post.Data> {
   #published!: boolean;
   #created!: ImmutableDate;
   #updated!: ImmutableDate;
-  constructor(props?: Post.Value) {
+  constructor(props?: Post.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Post.EMPTY) return Post.EMPTY;
     super(Post.TYPE_TAG, "Post");
-    this.#id = props ? props.id : 0n;
-    this.#userId = props ? props.userId : 0n;
-    this.#title = props ? props.title : "";
-    this.#content = props ? props.content : "";
-    this.#published = props ? props.published : false;
+    this.#id = (props ? props.id : 0n) as bigint;
+    this.#userId = (props ? props.userId : 0n) as bigint;
+    this.#title = (props ? props.title : "") as string;
+    this.#content = (props ? props.content : "") as string;
+    this.#published = (props ? props.published : false) as boolean;
     this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
     this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
     if (!props) Post.EMPTY = this;
@@ -201,44 +218,57 @@ export class Post extends Message<Post.Data> {
     }, {
       name: "created",
       fieldNumber: null,
-      getValue: () => this.#created
+      getValue: () => this.#created as ImmutableDate | Date
     }, {
       name: "updated",
       fieldNumber: null,
-      getValue: () => this.#updated
+      getValue: () => this.#updated as ImmutableDate | Date
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Post.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Post.Data {
     const props = {} as Partial<Post.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "bigint")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as bigint;
     const userIdValue = entries["2"] === undefined ? entries["userId"] : entries["2"];
     if (userIdValue === undefined) throw new Error("Missing required property \"userId\".");
     if (!(typeof userIdValue === "bigint")) throw new Error("Invalid value for property \"userId\".");
-    props.userId = userIdValue;
+    props.userId = userIdValue as bigint;
     const titleValue = entries["3"] === undefined ? entries["title"] : entries["3"];
     if (titleValue === undefined) throw new Error("Missing required property \"title\".");
     if (!(typeof titleValue === "string")) throw new Error("Invalid value for property \"title\".");
-    props.title = titleValue;
+    props.title = titleValue as string;
     const contentValue = entries["4"] === undefined ? entries["content"] : entries["4"];
     if (contentValue === undefined) throw new Error("Missing required property \"content\".");
     if (!(typeof contentValue === "string")) throw new Error("Invalid value for property \"content\".");
-    props.content = contentValue;
+    props.content = contentValue as string;
     const publishedValue = entries["5"] === undefined ? entries["published"] : entries["5"];
     if (publishedValue === undefined) throw new Error("Missing required property \"published\".");
     if (!(typeof publishedValue === "boolean")) throw new Error("Invalid value for property \"published\".");
-    props.published = publishedValue;
+    props.published = publishedValue as boolean;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue instanceof Date || createdValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue;
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue instanceof Date || updatedValue instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue;
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
     return props as Post.Data;
+  }
+  static from(value: Post.Value): Post {
+    return value instanceof Post ? value : new Post(value);
+  }
+  static deserialize<T extends typeof Post>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): bigint {
     return this.#id;
@@ -268,7 +298,7 @@ export class Post extends Message<Post.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Post)(data));
+    return this.$update(new (this.constructor as typeof Post)(data) as this);
   }
   setContent(value: string) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -277,9 +307,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: value,
       published: this.#published,
-      created: this.#created,
-      updated: this.#updated
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -288,9 +318,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: value,
-      updated: this.#updated
-    }));
+      created: value as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
   setId(value: bigint) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -299,9 +329,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: this.#created,
-      updated: this.#updated
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
   setPublished(value: boolean) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -310,9 +340,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: value,
-      created: this.#created,
-      updated: this.#updated
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
   setTitle(value: string) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -321,9 +351,9 @@ export class Post extends Message<Post.Data> {
       title: value,
       content: this.#content,
       published: this.#published,
-      created: this.#created,
-      updated: this.#updated
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -332,9 +362,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: this.#created,
-      updated: value
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: value as ImmutableDate | Date
+    }) as this);
   }
   setUserId(value: bigint) {
     return this.$update(new (this.constructor as typeof Post)({
@@ -343,9 +373,9 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: this.#created,
-      updated: this.#updated
-    }));
+      created: this.#created as ImmutableDate | Date,
+      updated: this.#updated as ImmutableDate | Date
+    }) as this);
   }
 }
 export namespace Post {

@@ -1,8 +1,10 @@
-import { assert } from './assert.ts';
-import { computeExpectedHashCode } from './hash-helpers.ts';
-import { Message } from '../runtime/message.ts';
+import { assert } from './assert.js';
+import { computeExpectedHashCode } from './hash-helpers.js';
+import { Message, DataValue } from '../runtime/message.js';
+import { test } from 'node:test';
 
 interface SimpleProps {
+  [key: string]: DataValue;
   text: string;
 }
 
@@ -44,3 +46,7 @@ export default function runMessageRuntimeTests() {
     'Message.hashCode should be stable across repeated calls.'
   );
 }
+
+test('runMessageRuntimeTests', () => {
+  runMessageRuntimeTests();
+});

@@ -1,4 +1,4 @@
-import { Person$Base } from './extend-basic.pmsg.ts';
+import { Person$Base } from './extend-basic.pmsg.js';
 
 /**
  * Extended Person class with custom getters and methods.

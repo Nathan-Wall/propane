@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { toInt32 } from '../runtime/common/numbers/int32.js';
+import { toInt32 } from '@/common/numbers/int32.js';
 
 describe('toInt32', () => {
   describe('valid values', () => {

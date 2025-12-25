@@ -16,16 +16,17 @@
  * which can lead to incorrect rendering behavior.
  */
 
-import { assert } from './assert.ts';
+import { assert } from './assert.js';
 import {
   REGISTER_PATH,
   FROM_ROOT,
   EQUALS_FROM_ROOT,
-} from '../runtime/symbols.ts';
-import type { Message, DataObject } from '../runtime/message.ts';
+} from '../runtime/symbols.js';
+import type { Message, DataObject } from '../runtime/message.js';
 
 // Import Babel-generated types for testing
-import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.js';
+import { test } from 'node:test';
 
 export default function runPathAwareEqualityTests() {
   testIdenticalSiblingsAreContentEqual();
@@ -105,6 +106,12 @@ function testPathRegistrationDistinguishesSiblings() {
   console.log(`  inner1 path: ${path1}`);
   console.log(`  inner2 path: ${path2}`);
 
+  // Check inequality first (before type narrowing from subsequent assertions)
+  assert(
+    path1 !== path2,
+    'Paths should be different for siblings'
+  );
+
   assert(
     path1 === 'inner',
     `Expected inner1 path to be 'inner', got '${path1}'`
@@ -113,11 +120,6 @@ function testPathRegistrationDistinguishesSiblings() {
   assert(
     path2 === 'siblings[1]',
     `Expected inner2 path to be 'siblings[1]', got '${path2}'`
-  );
-
-  assert(
-    path1 !== path2,
-    'Paths should be different for siblings'
   );
 
   console.log('Path registration distinguishes siblings: PASSED');
@@ -315,3 +317,7 @@ function testMemoPropaneWithIdenticalSiblings() {
   console.log('  SUCCESS: Path-aware equality distinguishes identical siblings!');
   console.log('memoPropane with identical siblings: PASSED');
 }
+
+test('runPathAwareEqualityTests', () => {
+  runPathAwareEqualityTests();
+});

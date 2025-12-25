@@ -1,6 +1,5 @@
 export interface PropaneMessageInstance<Props> {
   serialize(): string;
-  cerealize(): Props;
 }
 
 export interface PropaneMessageConstructor<

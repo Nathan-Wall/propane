@@ -1,8 +1,9 @@
-import { assert } from './assert.ts';
-import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableArray } from '../../runtime/common/array/immutable.ts';
-import { ImmutableSet } from '../../runtime/common/set/immutable.ts';
-import { ImmutableArraySet } from './immutable-array-set.pmsg.ts';
+import { assert } from './assert.js';
+import { computeExpectedHashCode } from './hash-helpers.js';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { ImmutableArraySet } from './immutable-array-set.pmsg.js';
+import { test } from 'node:test';
 
 export default function runImmutableArraySetTests() {
   const arr = new ImmutableArray([1, 2, 3]);
@@ -52,3 +53,7 @@ export default function runImmutableArraySetTests() {
     'ImmutableSet hashCode should hash surrogate pairs by UTF-16 code unit.'
   );
 }
+
+test('runImmutableArraySetTests', () => {
+  runImmutableArraySetTests();
+});

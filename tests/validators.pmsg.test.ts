@@ -7,6 +7,12 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { ValidationError } from '@propane/runtime';
+import type {
+  Positive, Negative, NonNegative, NonPositive,
+  Min, Max, Range,
+  NonEmpty, MinLength, MaxLength, Length,
+  int32, int53, decimal,
+} from '@propane/types';
 import {
   NumericSignValidators,
   NumericBoundValidators,
@@ -20,10 +26,10 @@ import {
 describe('NumericSignValidators', () => {
   it('should accept valid positive number', () => {
     const msg = new NumericSignValidators({
-      positiveNumber: 1,
-      negativeNumber: -1,
-      nonNegativeNumber: 0,
-      nonPositiveNumber: 0,
+      positiveNumber: 1 as Positive<number>,
+      negativeNumber: -1 as Negative<number>,
+      nonNegativeNumber: 0 as NonNegative<number>,
+      nonPositiveNumber: 0 as NonPositive<number>,
     });
     assert.strictEqual(msg.positiveNumber, 1);
   });
@@ -31,10 +37,10 @@ describe('NumericSignValidators', () => {
   it('should reject invalid positive number', () => {
     assert.throws(
       () => new NumericSignValidators({
-        positiveNumber: 0,
-        negativeNumber: -1,
-        nonNegativeNumber: 0,
-        nonPositiveNumber: 0,
+        positiveNumber: 0 as Positive<number>,
+        negativeNumber: -1 as Negative<number>,
+        nonNegativeNumber: 0 as NonNegative<number>,
+        nonPositiveNumber: 0 as NonPositive<number>,
       }),
       ValidationError
     );
@@ -43,10 +49,10 @@ describe('NumericSignValidators', () => {
   it('should reject invalid negative number', () => {
     assert.throws(
       () => new NumericSignValidators({
-        positiveNumber: 1,
-        negativeNumber: 0,
-        nonNegativeNumber: 0,
-        nonPositiveNumber: 0,
+        positiveNumber: 1 as Positive<number>,
+        negativeNumber: 0 as Negative<number>,
+        nonNegativeNumber: 0 as NonNegative<number>,
+        nonPositiveNumber: 0 as NonPositive<number>,
       }),
       ValidationError
     );
@@ -55,10 +61,10 @@ describe('NumericSignValidators', () => {
   it('should skip validation with skipValidation option', () => {
     // This would normally throw, but skipValidation bypasses it
     const msg = new NumericSignValidators({
-      positiveNumber: 0,
-      negativeNumber: 0,
-      nonNegativeNumber: -1,
-      nonPositiveNumber: 1,
+      positiveNumber: 0 as Positive<number>,
+      negativeNumber: 0 as Negative<number>,
+      nonNegativeNumber: -1 as NonNegative<number>,
+      nonPositiveNumber: 1 as NonPositive<number>,
     }, { skipValidation: true });
     assert.strictEqual(msg.positiveNumber, 0);
   });
@@ -67,9 +73,9 @@ describe('NumericSignValidators', () => {
 describe('NumericBoundValidators', () => {
   it('should accept values within bounds', () => {
     const msg = new NumericBoundValidators({
-      minValue: 0,
-      maxValue: 100,
-      rangeValue: 50,
+      minValue: 0 as Min<number, 0>,
+      maxValue: 100 as Max<number, 100>,
+      rangeValue: 50 as Range<number, 0, 100>,
     });
     assert.strictEqual(msg.rangeValue, 50);
   });
@@ -77,9 +83,9 @@ describe('NumericBoundValidators', () => {
   it('should reject value below min', () => {
     assert.throws(
       () => new NumericBoundValidators({
-        minValue: -1,
-        maxValue: 50,
-        rangeValue: 50,
+        minValue: -1 as Min<number, 0>,
+        maxValue: 50 as Max<number, 100>,
+        rangeValue: 50 as Range<number, 0, 100>,
       }),
       ValidationError
     );
@@ -88,9 +94,9 @@ describe('NumericBoundValidators', () => {
   it('should reject value above max', () => {
     assert.throws(
       () => new NumericBoundValidators({
-        minValue: 0,
-        maxValue: 101,
-        rangeValue: 50,
+        minValue: 0 as Min<number, 0>,
+        maxValue: 101 as Max<number, 100>,
+        rangeValue: 50 as Range<number, 0, 100>,
       }),
       ValidationError
     );
@@ -99,9 +105,9 @@ describe('NumericBoundValidators', () => {
   it('should reject value outside range', () => {
     assert.throws(
       () => new NumericBoundValidators({
-        minValue: 0,
-        maxValue: 50,
-        rangeValue: 101,
+        minValue: 0 as Min<number, 0>,
+        maxValue: 50 as Max<number, 100>,
+        rangeValue: 101 as Range<number, 0, 100>,
       }),
       ValidationError
     );
@@ -111,10 +117,10 @@ describe('NumericBoundValidators', () => {
 describe('StringValidators', () => {
   it('should accept valid strings', () => {
     const msg = new StringValidators({
-      nonEmptyString: 'hello',
-      minLengthString: 'abc',
-      maxLengthString: 'short',
-      exactLengthString: 'hello',
+      nonEmptyString: 'hello' as NonEmpty<string>,
+      minLengthString: 'abc' as MinLength<string, 3>,
+      maxLengthString: 'short' as MaxLength<string, 100>,
+      exactLengthString: 'hello' as Length<string, 5, 10>,
     });
     assert.strictEqual(msg.nonEmptyString, 'hello');
   });
@@ -122,10 +128,10 @@ describe('StringValidators', () => {
   it('should reject empty string for NonEmpty', () => {
     assert.throws(
       () => new StringValidators({
-        nonEmptyString: '',
-        minLengthString: 'abc',
-        maxLengthString: 'short',
-        exactLengthString: 'hello',
+        nonEmptyString: '' as NonEmpty<string>,
+        minLengthString: 'abc' as MinLength<string, 3>,
+        maxLengthString: 'short' as MaxLength<string, 100>,
+        exactLengthString: 'hello' as Length<string, 5, 10>,
       }),
       ValidationError
     );
@@ -134,10 +140,10 @@ describe('StringValidators', () => {
   it('should reject string below min length', () => {
     assert.throws(
       () => new StringValidators({
-        nonEmptyString: 'hello',
-        minLengthString: 'ab',
-        maxLengthString: 'short',
-        exactLengthString: 'hello',
+        nonEmptyString: 'hello' as NonEmpty<string>,
+        minLengthString: 'ab' as MinLength<string, 3>,
+        maxLengthString: 'short' as MaxLength<string, 100>,
+        exactLengthString: 'hello' as Length<string, 5, 10>,
       }),
       ValidationError
     );
@@ -147,12 +153,12 @@ describe('StringValidators', () => {
 describe('BrandedValidators', () => {
   it('should accept valid branded values', () => {
     const msg = new BrandedValidators({
-      positiveInt32: 1,
-      positiveInt53: 1,
-      positiveDecimal: '1.00',
-      minDecimal: '100.00',
-      maxDecimal: '500.00',
-      rangeDecimal: '500.00',
+      positiveInt32: 1 as Positive<int32>,
+      positiveInt53: 1 as Positive<int53>,
+      positiveDecimal: '1.00' as Positive<decimal<10, 2>>,
+      minDecimal: '100.00' as Min<decimal<10, 2>, '100'>,
+      maxDecimal: '500.00' as Max<decimal<10, 2>, '1000'>,
+      rangeDecimal: '500.00' as Range<decimal<10, 2>, '0', '999.99'>,
     });
     assert.strictEqual(msg.positiveInt32, 1);
     assert.strictEqual(msg.minDecimal, '100.00');
@@ -162,12 +168,12 @@ describe('BrandedValidators', () => {
     // Validators accept numbers for decimal fields but don't transform them
     // (transformation to decimal string is a separate concern handled by toDecimal)
     const msg = new BrandedValidators({
-      positiveInt32: 1,
-      positiveInt53: 1,
-      positiveDecimal: 1,
-      minDecimal: 100,
-      maxDecimal: 500,
-      rangeDecimal: 500,
+      positiveInt32: 1 as Positive<int32>,
+      positiveInt53: 1 as Positive<int53>,
+      positiveDecimal: 1 as unknown as Positive<decimal<10, 2>>,
+      minDecimal: 100 as unknown as Min<decimal<10, 2>, '100'>,
+      maxDecimal: 500 as unknown as Max<decimal<10, 2>, '1000'>,
+      rangeDecimal: 500 as unknown as Range<decimal<10, 2>, '0', '999.99'>,
     });
     // Number is accepted (validates via canBeDecimal) but not transformed
     assert.strictEqual(msg.positiveDecimal, 1);
@@ -176,12 +182,12 @@ describe('BrandedValidators', () => {
   it('should reject decimal below min', () => {
     assert.throws(
       () => new BrandedValidators({
-        positiveInt32: 1,
-        positiveInt53: 1,
-        positiveDecimal: '1.00',
-        minDecimal: '99.99',
-        maxDecimal: '500.00',
-        rangeDecimal: '500.00',
+        positiveInt32: 1 as Positive<int32>,
+        positiveInt53: 1 as Positive<int53>,
+        positiveDecimal: '1.00' as Positive<decimal<10, 2>>,
+        minDecimal: '99.99' as Min<decimal<10, 2>, '100'>,
+        maxDecimal: '500.00' as Max<decimal<10, 2>, '1000'>,
+        rangeDecimal: '500.00' as Range<decimal<10, 2>, '0', '999.99'>,
       }),
       ValidationError
     );
@@ -191,7 +197,8 @@ describe('BrandedValidators', () => {
 describe('OptionalValidators', () => {
   it('should validate required field', () => {
     const msg = new OptionalValidators({
-      requiredPositive: 1,
+      requiredPositive: 1 as Positive<number>,
+      nullablePositive: null,
     });
     assert.strictEqual(msg.requiredPositive, 1);
   });
@@ -199,8 +206,9 @@ describe('OptionalValidators', () => {
   it('should skip validation for undefined optional field', () => {
     // Optional field not provided - should not throw
     const msg = new OptionalValidators({
-      requiredPositive: 1,
+      requiredPositive: 1 as Positive<number>,
       optionalPositive: undefined,
+      nullablePositive: null,
     });
     assert.strictEqual(msg.optionalPositive, undefined);
   });
@@ -208,8 +216,9 @@ describe('OptionalValidators', () => {
   it('should validate optional field when provided', () => {
     assert.throws(
       () => new OptionalValidators({
-        requiredPositive: 1,
-        optionalPositive: 0, // Invalid: not positive
+        requiredPositive: 1 as Positive<number>,
+        optionalPositive: 0 as Positive<number>, // Invalid: not positive
+        nullablePositive: null,
       }),
       ValidationError
     );
@@ -217,7 +226,7 @@ describe('OptionalValidators', () => {
 
   it('should skip validation for null nullable field', () => {
     const msg = new OptionalValidators({
-      requiredPositive: 1,
+      requiredPositive: 1 as Positive<number>,
       nullablePositive: null,
     });
     assert.strictEqual(msg.nullablePositive, null);
@@ -227,9 +236,9 @@ describe('OptionalValidators', () => {
 describe('ArrayValidators', () => {
   it('should accept valid arrays', () => {
     const msg = new ArrayValidators({
-      nonEmptyArray: ['hello'],
-      minLengthArray: [1],
-      maxLengthArray: [1, 2, 3],
+      nonEmptyArray: ['hello'] as NonEmpty<string[]>,
+      minLengthArray: [1] as MinLength<number[], 1>,
+      maxLengthArray: [1, 2, 3] as MaxLength<number[], 10>,
     });
     assert.strictEqual(msg.nonEmptyArray.length, 1);
   });
@@ -237,9 +246,9 @@ describe('ArrayValidators', () => {
   it('should reject empty array for NonEmpty', () => {
     assert.throws(
       () => new ArrayValidators({
-        nonEmptyArray: [],
-        minLengthArray: [1],
-        maxLengthArray: [1],
+        nonEmptyArray: [] as unknown as NonEmpty<string[]>,
+        minLengthArray: [1] as MinLength<number[], 1>,
+        maxLengthArray: [1] as MaxLength<number[], 10>,
       }),
       ValidationError
     );
@@ -249,10 +258,10 @@ describe('ArrayValidators', () => {
 describe('BigintValidators', () => {
   it('should accept valid bigint values', () => {
     const msg = new BigintValidators({
-      positiveBigint: 1n,
-      minBigint: 0n,
-      maxBigint: 1000n,
-      rangeBigint: 50n,
+      positiveBigint: 1n as Positive<bigint>,
+      minBigint: 0n as Min<bigint, 0n>,
+      maxBigint: 1000n as Max<bigint, 1000000n>,
+      rangeBigint: 50n as Range<bigint, 0n, 100n>,
     });
     assert.strictEqual(msg.positiveBigint, 1n);
   });
@@ -260,10 +269,10 @@ describe('BigintValidators', () => {
   it('should reject invalid positive bigint', () => {
     assert.throws(
       () => new BigintValidators({
-        positiveBigint: 0n,
-        minBigint: 0n,
-        maxBigint: 1000n,
-        rangeBigint: 50n,
+        positiveBigint: 0n as Positive<bigint>,
+        minBigint: 0n as Min<bigint, 0n>,
+        maxBigint: 1000n as Max<bigint, 1000000n>,
+        rangeBigint: 50n as Range<bigint, 0n, 100n>,
       }),
       ValidationError
     );
@@ -273,10 +282,10 @@ describe('BigintValidators', () => {
 describe('validateAll', () => {
   it('should collect all validation errors', () => {
     const errors = NumericSignValidators.validateAll({
-      positiveNumber: 0,
-      negativeNumber: 0,
-      nonNegativeNumber: -1,
-      nonPositiveNumber: 1,
+      positiveNumber: 0 as Positive<number>,
+      negativeNumber: 0 as Negative<number>,
+      nonNegativeNumber: -1 as NonNegative<number>,
+      nonPositiveNumber: 1 as NonPositive<number>,
     });
     // All four fields are invalid
     assert.strictEqual(errors.length, 4);
@@ -284,10 +293,10 @@ describe('validateAll', () => {
 
   it('should return empty array for valid data', () => {
     const errors = NumericSignValidators.validateAll({
-      positiveNumber: 1,
-      negativeNumber: -1,
-      nonNegativeNumber: 0,
-      nonPositiveNumber: 0,
+      positiveNumber: 1 as Positive<number>,
+      negativeNumber: -1 as Negative<number>,
+      nonNegativeNumber: 0 as NonNegative<number>,
+      nonPositiveNumber: 0 as NonPositive<number>,
     });
     assert.strictEqual(errors.length, 0);
   });

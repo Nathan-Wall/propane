@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-date-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 export class MapDateKey extends Message<MapDateKey.Data> {
   static TYPE_TAG = Symbol("MapDateKey");
@@ -9,76 +9,91 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   #dateValues!: ImmutableMap<ImmutableDate, number>;
   #urlValues!: ImmutableMap<ImmutableUrl, string>;
   #optionalDateMap!: ImmutableMap<ImmutableDate, boolean> | undefined;
-  constructor(props?: MapDateKey.Value) {
+  constructor(props?: MapDateKey.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && MapDateKey.EMPTY) return MapDateKey.EMPTY;
     super(MapDateKey.TYPE_TAG, "MapDateKey");
-    this.#dateValues = props ? props.dateValues === undefined || props.dateValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.dateValues).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : new ImmutableMap();
-    this.#urlValues = props ? props.urlValues === undefined || props.urlValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.urlValues).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])) : new ImmutableMap();
-    this.#optionalDateMap = props ? props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])) : undefined;
+    this.#dateValues = props ? (props.dateValues === undefined || props.dateValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.dateValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]))) as ImmutableMap<ImmutableDate, number> : new ImmutableMap();
+    this.#urlValues = props ? (props.urlValues === undefined || props.urlValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.urlValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableUrl.from(k as URL), v]))) as ImmutableMap<ImmutableUrl, string> : new ImmutableMap();
+    this.#optionalDateMap = props ? (props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]))) as ImmutableMap<ImmutableDate, boolean> : undefined;
     if (!props) MapDateKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapDateKey.Data>[] {
     return [{
       name: "dateValues",
       fieldNumber: null,
-      getValue: () => this.#dateValues
+      getValue: () => this.#dateValues as Map<Date, number> | Iterable<[Date, number]>
     }, {
       name: "urlValues",
       fieldNumber: null,
-      getValue: () => this.#urlValues
+      getValue: () => this.#urlValues as Map<URL, string> | Iterable<[URL, string]>
     }, {
       name: "optionalDateMap",
       fieldNumber: null,
-      getValue: () => this.#optionalDateMap
+      getValue: () => this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): MapDateKey.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): MapDateKey.Data {
     const props = {} as Partial<MapDateKey.Data>;
     const dateValuesValue = entries["dateValues"];
     if (dateValuesValue === undefined) throw new Error("Missing required property \"dateValues\".");
-    const dateValuesMapValue = dateValuesValue === undefined || dateValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(dateValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v]));
-    if (!((dateValuesMapValue instanceof ImmutableMap || dateValuesMapValue instanceof Map) && [...(dateValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey instanceof Date || mapKey instanceof ImmutableDate) && typeof mapValue === "number"))) throw new Error("Invalid value for property \"dateValues\".");
-    props.dateValues = dateValuesMapValue as ImmutableMap<ImmutableDate, number>;
+    const dateValuesMapValue = dateValuesValue === undefined || dateValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(dateValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]));
+    if (!((dateValuesMapValue as object instanceof ImmutableMap || dateValuesMapValue as object instanceof Map) && [...(dateValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "number"))) throw new Error("Invalid value for property \"dateValues\".");
+    props.dateValues = dateValuesMapValue as Map<Date, number> | Iterable<[Date, number]>;
     const urlValuesValue = entries["urlValues"];
     if (urlValuesValue === undefined) throw new Error("Missing required property \"urlValues\".");
-    const urlValuesMapValue = urlValuesValue === undefined || urlValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(urlValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v]));
-    if (!((urlValuesMapValue instanceof ImmutableMap || urlValuesMapValue instanceof Map) && [...(urlValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey instanceof URL || mapKey instanceof ImmutableUrl) && typeof mapValue === "string"))) throw new Error("Invalid value for property \"urlValues\".");
-    props.urlValues = urlValuesMapValue as ImmutableMap<ImmutableUrl, string>;
+    const urlValuesMapValue = urlValuesValue === undefined || urlValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(urlValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableUrl.from(k as URL), v]));
+    if (!((urlValuesMapValue as object instanceof ImmutableMap || urlValuesMapValue as object instanceof Map) && [...(urlValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof URL || mapKey as object instanceof ImmutableUrl) && typeof mapValue === "string"))) throw new Error("Invalid value for property \"urlValues\".");
+    props.urlValues = urlValuesMapValue as Map<URL, string> | Iterable<[URL, string]>;
     const optionalDateMapValue = entries["optionalDateMap"];
     const optionalDateMapNormalized = optionalDateMapValue === null ? undefined : optionalDateMapValue;
-    const optionalDateMapMapValue = optionalDateMapNormalized === undefined || optionalDateMapNormalized === null ? optionalDateMapNormalized : new ImmutableMap(Array.from(optionalDateMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v]));
-    if (optionalDateMapMapValue !== undefined && !((optionalDateMapMapValue instanceof ImmutableMap || optionalDateMapMapValue instanceof Map) && [...(optionalDateMapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey instanceof Date || mapKey instanceof ImmutableDate) && typeof mapValue === "boolean"))) throw new Error("Invalid value for property \"optionalDateMap\".");
-    props.optionalDateMap = optionalDateMapMapValue as ImmutableMap<ImmutableDate, boolean>;
+    const optionalDateMapMapValue = optionalDateMapNormalized === undefined || optionalDateMapNormalized === null ? optionalDateMapNormalized : new ImmutableMap(Array.from(optionalDateMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]));
+    if (optionalDateMapMapValue !== undefined && !((optionalDateMapMapValue as object instanceof ImmutableMap || optionalDateMapMapValue as object instanceof Map) && [...(optionalDateMapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "boolean"))) throw new Error("Invalid value for property \"optionalDateMap\".");
+    props.optionalDateMap = optionalDateMapMapValue as Map<Date, boolean> | Iterable<[Date, boolean]>;
     return props as MapDateKey.Data;
   }
-  override [WITH_CHILD](key: string | number, child: unknown): MapDateKey {
+  static from(value: MapDateKey.Value): MapDateKey {
+    return value instanceof MapDateKey ? value : new MapDateKey(value);
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
       case "dateValues":
         return new (this.constructor as typeof MapDateKey)({
           dateValues: child as ImmutableMap<ImmutableDate, number>,
           urlValues: this.#urlValues,
           optionalDateMap: this.#optionalDateMap
-        });
+        } as unknown as MapDateKey.Value) as this;
       case "urlValues":
         return new (this.constructor as typeof MapDateKey)({
           dateValues: this.#dateValues,
           urlValues: child as ImmutableMap<ImmutableUrl, string>,
           optionalDateMap: this.#optionalDateMap
-        });
+        } as unknown as MapDateKey.Value) as this;
       case "optionalDateMap":
         return new (this.constructor as typeof MapDateKey)({
           dateValues: this.#dateValues,
           urlValues: this.#urlValues,
           optionalDateMap: child as ImmutableMap<ImmutableDate, boolean>
-        });
+        } as unknown as MapDateKey.Value) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["dateValues", this.#dateValues] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
-    yield ["urlValues", this.#urlValues] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
-    yield ["optionalDateMap", this.#optionalDateMap] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["dateValues", this.#dateValues] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["urlValues", this.#urlValues] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["optionalDateMap", this.#optionalDateMap] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof MapDateKey>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get dateValues(): ImmutableMap<ImmutableDate, number> {
     return this.#dateValues;
@@ -97,10 +112,10 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     const dateValuesMapNext = new Map(dateValuesMapEntries);
     dateValuesMapNext.clear();
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   clearOptionalDateMap() {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -110,10 +125,10 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
     optionalDateMapMapNext.clear();
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   clearUrlValues() {
     const urlValuesCurrent = this.urlValues;
@@ -123,57 +138,54 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     const urlValuesMapNext = new Map(urlValuesMapEntries);
     urlValuesMapNext.clear();
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  deleteDateValuesEntry(key: ImmutableDate | Date) {
+  deleteDateValue(key: ImmutableDate | Date) {
     const dateValuesCurrent = this.dateValues;
-    if (!dateValuesCurrent?.has(key)) return this;
+    const k = ImmutableDate.from(key);
+    if (!dateValuesCurrent?.has(k)) return this;
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
-    dateValuesMapNext.delete(key);
+    dateValuesMapNext.delete(k);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
-  }
-  deleteOptionalDateMap() {
-    return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   deleteOptionalDateMapEntry(key: ImmutableDate | Date) {
     const optionalDateMapCurrent = this.optionalDateMap;
-    if (!optionalDateMapCurrent?.has(key)) return this;
+    const k = ImmutableDate.from(key);
+    if (!optionalDateMapCurrent?.has(k)) return this;
     const optionalDateMapMapSource = this.#optionalDateMap;
     const optionalDateMapMapEntries = optionalDateMapMapSource === undefined ? [] : [...optionalDateMapMapSource.entries()];
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
-    optionalDateMapMapNext.delete(key);
+    optionalDateMapMapNext.delete(k);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  deleteUrlValuesEntry(key: ImmutableUrl | URL) {
+  deleteUrlValue(key: ImmutableUrl | URL) {
     const urlValuesCurrent = this.urlValues;
-    if (!urlValuesCurrent?.has(key)) return this;
+    const k = ImmutableUrl.from(key);
+    if (!urlValuesCurrent?.has(k)) return this;
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
-    urlValuesMapNext.delete(key);
+    urlValuesMapNext.delete(k);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  filterDateValuesEntries(predicate: (value: number, key: ImmutableDate | Date) => boolean) {
+  filterDateValues(predicate: (value: number, key: ImmutableDate | Date) => boolean) {
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
@@ -182,10 +194,10 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     }
     if (this.dateValues === dateValuesMapNext as unknown || this.dateValues?.equals(dateValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   filterOptionalDateMapEntries(predicate: (value: boolean, key: ImmutableDate | Date) => boolean) {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -196,12 +208,12 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     }
     if (this.optionalDateMap === optionalDateMapMapNext as unknown || this.optionalDateMap?.equals(optionalDateMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  filterUrlValuesEntries(predicate: (value: string, key: ImmutableUrl | URL) => boolean) {
+  filterUrlValues(predicate: (value: string, key: ImmutableUrl | URL) => boolean) {
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
@@ -210,112 +222,112 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     }
     if (this.urlValues === urlValuesMapNext as unknown || this.urlValues?.equals(urlValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  mapDateValuesEntries(mapper: (value: number, key: ImmutableDate | Date) => [ImmutableDate | Date, number]) {
+  mapDateValues(mapper: (value: number, key: ImmutableDate | Date) => [ImmutableDate | Date, number]) {
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
-    const dateValuesMappedEntries = [];
+    const dateValuesMappedEntries: [ImmutableDate | Date, number][] = [];
     for (const [entryKey, entryValue] of dateValuesMapNext) {
       const mappedEntry = mapper(entryValue, entryKey);
       dateValuesMappedEntries.push(mappedEntry);
     }
     dateValuesMapNext.clear();
     for (const [newKey, newValue] of dateValuesMappedEntries) {
-      dateValuesMapNext.set(newKey, newValue);
+      dateValuesMapNext.set(ImmutableDate.from(newKey), newValue);
     }
     if (this.dateValues === dateValuesMapNext as unknown || this.dateValues?.equals(dateValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   mapOptionalDateMapEntries(mapper: (value: boolean, key: ImmutableDate | Date) => [ImmutableDate | Date, boolean]) {
     const optionalDateMapMapSource = this.#optionalDateMap;
     const optionalDateMapMapEntries = optionalDateMapMapSource === undefined ? [] : [...optionalDateMapMapSource.entries()];
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
-    const optionalDateMapMappedEntries = [];
+    const optionalDateMapMappedEntries: [ImmutableDate | Date, boolean][] = [];
     for (const [entryKey, entryValue] of optionalDateMapMapNext) {
       const mappedEntry = mapper(entryValue, entryKey);
       optionalDateMapMappedEntries.push(mappedEntry);
     }
     optionalDateMapMapNext.clear();
     for (const [newKey, newValue] of optionalDateMapMappedEntries) {
-      optionalDateMapMapNext.set(newKey, newValue);
+      optionalDateMapMapNext.set(ImmutableDate.from(newKey), newValue);
     }
     if (this.optionalDateMap === optionalDateMapMapNext as unknown || this.optionalDateMap?.equals(optionalDateMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  mapUrlValuesEntries(mapper: (value: string, key: ImmutableUrl | URL) => [ImmutableUrl | URL, string]) {
+  mapUrlValues(mapper: (value: string, key: ImmutableUrl | URL) => [ImmutableUrl | URL, string]) {
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
-    const urlValuesMappedEntries = [];
+    const urlValuesMappedEntries: [ImmutableUrl | URL, string][] = [];
     for (const [entryKey, entryValue] of urlValuesMapNext) {
       const mappedEntry = mapper(entryValue, entryKey);
       urlValuesMappedEntries.push(mappedEntry);
     }
     urlValuesMapNext.clear();
     for (const [newKey, newValue] of urlValuesMappedEntries) {
-      urlValuesMapNext.set(newKey, newValue);
+      urlValuesMapNext.set(ImmutableUrl.from(newKey), newValue);
     }
     if (this.urlValues === urlValuesMapNext as unknown || this.urlValues?.equals(urlValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  mergeDateValuesEntries(entries: ImmutableMap<ImmutableDate | Date, number> | ReadonlyMap<ImmutableDate | Date, number> | Iterable<[ImmutableDate | Date, number]>) {
+  mergeDateValues(entries: ImmutableMap<ImmutableDate | Date, number> | ReadonlyMap<ImmutableDate | Date, number> | Iterable<[ImmutableDate | Date, number]>) {
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
-      dateValuesMapNext.set(mergeKey, mergeValue);
+      dateValuesMapNext.set(ImmutableDate.from(mergeKey), mergeValue);
     }
     if (this.dateValues === dateValuesMapNext as unknown || this.dateValues?.equals(dateValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   mergeOptionalDateMapEntries(entries: ImmutableMap<ImmutableDate | Date, boolean> | ReadonlyMap<ImmutableDate | Date, boolean> | Iterable<[ImmutableDate | Date, boolean]>) {
     const optionalDateMapMapSource = this.#optionalDateMap;
     const optionalDateMapMapEntries = optionalDateMapMapSource === undefined ? [] : [...optionalDateMapMapSource.entries()];
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
-      optionalDateMapMapNext.set(mergeKey, mergeValue);
+      optionalDateMapMapNext.set(ImmutableDate.from(mergeKey), mergeValue);
     }
     if (this.optionalDateMap === optionalDateMapMapNext as unknown || this.optionalDateMap?.equals(optionalDateMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  mergeUrlValuesEntries(entries: ImmutableMap<ImmutableUrl | URL, string> | ReadonlyMap<ImmutableUrl | URL, string> | Iterable<[ImmutableUrl | URL, string]>) {
+  mergeUrlValues(entries: ImmutableMap<ImmutableUrl | URL, string> | ReadonlyMap<ImmutableUrl | URL, string> | Iterable<[ImmutableUrl | URL, string]>) {
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
     for (const [mergeKey, mergeValue] of entries) {
-      urlValuesMapNext.set(mergeKey, mergeValue);
+      urlValuesMapNext.set(ImmutableUrl.from(mergeKey), mergeValue);
     }
     if (this.urlValues === urlValuesMapNext as unknown || this.urlValues?.equals(urlValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   set(updates: Partial<SetUpdates<MapDateKey.Data>>) {
     const data = this.toData();
@@ -324,118 +336,130 @@ export class MapDateKey extends Message<MapDateKey.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof MapDateKey)(data));
+    return this.$update(new (this.constructor as typeof MapDateKey)(data) as this);
   }
-  setDateValues(value: Map<Date, number> | Iterable<[Date, number]>) {
-    return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v])),
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
-  }
-  setDateValuesEntry(key: ImmutableDate | Date, value: number) {
+  setDateValue(key: ImmutableDate | Date, value: number) {
     const dateValuesCurrent = this.dateValues;
-    if (dateValuesCurrent?.has(key)) {
-      const existing = dateValuesCurrent.get(key);
+    const k = ImmutableDate.from(key);
+    if (dateValuesCurrent?.has(k)) {
+      const existing = dateValuesCurrent.get(k);
       if (equals(existing, value)) return this;
     }
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
-    dateValuesMapNext.set(key, value);
+    dateValuesMapNext.set(k, value);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  setOptionalDateMap(value: Map<Date, boolean> | Iterable<[Date, boolean]>) {
+  setDateValues(value: Map<Date, number> | Iterable<[Date, number]>) {
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableDate ? k : new ImmutableDate(k), v]))
-    }));
+      dateValues: (value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [ImmutableDate.from(k), v]))) as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    }) as this);
+  }
+  setOptionalDateMap(value: Map<Date, boolean> | Iterable<[Date, boolean]> | undefined) {
+    return this.$update(new (this.constructor as typeof MapDateKey)({
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: (value === undefined || value === null ? value : new ImmutableMap(Array.from(value).map(([k, v]) => [ImmutableDate.from(k), v]))) as Map<Date, boolean> | Iterable<[Date, boolean]>
+    }) as this);
   }
   setOptionalDateMapEntry(key: ImmutableDate | Date, value: boolean) {
     const optionalDateMapCurrent = this.optionalDateMap;
-    if (optionalDateMapCurrent?.has(key)) {
-      const existing = optionalDateMapCurrent.get(key);
+    const k = ImmutableDate.from(key);
+    if (optionalDateMapCurrent?.has(k)) {
+      const existing = optionalDateMapCurrent.get(k);
       if (equals(existing, value)) return this;
     }
     const optionalDateMapMapSource = this.#optionalDateMap;
     const optionalDateMapMapEntries = optionalDateMapMapSource === undefined ? [] : [...optionalDateMapMapSource.entries()];
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
-    optionalDateMapMapNext.set(key, value);
+    optionalDateMapMapNext.set(k, value);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  setUrlValues(value: Map<URL, string> | Iterable<[URL, string]>) {
-    return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [k instanceof ImmutableUrl ? k : new ImmutableUrl(k), v])),
-      optionalDateMap: this.#optionalDateMap
-    }));
-  }
-  setUrlValuesEntry(key: ImmutableUrl | URL, value: string) {
+  setUrlValue(key: ImmutableUrl | URL, value: string) {
     const urlValuesCurrent = this.urlValues;
-    if (urlValuesCurrent?.has(key)) {
-      const existing = urlValuesCurrent.get(key);
+    const k = ImmutableUrl.from(key);
+    if (urlValuesCurrent?.has(k)) {
+      const existing = urlValuesCurrent.get(k);
       if (equals(existing, value)) return this;
     }
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
-    urlValuesMapNext.set(key, value);
+    urlValuesMapNext.set(k, value);
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  updateDateValuesEntry(key: ImmutableDate | Date, updater: (currentValue: number | undefined) => number) {
+  setUrlValues(value: Map<URL, string> | Iterable<[URL, string]>) {
+    return this.$update(new (this.constructor as typeof MapDateKey)({
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: (value === undefined || value === null ? new ImmutableMap() : new ImmutableMap(Array.from(value).map(([k, v]) => [ImmutableUrl.from(k), v]))) as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    }) as this);
+  }
+  unsetOptionalDateMap() {
+    return this.$update(new (this.constructor as typeof MapDateKey)({
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>
+    }) as this);
+  }
+  updateDateValue(key: ImmutableDate | Date, updater: (currentValue: number | undefined) => number) {
     const dateValuesMapSource = this.#dateValues;
     const dateValuesMapEntries = [...dateValuesMapSource.entries()];
     const dateValuesMapNext = new Map(dateValuesMapEntries);
-    const currentValue = dateValuesMapNext.get(key);
+    const k = ImmutableDate.from(key);
+    const currentValue = dateValuesMapNext.get(k);
     const updatedValue = updater(currentValue);
-    dateValuesMapNext.set(key, updatedValue);
+    dateValuesMapNext.set(k, updatedValue);
     if (this.dateValues === dateValuesMapNext as unknown || this.dateValues?.equals(dateValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: dateValuesMapNext,
-      urlValues: this.#urlValues,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
   updateOptionalDateMapEntry(key: ImmutableDate | Date, updater: (currentValue: boolean | undefined) => boolean) {
     const optionalDateMapMapSource = this.#optionalDateMap;
     const optionalDateMapMapEntries = optionalDateMapMapSource === undefined ? [] : [...optionalDateMapMapSource.entries()];
     const optionalDateMapMapNext = new Map(optionalDateMapMapEntries);
-    const currentValue = optionalDateMapMapNext.get(key);
+    const k = ImmutableDate.from(key);
+    const currentValue = optionalDateMapMapNext.get(k);
     const updatedValue = updater(currentValue);
-    optionalDateMapMapNext.set(key, updatedValue);
+    optionalDateMapMapNext.set(k, updatedValue);
     if (this.optionalDateMap === optionalDateMapMapNext as unknown || this.optionalDateMap?.equals(optionalDateMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: this.#urlValues,
-      optionalDateMap: optionalDateMapMapNext
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
-  updateUrlValuesEntry(key: ImmutableUrl | URL, updater: (currentValue: string | undefined) => string) {
+  updateUrlValue(key: ImmutableUrl | URL, updater: (currentValue: string | undefined) => string) {
     const urlValuesMapSource = this.#urlValues;
     const urlValuesMapEntries = [...urlValuesMapSource.entries()];
     const urlValuesMapNext = new Map(urlValuesMapEntries);
-    const currentValue = urlValuesMapNext.get(key);
+    const k = ImmutableUrl.from(key);
+    const currentValue = urlValuesMapNext.get(k);
     const updatedValue = updater(currentValue);
-    urlValuesMapNext.set(key, updatedValue);
+    urlValuesMapNext.set(k, updatedValue);
     if (this.urlValues === urlValuesMapNext as unknown || this.urlValues?.equals(urlValuesMapNext)) return this;
     return this.$update(new (this.constructor as typeof MapDateKey)({
-      dateValues: this.#dateValues,
-      urlValues: urlValuesMapNext,
-      optionalDateMap: this.#optionalDateMap
-    }));
+      dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+      urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
+      optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+    } as unknown as MapDateKey.Value) as this);
   }
 }
 export namespace MapDateKey {

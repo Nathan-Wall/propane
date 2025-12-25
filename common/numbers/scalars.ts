@@ -29,6 +29,7 @@ export {
   decimalInRangeExclusive,
   isDecimal,
   canBeDecimal,
+  isValidDecimalString,
   type ComparisonResult,
 } from './decimal.js';
 export {

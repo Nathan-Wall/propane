@@ -3,6 +3,7 @@ import path from 'node:path';
 import { parse } from '@babel/parser';
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
+import { findParentTypeAlias, getSourceFilename } from './babel-helpers.js';
 
 export function resolveImportPath(
   importSource: unknown,
@@ -33,6 +34,32 @@ export function resolveImportPath(
   return null;
 }
 
+/**
+ * Check if a type annotation represents a message type.
+ * This includes:
+ * - Raw object literal types: `type Foo = { ... }`
+ * - Message/Table wrapped types: `type Foo = Message<{ ... }>`
+ */
+function isMessageTypeAnnotation(typeAnnotation: t.TSType): boolean {
+  // Raw object literal type
+  if (typeAnnotation.type === 'TSTypeLiteral') {
+    return true;
+  }
+
+  // Message<{...}> or Table<{...}> wrapper
+  if (
+    typeAnnotation.type === 'TSTypeReference'
+    && typeAnnotation.typeName.type === 'Identifier'
+    && (typeAnnotation.typeName.name === 'Message'
+      || typeAnnotation.typeName.name === 'Table')
+    && typeAnnotation.typeParameters?.params?.[0]?.type === 'TSTypeLiteral'
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function analyzePropaneModule(filename: string): Set<string> {
   try {
     const source = fs.readFileSync(filename, 'utf8');
@@ -52,7 +79,7 @@ export function analyzePropaneModule(filename: string): Set<string> {
       if (
         declaration?.type === 'TSTypeAliasDeclaration'
         && declaration.id?.type === 'Identifier'
-        && declaration.typeAnnotation?.type === 'TSTypeLiteral'
+        && isMessageTypeAnnotation(declaration.typeAnnotation)
       ) {
         names.add(declaration.id.name);
       }
@@ -87,11 +114,8 @@ export function getImportedName(
   return null;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 export function getFilename(nodePath: NodePath<t.Node>): string | null {
-  const typePath = (nodePath as any).findParent(
-    (p: any) => p.isTSTypeAliasDeclaration()
-  );
+  const typePath = findParentTypeAlias(nodePath);
   if (!typePath) return null;
-  return typePath.hub?.file?.opts?.filename ?? null;
+  return getSourceFilename(typePath) || null;
 }

@@ -2,15 +2,30 @@
  * Test that demonstrates the stale reference bug with real React components
  * using memoPropane.
  *
- * This test uses react-test-renderer to render actual React components
+ * This test uses @testing-library/react to render actual React components
  * and verify the bug occurs in a real React environment.
  */
 
-import React, { useRef, useEffect } from 'react';
-import TestRenderer, { act } from 'react-test-renderer';
-import { usePropaneState, memoPropane, update } from '../react/index.ts';
-import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
-import { assert } from './assert.ts';
+// Set up DOM globals before importing React/testing-library
+import { Window } from 'happy-dom';
+const happyDomWindow = new Window();
+
+// Use defineProperty to avoid "has only a getter" errors
+Object.defineProperty(globalThis, 'document', { value: happyDomWindow.document, configurable: true });
+Object.defineProperty(globalThis, 'window', { value: happyDomWindow, configurable: true });
+Object.defineProperty(globalThis, 'navigator', { value: happyDomWindow.navigator, configurable: true });
+Object.defineProperty(globalThis, 'HTMLElement', { value: happyDomWindow.HTMLElement, configurable: true });
+Object.defineProperty(globalThis, 'Element', { value: happyDomWindow.Element, configurable: true });
+Object.defineProperty(globalThis, 'Node', { value: happyDomWindow.Node, configurable: true });
+Object.defineProperty(globalThis, 'Text', { value: happyDomWindow.Text, configurable: true });
+Object.defineProperty(globalThis, 'DocumentFragment', { value: happyDomWindow.DocumentFragment, configurable: true });
+
+import React, { useRef, useEffect, act } from 'react';
+import { render, cleanup } from '@testing-library/react';
+import { usePropaneState, memoPropane, update } from '../react/index.js';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.js';
+import { assert } from './assert.js';
+import { test } from 'node:test';
 
 // Track render counts
 let innerRenderCount = 0;
@@ -105,12 +120,8 @@ function testMemoPropaneSkipsRerenderOnEqualInner() {
   console.log('Testing: memoPropane skips re-render when inner is equal...');
   resetTestState();
 
-  let renderer: TestRenderer.ReactTestRenderer;
-
   // Initial render
-  act(() => {
-    renderer = TestRenderer.create(React.createElement(OuterComponent));
-  });
+  const { unmount } = render(React.createElement(OuterComponent));
 
   console.log(`  Initial render: outer=${outerRenderCount}, inner=${innerRenderCount}`);
   assert(outerRenderCount === 1, 'Outer should render once initially');
@@ -125,8 +136,9 @@ function testMemoPropaneSkipsRerenderOnEqualInner() {
   console.log(`  After setCounter(10): outer=${outerRenderCount}, inner=${innerRenderCount}`);
   console.log(`  Counter value: ${capturedOuterState!.counter}`);
 
-  assert(outerRenderCount === 2, 'Outer should re-render when counter changes');
-  assert(capturedOuterState!.counter === 10, 'Counter should be 10');
+  // Cast needed: previous asserts narrow to literal types, but act() mutates these
+  assert((outerRenderCount as number) === 2, 'Outer should re-render when counter changes');
+  assert((capturedOuterState!.counter as number) === 10, 'Counter should be 10');
 
   // Key assertion: inner should NOT re-render because inner.equals(newInner) is true
   assert(
@@ -136,21 +148,16 @@ function testMemoPropaneSkipsRerenderOnEqualInner() {
 
   console.log('memoPropane skips re-render when inner is equal: PASSED');
 
-  act(() => {
-    renderer.unmount();
-  });
+  unmount();
+  cleanup();
 }
 
 function testStaleRefCausesStateReversion() {
   console.log('Testing: stale ref causes state reversion (THE BUG)...');
   resetTestState();
 
-  let renderer: TestRenderer.ReactTestRenderer;
-
   // Initial render
-  act(() => {
-    renderer = TestRenderer.create(React.createElement(OuterComponent));
-  });
+  const { unmount } = render(React.createElement(OuterComponent));
 
   const initialInnerRef = capturedInnerRef;
   console.log(`  Initial: counter=${capturedOuterState!.counter}, inner="${initialInnerRef!.value}"`);
@@ -211,7 +218,10 @@ function testStaleRefCausesStateReversion() {
     assert(false, `Unexpected counter value: ${finalCounter}`);
   }
 
-  act(() => {
-    renderer.unmount();
-  });
+  unmount();
+  cleanup();
 }
+
+test('runReactMemoStaleRefTests', () => {
+  runReactMemoStaleRefTests();
+});

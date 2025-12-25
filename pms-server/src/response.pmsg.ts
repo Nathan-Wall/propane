@@ -13,24 +13,21 @@
  * });
  * ```
  */
-import { ensure } from '../../common/assert/index.js';
-import { emsg } from '../../common/strings/msg/index.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString } from "../../runtime/index.js";
-import type { MessagePropDescriptor, MessageConstructor, DataObject, ImmutableArray, ImmutableSet } from "../../runtime/index.js";
-export class Response<
-  T extends Message<any>,
-  A extends unknown[] = unknown[],
-  TConstructor extends MessageConstructor<T, A> = MessageConstructor<T, A>
-> extends Message<Response.Data<T>> {
+import { Message } from '@/runtime/index.js';
+import type { MessagePropDescriptor, MessageConstructor, MessageValue, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../../runtime/index.js";
+import { WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString, SKIP, ensure } from "../../runtime/index.js";
+export class Response<T extends Message<any>> extends Message<Response.Data<T>> {
   static TYPE_TAG = Symbol("Response");
-  #body: T;
-  #headers: ImmutableMap<string, string> | undefined;
-  #tClass: TConstructor;
-  constructor(tClass: TConstructor, props?: Response.Value<T, A>) {
+  #body!: T;
+  #headers!: ImmutableMap<string, string> | undefined;
+  #tClass!: MessageConstructor<T>;
+  constructor(tClass: MessageConstructor<T>, props?: Response.Value<T>, options?: {
+    skipValidation?: boolean;
+  }) {
     super(Response.TYPE_TAG, `Response<${tClass.$typeName}>`);
     this.#tClass = tClass;
-    this.#body = props ? props.body : new this.#tClass(...[] as unknown as A);
-    this.#headers = props ? props.headers === undefined || props.headers === null ? props.headers : props.headers instanceof ImmutableMap ? props.headers : new ImmutableMap(props.headers) : undefined;
+    this.#body = (props ? props.body : new this.#tClass(undefined)) as T;
+    this.#headers = props ? (props.headers === undefined || props.headers === null ? props.headers : props.headers as object instanceof ImmutableMap ? props.headers : new ImmutableMap(props.headers as Iterable<[unknown, unknown]>)) as ImmutableMap<string, string> : undefined;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Response.Data<T>>[] {
     return [{
@@ -40,7 +37,7 @@ export class Response<
     }, {
       name: "headers",
       fieldNumber: 2,
-      getValue: () => this.#headers
+      getValue: () => this.#headers as Map<string, string> | Iterable<[string, string]>
     }];
   }
   protected $fromEntries(entries: Record<string, unknown>): Response.Data<T> {
@@ -51,8 +48,8 @@ export class Response<
     const headersValue = entries["2"] === undefined ? entries["headers"] : entries["2"];
     const headersNormalized = headersValue === null ? undefined : headersValue;
     const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : headersNormalized as object instanceof ImmutableMap ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
-    if (headersMapValue !== undefined && !((headersMapValue instanceof ImmutableMap || headersMapValue instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
-    props.headers = headersMapValue as ImmutableMap<string, string>;
+    if (headersMapValue !== undefined && !((headersMapValue as object instanceof ImmutableMap || headersMapValue as object instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
+    props.headers = headersMapValue as Map<string, string> | Iterable<[string, string]>;
     return props as Response.Data<T>;
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
@@ -61,38 +58,46 @@ export class Response<
         return new Response(this.#tClass, {
           body: this.#body,
           headers: child as ImmutableMap<string, string>
-        }) as this;
+        } as unknown as Response.Value<T>) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["headers", this.#headers] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["headers", this.#headers] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
-  static override bind<
-    T extends Message<any>,
-    A extends unknown[] = unknown[],
-    TConstructor extends MessageConstructor<T, A> = MessageConstructor<T, A>
-  >(
-    tClass: TConstructor,
-  ) {
-    const boundCtor = function (props: Response.Data<T>) {
-      return new Response<T, A>(tClass, props);
+  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+    (props: Response.Value<T>): Response<T>;
+    new (props: Response.Value<T>): Response<T>;
+    deserialize: (data: string, options?: { skipValidation?: boolean }) => Response<T>;
+    $typeName: string;
+  } {
+    const boundCtor = function (props: Response.Value<T>) {
+      const body = props.body instanceof tClass ? props.body : new tClass(props.body as any);
+      return new Response(tClass, {
+        ...props,
+        body
+      });
     };
-    boundCtor.deserialize = (data: string) => {
-      const payload = ensure.simpleObject(
-        parseCerealString(data),
-        emsg`Expected an object when deserializing: ${data}`,
-      );
-      const proto = Response.prototype;
-      const props = proto.$fromEntries(payload);
-      return new Response<T, A>(
-        tClass,
-        props,
-      );
+    boundCtor.deserialize = (data: string, options?: { skipValidation?: boolean }) => {
+      const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+      return boundCtor(payload as Response.Data<T>);
     };
     boundCtor.$typeName = `Response<${tClass.$typeName}>`;
-    return boundCtor;
+    return boundCtor as {
+      (props: Response.Value<T>): Response<T>;
+      new (props: Response.Value<T>): Response<T>;
+      deserialize: (data: string, options?: { skipValidation?: boolean }) => Response<T>;
+      $typeName: string;
+    };
+  }
+  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: { skipValidation?: boolean }): Response<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const body = new tClass((payload["1"] ?? payload["body"]) as MessageValue<T>, options);
+    return new Response(tClass, {
+      ...(payload as Response.Data<T>),
+      body
+    }, options);
   }
   get body(): T {
     return this.#body;
@@ -109,13 +114,13 @@ export class Response<
     headersMapNext.clear();
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
   deleteHeaders() {
     return this.$update(new Response(this.#tClass, {
       body: this.#body
-    }) as this);
+    }) as this as this);
   }
   deleteHeadersEntry(key: string) {
     const headersCurrent = this.headers;
@@ -126,8 +131,8 @@ export class Response<
     headersMapNext.delete(key);
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
   filterHeadersEntries(predicate: (value: string, key: string) => boolean) {
     const headersMapSource = this.#headers;
@@ -139,14 +144,14 @@ export class Response<
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
   mapHeadersEntries(mapper: (value: string, key: string) => [string, string]) {
     const headersMapSource = this.#headers;
     const headersMapEntries = headersMapSource === undefined ? [] : [...headersMapSource.entries()];
     const headersMapNext = new Map(headersMapEntries);
-    const headersMappedEntries = [];
+    const headersMappedEntries: [string, string][] = [];
     for (const [entryKey, entryValue] of headersMapNext) {
       const mappedEntry = mapper(entryValue, entryKey);
       headersMappedEntries.push(mappedEntry);
@@ -158,8 +163,8 @@ export class Response<
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
   mergeHeadersEntries(entries: ImmutableMap<string, string> | ReadonlyMap<string, string> | Iterable<[string, string]>) {
     const headersMapSource = this.#headers;
@@ -171,20 +176,29 @@ export class Response<
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
+  }
+  set(updates: Partial<SetUpdates<Response.Data<T>>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new Response(this.#tClass, data) as this as this);
   }
   setBody(value: T) {
     return this.$update(new Response(this.#tClass, {
       body: value,
-      headers: this.#headers
-    }) as this);
+      headers: this.#headers as Map<string, string> | Iterable<[string, string]>
+    }) as this as this);
   }
-  setHeaders(value: Map<string, string> | Iterable<[string, string]>) {
+  setHeaders(value: Map<string, string> | Iterable<[string, string]> | undefined) {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)
-    }) as this);
+      headers: (value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, string> | Iterable<[string, string]>
+    }) as this as this);
   }
   setHeadersEntry(key: string, value: string) {
     const headersCurrent = this.headers;
@@ -198,8 +212,8 @@ export class Response<
     headersMapNext.set(key, value);
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
   updateHeadersEntry(key: string, updater: (currentValue: string | undefined) => string) {
     const headersMapSource = this.#headers;
@@ -211,8 +225,8 @@ export class Response<
     if (this.headers === headersMapNext as unknown || this.headers?.equals(headersMapNext)) return this;
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: headersMapNext
-    }) as this);
+      headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
+    } as unknown as Response.Value<T>) as this as this);
   }
 }
 export namespace Response {
@@ -220,8 +234,5 @@ export namespace Response {
     body: T;
     headers?: Map<string, string> | Iterable<[string, string]> | undefined;
   };
-  export type Value<
-    T extends Message<any>,
-    A extends unknown[],
-  > = Response<T, A> | Response.Data<T>;
+  export type Value<T extends Message<any>> = Response<T> | Response.Data<T>;
 }

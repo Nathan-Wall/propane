@@ -68,9 +68,10 @@ export type NonPositive<T extends numeric> = T & {
 
 /**
  * Bound type for numeric validators.
- * Allows number literals for number/bigint, string literals for decimals.
+ * Allows number literals for number, bigint literals for bigint,
+ * and string literals for decimals.
  */
-export type NumericBound = number | string;
+export type NumericBound = number | bigint | string;
 
 /**
  * Value must be greater than or equal to the minimum.

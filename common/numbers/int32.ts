@@ -5,7 +5,7 @@
  * validates values are within the 32-bit signed integer range.
  */
 
-import type { Brand } from '../types/brand.js';
+import type { Brand } from '@/runtime/common/types/brand.js';
 
 /**
  * Module-scoped namespace symbol for int32 type brand.

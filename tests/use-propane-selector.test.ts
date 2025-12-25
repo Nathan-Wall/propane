@@ -1,7 +1,8 @@
-import { assert } from './assert.ts';
-import { Message, DataObject } from '../runtime/message.ts';
-import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.ts';
-import { equals } from '../runtime/common/data/equals.ts';
+import { assert } from './assert.js';
+import { Message, DataObject } from '../runtime/message.js';
+import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.js';
+import { equals } from '../runtime/common/data/equals.js';
+import { test } from 'node:test';
 
 // Shared type tag for UserState - must be the same symbol for equals() to work
 const USER_STATE_TAG = Symbol('UserState');
@@ -28,7 +29,7 @@ class UserState extends Message<{ name: string; age: number }> {
   }
 
   protected $fromEntries(entries: Record<string, unknown>) {
-    return { name: entries.name as string, age: entries.age as number };
+    return { name: entries['name'] as string, age: entries['age'] as number };
   }
 
   get name() {
@@ -41,12 +42,12 @@ class UserState extends Message<{ name: string; age: number }> {
 
   setName(name: string) {
     const next = new UserState({ name, age: this.#age });
-    return this.$update(next);
+    return this.$update(next as this);
   }
 
   setAge(age: number) {
     const next = new UserState({ name: this.#name, age });
-    return this.$update(next);
+    return this.$update(next as this);
   }
 }
 
@@ -264,3 +265,7 @@ function testSelectorArraySelection() {
 
   console.log('Array selection passed.');
 }
+
+test('runUsePropaneSelectorTests', () => {
+  runUsePropaneSelectorTests();
+});

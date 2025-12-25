@@ -4,12 +4,21 @@
  */
 
 import type { ValidatorDefinition } from '../registry.js';
+import { isValidDecimalString } from '@/common/numbers/decimal.js';
 
 export const RangeDefinition: ValidatorDefinition = {
   name: 'Range',
 
   generateJs({ valueExpr, type, params, imports }) {
     const [min, max] = params as [number | bigint | string, number | bigint | string];
+
+    // Validate string bounds at build time
+    if (typeof min === 'string' && !isValidDecimalString(min)) {
+      throw new Error(`Invalid decimal bound in Range validator (min): '${min}'`);
+    }
+    if (typeof max === 'string' && !isValidDecimalString(max)) {
+      throw new Error(`Invalid decimal bound in Range validator (max): '${max}'`);
+    }
 
     if (type.kind === 'number') {
       return { condition: `${valueExpr} >= ${min} && ${valueExpr} <= ${max}` };
@@ -21,8 +30,17 @@ export const RangeDefinition: ValidatorDefinition = {
     }
     // For decimal or mixed numeric types, use runtime helper
     imports.add('inRange', '@propane/runtime');
-    const minArg = typeof min === 'string' ? `'${min}'` : String(min);
-    const maxArg = typeof max === 'string' ? `'${max}'` : String(max);
+    // String bounds are validated above, cast to AnyDecimal for type safety
+    const needsAnyDecimal = typeof min === 'string' || typeof max === 'string';
+    const minArg = typeof min === 'string'
+      ? `'${min}' as AnyDecimal`
+      : String(min);
+    const maxArg = typeof max === 'string'
+      ? `'${max}' as AnyDecimal`
+      : String(max);
+    if (needsAnyDecimal) {
+      imports.add('AnyDecimal', '@propane/runtime');
+    }
     return { condition: `inRange(${valueExpr}, ${minArg}, ${maxArg})` };
   },
 

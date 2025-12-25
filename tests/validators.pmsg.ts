@@ -6,11 +6,11 @@
  * Tests validation code generation for various validator types.
  */
 
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP, ValidationError, isInt32, isInt53, canBeDecimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, canBeDecimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
 import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53, decimal } from '@propane/types';
 
 // Test: Numeric sign validators
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates, AnyDecimal } from "../runtime/index.js";
 export class NumericSignValidators extends Message<NumericSignValidators.Data> {
   static TYPE_TAG = Symbol("NumericSignValidators");
   static readonly $typeName = "NumericSignValidators";
@@ -27,48 +27,55 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#positiveNumber = props ? props.positiveNumber : new Positive();
-    this.#negativeNumber = props ? props.negativeNumber : new Negative();
-    this.#nonNegativeNumber = props ? props.nonNegativeNumber : new NonNegative();
-    this.#nonPositiveNumber = props ? props.nonPositiveNumber : new NonPositive();
+    this.#positiveNumber = (props ? props.positiveNumber : undefined) as Positive<number>;
+    this.#negativeNumber = (props ? props.negativeNumber : undefined) as Negative<number>;
+    this.#nonNegativeNumber = (props ? props.nonNegativeNumber : undefined) as NonNegative<number>;
+    this.#nonPositiveNumber = (props ? props.nonPositiveNumber : undefined) as NonPositive<number>;
     if (!props) NumericSignValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumericSignValidators.Data>[] {
     return [{
       name: "positiveNumber",
       fieldNumber: 1,
-      getValue: () => this.#positiveNumber
+      getValue: () => this.#positiveNumber as Positive<number>
     }, {
       name: "negativeNumber",
       fieldNumber: 2,
-      getValue: () => this.#negativeNumber
+      getValue: () => this.#negativeNumber as Negative<number>
     }, {
       name: "nonNegativeNumber",
       fieldNumber: 3,
-      getValue: () => this.#nonNegativeNumber
+      getValue: () => this.#nonNegativeNumber as NonNegative<number>
     }, {
       name: "nonPositiveNumber",
       fieldNumber: 4,
-      getValue: () => this.#nonPositiveNumber
+      getValue: () => this.#nonPositiveNumber as NonPositive<number>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): NumericSignValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): NumericSignValidators.Data {
     const props = {} as Partial<NumericSignValidators.Data>;
     const positiveNumberValue = entries["1"] === undefined ? entries["positiveNumber"] : entries["1"];
     if (positiveNumberValue === undefined) throw new Error("Missing required property \"positiveNumber\".");
-    props.positiveNumber = positiveNumberValue;
+    props.positiveNumber = positiveNumberValue as Positive<number>;
     const negativeNumberValue = entries["2"] === undefined ? entries["negativeNumber"] : entries["2"];
     if (negativeNumberValue === undefined) throw new Error("Missing required property \"negativeNumber\".");
-    props.negativeNumber = negativeNumberValue;
+    props.negativeNumber = negativeNumberValue as Negative<number>;
     const nonNegativeNumberValue = entries["3"] === undefined ? entries["nonNegativeNumber"] : entries["3"];
     if (nonNegativeNumberValue === undefined) throw new Error("Missing required property \"nonNegativeNumber\".");
-    props.nonNegativeNumber = nonNegativeNumberValue;
+    props.nonNegativeNumber = nonNegativeNumberValue as NonNegative<number>;
     const nonPositiveNumberValue = entries["4"] === undefined ? entries["nonPositiveNumber"] : entries["4"];
     if (nonPositiveNumberValue === undefined) throw new Error("Missing required property \"nonPositiveNumber\".");
-    props.nonPositiveNumber = nonPositiveNumberValue;
+    props.nonPositiveNumber = nonPositiveNumberValue as NonPositive<number>;
     return props as NumericSignValidators.Data;
   }
+  static from(value: NumericSignValidators.Value): NumericSignValidators {
+    return value instanceof NumericSignValidators ? value : new NumericSignValidators(value);
+  }
   #validate(data: NumericSignValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.positiveNumber > 0)) {
       throw new ValidationError("positiveNumber", "must be positive", data.positiveNumber, "POSITIVE");
     }
@@ -114,6 +121,13 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof NumericSignValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get positiveNumber(): Positive<number> {
     return this.#positiveNumber;
   }
@@ -133,39 +147,39 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof NumericSignValidators)(data));
+    return this.$update(new (this.constructor as typeof NumericSignValidators)(data) as this);
   }
   setNegativeNumber(value: Negative<number>) {
     return this.$update(new (this.constructor as typeof NumericSignValidators)({
-      positiveNumber: this.#positiveNumber,
-      negativeNumber: value,
-      nonNegativeNumber: this.#nonNegativeNumber,
-      nonPositiveNumber: this.#nonPositiveNumber
-    }));
+      positiveNumber: this.#positiveNumber as Positive<number>,
+      negativeNumber: value as Negative<number>,
+      nonNegativeNumber: this.#nonNegativeNumber as NonNegative<number>,
+      nonPositiveNumber: this.#nonPositiveNumber as NonPositive<number>
+    }) as this);
   }
   setNonNegativeNumber(value: NonNegative<number>) {
     return this.$update(new (this.constructor as typeof NumericSignValidators)({
-      positiveNumber: this.#positiveNumber,
-      negativeNumber: this.#negativeNumber,
-      nonNegativeNumber: value,
-      nonPositiveNumber: this.#nonPositiveNumber
-    }));
+      positiveNumber: this.#positiveNumber as Positive<number>,
+      negativeNumber: this.#negativeNumber as Negative<number>,
+      nonNegativeNumber: value as NonNegative<number>,
+      nonPositiveNumber: this.#nonPositiveNumber as NonPositive<number>
+    }) as this);
   }
   setNonPositiveNumber(value: NonPositive<number>) {
     return this.$update(new (this.constructor as typeof NumericSignValidators)({
-      positiveNumber: this.#positiveNumber,
-      negativeNumber: this.#negativeNumber,
-      nonNegativeNumber: this.#nonNegativeNumber,
-      nonPositiveNumber: value
-    }));
+      positiveNumber: this.#positiveNumber as Positive<number>,
+      negativeNumber: this.#negativeNumber as Negative<number>,
+      nonNegativeNumber: this.#nonNegativeNumber as NonNegative<number>,
+      nonPositiveNumber: value as NonPositive<number>
+    }) as this);
   }
   setPositiveNumber(value: Positive<number>) {
     return this.$update(new (this.constructor as typeof NumericSignValidators)({
-      positiveNumber: value,
-      negativeNumber: this.#negativeNumber,
-      nonNegativeNumber: this.#nonNegativeNumber,
-      nonPositiveNumber: this.#nonPositiveNumber
-    }));
+      positiveNumber: value as Positive<number>,
+      negativeNumber: this.#negativeNumber as Negative<number>,
+      nonNegativeNumber: this.#nonNegativeNumber as NonNegative<number>,
+      nonPositiveNumber: this.#nonPositiveNumber as NonPositive<number>
+    }) as this);
   }
 }
 export namespace NumericSignValidators {
@@ -192,40 +206,47 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#minValue = props ? props.minValue : new Min();
-    this.#maxValue = props ? props.maxValue : new Max();
-    this.#rangeValue = props ? props.rangeValue : new Range();
+    this.#minValue = (props ? props.minValue : undefined) as Min<number, 0>;
+    this.#maxValue = (props ? props.maxValue : undefined) as Max<number, 100>;
+    this.#rangeValue = (props ? props.rangeValue : undefined) as Range<number, 0, 100>;
     if (!props) NumericBoundValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumericBoundValidators.Data>[] {
     return [{
       name: "minValue",
       fieldNumber: 1,
-      getValue: () => this.#minValue
+      getValue: () => this.#minValue as Min<number, 0>
     }, {
       name: "maxValue",
       fieldNumber: 2,
-      getValue: () => this.#maxValue
+      getValue: () => this.#maxValue as Max<number, 100>
     }, {
       name: "rangeValue",
       fieldNumber: 3,
-      getValue: () => this.#rangeValue
+      getValue: () => this.#rangeValue as Range<number, 0, 100>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): NumericBoundValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): NumericBoundValidators.Data {
     const props = {} as Partial<NumericBoundValidators.Data>;
     const minValueValue = entries["1"] === undefined ? entries["minValue"] : entries["1"];
     if (minValueValue === undefined) throw new Error("Missing required property \"minValue\".");
-    props.minValue = minValueValue;
+    props.minValue = minValueValue as Min<number, 0>;
     const maxValueValue = entries["2"] === undefined ? entries["maxValue"] : entries["2"];
     if (maxValueValue === undefined) throw new Error("Missing required property \"maxValue\".");
-    props.maxValue = maxValueValue;
+    props.maxValue = maxValueValue as Max<number, 100>;
     const rangeValueValue = entries["3"] === undefined ? entries["rangeValue"] : entries["3"];
     if (rangeValueValue === undefined) throw new Error("Missing required property \"rangeValue\".");
-    props.rangeValue = rangeValueValue;
+    props.rangeValue = rangeValueValue as Range<number, 0, 100>;
     return props as NumericBoundValidators.Data;
   }
+  static from(value: NumericBoundValidators.Value): NumericBoundValidators {
+    return value instanceof NumericBoundValidators ? value : new NumericBoundValidators(value);
+  }
   #validate(data: NumericBoundValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.minValue >= 0)) {
       throw new ValidationError("minValue", "must be at least 0", data.minValue, "MIN");
     }
@@ -261,6 +282,13 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
     }
     return errors;
   }
+  static deserialize<T extends typeof NumericBoundValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get minValue(): Min<number, 0> {
     return this.#minValue;
   }
@@ -277,28 +305,28 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof NumericBoundValidators)(data));
+    return this.$update(new (this.constructor as typeof NumericBoundValidators)(data) as this);
   }
   setMaxValue(value: Max<number, 100>) {
     return this.$update(new (this.constructor as typeof NumericBoundValidators)({
-      minValue: this.#minValue,
-      maxValue: value,
-      rangeValue: this.#rangeValue
-    }));
+      minValue: this.#minValue as Min<number, 0>,
+      maxValue: value as Max<number, 100>,
+      rangeValue: this.#rangeValue as Range<number, 0, 100>
+    }) as this);
   }
   setMinValue(value: Min<number, 0>) {
     return this.$update(new (this.constructor as typeof NumericBoundValidators)({
-      minValue: value,
-      maxValue: this.#maxValue,
-      rangeValue: this.#rangeValue
-    }));
+      minValue: value as Min<number, 0>,
+      maxValue: this.#maxValue as Max<number, 100>,
+      rangeValue: this.#rangeValue as Range<number, 0, 100>
+    }) as this);
   }
   setRangeValue(value: Range<number, 0, 100>) {
     return this.$update(new (this.constructor as typeof NumericBoundValidators)({
-      minValue: this.#minValue,
-      maxValue: this.#maxValue,
-      rangeValue: value
-    }));
+      minValue: this.#minValue as Min<number, 0>,
+      maxValue: this.#maxValue as Max<number, 100>,
+      rangeValue: value as Range<number, 0, 100>
+    }) as this);
   }
 }
 export namespace NumericBoundValidators {
@@ -326,48 +354,55 @@ export class StringValidators extends Message<StringValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#nonEmptyString = props ? props.nonEmptyString : new NonEmpty();
-    this.#minLengthString = props ? props.minLengthString : new MinLength();
-    this.#maxLengthString = props ? props.maxLengthString : new MaxLength();
-    this.#exactLengthString = props ? props.exactLengthString : new Length();
+    this.#nonEmptyString = (props ? props.nonEmptyString : undefined) as NonEmpty<string>;
+    this.#minLengthString = (props ? props.minLengthString : undefined) as MinLength<string, 3>;
+    this.#maxLengthString = (props ? props.maxLengthString : undefined) as MaxLength<string, 100>;
+    this.#exactLengthString = (props ? props.exactLengthString : undefined) as Length<string, 5, 10>;
     if (!props) StringValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<StringValidators.Data>[] {
     return [{
       name: "nonEmptyString",
       fieldNumber: 1,
-      getValue: () => this.#nonEmptyString
+      getValue: () => this.#nonEmptyString as NonEmpty<string>
     }, {
       name: "minLengthString",
       fieldNumber: 2,
-      getValue: () => this.#minLengthString
+      getValue: () => this.#minLengthString as MinLength<string, 3>
     }, {
       name: "maxLengthString",
       fieldNumber: 3,
-      getValue: () => this.#maxLengthString
+      getValue: () => this.#maxLengthString as MaxLength<string, 100>
     }, {
       name: "exactLengthString",
       fieldNumber: 4,
-      getValue: () => this.#exactLengthString
+      getValue: () => this.#exactLengthString as Length<string, 5, 10>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): StringValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): StringValidators.Data {
     const props = {} as Partial<StringValidators.Data>;
     const nonEmptyStringValue = entries["1"] === undefined ? entries["nonEmptyString"] : entries["1"];
     if (nonEmptyStringValue === undefined) throw new Error("Missing required property \"nonEmptyString\".");
-    props.nonEmptyString = nonEmptyStringValue;
+    props.nonEmptyString = nonEmptyStringValue as NonEmpty<string>;
     const minLengthStringValue = entries["2"] === undefined ? entries["minLengthString"] : entries["2"];
     if (minLengthStringValue === undefined) throw new Error("Missing required property \"minLengthString\".");
-    props.minLengthString = minLengthStringValue;
+    props.minLengthString = minLengthStringValue as MinLength<string, 3>;
     const maxLengthStringValue = entries["3"] === undefined ? entries["maxLengthString"] : entries["3"];
     if (maxLengthStringValue === undefined) throw new Error("Missing required property \"maxLengthString\".");
-    props.maxLengthString = maxLengthStringValue;
+    props.maxLengthString = maxLengthStringValue as MaxLength<string, 100>;
     const exactLengthStringValue = entries["4"] === undefined ? entries["exactLengthString"] : entries["4"];
     if (exactLengthStringValue === undefined) throw new Error("Missing required property \"exactLengthString\".");
-    props.exactLengthString = exactLengthStringValue;
+    props.exactLengthString = exactLengthStringValue as Length<string, 5, 10>;
     return props as StringValidators.Data;
   }
+  static from(value: StringValidators.Value): StringValidators {
+    return value instanceof StringValidators ? value : new StringValidators(value);
+  }
   #validate(data: StringValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.nonEmptyString.length > 0)) {
       throw new ValidationError("nonEmptyString", "must not be empty", data.nonEmptyString, "NON_EMPTY");
     }
@@ -413,6 +448,13 @@ export class StringValidators extends Message<StringValidators.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof StringValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get nonEmptyString(): NonEmpty<string> {
     return this.#nonEmptyString;
   }
@@ -432,39 +474,39 @@ export class StringValidators extends Message<StringValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof StringValidators)(data));
+    return this.$update(new (this.constructor as typeof StringValidators)(data) as this);
   }
   setExactLengthString(value: Length<string, 5, 10>) {
     return this.$update(new (this.constructor as typeof StringValidators)({
-      nonEmptyString: this.#nonEmptyString,
-      minLengthString: this.#minLengthString,
-      maxLengthString: this.#maxLengthString,
-      exactLengthString: value
-    }));
+      nonEmptyString: this.#nonEmptyString as NonEmpty<string>,
+      minLengthString: this.#minLengthString as MinLength<string, 3>,
+      maxLengthString: this.#maxLengthString as MaxLength<string, 100>,
+      exactLengthString: value as Length<string, 5, 10>
+    }) as this);
   }
   setMaxLengthString(value: MaxLength<string, 100>) {
     return this.$update(new (this.constructor as typeof StringValidators)({
-      nonEmptyString: this.#nonEmptyString,
-      minLengthString: this.#minLengthString,
-      maxLengthString: value,
-      exactLengthString: this.#exactLengthString
-    }));
+      nonEmptyString: this.#nonEmptyString as NonEmpty<string>,
+      minLengthString: this.#minLengthString as MinLength<string, 3>,
+      maxLengthString: value as MaxLength<string, 100>,
+      exactLengthString: this.#exactLengthString as Length<string, 5, 10>
+    }) as this);
   }
   setMinLengthString(value: MinLength<string, 3>) {
     return this.$update(new (this.constructor as typeof StringValidators)({
-      nonEmptyString: this.#nonEmptyString,
-      minLengthString: value,
-      maxLengthString: this.#maxLengthString,
-      exactLengthString: this.#exactLengthString
-    }));
+      nonEmptyString: this.#nonEmptyString as NonEmpty<string>,
+      minLengthString: value as MinLength<string, 3>,
+      maxLengthString: this.#maxLengthString as MaxLength<string, 100>,
+      exactLengthString: this.#exactLengthString as Length<string, 5, 10>
+    }) as this);
   }
   setNonEmptyString(value: NonEmpty<string>) {
     return this.$update(new (this.constructor as typeof StringValidators)({
-      nonEmptyString: value,
-      minLengthString: this.#minLengthString,
-      maxLengthString: this.#maxLengthString,
-      exactLengthString: this.#exactLengthString
-    }));
+      nonEmptyString: value as NonEmpty<string>,
+      minLengthString: this.#minLengthString as MinLength<string, 3>,
+      maxLengthString: this.#maxLengthString as MaxLength<string, 100>,
+      exactLengthString: this.#exactLengthString as Length<string, 5, 10>
+    }) as this);
   }
 }
 export namespace StringValidators {
@@ -494,64 +536,71 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#positiveInt32 = props ? props.positiveInt32 : new Positive();
-    this.#positiveInt53 = props ? props.positiveInt53 : new Positive();
-    this.#positiveDecimal = props ? props.positiveDecimal : new Positive();
-    this.#minDecimal = props ? props.minDecimal : new Min();
-    this.#maxDecimal = props ? props.maxDecimal : new Max();
-    this.#rangeDecimal = props ? props.rangeDecimal : new Range();
+    this.#positiveInt32 = (props ? props.positiveInt32 : undefined) as Positive<int32>;
+    this.#positiveInt53 = (props ? props.positiveInt53 : undefined) as Positive<int53>;
+    this.#positiveDecimal = (props ? props.positiveDecimal : undefined) as Positive<decimal<10, 2>>;
+    this.#minDecimal = (props ? props.minDecimal : undefined) as Min<decimal<10, 2>, "100">;
+    this.#maxDecimal = (props ? props.maxDecimal : undefined) as Max<decimal<10, 2>, "1000">;
+    this.#rangeDecimal = (props ? props.rangeDecimal : undefined) as Range<decimal<10, 2>, "0", "999.99">;
     if (!props) BrandedValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<BrandedValidators.Data>[] {
     return [{
       name: "positiveInt32",
       fieldNumber: 1,
-      getValue: () => this.#positiveInt32
+      getValue: () => this.#positiveInt32 as Positive<int32>
     }, {
       name: "positiveInt53",
       fieldNumber: 2,
-      getValue: () => this.#positiveInt53
+      getValue: () => this.#positiveInt53 as Positive<int53>
     }, {
       name: "positiveDecimal",
       fieldNumber: 3,
-      getValue: () => this.#positiveDecimal
+      getValue: () => this.#positiveDecimal as Positive<decimal<10, 2>>
     }, {
       name: "minDecimal",
       fieldNumber: 4,
-      getValue: () => this.#minDecimal
+      getValue: () => this.#minDecimal as Min<decimal<10, 2>, "100">
     }, {
       name: "maxDecimal",
       fieldNumber: 5,
-      getValue: () => this.#maxDecimal
+      getValue: () => this.#maxDecimal as Max<decimal<10, 2>, "1000">
     }, {
       name: "rangeDecimal",
       fieldNumber: 6,
-      getValue: () => this.#rangeDecimal
+      getValue: () => this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): BrandedValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): BrandedValidators.Data {
     const props = {} as Partial<BrandedValidators.Data>;
     const positiveInt32Value = entries["1"] === undefined ? entries["positiveInt32"] : entries["1"];
     if (positiveInt32Value === undefined) throw new Error("Missing required property \"positiveInt32\".");
-    props.positiveInt32 = positiveInt32Value;
+    props.positiveInt32 = positiveInt32Value as Positive<int32>;
     const positiveInt53Value = entries["2"] === undefined ? entries["positiveInt53"] : entries["2"];
     if (positiveInt53Value === undefined) throw new Error("Missing required property \"positiveInt53\".");
-    props.positiveInt53 = positiveInt53Value;
+    props.positiveInt53 = positiveInt53Value as Positive<int53>;
     const positiveDecimalValue = entries["3"] === undefined ? entries["positiveDecimal"] : entries["3"];
     if (positiveDecimalValue === undefined) throw new Error("Missing required property \"positiveDecimal\".");
-    props.positiveDecimal = positiveDecimalValue;
+    props.positiveDecimal = positiveDecimalValue as Positive<decimal<10, 2>>;
     const minDecimalValue = entries["4"] === undefined ? entries["minDecimal"] : entries["4"];
     if (minDecimalValue === undefined) throw new Error("Missing required property \"minDecimal\".");
-    props.minDecimal = minDecimalValue;
+    props.minDecimal = minDecimalValue as Min<decimal<10, 2>, "100">;
     const maxDecimalValue = entries["5"] === undefined ? entries["maxDecimal"] : entries["5"];
     if (maxDecimalValue === undefined) throw new Error("Missing required property \"maxDecimal\".");
-    props.maxDecimal = maxDecimalValue;
+    props.maxDecimal = maxDecimalValue as Max<decimal<10, 2>, "1000">;
     const rangeDecimalValue = entries["6"] === undefined ? entries["rangeDecimal"] : entries["6"];
     if (rangeDecimalValue === undefined) throw new Error("Missing required property \"rangeDecimal\".");
-    props.rangeDecimal = rangeDecimalValue;
+    props.rangeDecimal = rangeDecimalValue as Range<decimal<10, 2>, "0", "999.99">;
     return props as BrandedValidators.Data;
   }
+  static from(value: BrandedValidators.Value): BrandedValidators {
+    return value instanceof BrandedValidators ? value : new BrandedValidators(value);
+  }
   #validate(data: BrandedValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(isInt32(data.positiveInt32))) {
       throw new ValidationError("positiveInt32", "must be a 32-bit integer", data.positiveInt32, "INT32");
     }
@@ -573,19 +622,19 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
     if (!(canBeDecimal(data.minDecimal, 10, 2))) {
       throw new ValidationError("minDecimal", "must be a valid decimal(10,2)", data.minDecimal, "DECIMAL");
     }
-    if (!(greaterThanOrEqual(data.minDecimal, "100.00"))) {
+    if (!(greaterThanOrEqual(data.minDecimal, '100.00' as AnyDecimal))) {
       throw new ValidationError("minDecimal", "must be at least 100.00", data.minDecimal, "MIN");
     }
     if (!(canBeDecimal(data.maxDecimal, 10, 2))) {
       throw new ValidationError("maxDecimal", "must be a valid decimal(10,2)", data.maxDecimal, "DECIMAL");
     }
-    if (!(lessThanOrEqual(data.maxDecimal, "1000.00"))) {
+    if (!(lessThanOrEqual(data.maxDecimal, '1000.00' as AnyDecimal))) {
       throw new ValidationError("maxDecimal", "must be at most 1000.00", data.maxDecimal, "MAX");
     }
     if (!(canBeDecimal(data.rangeDecimal, 10, 2))) {
       throw new ValidationError("rangeDecimal", "must be a valid decimal(10,2)", data.rangeDecimal, "DECIMAL");
     }
-    if (!(inRange(data.rangeDecimal, "0.00", "999.99"))) {
+    if (!(inRange(data.rangeDecimal, '0.00' as AnyDecimal, '999.99' as AnyDecimal))) {
       throw new ValidationError("rangeDecimal", "must be between 0.00 and 999.99", data.rangeDecimal, "RANGE");
     }
   }
@@ -625,7 +674,7 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
       if (!(canBeDecimal(data.minDecimal, 10, 2))) {
         throw new ValidationError("minDecimal", "must be a valid decimal(10,2)", data.minDecimal, "DECIMAL");
       }
-      if (!(greaterThanOrEqual(data.minDecimal, "100.00"))) {
+      if (!(greaterThanOrEqual(data.minDecimal, '100.00' as AnyDecimal))) {
         throw new ValidationError("minDecimal", "must be at least 100.00", data.minDecimal, "MIN");
       }
     } catch (e) {
@@ -635,7 +684,7 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
       if (!(canBeDecimal(data.maxDecimal, 10, 2))) {
         throw new ValidationError("maxDecimal", "must be a valid decimal(10,2)", data.maxDecimal, "DECIMAL");
       }
-      if (!(lessThanOrEqual(data.maxDecimal, "1000.00"))) {
+      if (!(lessThanOrEqual(data.maxDecimal, '1000.00' as AnyDecimal))) {
         throw new ValidationError("maxDecimal", "must be at most 1000.00", data.maxDecimal, "MAX");
       }
     } catch (e) {
@@ -645,13 +694,20 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
       if (!(canBeDecimal(data.rangeDecimal, 10, 2))) {
         throw new ValidationError("rangeDecimal", "must be a valid decimal(10,2)", data.rangeDecimal, "DECIMAL");
       }
-      if (!(inRange(data.rangeDecimal, "0.00", "999.99"))) {
+      if (!(inRange(data.rangeDecimal, '0.00' as AnyDecimal, '999.99' as AnyDecimal))) {
         throw new ValidationError("rangeDecimal", "must be between 0.00 and 999.99", data.rangeDecimal, "RANGE");
       }
     } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
+  }
+  static deserialize<T extends typeof BrandedValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get positiveInt32(): Positive<int32> {
     return this.#positiveInt32;
@@ -678,67 +734,67 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof BrandedValidators)(data));
+    return this.$update(new (this.constructor as typeof BrandedValidators)(data) as this);
   }
   setMaxDecimal(value: Max<decimal<10, 2>, "1000">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32,
-      positiveInt53: this.#positiveInt53,
-      positiveDecimal: this.#positiveDecimal,
-      minDecimal: this.#minDecimal,
-      maxDecimal: value,
-      rangeDecimal: this.#rangeDecimal
-    }));
+      positiveInt32: this.#positiveInt32 as Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveDecimal: this.#positiveDecimal as Positive<decimal<10, 2>>,
+      minDecimal: this.#minDecimal as Min<decimal<10, 2>, "100">,
+      maxDecimal: value as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
   setMinDecimal(value: Min<decimal<10, 2>, "100">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32,
-      positiveInt53: this.#positiveInt53,
-      positiveDecimal: this.#positiveDecimal,
-      minDecimal: value,
-      maxDecimal: this.#maxDecimal,
-      rangeDecimal: this.#rangeDecimal
-    }));
+      positiveInt32: this.#positiveInt32 as Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveDecimal: this.#positiveDecimal as Positive<decimal<10, 2>>,
+      minDecimal: value as Min<decimal<10, 2>, "100">,
+      maxDecimal: this.#maxDecimal as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
   setPositiveDecimal(value: Positive<decimal<10, 2>>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32,
-      positiveInt53: this.#positiveInt53,
-      positiveDecimal: value,
-      minDecimal: this.#minDecimal,
-      maxDecimal: this.#maxDecimal,
-      rangeDecimal: this.#rangeDecimal
-    }));
+      positiveInt32: this.#positiveInt32 as Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveDecimal: value as Positive<decimal<10, 2>>,
+      minDecimal: this.#minDecimal as Min<decimal<10, 2>, "100">,
+      maxDecimal: this.#maxDecimal as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
   setPositiveInt32(value: Positive<int32>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: value,
-      positiveInt53: this.#positiveInt53,
-      positiveDecimal: this.#positiveDecimal,
-      minDecimal: this.#minDecimal,
-      maxDecimal: this.#maxDecimal,
-      rangeDecimal: this.#rangeDecimal
-    }));
+      positiveInt32: value as Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveDecimal: this.#positiveDecimal as Positive<decimal<10, 2>>,
+      minDecimal: this.#minDecimal as Min<decimal<10, 2>, "100">,
+      maxDecimal: this.#maxDecimal as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
   setPositiveInt53(value: Positive<int53>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32,
-      positiveInt53: value,
-      positiveDecimal: this.#positiveDecimal,
-      minDecimal: this.#minDecimal,
-      maxDecimal: this.#maxDecimal,
-      rangeDecimal: this.#rangeDecimal
-    }));
+      positiveInt32: this.#positiveInt32 as Positive<int32>,
+      positiveInt53: value as Positive<int53>,
+      positiveDecimal: this.#positiveDecimal as Positive<decimal<10, 2>>,
+      minDecimal: this.#minDecimal as Min<decimal<10, 2>, "100">,
+      maxDecimal: this.#maxDecimal as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: this.#rangeDecimal as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
   setRangeDecimal(value: Range<decimal<10, 2>, "0", "999.99">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32,
-      positiveInt53: this.#positiveInt53,
-      positiveDecimal: this.#positiveDecimal,
-      minDecimal: this.#minDecimal,
-      maxDecimal: this.#maxDecimal,
-      rangeDecimal: value
-    }));
+      positiveInt32: this.#positiveInt32 as Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveDecimal: this.#positiveDecimal as Positive<decimal<10, 2>>,
+      minDecimal: this.#minDecimal as Min<decimal<10, 2>, "100">,
+      maxDecimal: this.#maxDecimal as Max<decimal<10, 2>, "1000">,
+      rangeDecimal: value as Range<decimal<10, 2>, "0", "999.99">
+    }) as this);
   }
 }
 export namespace BrandedValidators {
@@ -757,9 +813,9 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
   static readonly $typeName = "OptionalValidators";
   static EMPTY: OptionalValidators;
   #requiredPositive!: Positive<number>;
-  #optionalPositive!: Positive<number>;
+  #optionalPositive!: Positive<number> | undefined;
   #nullablePositive!: Positive<number> | null;
-  #optionalNullablePositive!: Positive<number> | null;
+  #optionalNullablePositive!: Positive<number> | null | undefined;
   constructor(props?: OptionalValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -768,49 +824,56 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#requiredPositive = props ? props.requiredPositive : new Positive();
-    this.#optionalPositive = props ? props.optionalPositive : undefined;
-    this.#nullablePositive = props ? props.nullablePositive : new Positive();
-    this.#optionalNullablePositive = props ? props.optionalNullablePositive : undefined;
+    this.#requiredPositive = (props ? props.requiredPositive : undefined) as Positive<number>;
+    this.#optionalPositive = (props ? props.optionalPositive : undefined) as Positive<number>;
+    this.#nullablePositive = (props ? props.nullablePositive : undefined) as Positive<number> | null;
+    this.#optionalNullablePositive = (props ? props.optionalNullablePositive : undefined) as Positive<number> | null;
     if (!props) OptionalValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OptionalValidators.Data>[] {
     return [{
       name: "requiredPositive",
       fieldNumber: 1,
-      getValue: () => this.#requiredPositive
+      getValue: () => this.#requiredPositive as Positive<number>
     }, {
       name: "optionalPositive",
       fieldNumber: 2,
-      getValue: () => this.#optionalPositive
+      getValue: () => this.#optionalPositive as Positive<number>
     }, {
       name: "nullablePositive",
       fieldNumber: 3,
-      getValue: () => this.#nullablePositive
+      getValue: () => this.#nullablePositive as Positive<number> | null
     }, {
       name: "optionalNullablePositive",
       fieldNumber: 4,
-      getValue: () => this.#optionalNullablePositive
+      getValue: () => this.#optionalNullablePositive as Positive<number> | null
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): OptionalValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): OptionalValidators.Data {
     const props = {} as Partial<OptionalValidators.Data>;
     const requiredPositiveValue = entries["1"] === undefined ? entries["requiredPositive"] : entries["1"];
     if (requiredPositiveValue === undefined) throw new Error("Missing required property \"requiredPositive\".");
-    props.requiredPositive = requiredPositiveValue;
+    props.requiredPositive = requiredPositiveValue as Positive<number>;
     const optionalPositiveValue = entries["2"] === undefined ? entries["optionalPositive"] : entries["2"];
     const optionalPositiveNormalized = optionalPositiveValue === null ? undefined : optionalPositiveValue;
-    props.optionalPositive = optionalPositiveNormalized;
+    props.optionalPositive = optionalPositiveNormalized as Positive<number>;
     const nullablePositiveValue = entries["3"] === undefined ? entries["nullablePositive"] : entries["3"];
     if (nullablePositiveValue === undefined) throw new Error("Missing required property \"nullablePositive\".");
     if (!(nullablePositiveValue === null)) throw new Error("Invalid value for property \"nullablePositive\".");
-    props.nullablePositive = nullablePositiveValue;
+    props.nullablePositive = nullablePositiveValue as Positive<number> | null;
     const optionalNullablePositiveValue = entries["4"] === undefined ? entries["optionalNullablePositive"] : entries["4"];
     if (optionalNullablePositiveValue !== undefined && !(optionalNullablePositiveValue === null)) throw new Error("Invalid value for property \"optionalNullablePositive\".");
-    props.optionalNullablePositive = optionalNullablePositiveValue;
+    props.optionalNullablePositive = optionalNullablePositiveValue as Positive<number> | null;
     return props as OptionalValidators.Data;
   }
+  static from(value: OptionalValidators.Value): OptionalValidators {
+    return value instanceof OptionalValidators ? value : new OptionalValidators(value);
+  }
   #validate(data: OptionalValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.requiredPositive > 0)) {
       throw new ValidationError("requiredPositive", "must be positive", data.requiredPositive, "POSITIVE");
     }
@@ -868,31 +931,24 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof OptionalValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get requiredPositive(): Positive<number> {
     return this.#requiredPositive;
   }
-  get optionalPositive(): Positive<number> {
+  get optionalPositive(): Positive<number> | undefined {
     return this.#optionalPositive;
   }
   get nullablePositive(): Positive<number> | null {
     return this.#nullablePositive;
   }
-  get optionalNullablePositive(): Positive<number> | null {
+  get optionalNullablePositive(): Positive<number> | null | undefined {
     return this.#optionalNullablePositive;
-  }
-  deleteOptionalNullablePositive() {
-    return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: this.#requiredPositive,
-      optionalPositive: this.#optionalPositive,
-      nullablePositive: this.#nullablePositive
-    }));
-  }
-  deleteOptionalPositive() {
-    return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: this.#requiredPositive,
-      nullablePositive: this.#nullablePositive,
-      optionalNullablePositive: this.#optionalNullablePositive
-    }));
   }
   set(updates: Partial<SetUpdates<OptionalValidators.Data>>) {
     const data = this.toData();
@@ -901,39 +957,53 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof OptionalValidators)(data));
+    return this.$update(new (this.constructor as typeof OptionalValidators)(data) as this);
   }
   setNullablePositive(value: Positive<number> | null) {
     return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: this.#requiredPositive,
-      optionalPositive: this.#optionalPositive,
-      nullablePositive: value,
-      optionalNullablePositive: this.#optionalNullablePositive
-    }));
+      requiredPositive: this.#requiredPositive as Positive<number>,
+      optionalPositive: this.#optionalPositive as Positive<number>,
+      nullablePositive: value as Positive<number> | null,
+      optionalNullablePositive: this.#optionalNullablePositive as Positive<number> | null
+    }) as this);
   }
-  setOptionalNullablePositive(value: Positive<number> | null) {
+  setOptionalNullablePositive(value: Positive<number> | null | undefined) {
     return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: this.#requiredPositive,
-      optionalPositive: this.#optionalPositive,
-      nullablePositive: this.#nullablePositive,
-      optionalNullablePositive: value
-    }));
+      requiredPositive: this.#requiredPositive as Positive<number>,
+      optionalPositive: this.#optionalPositive as Positive<number>,
+      nullablePositive: this.#nullablePositive as Positive<number> | null,
+      optionalNullablePositive: value as Positive<number> | null
+    }) as this);
   }
-  setOptionalPositive(value: Positive<number>) {
+  setOptionalPositive(value: Positive<number> | undefined) {
     return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: this.#requiredPositive,
-      optionalPositive: value,
-      nullablePositive: this.#nullablePositive,
-      optionalNullablePositive: this.#optionalNullablePositive
-    }));
+      requiredPositive: this.#requiredPositive as Positive<number>,
+      optionalPositive: value as Positive<number>,
+      nullablePositive: this.#nullablePositive as Positive<number> | null,
+      optionalNullablePositive: this.#optionalNullablePositive as Positive<number> | null
+    }) as this);
   }
   setRequiredPositive(value: Positive<number>) {
     return this.$update(new (this.constructor as typeof OptionalValidators)({
-      requiredPositive: value,
-      optionalPositive: this.#optionalPositive,
-      nullablePositive: this.#nullablePositive,
-      optionalNullablePositive: this.#optionalNullablePositive
-    }));
+      requiredPositive: value as Positive<number>,
+      optionalPositive: this.#optionalPositive as Positive<number>,
+      nullablePositive: this.#nullablePositive as Positive<number> | null,
+      optionalNullablePositive: this.#optionalNullablePositive as Positive<number> | null
+    }) as this);
+  }
+  unsetOptionalNullablePositive() {
+    return this.$update(new (this.constructor as typeof OptionalValidators)({
+      requiredPositive: this.#requiredPositive as Positive<number>,
+      optionalPositive: this.#optionalPositive as Positive<number>,
+      nullablePositive: this.#nullablePositive as Positive<number> | null
+    }) as this);
+  }
+  unsetOptionalPositive() {
+    return this.$update(new (this.constructor as typeof OptionalValidators)({
+      requiredPositive: this.#requiredPositive as Positive<number>,
+      nullablePositive: this.#nullablePositive as Positive<number> | null,
+      optionalNullablePositive: this.#optionalNullablePositive as Positive<number> | null
+    }) as this);
   }
 }
 export namespace OptionalValidators {
@@ -960,40 +1030,47 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#nonEmptyArray = props ? props.nonEmptyArray : new NonEmpty();
-    this.#minLengthArray = props ? props.minLengthArray : new MinLength();
-    this.#maxLengthArray = props ? props.maxLengthArray : new MaxLength();
+    this.#nonEmptyArray = (props ? props.nonEmptyArray : undefined) as NonEmpty<string[]>;
+    this.#minLengthArray = (props ? props.minLengthArray : undefined) as MinLength<number[], 1>;
+    this.#maxLengthArray = (props ? props.maxLengthArray : undefined) as MaxLength<number[], 10>;
     if (!props) ArrayValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayValidators.Data>[] {
     return [{
       name: "nonEmptyArray",
       fieldNumber: 1,
-      getValue: () => this.#nonEmptyArray
+      getValue: () => this.#nonEmptyArray as NonEmpty<string[]>
     }, {
       name: "minLengthArray",
       fieldNumber: 2,
-      getValue: () => this.#minLengthArray
+      getValue: () => this.#minLengthArray as MinLength<number[], 1>
     }, {
       name: "maxLengthArray",
       fieldNumber: 3,
-      getValue: () => this.#maxLengthArray
+      getValue: () => this.#maxLengthArray as MaxLength<number[], 10>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): ArrayValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): ArrayValidators.Data {
     const props = {} as Partial<ArrayValidators.Data>;
     const nonEmptyArrayValue = entries["1"] === undefined ? entries["nonEmptyArray"] : entries["1"];
     if (nonEmptyArrayValue === undefined) throw new Error("Missing required property \"nonEmptyArray\".");
-    props.nonEmptyArray = nonEmptyArrayValue;
+    props.nonEmptyArray = nonEmptyArrayValue as NonEmpty<string[]>;
     const minLengthArrayValue = entries["2"] === undefined ? entries["minLengthArray"] : entries["2"];
     if (minLengthArrayValue === undefined) throw new Error("Missing required property \"minLengthArray\".");
-    props.minLengthArray = minLengthArrayValue;
+    props.minLengthArray = minLengthArrayValue as MinLength<number[], 1>;
     const maxLengthArrayValue = entries["3"] === undefined ? entries["maxLengthArray"] : entries["3"];
     if (maxLengthArrayValue === undefined) throw new Error("Missing required property \"maxLengthArray\".");
-    props.maxLengthArray = maxLengthArrayValue;
+    props.maxLengthArray = maxLengthArrayValue as MaxLength<number[], 10>;
     return props as ArrayValidators.Data;
   }
+  static from(value: ArrayValidators.Value): ArrayValidators {
+    return value instanceof ArrayValidators ? value : new ArrayValidators(value);
+  }
   #validate(data: ArrayValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.nonEmptyArray.length > 0)) {
       throw new ValidationError("nonEmptyArray", "must not be empty", data.nonEmptyArray, "NON_EMPTY");
     }
@@ -1029,6 +1106,13 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof ArrayValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get nonEmptyArray(): NonEmpty<string[]> {
     return this.#nonEmptyArray;
   }
@@ -1045,28 +1129,28 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof ArrayValidators)(data));
+    return this.$update(new (this.constructor as typeof ArrayValidators)(data) as this);
   }
   setMaxLengthArray(value: MaxLength<number[], 10>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: this.#nonEmptyArray,
-      minLengthArray: this.#minLengthArray,
-      maxLengthArray: value
-    }));
+      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]>,
+      minLengthArray: this.#minLengthArray as MinLength<number[], 1>,
+      maxLengthArray: value as MaxLength<number[], 10>
+    }) as this);
   }
   setMinLengthArray(value: MinLength<number[], 1>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: this.#nonEmptyArray,
-      minLengthArray: value,
-      maxLengthArray: this.#maxLengthArray
-    }));
+      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]>,
+      minLengthArray: value as MinLength<number[], 1>,
+      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10>
+    }) as this);
   }
   setNonEmptyArray(value: NonEmpty<string[]>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: value,
-      minLengthArray: this.#minLengthArray,
-      maxLengthArray: this.#maxLengthArray
-    }));
+      nonEmptyArray: value as NonEmpty<string[]>,
+      minLengthArray: this.#minLengthArray as MinLength<number[], 1>,
+      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10>
+    }) as this);
   }
 }
 export namespace ArrayValidators {
@@ -1093,48 +1177,55 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#positiveBigint = props ? props.positiveBigint : new Positive();
-    this.#minBigint = props ? props.minBigint : new Min();
-    this.#maxBigint = props ? props.maxBigint : new Max();
-    this.#rangeBigint = props ? props.rangeBigint : new Range();
+    this.#positiveBigint = (props ? props.positiveBigint : undefined) as Positive<bigint>;
+    this.#minBigint = (props ? props.minBigint : undefined) as Min<bigint, 0n>;
+    this.#maxBigint = (props ? props.maxBigint : undefined) as Max<bigint, 1000000n>;
+    this.#rangeBigint = (props ? props.rangeBigint : undefined) as Range<bigint, 0n, 100n>;
     if (!props) BigintValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<BigintValidators.Data>[] {
     return [{
       name: "positiveBigint",
       fieldNumber: 1,
-      getValue: () => this.#positiveBigint
+      getValue: () => this.#positiveBigint as Positive<bigint>
     }, {
       name: "minBigint",
       fieldNumber: 2,
-      getValue: () => this.#minBigint
+      getValue: () => this.#minBigint as Min<bigint, 0n>
     }, {
       name: "maxBigint",
       fieldNumber: 3,
-      getValue: () => this.#maxBigint
+      getValue: () => this.#maxBigint as Max<bigint, 1000000n>
     }, {
       name: "rangeBigint",
       fieldNumber: 4,
-      getValue: () => this.#rangeBigint
+      getValue: () => this.#rangeBigint as Range<bigint, 0n, 100n>
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): BigintValidators.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): BigintValidators.Data {
     const props = {} as Partial<BigintValidators.Data>;
     const positiveBigintValue = entries["1"] === undefined ? entries["positiveBigint"] : entries["1"];
     if (positiveBigintValue === undefined) throw new Error("Missing required property \"positiveBigint\".");
-    props.positiveBigint = positiveBigintValue;
+    props.positiveBigint = positiveBigintValue as Positive<bigint>;
     const minBigintValue = entries["2"] === undefined ? entries["minBigint"] : entries["2"];
     if (minBigintValue === undefined) throw new Error("Missing required property \"minBigint\".");
-    props.minBigint = minBigintValue;
+    props.minBigint = minBigintValue as Min<bigint, 0n>;
     const maxBigintValue = entries["3"] === undefined ? entries["maxBigint"] : entries["3"];
     if (maxBigintValue === undefined) throw new Error("Missing required property \"maxBigint\".");
-    props.maxBigint = maxBigintValue;
+    props.maxBigint = maxBigintValue as Max<bigint, 1000000n>;
     const rangeBigintValue = entries["4"] === undefined ? entries["rangeBigint"] : entries["4"];
     if (rangeBigintValue === undefined) throw new Error("Missing required property \"rangeBigint\".");
-    props.rangeBigint = rangeBigintValue;
+    props.rangeBigint = rangeBigintValue as Range<bigint, 0n, 100n>;
     return props as BigintValidators.Data;
   }
+  static from(value: BigintValidators.Value): BigintValidators {
+    return value instanceof BigintValidators ? value : new BigintValidators(value);
+  }
   #validate(data: BigintValidators.Value | undefined) {
+    if (data === undefined) return;
     if (!(data.positiveBigint > 0n)) {
       throw new ValidationError("positiveBigint", "must be positive", data.positiveBigint, "POSITIVE");
     }
@@ -1180,6 +1271,13 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     }
     return errors;
   }
+  static deserialize<T extends typeof BigintValidators>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
   get positiveBigint(): Positive<bigint> {
     return this.#positiveBigint;
   }
@@ -1199,39 +1297,39 @@ export class BigintValidators extends Message<BigintValidators.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof BigintValidators)(data));
+    return this.$update(new (this.constructor as typeof BigintValidators)(data) as this);
   }
   setMaxBigint(value: Max<bigint, 1000000n>) {
     return this.$update(new (this.constructor as typeof BigintValidators)({
-      positiveBigint: this.#positiveBigint,
-      minBigint: this.#minBigint,
-      maxBigint: value,
-      rangeBigint: this.#rangeBigint
-    }));
+      positiveBigint: this.#positiveBigint as Positive<bigint>,
+      minBigint: this.#minBigint as Min<bigint, 0n>,
+      maxBigint: value as Max<bigint, 1000000n>,
+      rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
+    }) as this);
   }
   setMinBigint(value: Min<bigint, 0n>) {
     return this.$update(new (this.constructor as typeof BigintValidators)({
-      positiveBigint: this.#positiveBigint,
-      minBigint: value,
-      maxBigint: this.#maxBigint,
-      rangeBigint: this.#rangeBigint
-    }));
+      positiveBigint: this.#positiveBigint as Positive<bigint>,
+      minBigint: value as Min<bigint, 0n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
+    }) as this);
   }
   setPositiveBigint(value: Positive<bigint>) {
     return this.$update(new (this.constructor as typeof BigintValidators)({
-      positiveBigint: value,
-      minBigint: this.#minBigint,
-      maxBigint: this.#maxBigint,
-      rangeBigint: this.#rangeBigint
-    }));
+      positiveBigint: value as Positive<bigint>,
+      minBigint: this.#minBigint as Min<bigint, 0n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
+    }) as this);
   }
   setRangeBigint(value: Range<bigint, 0n, 100n>) {
     return this.$update(new (this.constructor as typeof BigintValidators)({
-      positiveBigint: this.#positiveBigint,
-      minBigint: this.#minBigint,
-      maxBigint: this.#maxBigint,
-      rangeBigint: value
-    }));
+      positiveBigint: this.#positiveBigint as Positive<bigint>,
+      minBigint: this.#minBigint as Min<bigint, 0n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      rangeBigint: value as Range<bigint, 0n, 100n>
+    }) as this);
   }
 }
 export namespace BigintValidators {

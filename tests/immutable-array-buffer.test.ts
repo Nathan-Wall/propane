@@ -1,6 +1,7 @@
-import { assert } from './assert.ts';
-import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableArrayBuffer } from '../runtime/common/data/immutable-array-buffer.ts';
+import { assert } from './assert.js';
+import { computeExpectedHashCode } from './hash-helpers.js';
+import { ImmutableArrayBuffer } from '../runtime/common/data/immutable-array-buffer.js';
+import { test } from 'node:test';
 
 export default function runImmutableArrayBufferTests() {
   const bytes = [1, 2, 3, 4];
@@ -25,3 +26,7 @@ export default function runImmutableArrayBufferTests() {
   const json = JSON.stringify({ data: imm });
   assert(json === `{"data":"${imm.toString()}"}`, 'toJSON should emit base64 string with prefix.');
 }
+
+test('runImmutableArrayBufferTests', () => {
+  runImmutableArrayBufferTests();
+});

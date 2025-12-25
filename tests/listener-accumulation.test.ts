@@ -6,13 +6,14 @@
  * uses back-pointer chains instead of accumulating listeners.
  */
 
-import { assert } from './assert.ts';
-import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.ts';
+import { assert } from './assert.js';
+import { InnerMessage, OuterMessage } from './nested-memo-state.pmsg.js';
 import {
   SET_UPDATE_LISTENER,
   REACT_LISTENER_KEY,
-} from '../runtime/symbols.ts';
-import type { Message, DataObject } from '../runtime/message.ts';
+} from '../runtime/symbols.js';
+import type { Message, DataObject } from '../runtime/message.js';
+import { test } from 'node:test';
 
 export default function runListenerAccumulationTests() {
   testStaleInnerReferenceFromMemo();
@@ -133,3 +134,7 @@ function testStaleInnerReferenceFromMemo() {
   console.log('  RESULT: Counter persisted correctly (10)');
   console.log('Stale inner reference from memoPropane skip: PASSED');
 }
+
+test('runListenerAccumulationTests', () => {
+  runListenerAccumulationTests();
+});

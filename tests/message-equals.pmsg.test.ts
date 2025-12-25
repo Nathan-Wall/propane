@@ -1,8 +1,10 @@
-import { assert } from './assert.ts';
-import { User } from './user.pmsg.ts';
-import { Indexed } from './indexed.pmsg.ts';
+import { assert } from './assert.js';
+import { User } from './user.pmsg.js';
+import { Indexed } from './indexed.pmsg.js';
+import { test } from 'node:test';
 
 export default function runMessageEqualsTests() {
+  // Cast needed: User.Value has branded types (Email, Hash)
   const userProps = {
     id: 1,
     name: 'Alice',
@@ -13,11 +15,11 @@ export default function runMessageEqualsTests() {
     active: true,
     eyeColor: 'green' as const,
     height: { unit: 'm' as const, value: 1.6 },
-  };
+  } as User.Value;
 
   const userA = new User(userProps);
-  const userB = new User({ ...userProps });
-  const userC = new User({ ...userProps, name: 'Bob' });
+  const userB = new User({ ...userProps } as User.Value);
+  const userC = new User({ ...userProps, name: 'Bob' } as User.Value);
 
   assert(userA.equals(userA), 'equals should be reflexive.');
   assert(userA.equals(userB), 'equals should match same type and data.');
@@ -33,7 +35,10 @@ export default function runMessageEqualsTests() {
   });
 
   assert(!userA.equals(indexed), 'equals should fail for different message types.');
-  // @ts-expect-error Intentional non-Message comparison
   assert(!userA.equals({ serialize: () => userA.serialize() }), 'equals should require Message instances.');
   assert(!userA.equals(null), 'equals should return false for null.');
 }
+
+test('runMessageEqualsTests', () => {
+  runMessageEqualsTests();
+});

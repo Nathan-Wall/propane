@@ -1,6 +1,7 @@
-import { assert } from './assert.ts';
-import { computeExpectedHashCode } from './hash-helpers.ts';
-import { ImmutableDate } from '../runtime/common/time/date.ts';
+import { assert } from './assert.js';
+import { computeExpectedHashCode } from './hash-helpers.js';
+import { ImmutableDate } from '../runtime/common/time/date.js';
+import { test } from 'node:test';
 
 export default function runImmutableDateTests() {
   const iso = '2020-01-02T03:04:05.000Z';
@@ -29,3 +30,7 @@ export default function runImmutableDateTests() {
   // value semantics
   assert(imm.getTime() === new Date(iso).getTime(), 'getTime should match underlying epoch.');
 }
+
+test('runImmutableDateTests', () => {
+  runImmutableDateTests();
+});

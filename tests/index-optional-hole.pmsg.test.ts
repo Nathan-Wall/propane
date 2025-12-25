@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { OptionalHole } from './index-optional-hole.pmsg.ts';
+import { assert } from './assert.js';
+import { OptionalHole } from './index-optional-hole.pmsg.js';
+import { test } from 'node:test';
 
 export default function runOptionalHoleTests() {
 
@@ -14,8 +15,7 @@ export default function runOptionalHoleTests() {
     optionalHoleSerialized === expectedOptionalSerialization,
     'Optional field omission should force explicit index on next property.'
   );
-  const optionalHoleCereal = optionalHole.cerealize();
-  assert(optionalHoleCereal.note === undefined, 'Optional undefined should stay omitted.');
+  assert(optionalHole.note === undefined, 'Optional undefined should stay omitted.');
 
   const optionalHoleWithNote = new OptionalHole({
     id: 9,
@@ -29,17 +29,20 @@ export default function runOptionalHoleTests() {
     optionalHoleWithNoteSerialized === expectedOptionalWithNote,
     'Present optional field should include its index and keep later implicit.'
   );
-  const optionalHoleDeleted = optionalHoleWithNote.deleteNote();
+  const optionalHoleDeleted = optionalHoleWithNote.unsetNote();
   const expectedOptionalDeleted = ':{9,D"1892-01-03T00:00:00.000Z",4:Optional}';
   assert(
     optionalHoleDeleted.serialize() === expectedOptionalDeleted,
-    'deleteNote should clear optional field and reintroduce index gap.'
+    'unsetNote should clear optional field and reintroduce index gap.'
   );
   const optionalHoleHydrated = OptionalHole.deserialize(optionalHoleSerialized);
-  assert(optionalHoleHydrated.cerealize().name === 'Optional', 'Optional hole deserialize failed.');
+  assert(optionalHoleHydrated.name === 'Optional', 'Optional hole deserialize failed.');
   const optionalHoleWithNoteHydrated = OptionalHole.deserialize(
     optionalHoleWithNoteSerialized
   );
-  const optionalHoleWithNoteCereal = optionalHoleWithNoteHydrated.cerealize();
-  assert(optionalHoleWithNoteCereal.note === 'HELLO', 'Optional field lost during serialization.');
+  assert(optionalHoleWithNoteHydrated.note === 'HELLO', 'Optional field lost during serialization.');
 }
+
+test('runOptionalHoleTests', () => {
+  runOptionalHoleTests();
+});

@@ -1,0 +1,15 @@
+/**
+ * Invalid Decimal Bound Test
+ *
+ * This file should fail to compile because the decimal bound is not a valid number.
+ * Expected error: "Invalid decimal bound in Min validator: 'not-a-number'"
+ */
+
+import { Message } from '@propane/runtime';
+import type { Min } from '@propane/types';
+import type { decimal } from '@propane/runtime';
+
+// ERROR: Invalid decimal string bound
+export type InvalidBound = Message<{
+  '1:value': Min<decimal<10, 2>, 'not-a-number'>;
+}>;

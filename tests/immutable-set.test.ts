@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { ImmutableSet } from '../runtime/common/set/immutable.ts';
+import { assert } from './assert.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { test } from 'node:test';
 
 export default function runImmutableSetTests() {
   testConstruction();
@@ -339,3 +340,7 @@ function testImmutability() {
   plain.add(999);
   assert(!set.has(999), 'Mutating toSet result should not affect original');
 }
+
+test('runImmutableSetTests', () => {
+  runImmutableSetTests();
+});

@@ -9,6 +9,7 @@ import { ensureBaseImport, DEFAULT_RUNTIME_SOURCE } from './base-import.js';
 import { createMessageReferenceResolver, type MessageReferenceResolver } from './message-lookup.js';
 import { buildDeclarations, GENERATED_ALIAS, IMPLICIT_MESSAGE } from './declarations.js';
 import { levenshteinDistance } from '../../../common/strings/levenshtein.js';
+import { getSourceFilename } from './babel-helpers.js';
 import {
   type BrandImportTracker,
   createBrandImportTracker,
@@ -75,9 +76,11 @@ export interface PropaneState {
   usesTaggedMessageData: boolean;
   usesListeners: boolean;
   usesMessageConstructor: boolean;
+  usesMessageValue: boolean;
   usesDataValue: boolean;
   usesParseCerealString: boolean;
   usesDataObject: boolean;
+  usesEnsure: boolean;
   usesSkip: boolean;
   hasGenericTypes: boolean;
   // Type-only import flags for GET_MESSAGE_CHILDREN yield type
@@ -101,6 +104,7 @@ export interface PropaneState {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
+  usesAnyDecimal: boolean;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -328,8 +332,7 @@ function extractExtendDecorator(
 ): ExtendInfo | null {
   const comments = commentSourcePath.node.leadingComments ?? [];
   const extendInfos: { comment: t.Comment; path: string }[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-  const sourceFilename = ((typeAliasPath.hub as any)?.file?.opts?.filename ?? '') as string;
+  const sourceFilename = getSourceFilename(typeAliasPath);
 
   for (const comment of comments) {
     const lines = comment.type === 'CommentLine'
@@ -442,6 +445,8 @@ function extractExtendDecorator(
 export default function propanePlugin() {
   const declaredTypeNames = new Set<string>();
   const declaredMessageTypeNames = new Set<string>();
+  // Map of type alias name -> type annotation for resolving defaults
+  const typeAliasDefinitions = new Map<string, t.TSType>();
   const getMessageReferenceName: MessageReferenceResolver =
     createMessageReferenceResolver(declaredMessageTypeNames);
 
@@ -461,9 +466,11 @@ export default function propanePlugin() {
           state.usesTaggedMessageData = false;
           state.usesListeners = false;
           state.usesMessageConstructor = false;
+          state.usesMessageValue = false;
           state.usesDataValue = false;
           state.usesParseCerealString = false;
           state.usesDataObject = false;
+          state.usesEnsure = false;
           state.usesSkip = false;
           state.hasGenericTypes = false;
           state.needsImmutableArrayType = false;
@@ -486,6 +493,7 @@ export default function propanePlugin() {
           state.usesLessThan = false;
           state.usesLessThanOrEqual = false;
           state.usesInRange = false;
+          state.usesAnyDecimal = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
@@ -600,7 +608,7 @@ export default function propanePlugin() {
         }
 
         // Register the type alias for reference tracking (even if not a message)
-        registerTypeAlias(declarationPath.node, declaredTypeNames);
+        registerTypeAlias(declarationPath.node, declaredTypeNames, typeAliasDefinitions);
 
         // Check if this is a message type using PMT (parsed by shared parser in Program.enter)
         type ImplicitNode = t.TSTypeAliasDeclaration & {
@@ -653,6 +661,7 @@ export default function propanePlugin() {
           state,
           declaredTypeNames,
           declaredMessageTypeNames,
+          typeAliasDefinitions,
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
           brandTracker: state.brandTracker,
@@ -681,7 +690,7 @@ export default function propanePlugin() {
         }
 
         // Register the type alias for reference tracking (even if not a message)
-        registerTypeAlias(path.node, declaredTypeNames);
+        registerTypeAlias(path.node, declaredTypeNames, typeAliasDefinitions);
 
         // Check if this is a message type using PMT (parsed by shared parser in Program.enter)
         const isImplicitMessage = (path.node as t.TSTypeAliasDeclaration & {
@@ -728,6 +737,7 @@ export default function propanePlugin() {
           state,
           declaredTypeNames,
           declaredMessageTypeNames,
+          typeAliasDefinitions,
           getMessageReferenceName,
           extendInfo: extendInfo ?? undefined,
           brandTracker: state.brandTracker,

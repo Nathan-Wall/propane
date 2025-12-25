@@ -144,6 +144,8 @@ interface BuildDeclarationsOptions {
   state: PropaneState;
   declaredTypeNames: Set<string>;
   declaredMessageTypeNames: Set<string>;
+  /** Map of type alias name -> type annotation for resolving defaults */
+  typeAliasDefinitions?: Map<string, t.TSType>;
   getMessageReferenceName: (typePath: NodePath<t.TSType>) => string | null;
   /** Extension info if this type has an @extend decorator */
   extendInfo?: ExtendInfo;
@@ -160,6 +162,7 @@ export function buildDeclarations(
     state,
     declaredTypeNames,
     declaredMessageTypeNames,
+    typeAliasDefinitions,
     getMessageReferenceName,
     extendInfo,
     brandTracker,
@@ -352,6 +355,7 @@ export function buildDeclarations(
     typeAlias,
     properties,
     exported,
+    state,
     generatedTypeNames,
     className
   );
@@ -365,7 +369,8 @@ export function buildDeclarations(
     wrapperInfo,
     state.validatorTracker
       ? { registry: state.typeRegistry, tracker: state.validatorTracker }
-      : undefined
+      : undefined,
+    typeAliasDefinitions
   );
 
   state.usesPropaneBase = true;

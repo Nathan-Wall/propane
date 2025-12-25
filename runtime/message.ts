@@ -29,6 +29,7 @@ const ARRAY_BUFFER_PREFIX = 'B';
 export type DataPrimitive =
   | string
   | number
+  | bigint
   | boolean
   | null
   | undefined;
@@ -93,19 +94,28 @@ export interface MessagePropDescriptor<T extends object> {
 }
 
 /**
+ * Extract the Data type from a Message<Data> type.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MessageData<T extends Message<any>> = T extends Message<infer D> ? D : never;
+
+/**
+ * The Value type for a Message: either the message instance or its data.
+ * Exported for use in generated generic parse methods.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type MessageValue<T extends Message<any>> = T | MessageData<T>;
+
+/**
  * Interface for generic message constructors.
  * Used when passing constructors to generic message classes.
  * Uses Message<any> constraint to allow generic types like Response<T>
  * where T extends Message<any>.
  */
-
-export interface MessageConstructor<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  T extends Message<any>,
-  A extends unknown[]
-> {
-  new (...args: A): T;
-  deserialize(data: string): T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface MessageConstructor<T extends Message<any>> {
+  new (props?: MessageValue<T>, options?: { skipValidation?: boolean }): T;
+  deserialize(data: string, options?: { skipValidation?: boolean }): T;
   readonly $typeName: string;
 }
 
@@ -124,14 +134,6 @@ export interface SerializeOptions {
   includeTag?: boolean;
 }
 
-type MessageFromEntries<T extends DataObject> = Message<T> & {
-  $fromEntries(entries: Record<string, unknown>): T;
-};
-
-interface InternalMessageConstructor<T extends DataObject> {
-  new(props: T, options?: { skipValidation?: boolean }): Message<T>;
-  prototype: MessageFromEntries<T>;
-}
 
 // Intern pool for message instances, keyed by serialized form
 // Uses WeakRef to allow garbage collection of unused instances
@@ -158,7 +160,19 @@ interface ParentChainEntry {
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
-export abstract class Message<T extends DataObject> {
+/**
+ * Structural type that matches any Message instance.
+ * Use this as a type constraint instead of Message<any> to avoid
+ * TypeScript invariance issues with generic class type parameters.
+ */
+export interface AnyMessage {
+  readonly $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}
+
+export abstract class Message<T extends object> {
   readonly #typeTag: symbol;
   readonly #typeName: string;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
@@ -176,7 +190,7 @@ export abstract class Message<T extends DataObject> {
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
-  protected abstract $fromEntries(entries: Record<string, unknown>): T;
+  protected abstract $fromEntries(entries: Record<string, unknown>, options?: { skipValidation?: boolean }): T;
 
   /**
    * Create a new message with a child replaced at the given key.
@@ -484,12 +498,12 @@ export abstract class Message<T extends DataObject> {
     return this.serialize() === other.serialize();
   }
 
-  private cerealize(): T {
-    return this.cerealizeWithDescriptors(this.$getPropDescriptors());
-  }
-
-  private cerealizeWithDescriptors(descriptors: MessagePropDescriptor<T>[]): T {
-    return descriptors.reduce((acc, descriptor) => {
+  /**
+   * Returns the message data as a plain object.
+   * Used internally by generated set() methods.
+   */
+  protected toData(): T {
+    return this.$getPropDescriptors().reduce((acc, descriptor) => {
       acc[descriptor.name] = descriptor.getValue();
       return acc;
     }, {} as T);
@@ -554,22 +568,7 @@ export abstract class Message<T extends DataObject> {
    * Use `serialize()` for serialization.
    */
   toJSON(): unknown {
-    return normalizeForJson(this.cerealize());
-  }
-
-  static deserialize<T extends DataObject>(
-    this: InternalMessageConstructor<T>,
-    message: string,
-    options?: { skipValidation?: boolean }
-  ) {
-    const payload = ensure.simpleObject(
-      parseCerealString(message),
-      emsg`Expected an object when deserializing: ${message}`,
-    );
-    const proto = this.prototype;
-    const props = proto.$fromEntries(payload);
-    // Pass options to constructor; generated classes use skipValidation
-    return new this(props, options);
+    return normalizeForJson(this.toData());
   }
 
   /**
@@ -577,7 +576,7 @@ export abstract class Message<T extends DataObject> {
    * If an equivalent message has been interned before, returns that instance.
    * Otherwise, interns this message and returns it.
    */
-  private intern(): this {
+  protected intern(): this {
     // Messages with listeners should be detached before interning
     const toIntern = this.hasActiveListeners() ? this.detach() : this;
 

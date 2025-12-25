@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, SKIP, ValidationError } from "../runtime/index.js";
-import type { MessagePropDescriptor, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export class Wrapper extends Message<Wrapper.Data> {
   static TYPE_TAG = Symbol("Wrapper");
   static readonly $typeName = "Wrapper";
@@ -17,31 +17,52 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#payload = props ? props.payload : new ImmutableDate(0);
+    this.#payload = (props ? props.payload : new ImmutableDate(0)) as Date | {
+      d: Date;
+    };
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
     return [{
       name: "payload",
       fieldNumber: null,
-      getValue: () => this.#payload
+      getValue: () => this.#payload as Date | {
+        d: Date;
+      }
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Wrapper.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Wrapper.Data {
     const props = {} as Partial<Wrapper.Data>;
     const payloadValue = entries["payload"];
     if (payloadValue === undefined) throw new Error("Missing required property \"payload\".");
-    if (!(payloadValue instanceof Date || payloadValue instanceof ImmutableDate || typeof payloadValue === "object" && payloadValue !== null && payloadValue.d !== undefined && (payloadValue.d instanceof Date || payloadValue.d instanceof ImmutableDate))) throw new Error("Invalid value for property \"payload\".");
-    props.payload = payloadValue;
+    if (!(payloadValue as object instanceof Date || payloadValue as object instanceof ImmutableDate || typeof payloadValue === "object" && payloadValue !== null && (payloadValue as Record<string, unknown>)["d"] !== undefined && ((payloadValue as Record<string, unknown>)["d"] as object instanceof Date || (payloadValue as Record<string, unknown>)["d"] as object instanceof ImmutableDate))) throw new Error("Invalid value for property \"payload\".");
+    props.payload = payloadValue as Date | {
+      d: Date;
+    };
     return props as Wrapper.Data;
   }
-  #validate(data: Wrapper.Value | undefined) {}
+  static from(value: Wrapper.Value): Wrapper {
+    return value instanceof Wrapper ? value : new Wrapper(value);
+  }
+  #validate(data: Wrapper.Value | undefined) {
+    if (data === undefined) return;
+  }
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
     try {} catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
+  }
+  static deserialize<T extends typeof Wrapper>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get payload(): Date | {
     d: Date;
@@ -55,14 +76,16 @@ export class Wrapper extends Message<Wrapper.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof Wrapper)(data));
+    return this.$update(new (this.constructor as typeof Wrapper)(data) as this);
   }
   setPayload(value: Date | {
     d: Date;
   }) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      payload: value
-    }));
+      payload: value as Date | {
+        d: Date;
+      }
+    }) as this);
   }
 }
 export namespace Wrapper {

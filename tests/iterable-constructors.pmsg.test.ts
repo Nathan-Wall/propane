@@ -1,7 +1,8 @@
-import { assert } from './assert.ts';
-import { ImmutableArray } from '../runtime/common/array/immutable.ts';
-import { ImmutableSet } from '../runtime/common/set/immutable.ts';
-import { ImmutableMap } from '../runtime/common/map/immutable.ts';
+import { assert } from './assert.js';
+import { ImmutableArray } from '../runtime/common/array/immutable.js';
+import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { test } from 'node:test';
 
 export default function runIterableConstructorTests() {
   // Iterable with a misleading length property should still use Symbol.iterator
@@ -42,3 +43,7 @@ export default function runIterableConstructorTests() {
   assert(map.size === 2, 'ImmutableMap should consume iterable entries.');
   assert(map.get('x') === 1 && map.get('y') === 2, 'ImmutableMap should preserve iterable key/value pairs.');
 }
+
+test('runIterableConstructorTests', () => {
+  runIterableConstructorTests();
+});

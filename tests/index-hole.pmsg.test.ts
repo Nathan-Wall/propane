@@ -1,5 +1,6 @@
-import { assert } from './assert.ts';
-import { Hole } from './index-hole.pmsg.ts';
+import { assert } from './assert.js';
+import { Hole } from './index-hole.pmsg.js';
+import { test } from 'node:test';
 
 export default function runIndexHoleTests() {
 
@@ -14,12 +15,15 @@ export default function runIndexHoleTests() {
     holeSerialized === expectedHoleSerialization,
     `Hole serialization should use compact object literal. Got: ${holeSerialized}`
   );
-  assert(holeInstance.cerealize().id === 20, 'Hole serialization lost data.');
+  assert(holeInstance.id === 20, 'Hole serialization lost data.');
   const hydratedHole = Hole.deserialize(holeSerialized);
-  assert(hydratedHole.cerealize().name === 'Hole', 'Hole roundtrip failed.');
+  assert(hydratedHole.name === 'Hole', 'Hole roundtrip failed.');
 
   const holeRaw = ':{"1":20,"3":42,"name":"Hole"}';
   const holeHydrated = Hole.deserialize(holeRaw);
-  const holeHydratedCereal = holeHydrated.cerealize();
-  assert(holeHydratedCereal.name === 'Hole', 'Hole raw deserialize lost name.');
+  assert(holeHydrated.name === 'Hole', 'Hole raw deserialize lost name.');
 }
+
+test('runIndexHoleTests', () => {
+  runIndexHoleTests();
+});

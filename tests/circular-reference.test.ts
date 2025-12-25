@@ -1,15 +1,17 @@
-import { assert, assertThrows } from './assert.ts';
-import { Message } from '../runtime/message.ts';
+import { assert, assertThrows } from './assert.js';
+import { Message, DataObject, DataValue } from '../runtime/message.js';
+import { test } from 'node:test';
 
 interface ObjectFieldProps {
-  data: Record<string, unknown>;
+  [key: string]: DataValue;
+  data: DataObject;
 }
 
 class ObjectFieldMessage extends Message<ObjectFieldProps> {
   static readonly TYPE_TAG = Symbol('ObjectFieldMessage');
-  #data: Record<string, unknown>;
+  #data: DataObject;
 
-  constructor(data: Record<string, unknown>) {
+  constructor(data: DataObject) {
     super(ObjectFieldMessage.TYPE_TAG, 'ObjectFieldMessage');
     this.#data = data;
   }
@@ -23,7 +25,7 @@ class ObjectFieldMessage extends Message<ObjectFieldProps> {
     if (!data || typeof data !== 'object') {
       throw new TypeError('Missing required property "data".');
     }
-    return { data: data as Record<string, unknown> };
+    return { data: data as DataObject };
   }
 }
 
@@ -38,8 +40,9 @@ export default function runCircularReferenceTests() {
 function testDirectCircularReference() {
   // Create an object that references itself
   const circular: Record<string, unknown> = { name: 'test' };
-  circular.self = circular;
+  circular['self'] = circular;
 
+  // @ts-expect-error Testing with circular Record<string, unknown>
   const message = new ObjectFieldMessage(circular);
 
   assertThrows(
@@ -52,8 +55,9 @@ function testNestedCircularReference() {
   // Create a circular reference through nesting
   const parent: Record<string, unknown> = { name: 'parent' };
   const child: Record<string, unknown> = { name: 'child', parent };
-  parent.child = child;
+  parent['child'] = child;
 
+  // @ts-expect-error Testing with circular Record<string, unknown>
   const message = new ObjectFieldMessage(parent);
 
   assertThrows(
@@ -66,7 +70,7 @@ function testArrayCircularReference() {
   // Create a circular reference through an array
   const obj: Record<string, unknown> = { name: 'test' };
   const arr = [1, 2, obj];
-  obj.arr = arr;
+  obj['arr'] = arr;
 
   const message = new ObjectFieldMessage({ items: arr });
 
@@ -94,3 +98,7 @@ function testNonCircularSharedReference() {
     'Shared references should serialize successfully'
   );
 }
+
+test('runCircularReferenceTests', () => {
+  runCircularReferenceTests();
+});

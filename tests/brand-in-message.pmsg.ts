@@ -4,8 +4,8 @@
  * Test Brand types used as properties in Message types.
  */
 
-import type { Brand, MessagePropDescriptor, SetUpdates, Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
-import { Message } from "../runtime/index.js";
+import type { Brand, MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // A standalone Brand type (should transform)
 declare const _UserId_brand: unique symbol;
@@ -20,19 +20,21 @@ export class User extends Message<User.Data> {
   #id!: Brand<number, 'userId', typeof _User_id_brand>;
   #name!: string;
   #ref!: UserId;
-  constructor(props?: User.Value) {
+  constructor(props?: User.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && User.EMPTY) return User.EMPTY;
     super(User.TYPE_TAG, "User");
-    this.#id = props ? props.id : new Brand();
-    this.#name = props ? props.name : "";
-    this.#ref = props ? props.ref : new UserId();
+    this.#id = (props ? props.id : undefined) as Brand<number, 'userId', typeof _User_id_brand>;
+    this.#name = (props ? props.name : "") as string;
+    this.#ref = (props ? props.ref : undefined) as UserId;
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
     return [{
       name: "id",
       fieldNumber: 1,
-      getValue: () => this.#id
+      getValue: () => this.#id as Brand<number, 'userId', typeof _User_id_brand>
     }, {
       name: "name",
       fieldNumber: 2,
@@ -43,19 +45,32 @@ export class User extends Message<User.Data> {
       getValue: () => this.#ref
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): User.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): User.Data {
     const props = {} as Partial<User.Data>;
     const idValue = entries["1"] === undefined ? entries["id"] : entries["1"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
-    props.id = idValue;
+    props.id = idValue as Brand<number, 'userId', typeof _User_id_brand>;
     const nameValue = entries["2"] === undefined ? entries["name"] : entries["2"];
     if (nameValue === undefined) throw new Error("Missing required property \"name\".");
     if (!(typeof nameValue === "string")) throw new Error("Invalid value for property \"name\".");
-    props.name = nameValue;
+    props.name = nameValue as string;
     const refValue = entries["3"] === undefined ? entries["ref"] : entries["3"];
     if (refValue === undefined) throw new Error("Missing required property \"ref\".");
-    props.ref = refValue;
+    props.ref = refValue as UserId;
     return props as User.Data;
+  }
+  static from(value: User.Value): User {
+    return value instanceof User ? value : new User(value);
+  }
+  static deserialize<T extends typeof User>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): Brand<number, 'userId', typeof _User_id_brand> {
     return this.#id;
@@ -73,28 +88,28 @@ export class User extends Message<User.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof User)(data));
+    return this.$update(new (this.constructor as typeof User)(data) as this);
   }
   setId(value: Brand<number, 'userId', typeof _User_id_brand>) {
     return this.$update(new (this.constructor as typeof User)({
-      id: value,
+      id: value as Brand<number, 'userId', typeof _User_id_brand>,
       name: this.#name,
       ref: this.#ref
-    }));
+    }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof User)({
-      id: this.#id,
+      id: this.#id as Brand<number, 'userId', typeof _User_id_brand>,
       name: value,
       ref: this.#ref
-    }));
+    }) as this);
   }
   setRef(value: UserId) {
     return this.$update(new (this.constructor as typeof User)({
-      id: this.#id,
+      id: this.#id as Brand<number, 'userId', typeof _User_id_brand>,
       name: this.#name,
       ref: value
-    }));
+    }) as this);
   }
 }
 export namespace User {

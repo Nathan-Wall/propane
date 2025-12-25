@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // Nested message types for testing memo behavior with state persistence
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
@@ -9,10 +9,12 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   static readonly $typeName = "InnerMessage";
   static EMPTY: InnerMessage;
   #value!: string;
-  constructor(props?: InnerMessage.Value) {
+  constructor(props?: InnerMessage.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && InnerMessage.EMPTY) return InnerMessage.EMPTY;
     super(InnerMessage.TYPE_TAG, "InnerMessage");
-    this.#value = props ? props.value : "";
+    this.#value = (props ? props.value : "") as string;
     if (!props) InnerMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<InnerMessage.Data>[] {
@@ -22,13 +24,26 @@ export class InnerMessage extends Message<InnerMessage.Data> {
       getValue: () => this.#value
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): InnerMessage.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): InnerMessage.Data {
     const props = {} as Partial<InnerMessage.Data>;
     const valueValue = entries["1"] === undefined ? entries["value"] : entries["1"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
     if (!(typeof valueValue === "string")) throw new Error("Invalid value for property \"value\".");
-    props.value = valueValue;
+    props.value = valueValue as string;
     return props as InnerMessage.Data;
+  }
+  static from(value: InnerMessage.Value): InnerMessage {
+    return value instanceof InnerMessage ? value : new InnerMessage(value);
+  }
+  static deserialize<T extends typeof InnerMessage>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get value(): string {
     return this.#value;
@@ -40,12 +55,12 @@ export class InnerMessage extends Message<InnerMessage.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof InnerMessage)(data));
+    return this.$update(new (this.constructor as typeof InnerMessage)(data) as this);
   }
   setValue(value: string) {
     return this.$update(new (this.constructor as typeof InnerMessage)({
       value: value
-    }));
+    }) as this);
   }
 }
 export namespace InnerMessage {
@@ -65,7 +80,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   }) {
     if (!props && OuterMessage.EMPTY) return OuterMessage.EMPTY;
     super(OuterMessage.TYPE_TAG, "OuterMessage");
-    this.#counter = props ? props.counter : 0;
+    this.#counter = (props ? props.counter : 0) as number;
     this.#inner = props ? props.inner instanceof InnerMessage ? props.inner : new InnerMessage(props.inner, options) : new InnerMessage();
     if (!props) OuterMessage.EMPTY = this;
   }
@@ -77,34 +92,47 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     }, {
       name: "inner",
       fieldNumber: 2,
-      getValue: () => this.#inner
+      getValue: () => this.#inner as InnerMessage.Value
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): OuterMessage.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): OuterMessage.Data {
     const props = {} as Partial<OuterMessage.Data>;
     const counterValue = entries["1"] === undefined ? entries["counter"] : entries["1"];
     if (counterValue === undefined) throw new Error("Missing required property \"counter\".");
     if (!(typeof counterValue === "number")) throw new Error("Invalid value for property \"counter\".");
-    props.counter = counterValue;
+    props.counter = counterValue as number;
     const innerValue = entries["2"] === undefined ? entries["inner"] : entries["2"];
     if (innerValue === undefined) throw new Error("Missing required property \"inner\".");
-    const innerMessageValue = innerValue instanceof InnerMessage ? innerValue : new InnerMessage(innerValue);
+    const innerMessageValue = innerValue instanceof InnerMessage ? innerValue : new InnerMessage(innerValue as InnerMessage.Value, options);
     props.inner = innerMessageValue;
     return props as OuterMessage.Data;
   }
-  override [WITH_CHILD](key: string | number, child: unknown): OuterMessage {
+  static from(value: OuterMessage.Value): OuterMessage {
+    return value instanceof OuterMessage ? value : new OuterMessage(value);
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
       case "inner":
         return new (this.constructor as typeof OuterMessage)({
           counter: this.#counter,
           inner: child as InnerMessage
-        });
+        } as unknown as OuterMessage.Value) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["inner", this.#inner] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["inner", this.#inner] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof OuterMessage>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get counter(): number {
     return this.#counter;
@@ -119,19 +147,19 @@ export class OuterMessage extends Message<OuterMessage.Data> {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new (this.constructor as typeof OuterMessage)(data));
+    return this.$update(new (this.constructor as typeof OuterMessage)(data) as this);
   }
   setCounter(value: number) {
     return this.$update(new (this.constructor as typeof OuterMessage)({
       counter: value,
-      inner: this.#inner
-    }));
+      inner: this.#inner as InnerMessage.Value
+    }) as this);
   }
   setInner(value: InnerMessage.Value) {
     return this.$update(new (this.constructor as typeof OuterMessage)({
       counter: this.#counter,
-      inner: value instanceof InnerMessage ? value : new InnerMessage(value)
-    }));
+      inner: (value instanceof InnerMessage ? value : new InnerMessage(value)) as InnerMessage.Value
+    }) as this);
   }
 }
 export namespace OuterMessage {

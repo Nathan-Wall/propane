@@ -1,8 +1,9 @@
-import { assert } from './assert.ts';
-import { MapDateKey } from './map-date-key.pmsg.ts';
-import { ImmutableMap } from '../runtime/common/map/immutable.ts';
-import { ImmutableDate } from '../runtime/common/time/date.ts';
-import { ImmutableUrl } from '../runtime/common/web/url.ts';
+import { assert } from './assert.js';
+import { MapDateKey } from './map-date-key.pmsg.js';
+import { ImmutableMap } from '../runtime/common/map/immutable.js';
+import { ImmutableDate } from '../runtime/common/time/date.js';
+import { ImmutableUrl } from '../runtime/common/web/url.js';
+import { test } from 'node:test';
 
 export default function runMapDateKeyTests() {
   // Test Date as map key
@@ -26,10 +27,9 @@ export default function runMapDateKeyTests() {
     urlValues: urlMap,
   });
 
-  // Test cerealize returns the data
-  const cereal = instance.cerealize();
-  assert(cereal.dateValues instanceof ImmutableMap, 'dateValues should be ImmutableMap');
-  assert(cereal.urlValues instanceof ImmutableMap, 'urlValues should be ImmutableMap');
+  // Test property access returns ImmutableMap
+  assert(instance.dateValues instanceof ImmutableMap, 'dateValues should be ImmutableMap');
+  assert(instance.urlValues instanceof ImmutableMap, 'urlValues should be ImmutableMap');
 
   // Test serialization
   const serialized = instance.serialize();
@@ -39,10 +39,9 @@ export default function runMapDateKeyTests() {
 
   // Test deserialization
   const deserialized = MapDateKey.deserialize(serialized);
-  const deserializedData = deserialized.cerealize();
 
   // Verify Date keys are properly deserialized
-  const dateKeys = [...deserializedData.dateValues.keys()];
+  const dateKeys = [...deserialized.dateValues.keys()];
   assert(dateKeys.length === 2, 'Should have 2 date keys');
   assert(
     dateKeys.some(k => k instanceof Date || k instanceof ImmutableDate),
@@ -50,7 +49,7 @@ export default function runMapDateKeyTests() {
   );
 
   // Verify URL keys are properly deserialized
-  const urlKeys = [...deserializedData.urlValues.keys()];
+  const urlKeys = [...deserialized.urlValues.keys()];
   assert(urlKeys.length === 2, 'Should have 2 URL keys');
   assert(
     urlKeys.some(k => k instanceof URL || k instanceof ImmutableUrl),
@@ -66,19 +65,18 @@ export default function runMapDateKeyTests() {
     urlValues: urlMap,
     optionalDateMap: new Map([[date1, true]]),
   });
-  const optionalCereal = instanceWithOptional.cerealize();
-  assert(optionalCereal.optionalDateMap !== undefined, 'Optional date map should be defined');
-  assert(optionalCereal.optionalDateMap.size === 1, 'Optional date map should have 1 entry');
+  assert(instanceWithOptional.optionalDateMap !== undefined, 'Optional date map should be defined');
+  assert(instanceWithOptional.optionalDateMap!.size === 1, 'Optional date map should have 1 entry');
 
   // Test setters
   const newDate = new Date('2025-01-01T00:00:00Z');
-  const updated = instance.setDateValuesEntry(newDate, 300);
-  assert(updated.dateValues.size === 3, 'setDateValuesEntry should add new entry');
+  const updated = instance.setDateValue(newDate, 300);
+  assert(updated.dateValues.size === 3, 'setDateValue should add new entry');
   assert(instance.dateValues.size === 2, 'Original should not be mutated');
 
   const newUrl = new URL('https://example.com/path3');
-  const updatedUrl = instance.setUrlValuesEntry(newUrl, 'third');
-  assert(updatedUrl.urlValues.size === 3, 'setUrlValuesEntry should add new entry');
+  const updatedUrl = instance.setUrlValue(newUrl, 'third');
+  assert(updatedUrl.urlValues.size === 3, 'setUrlValue should add new entry');
 
   // Test ImmutableMap with Date keys
   const immutableDateMap = new ImmutableMap<Date, number>([
@@ -94,3 +92,7 @@ export default function runMapDateKeyTests() {
   ]);
   assert(immutableUrlMap.size === 2, 'ImmutableMap with URL keys should have correct size');
 }
+
+test('runMapDateKeyTests', () => {
+  runMapDateKeyTests();
+});

@@ -371,11 +371,23 @@ export function deserializeUnionValue(
 
   // Tagged format: {"$t": ..., "$v": ...}
   if ('$t' in obj && '$v' in obj) {
-    const typeTag = obj.$t as string;
+    // Validate $t is a string (could be corrupted data)
+    if (typeof obj.$t !== 'string') {
+      throw new Error(
+        `Invalid union wrapper: $t must be a string, got ${typeof obj.$t}`
+      );
+    }
+    const typeTag = obj.$t;
 
     // Message: {"$t": "message", "$v": ":$TypeName{...}"}
     if (typeTag === 'message') {
-      const taggedCereal = obj.$v as string;
+      // Validate $v is a string for message type
+      if (typeof obj.$v !== 'string') {
+        throw new Error(
+          `Invalid message union: $v must be a string, got ${typeof obj.$v}`
+        );
+      }
+      const taggedCereal = obj.$v;
       const typeName = extractTypeName(taggedCereal);
       const MessageClass = unionAnalysis.messageClasses?.get(typeName);
       if (MessageClass) {

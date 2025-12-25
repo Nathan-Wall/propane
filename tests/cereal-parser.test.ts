@@ -1,15 +1,16 @@
-import { assert, assertThrows } from './assert.ts';
+import { assert, assertThrows } from './assert.js';
 import { parseCerealString } from '../runtime/message.js';
 import { ImmutableMap } from '../runtime/common/map/immutable.js';
 import { ImmutableSet } from '../runtime/common/set/immutable.js';
+import { test } from 'node:test';
 
 export default function runCerealParserTests() {
   // 1. Whitespace tolerance
   // JSON-like structures with excessive mixed whitespace
   const whitespaceJson = ':{ \n  "a" : \t 1, \r\n "b":2 }';
   const wsObj = parseCerealString(whitespaceJson) as Record<string, number>;
-  assert(wsObj.a === 1, 'Whitespace parse failed for a');
-  assert(wsObj.b === 2, 'Whitespace parse failed for b');
+  assert(wsObj['a'] === 1, 'Whitespace parse failed for a');
+  assert(wsObj['b'] === 2, 'Whitespace parse failed for b');
 
   const whitespaceArray = ':[ 1,   2, \n 3 ]';
   const wsArr = parseCerealString(whitespaceArray) as number[];
@@ -20,22 +21,22 @@ export default function runCerealParserTests() {
   // Tests handling of escaped characters within strings
   const escapedStr = String.raw`:{ "key": "Line\nBreak", "quote": "He said \"Hello\"" }`;
   const escObj = parseCerealString(escapedStr) as Record<string, string>;
-  assert(escObj.key === 'Line\nBreak', 'Newline escape failed');
-  assert(escObj.quote === 'He said "Hello"', 'Quote escape failed');
+  assert(escObj['key'] === 'Line\nBreak', 'Newline escape failed');
+  assert(escObj['quote'] === 'He said "Hello"', 'Quote escape failed');
 
   // 3. Bare strings (identifiers)
   // Propane allows unquoted strings as keys and values
   const bareString = ':{ name: John, status: ACTIVE }';
   const bareObj = parseCerealString(bareString) as Record<string, string>;
-  assert(bareObj.name === 'John', 'Bare string value failed');
-  assert(bareObj.status === 'ACTIVE', 'Bare string value failed');
+  assert(bareObj['name'] === 'John', 'Bare string value failed');
+  assert(bareObj['status'] === 'ACTIVE', 'Bare string value failed');
 
   // 4. Bare strings with spaces
   // Verify bare strings are consumed until a delimiter, allowing spaces
   const bareSpace = ':{ name: John Doe, status: VERY ACTIVE }';
   const bareSpaceObj = parseCerealString(bareSpace) as Record<string, string>;
-  assert(bareSpaceObj.name === 'John Doe', 'Bare string with space failed (name)');
-  assert(bareSpaceObj.status === 'VERY ACTIVE', 'Bare string with space failed (status)');
+  assert(bareSpaceObj['name'] === 'John Doe', 'Bare string with space failed (name)');
+  assert(bareSpaceObj['status'] === 'VERY ACTIVE', 'Bare string with space failed (status)');
 
   // 5. Empty structures
   assert(Object.keys(parseCerealString(':{}') as object).length === 0, 'Empty object failed');
@@ -71,7 +72,7 @@ export default function runCerealParserTests() {
   type TaggedObj = { $tag: string; $data: Record<string, unknown> };
   const taggedObj = parseCerealString(tagged) as TaggedObj;
   assert(taggedObj.$tag === 'User', 'Tagged message tag extraction failed');
-  assert(taggedObj.$data.id === 1, 'Tagged message data extraction failed');
+  assert(taggedObj.$data['id'] === 1, 'Tagged message data extraction failed');
 
   // 9. Typed Primitives
   // Dates (D"ISO"), URLs (U"href"), ArrayBuffers (B"base64")
@@ -96,3 +97,7 @@ export default function runCerealParserTests() {
   assertThrows(() => parseCerealString(': { a: 1 } garbage'), 'Should throw on trailing garbage');
   assertThrows(() => parseCerealString(': $Tag'), 'Should throw on incomplete tag');
 }
+
+test('runCerealParserTests', () => {
+  runCerealParserTests();
+});

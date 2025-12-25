@@ -1,7 +1,9 @@
-import { assert } from './assert.ts';
-import { Message } from '../runtime/message.ts';
+import { assert } from './assert.js';
+import { Message, DataValue } from '../runtime/message.js';
+import { test } from 'node:test';
 
 interface PersonProps {
+  [key: string]: DataValue;
   name: string;
   age: number;
 }
@@ -49,3 +51,7 @@ export default function runMessageInternTests() {
   assert(p5.equals(p4), 'Instances with same value should be equal by value');
   assert(!p5.equals(p6), 'Instances with different value should not be equal by value');
 }
+
+test('runMessageInternTests', () => {
+  runMessageInternTests();
+});

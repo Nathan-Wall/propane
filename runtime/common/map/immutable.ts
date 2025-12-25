@@ -186,6 +186,16 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
+  /**
+   * Returns an ImmutableMap from the input.
+   * If the input is already an ImmutableMap, returns it as-is.
+   */
+  static from<K, V>(
+    input: ImmutableMap<K, V> | ReadonlyMap<K, V> | Iterable<readonly [K, V]>
+  ): ImmutableMap<K, V> {
+    return input instanceof ImmutableMap ? input : new ImmutableMap(input);
+  }
+
   constructor(
     entries?:
       | Iterable<readonly [K, V]>

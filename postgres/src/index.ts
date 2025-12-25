@@ -6,7 +6,7 @@
  */
 
 // Re-export scalar types from runtime for convenience
-export { int32, decimal, toInt32, toDecimal } from '@/runtime/common/numbers/scalars.js';
+export { int32, decimal, toInt32, toDecimal } from '@/common/numbers/scalars.js';
 
 // Export database wrapper types
 export {

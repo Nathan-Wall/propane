@@ -83,7 +83,8 @@ function isWrapperImportInternal(
   imports: PmtImport[],
   wrapperSources: Record<string, Set<string>>
 ): boolean {
-  // Map internal paths to their package names
+  // Map internal @/ paths to their package names
+  // Note: relative paths are normalized to @propane/* in parse-ast.ts
   const internalPathPatterns: Record<string, string> = {
     '@/runtime': '@propane/runtime',
     '@/postgres': '@propane/postgres',
