@@ -264,8 +264,8 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     switch (key) {
       case "sub":
         return new (this.constructor as typeof RequiredMessage)({
-          sub: child as UnionFirstNumber
-        } as unknown as RequiredMessage.Value) as this;
+          sub: child as UnionFirstNumber.Value
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }

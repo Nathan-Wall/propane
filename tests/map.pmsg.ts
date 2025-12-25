@@ -193,22 +193,22 @@ export class MapMessage extends Message<MapMessage.Data> {
     switch (key) {
       case "labels":
         return new (this.constructor as typeof MapMessage)({
-          labels: child as ImmutableMap<string | number, number>,
-          metadata: this.#metadata,
-          extras: this.#extras
-        } as unknown as MapMessage.Value) as this;
+          labels: child as Map<string | number, number> | Iterable<[string | number, number]>,
+          metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
+          extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
+        }) as this;
       case "metadata":
         return new (this.constructor as typeof MapMessage)({
-          labels: this.#labels,
-          metadata: child as ImmutableMap<string, MapMessage_Metadata_Value>,
-          extras: this.#extras
-        } as unknown as MapMessage.Value) as this;
+          labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
+          metadata: child as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
+          extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
+        }) as this;
       case "extras":
         return new (this.constructor as typeof MapMessage)({
-          labels: this.#labels,
-          metadata: this.#metadata,
-          extras: child as ImmutableMap<string, MapMessage_Extras_Value>
-        } as unknown as MapMessage.Value) as this;
+          labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
+          metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
+          extras: child as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -245,7 +245,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   clearLabels() {
     const labelsCurrent = this.labels;
@@ -258,7 +258,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   clearMetadata() {
     const metadataCurrent = this.metadata;
@@ -271,7 +271,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   deleteExtra(key: string) {
     const extrasCurrent = this.extras;
@@ -284,7 +284,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   deleteLabel(key: string | number) {
     const labelsCurrent = this.labels;
@@ -297,7 +297,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   deleteMetadataEntry(key: string) {
     const metadataCurrent = this.metadata;
@@ -310,7 +310,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   filterExtras(predicate: (value: MapMessage_Extras_Value, key: string) => boolean) {
     const extrasMapSource = this.#extras;
@@ -324,7 +324,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   filterLabels(predicate: (value: number, key: string | number) => boolean) {
     const labelsMapSource = this.#labels;
@@ -338,7 +338,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   filterMetadataEntries(predicate: (value: MapMessage_Metadata_Value, key: string) => boolean) {
     const metadataMapSource = this.#metadata;
@@ -352,7 +352,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mapExtras(mapper: (value: MapMessage_Extras_Value, key: string) => [string, MapMessage_Extras_Value]) {
     const extrasMapSource = this.#extras;
@@ -372,7 +372,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mapLabels(mapper: (value: number, key: string | number) => [string | number, number]) {
     const labelsMapSource = this.#labels;
@@ -392,7 +392,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mapMetadataEntries(mapper: (value: MapMessage_Metadata_Value, key: string) => [string, MapMessage_Metadata_Value]) {
     const metadataMapSource = this.#metadata;
@@ -412,7 +412,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mergeExtras(entries: ImmutableMap<string, MapMessage_Extras_Value> | ReadonlyMap<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>) {
     const extrasMapSource = this.#extras;
@@ -426,7 +426,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mergeLabels(entries: ImmutableMap<string | number, number> | ReadonlyMap<string | number, number> | Iterable<[string | number, number]>) {
     const labelsMapSource = this.#labels;
@@ -440,7 +440,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   mergeMetadataEntries(entries: ImmutableMap<string, MapMessage_Metadata_Value> | ReadonlyMap<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>) {
     const metadataMapSource = this.#metadata;
@@ -454,7 +454,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<MapMessage.Data>>) {
     const data = this.toData();
@@ -479,7 +479,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   setExtras(value: Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>) {
     return this.$update(new (this.constructor as typeof MapMessage)({
@@ -502,7 +502,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   setLabels(value: Map<string | number, number> | Iterable<[string | number, number]>) {
     return this.$update(new (this.constructor as typeof MapMessage)({
@@ -532,7 +532,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   unsetMetadata() {
     return this.$update(new (this.constructor as typeof MapMessage)({
@@ -552,7 +552,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: extrasMapNext as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   updateLabel(key: string | number, updater: (currentValue: number | undefined) => number) {
     const labelsMapSource = this.#labels;
@@ -566,7 +566,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: labelsMapNext as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
   updateMetadataEntry(key: string, updater: (currentValue: MapMessage_Metadata_Value | undefined) => MapMessage_Metadata_Value) {
     const metadataMapSource = this.#metadata;
@@ -580,7 +580,7 @@ export class MapMessage extends Message<MapMessage.Data> {
       labels: this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: metadataMapNext as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
-    } as unknown as MapMessage.Value) as this);
+    }) as this);
   }
 }
 export namespace MapMessage {

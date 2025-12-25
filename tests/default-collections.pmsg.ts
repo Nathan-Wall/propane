@@ -68,22 +68,22 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
     switch (key) {
       case "arr":
         return new (this.constructor as typeof DefaultCollections)({
-          arr: child as ImmutableArray<number>,
-          map: this.#map,
-          tags: this.#tags
-        } as unknown as DefaultCollections.Value) as this;
+          arr: child as number[] | Iterable<number>,
+          map: this.#map as Map<string, number> | Iterable<[string, number]>,
+          tags: this.#tags as Set<string> | Iterable<string>
+        }) as this;
       case "map":
         return new (this.constructor as typeof DefaultCollections)({
-          arr: this.#arr,
-          map: child as ImmutableMap<string, number>,
-          tags: this.#tags
-        } as unknown as DefaultCollections.Value) as this;
+          arr: this.#arr as number[] | Iterable<number>,
+          map: child as Map<string, number> | Iterable<[string, number]>,
+          tags: this.#tags as Set<string> | Iterable<string>
+        }) as this;
       case "tags":
         return new (this.constructor as typeof DefaultCollections)({
-          arr: this.#arr,
-          map: this.#map,
-          tags: child as ImmutableSet<string>
-        } as unknown as DefaultCollections.Value) as this;
+          arr: this.#arr as number[] | Iterable<number>,
+          map: this.#map as Map<string, number> | Iterable<[string, number]>,
+          tags: child as Set<string> | Iterable<string>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -119,7 +119,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   addTags(values: Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -133,7 +133,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   clearMap() {
     const mapCurrent = this.map;
@@ -146,7 +146,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   clearTags() {
     const tagsSetSource = this.tags ?? [];
@@ -158,7 +158,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   copyWithinArr(target: number, start: number, end?: number) {
     const arrArray = this.#arr;
@@ -168,7 +168,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   deleteMapEntry(key: string) {
     const mapCurrent = this.map;
@@ -181,7 +181,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   deleteTag(value: string) {
     const tagsSetSource = this.tags ?? [];
@@ -193,7 +193,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   deleteTags(values: Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -207,7 +207,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   fillArr(value: number, start?: number, end?: number) {
     const arrArray = this.#arr;
@@ -217,7 +217,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   filterMapEntries(predicate: (value: number, key: string) => boolean) {
     const mapMapSource = this.#map;
@@ -231,7 +231,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   filterTags(predicate: (value: string) => boolean) {
     const tagsSetSource = this.tags ?? [];
@@ -250,7 +250,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   mapMapEntries(mapper: (value: number, key: string) => [string, number]) {
     const mapMapSource = this.#map;
@@ -270,7 +270,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   mapTags(mapper: (value: string) => string) {
     const tagsSetSource = this.tags ?? [];
@@ -290,7 +290,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   mergeMapEntries(entries: ImmutableMap<string, number> | ReadonlyMap<string, number> | Iterable<[string, number]>) {
     const mapMapSource = this.#map;
@@ -304,7 +304,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   popArr() {
     if ((this.arr ?? []).length === 0) return this;
@@ -315,7 +315,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   pushArr(...values: number[]) {
     if (values.length === 0) return this;
@@ -325,7 +325,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   reverseArr() {
     const arrArray = this.#arr;
@@ -335,7 +335,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<DefaultCollections.Data>>) {
     const data = this.toData();
@@ -374,7 +374,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   setTags(value: Set<string> | Iterable<string>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
@@ -392,7 +392,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   sortArr(compareFn?: (a: number, b: number) => number) {
     const arrArray = this.#arr;
@@ -402,7 +402,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   spliceArr(start: number, deleteCount?: number, ...items: number[]) {
     const arrArray = this.#arr;
@@ -412,7 +412,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   unshiftArr(...values: number[]) {
     if (values.length === 0) return this;
@@ -422,7 +422,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: arrNext as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   updateMapEntry(key: string, updater: (currentValue: number | undefined) => number) {
     const mapMapSource = this.#map;
@@ -436,7 +436,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: mapMapNext as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
   updateTags(updater: (current: Set<string>) => Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -452,7 +452,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       tags: tagsSetNext as Set<string> | Iterable<string>
-    } as unknown as DefaultCollections.Value) as this);
+    }) as this);
   }
 }
 export namespace DefaultCollections {

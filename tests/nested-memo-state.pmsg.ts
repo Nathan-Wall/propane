@@ -118,8 +118,8 @@ export class OuterMessage extends Message<OuterMessage.Data> {
       case "inner":
         return new (this.constructor as typeof OuterMessage)({
           counter: this.#counter,
-          inner: child as InnerMessage
-        } as unknown as OuterMessage.Value) as this;
+          inner: child as InnerMessage.Value
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }

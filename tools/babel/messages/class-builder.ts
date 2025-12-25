@@ -3043,25 +3043,8 @@ function buildArrayMutationMethod(
       );
     }
   }
-  // Cast propsObject to the Value type to bypass type checking for internal types
-  // The internal storage uses ImmutableArray but Data expects Array
   const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
-  const valueTypeRef = typeParameters.length > 0
-    ? t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value')),
-        t.tsTypeParameterInstantiation(
-          typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
-        )
-      )
-    : t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
-      );
-  constructorArgs.push(
-    t.tsAsExpression(
-      t.tsAsExpression(propsObject, t.tsUnknownKeyword()),
-      valueTypeRef
-    )
-  );
+  constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
@@ -3790,25 +3773,8 @@ function buildMapMutationMethod(
       );
     }
   }
-  // Cast propsObject to the Value type to bypass type checking for internal types
-  // The internal storage uses ImmutableMap/ImmutableArray but Data expects Map/Array
   const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
-  const valueTypeRef = typeParameters.length > 0
-    ? t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value')),
-        t.tsTypeParameterInstantiation(
-          typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
-        )
-      )
-    : t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
-      );
-  constructorArgs.push(
-    t.tsAsExpression(
-      t.tsAsExpression(propsObject, t.tsUnknownKeyword()),
-      valueTypeRef
-    )
-  );
+  constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
@@ -3934,25 +3900,8 @@ function buildSetMutationMethod(
       );
     }
   }
-  // Cast propsObject to the Value type to bypass type checking for internal types
-  // The internal storage uses ImmutableSet but Data expects Set
   const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
-  const valueTypeRef = typeParameters.length > 0
-    ? t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value')),
-        t.tsTypeParameterInstantiation(
-          typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
-        )
-      )
-    : t.tsTypeReference(
-        t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
-      );
-  constructorArgs.push(
-    t.tsAsExpression(
-      t.tsAsExpression(propsObject, t.tsUnknownKeyword()),
-      valueTypeRef
-    )
-  );
+  constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
   // For non-generic messages, use this.constructor pattern to support subclassing
@@ -4448,20 +4397,28 @@ function buildWithChildMethod(
   // Build switch cases for each child property
   const switchCases: t.SwitchCase[] = messageChildren.map((prop) => {
     // Create new instance with this property replaced
-    // Cast child to the property's actual type
+    // Use displayType casts to match the Data interface expected by constructor
     const propsObject = t.objectExpression(
-      propDescriptors.map((p) =>
-        t.objectProperty(
-          t.identifier(p.name),
-          p === prop
-            ? t.tsAsExpression(
-              t.cloneNode(childId), t.cloneNode(p.typeAnnotation)
-            )
-            : t.memberExpression(
-              t.thisExpression(), t.cloneNode(p.privateName)
-            )
-        )
-      )
+      propDescriptors.map((p) => {
+        if (p === prop) {
+          // Cast child to the property's displayType (or inputTypeAnnotation if no displayType)
+          const castType = p.displayType ?? p.inputTypeAnnotation;
+          return t.objectProperty(
+            t.identifier(p.name),
+            t.tsAsExpression(t.cloneNode(childId), t.cloneNode(castType))
+          );
+        }
+        // For other properties, cast private field to displayType if needed
+        const privateAccess = t.memberExpression(
+          t.thisExpression(), t.cloneNode(p.privateName)
+        );
+        const needsCast = p.displayType &&
+          !typesAreEquivalent(p.displayType, p.inputTypeAnnotation);
+        const value = needsCast
+          ? t.tsAsExpression(privateAccess, t.cloneNode(p.displayType!))
+          : privateAccess;
+        return t.objectProperty(t.identifier(p.name), value);
+      })
     );
 
     // Build constructor args with class refs for generics
@@ -4477,25 +4434,7 @@ function buildWithChildMethod(
         );
       }
     }
-    // Cast propsObject to the Value type to bypass type checking for internal types
-    // The internal storage uses ImmutableMap/ImmutableArray but Data expects Map/Array
-    // Use double-cast (as unknown as Value) to satisfy TypeScript
-    const valueTypeRef = typeParameters.length > 0
-      ? t.tsTypeReference(
-          t.tsQualifiedName(t.identifier(typeName), t.identifier('Value')),
-          t.tsTypeParameterInstantiation(
-            typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
-          )
-        )
-      : t.tsTypeReference(
-          t.tsQualifiedName(t.identifier(typeName), t.identifier('Value'))
-        );
-    constructorArgs.push(
-      t.tsAsExpression(
-        t.tsAsExpression(propsObject, t.tsUnknownKeyword()),
-        valueTypeRef
-      )
-    );
+    constructorArgs.push(propsObject);
 
     // For generic messages, use direct construction: new ClassName(...)
     // For non-generic messages, use this.constructor pattern

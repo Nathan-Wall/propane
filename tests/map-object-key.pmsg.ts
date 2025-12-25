@@ -203,14 +203,14 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     switch (key) {
       case "objectKeys":
         return new (this.constructor as typeof MapObjectKey)({
-          objectKeys: child as ImmutableMap<MapObjectKey_ObjectKeys_Key, string>,
-          optionalObjectMap: this.#optionalObjectMap
-        } as unknown as MapObjectKey.Value) as this;
+          objectKeys: child as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
+          optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
+        }) as this;
       case "optionalObjectMap":
         return new (this.constructor as typeof MapObjectKey)({
-          objectKeys: this.#objectKeys,
-          optionalObjectMap: child as ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate>
-        } as unknown as MapObjectKey.Value) as this;
+          objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
+          optionalObjectMap: child as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -242,7 +242,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   clearOptionalObjectMap() {
     const optionalObjectMapCurrent = this.optionalObjectMap;
@@ -254,7 +254,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   deleteObjectKey(key: MapObjectKey_ObjectKeys_Key) {
     const objectKeysCurrent = this.objectKeys;
@@ -267,7 +267,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   deleteOptionalObjectMapEntry(key: MapObjectKey_OptionalObjectMap_Key) {
     const optionalObjectMapCurrent = this.optionalObjectMap;
@@ -280,7 +280,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   filterObjectKeys(predicate: (value: string, key: MapObjectKey_ObjectKeys_Key) => boolean) {
     const objectKeysMapSource = this.#objectKeys;
@@ -293,7 +293,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   filterOptionalObjectMapEntries(predicate: (value: ImmutableDate | Date, key: MapObjectKey_OptionalObjectMap_Key) => boolean) {
     const optionalObjectMapMapSource = this.#optionalObjectMap;
@@ -306,7 +306,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   mapObjectKeys(mapper: (value: string, key: MapObjectKey_ObjectKeys_Key) => [MapObjectKey_ObjectKeys_Key, string]) {
     const objectKeysMapSource = this.#objectKeys;
@@ -325,7 +325,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   mapOptionalObjectMapEntries(mapper: (value: ImmutableDate | Date, key: MapObjectKey_OptionalObjectMap_Key) => [MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date]) {
     const optionalObjectMapMapSource = this.#optionalObjectMap;
@@ -344,7 +344,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   mergeObjectKeys(entries: ImmutableMap<MapObjectKey_ObjectKeys_Key, string> | ReadonlyMap<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>) {
     const objectKeysMapSource = this.#objectKeys;
@@ -357,7 +357,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   mergeOptionalObjectMapEntries(entries: ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | ReadonlyMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, ImmutableDate | Date]>) {
     const optionalObjectMapMapSource = this.#optionalObjectMap;
@@ -370,7 +370,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<MapObjectKey.Data>>) {
     const data = this.toData();
@@ -395,7 +395,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   setObjectKeys(value: Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>) {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
@@ -423,7 +423,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   unsetOptionalObjectMap() {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
@@ -442,7 +442,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: objectKeysMapNext as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: this.#optionalObjectMap as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
   updateOptionalObjectMapEntry(key: MapObjectKey_OptionalObjectMap_Key, updater: (currentValue: ImmutableDate | Date | undefined) => ImmutableDate | Date) {
     const optionalObjectMapMapSource = this.#optionalObjectMap;
@@ -456,7 +456,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return this.$update(new (this.constructor as typeof MapObjectKey)({
       objectKeys: this.#objectKeys as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>,
       optionalObjectMap: optionalObjectMapMapNext as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>
-    } as unknown as MapObjectKey.Value) as this);
+    }) as this);
   }
 }
 export namespace MapObjectKey {

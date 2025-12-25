@@ -139,32 +139,32 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     switch (key) {
       case "names":
         return new (this.constructor as typeof ArrayMessage)({
-          names: child as ImmutableArray<string>,
-          scores: this.#scores,
-          flags: this.#flags,
-          labels: this.#labels
-        } as unknown as ArrayMessage.Value) as this;
+          names: child as string[] | Iterable<string>,
+          scores: this.#scores as number[] | Iterable<number>,
+          flags: this.#flags as boolean[] | Iterable<boolean>,
+          labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
+        }) as this;
       case "scores":
         return new (this.constructor as typeof ArrayMessage)({
-          names: this.#names,
-          scores: child as ImmutableArray<number>,
-          flags: this.#flags,
-          labels: this.#labels
-        } as unknown as ArrayMessage.Value) as this;
+          names: this.#names as string[] | Iterable<string>,
+          scores: child as number[] | Iterable<number>,
+          flags: this.#flags as boolean[] | Iterable<boolean>,
+          labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
+        }) as this;
       case "flags":
         return new (this.constructor as typeof ArrayMessage)({
-          names: this.#names,
-          scores: this.#scores,
-          flags: child as ImmutableArray<boolean>,
-          labels: this.#labels
-        } as unknown as ArrayMessage.Value) as this;
+          names: this.#names as string[] | Iterable<string>,
+          scores: this.#scores as number[] | Iterable<number>,
+          flags: child as boolean[] | Iterable<boolean>,
+          labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
+        }) as this;
       case "labels":
         return new (this.constructor as typeof ArrayMessage)({
-          names: this.#names,
-          scores: this.#scores,
-          flags: this.#flags,
-          labels: child as ImmutableArray<ArrayMessage_Labels_Item>
-        } as unknown as ArrayMessage.Value) as this;
+          names: this.#names as string[] | Iterable<string>,
+          scores: this.#scores as number[] | Iterable<number>,
+          flags: this.#flags as boolean[] | Iterable<boolean>,
+          labels: child as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -203,7 +203,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   copyWithinLabels(target: number, start: number, end?: number) {
     const labelsArray = this.#labels;
@@ -214,7 +214,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   copyWithinNames(target: number, start: number, end?: number) {
     const namesArray = this.#names;
@@ -225,7 +225,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   copyWithinScores(target: number, start: number, end?: number) {
     const scoresArray = this.#scores;
@@ -236,7 +236,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   fillFlag(value: boolean, start?: number, end?: number) {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -247,7 +247,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   fillLabel(value: ArrayMessage_Labels_Item, start?: number, end?: number) {
     const labelsArray = this.#labels;
@@ -258,7 +258,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   fillName(value: string, start?: number, end?: number) {
     const namesArray = this.#names;
@@ -269,7 +269,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   fillScore(value: number, start?: number, end?: number) {
     const scoresArray = this.#scores;
@@ -280,7 +280,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   popFlag() {
     if ((this.flags ?? []).length === 0) return this;
@@ -292,7 +292,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   popLabel() {
     if ((this.labels ?? []).length === 0) return this;
@@ -304,7 +304,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   popName() {
     if ((this.names ?? []).length === 0) return this;
@@ -316,7 +316,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   popScore() {
     if ((this.scores ?? []).length === 0) return this;
@@ -328,7 +328,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   pushFlag(...values: boolean[]) {
     if (values.length === 0) return this;
@@ -339,7 +339,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   pushLabel(...values: ArrayMessage_Labels_Item[]) {
     if (values.length === 0) return this;
@@ -350,7 +350,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   pushName(...values: string[]) {
     if (values.length === 0) return this;
@@ -361,7 +361,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   pushScore(...values: number[]) {
     if (values.length === 0) return this;
@@ -372,7 +372,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   reverseFlags() {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -383,7 +383,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   reverseLabels() {
     const labelsArray = this.#labels;
@@ -394,7 +394,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   reverseNames() {
     const namesArray = this.#names;
@@ -405,7 +405,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   reverseScores() {
     const scoresArray = this.#scores;
@@ -416,7 +416,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<ArrayMessage.Data>>) {
     const data = this.toData();
@@ -469,7 +469,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   shiftLabel() {
     if ((this.labels ?? []).length === 0) return this;
@@ -481,7 +481,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   shiftName() {
     if ((this.names ?? []).length === 0) return this;
@@ -493,7 +493,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   shiftScore() {
     if ((this.scores ?? []).length === 0) return this;
@@ -505,7 +505,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   sortFlags(compareFn?: (a: boolean, b: boolean) => number) {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -516,7 +516,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   sortLabels(compareFn?: (a: ArrayMessage_Labels_Item, b: ArrayMessage_Labels_Item) => number) {
     const labelsArray = this.#labels;
@@ -527,7 +527,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   sortNames(compareFn?: (a: string, b: string) => number) {
     const namesArray = this.#names;
@@ -538,7 +538,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   sortScores(compareFn?: (a: number, b: number) => number) {
     const scoresArray = this.#scores;
@@ -549,7 +549,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   spliceFlag(start: number, deleteCount?: number, ...items: boolean[]) {
     const flagsArray = this.#flags === undefined ? [] : this.#flags;
@@ -560,7 +560,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   spliceLabel(start: number, deleteCount?: number, ...items: ArrayMessage_Labels_Item[]) {
     const labelsArray = this.#labels;
@@ -571,7 +571,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   spliceName(start: number, deleteCount?: number, ...items: string[]) {
     const namesArray = this.#names;
@@ -582,7 +582,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   spliceScore(start: number, deleteCount?: number, ...items: number[]) {
     const scoresArray = this.#scores;
@@ -593,7 +593,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   unsetFlags() {
     return this.$update(new (this.constructor as typeof ArrayMessage)({
@@ -611,7 +611,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: flagsNext as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   unshiftLabel(...values: ArrayMessage_Labels_Item[]) {
     if (values.length === 0) return this;
@@ -622,7 +622,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: labelsNext as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   unshiftName(...values: string[]) {
     if (values.length === 0) return this;
@@ -633,7 +633,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: this.#scores as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
   unshiftScore(...values: number[]) {
     if (values.length === 0) return this;
@@ -644,7 +644,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
       scores: scoresNext as number[] | Iterable<number>,
       flags: this.#flags as boolean[] | Iterable<boolean>,
       labels: this.#labels as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>
-    } as unknown as ArrayMessage.Value) as this);
+    }) as this);
   }
 }
 export namespace ArrayMessage {

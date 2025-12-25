@@ -138,12 +138,12 @@ export class User extends Message<User.Data> {
           name: this.#name,
           email: this.#email,
           passwordHash: this.#passwordHash,
-          created: this.#created,
-          updated: this.#updated,
+          created: this.#created as ImmutableDate | Date,
+          updated: this.#updated as ImmutableDate | Date,
           active: this.#active,
-          eyeColor: this.#eyeColor,
-          height: child as Distance
-        } as unknown as User.Value) as this;
+          eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+          height: child as Distance.Value
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }

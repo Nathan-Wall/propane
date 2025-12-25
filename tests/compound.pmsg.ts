@@ -127,22 +127,22 @@ export class Compound extends Message<Compound.Data> {
     switch (key) {
       case "user":
         return new (this.constructor as typeof Compound)({
-          user: child as User,
-          indexed: this.#indexed,
-          inline: this.#inline
-        } as unknown as Compound.Value) as this;
+          user: child as User.Value,
+          indexed: this.#indexed as Indexed.Value,
+          inline: this.#inline as Compound_Inline.Value
+        }) as this;
       case "indexed":
         return new (this.constructor as typeof Compound)({
-          user: this.#user,
-          indexed: child as Indexed,
-          inline: this.#inline
-        } as unknown as Compound.Value) as this;
+          user: this.#user as User.Value,
+          indexed: child as Indexed.Value,
+          inline: this.#inline as Compound_Inline.Value
+        }) as this;
       case "inline":
         return new (this.constructor as typeof Compound)({
-          user: this.#user,
-          indexed: this.#indexed,
-          inline: child as Compound_Inline
-        } as unknown as Compound.Value) as this;
+          user: this.#user as User.Value,
+          indexed: this.#indexed as Indexed.Value,
+          inline: child as Compound_Inline.Value
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }

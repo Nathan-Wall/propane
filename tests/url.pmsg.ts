@@ -72,10 +72,10 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       case "links":
         return new (this.constructor as typeof UrlMessage)({
           id: this.#id,
-          primary: this.#primary,
-          secondary: this.#secondary,
-          links: child as ImmutableArray<ImmutableUrl>
-        } as unknown as UrlMessage.Value) as this;
+          primary: this.#primary as ImmutableUrl | URL,
+          secondary: this.#secondary as ImmutableUrl | URL,
+          links: child as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -111,7 +111,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   fillLink(value: URL, start?: number, end?: number) {
     const linksArray = this.#links;
@@ -122,7 +122,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   popLink() {
     if ((this.links ?? []).length === 0) return this;
@@ -134,7 +134,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   pushLink(...values: URL[]) {
     if (values.length === 0) return this;
@@ -145,7 +145,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   reverseLinks() {
     const linksArray = this.#links;
@@ -156,7 +156,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<UrlMessage.Data>>) {
     const data = this.toData();
@@ -209,7 +209,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   sortLinks(compareFn?: (a: URL, b: URL) => number) {
     const linksArray = this.#links;
@@ -220,7 +220,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   spliceLink(start: number, deleteCount?: number, ...items: URL[]) {
     const linksArray = this.#links;
@@ -231,7 +231,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
   unsetSecondary() {
     return this.$update(new (this.constructor as typeof UrlMessage)({
@@ -249,7 +249,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       primary: this.#primary as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
-    } as unknown as UrlMessage.Value) as this);
+    }) as this);
   }
 }
 export namespace UrlMessage {

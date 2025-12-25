@@ -54,14 +54,14 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     switch (key) {
       case "arr":
         return new (this.constructor as typeof ImmutableArraySet)({
-          arr: child as ImmutableArray<number>,
-          items: this.#items
-        } as unknown as ImmutableArraySet.Value) as this;
+          arr: child as number[] | Iterable<number>,
+          items: this.#items as Set<string> | Iterable<string>
+        }) as this;
       case "items":
         return new (this.constructor as typeof ImmutableArraySet)({
-          arr: this.#arr,
-          items: child as ImmutableSet<string>
-        } as unknown as ImmutableArraySet.Value) as this;
+          arr: this.#arr as number[] | Iterable<number>,
+          items: child as Set<string> | Iterable<string>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -92,7 +92,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   addItems(values: Iterable<string>) {
     const itemsSetSource = this.items ?? [];
@@ -105,7 +105,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   clearItems() {
     const itemsSetSource = this.items ?? [];
@@ -116,7 +116,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   copyWithinArr(target: number, start: number, end?: number) {
     const arrArray = this.#arr;
@@ -125,7 +125,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   deleteItem(value: string) {
     const itemsSetSource = this.items ?? [];
@@ -136,7 +136,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   deleteItems(values: Iterable<string>) {
     const itemsSetSource = this.items ?? [];
@@ -149,7 +149,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   fillArr(value: number, start?: number, end?: number) {
     const arrArray = this.#arr;
@@ -158,7 +158,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   filterItems(predicate: (value: string) => boolean) {
     const itemsSetSource = this.items ?? [];
@@ -176,7 +176,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   mapItems(mapper: (value: string) => string) {
     const itemsSetSource = this.items ?? [];
@@ -195,7 +195,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   popArr() {
     if ((this.arr ?? []).length === 0) return this;
@@ -205,7 +205,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   pushArr(...values: number[]) {
     if (values.length === 0) return this;
@@ -214,7 +214,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   reverseArr() {
     const arrArray = this.#arr;
@@ -223,7 +223,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<ImmutableArraySet.Data>>) {
     const data = this.toData();
@@ -254,7 +254,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   sortArr(compareFn?: (a: number, b: number) => number) {
     const arrArray = this.#arr;
@@ -263,7 +263,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   spliceArr(start: number, deleteCount?: number, ...items: number[]) {
     const arrArray = this.#arr;
@@ -272,7 +272,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   unshiftArr(...values: number[]) {
     if (values.length === 0) return this;
@@ -281,7 +281,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: arrNext as number[] | Iterable<number>,
       items: this.#items as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
   updateItems(updater: (current: Set<string>) => Iterable<string>) {
     const itemsSetSource = this.items ?? [];
@@ -296,7 +296,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
       items: itemsSetNext as Set<string> | Iterable<string>
-    } as unknown as ImmutableArraySet.Value) as this);
+    }) as this);
   }
 }
 export namespace ImmutableArraySet {

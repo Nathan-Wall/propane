@@ -52,14 +52,14 @@ export class SetMessage extends Message<SetMessage.Data> {
     switch (key) {
       case "tags":
         return new (this.constructor as typeof SetMessage)({
-          tags: child as ImmutableSet<string>,
-          ids: this.#ids
-        } as unknown as SetMessage.Value) as this;
+          tags: child as Set<string> | Iterable<string>,
+          ids: this.#ids as Set<number> | Iterable<number>
+        }) as this;
       case "ids":
         return new (this.constructor as typeof SetMessage)({
-          tags: this.#tags,
-          ids: child as ImmutableSet<number>
-        } as unknown as SetMessage.Value) as this;
+          tags: this.#tags as Set<string> | Iterable<string>,
+          ids: child as Set<number> | Iterable<number>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -90,7 +90,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   addIds(values: Iterable<number>) {
     const idsSetSource = this.ids ?? [];
@@ -103,7 +103,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   addTag(value: string) {
     const tagsSetSource = this.tags ?? [];
@@ -114,7 +114,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   addTags(values: Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -127,7 +127,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   clearIds() {
     const idsSetSource = this.ids ?? [];
@@ -138,7 +138,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   clearTags() {
     const tagsSetSource = this.tags ?? [];
@@ -149,7 +149,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   deleteId(value: number) {
     const idsSetSource = this.ids ?? [];
@@ -160,7 +160,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   deleteIds(values: Iterable<number>) {
     const idsSetSource = this.ids ?? [];
@@ -173,7 +173,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   deleteTag(value: string) {
     const tagsSetSource = this.tags ?? [];
@@ -184,7 +184,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   deleteTags(values: Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -197,7 +197,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   filterIds(predicate: (value: number) => boolean) {
     const idsSetSource = this.ids ?? [];
@@ -215,7 +215,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   filterTags(predicate: (value: string) => boolean) {
     const tagsSetSource = this.tags ?? [];
@@ -233,7 +233,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   mapIds(mapper: (value: number) => number) {
     const idsSetSource = this.ids ?? [];
@@ -252,7 +252,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   mapTags(mapper: (value: string) => string) {
     const tagsSetSource = this.tags ?? [];
@@ -271,7 +271,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<SetMessage.Data>>) {
     const data = this.toData();
@@ -312,7 +312,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
       ids: idsSetNext as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
   updateTags(updater: (current: Set<string>) => Iterable<string>) {
     const tagsSetSource = this.tags ?? [];
@@ -327,7 +327,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: tagsSetNext as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
-    } as unknown as SetMessage.Value) as this);
+    }) as this);
   }
 }
 export namespace SetMessage {

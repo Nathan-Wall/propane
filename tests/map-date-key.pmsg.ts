@@ -63,22 +63,22 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     switch (key) {
       case "dateValues":
         return new (this.constructor as typeof MapDateKey)({
-          dateValues: child as ImmutableMap<ImmutableDate, number>,
-          urlValues: this.#urlValues,
-          optionalDateMap: this.#optionalDateMap
-        } as unknown as MapDateKey.Value) as this;
+          dateValues: child as Map<Date, number> | Iterable<[Date, number]>,
+          urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+          optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+        }) as this;
       case "urlValues":
         return new (this.constructor as typeof MapDateKey)({
-          dateValues: this.#dateValues,
-          urlValues: child as ImmutableMap<ImmutableUrl, string>,
-          optionalDateMap: this.#optionalDateMap
-        } as unknown as MapDateKey.Value) as this;
+          dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+          urlValues: child as Map<URL, string> | Iterable<[URL, string]>,
+          optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
+        }) as this;
       case "optionalDateMap":
         return new (this.constructor as typeof MapDateKey)({
-          dateValues: this.#dateValues,
-          urlValues: this.#urlValues,
-          optionalDateMap: child as ImmutableMap<ImmutableDate, boolean>
-        } as unknown as MapDateKey.Value) as this;
+          dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
+          urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
+          optionalDateMap: child as Map<Date, boolean> | Iterable<[Date, boolean]>
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
@@ -115,7 +115,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   clearOptionalDateMap() {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -128,7 +128,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   clearUrlValues() {
     const urlValuesCurrent = this.urlValues;
@@ -141,7 +141,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   deleteDateValue(key: ImmutableDate | Date) {
     const dateValuesCurrent = this.dateValues;
@@ -155,7 +155,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   deleteOptionalDateMapEntry(key: ImmutableDate | Date) {
     const optionalDateMapCurrent = this.optionalDateMap;
@@ -169,7 +169,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   deleteUrlValue(key: ImmutableUrl | URL) {
     const urlValuesCurrent = this.urlValues;
@@ -183,7 +183,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   filterDateValues(predicate: (value: number, key: ImmutableDate | Date) => boolean) {
     const dateValuesMapSource = this.#dateValues;
@@ -197,7 +197,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   filterOptionalDateMapEntries(predicate: (value: boolean, key: ImmutableDate | Date) => boolean) {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -211,7 +211,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   filterUrlValues(predicate: (value: string, key: ImmutableUrl | URL) => boolean) {
     const urlValuesMapSource = this.#urlValues;
@@ -225,7 +225,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mapDateValues(mapper: (value: number, key: ImmutableDate | Date) => [ImmutableDate | Date, number]) {
     const dateValuesMapSource = this.#dateValues;
@@ -245,7 +245,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mapOptionalDateMapEntries(mapper: (value: boolean, key: ImmutableDate | Date) => [ImmutableDate | Date, boolean]) {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -265,7 +265,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mapUrlValues(mapper: (value: string, key: ImmutableUrl | URL) => [ImmutableUrl | URL, string]) {
     const urlValuesMapSource = this.#urlValues;
@@ -285,7 +285,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mergeDateValues(entries: ImmutableMap<ImmutableDate | Date, number> | ReadonlyMap<ImmutableDate | Date, number> | Iterable<[ImmutableDate | Date, number]>) {
     const dateValuesMapSource = this.#dateValues;
@@ -299,7 +299,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mergeOptionalDateMapEntries(entries: ImmutableMap<ImmutableDate | Date, boolean> | ReadonlyMap<ImmutableDate | Date, boolean> | Iterable<[ImmutableDate | Date, boolean]>) {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -313,7 +313,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   mergeUrlValues(entries: ImmutableMap<ImmutableUrl | URL, string> | ReadonlyMap<ImmutableUrl | URL, string> | Iterable<[ImmutableUrl | URL, string]>) {
     const urlValuesMapSource = this.#urlValues;
@@ -327,7 +327,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<MapDateKey.Data>>) {
     const data = this.toData();
@@ -353,7 +353,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   setDateValues(value: Map<Date, number> | Iterable<[Date, number]>) {
     return this.$update(new (this.constructor as typeof MapDateKey)({
@@ -384,7 +384,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   setUrlValue(key: ImmutableUrl | URL, value: string) {
     const urlValuesCurrent = this.urlValues;
@@ -401,7 +401,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   setUrlValues(value: Map<URL, string> | Iterable<[URL, string]>) {
     return this.$update(new (this.constructor as typeof MapDateKey)({
@@ -429,7 +429,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: dateValuesMapNext as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   updateOptionalDateMapEntry(key: ImmutableDate | Date, updater: (currentValue: boolean | undefined) => boolean) {
     const optionalDateMapMapSource = this.#optionalDateMap;
@@ -444,7 +444,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: this.#urlValues as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: optionalDateMapMapNext as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
   updateUrlValue(key: ImmutableUrl | URL, updater: (currentValue: string | undefined) => string) {
     const urlValuesMapSource = this.#urlValues;
@@ -459,7 +459,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
       dateValues: this.#dateValues as Map<Date, number> | Iterable<[Date, number]>,
       urlValues: urlValuesMapNext as Map<URL, string> | Iterable<[URL, string]>,
       optionalDateMap: this.#optionalDateMap as Map<Date, boolean> | Iterable<[Date, boolean]>
-    } as unknown as MapDateKey.Value) as this);
+    }) as this);
   }
 }
 export namespace MapDateKey {
