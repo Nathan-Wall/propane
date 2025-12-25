@@ -6,6 +6,8 @@
  * using string representation.
  */
 
+import {CHECK_ASSERTS} from '@/common/assert/config.js';
+
 /**
  * Fixed-precision decimal type.
  *
@@ -129,6 +131,113 @@ export function toDecimal<P extends number, S extends number>(
   return normalized as decimal<P, S>;
 }
 
+/**
+ * Assert that a string is a normalized decimal format (when assertions enabled).
+ *
+ * Has two forms:
+ * - `assertDecimal(value)` - validates normalized format only
+ * - `assertDecimal(precision, scale, value)` - validates format, precision, and exact scale
+ *
+ * When `CHECK_ASSERTS` is false, returns the value without validation.
+ *
+ * Preserves type specificity: if you pass `decimal<10, 2>`, you get `decimal<10, 2>` back.
+ *
+ * @example
+ * ```typescript
+ * // Format-only validation
+ * assertDecimal('123.45');  // OK, returns AnyDecimal
+ * assertDecimal('00.10');   // Throws (not normalized)
+ *
+ * // Full precision/scale validation
+ * assertDecimal(10, 2, '123.45');  // OK, returns decimal<10, 2>
+ * assertDecimal(10, 2, '123.4');   // Throws (scale mismatch)
+ * ```
+ */
+export function assertDecimal<T extends AnyDecimal>(value: T): T;
+export function assertDecimal(value: string): AnyDecimal;
+export function assertDecimal<P extends number, S extends number>(
+  precision: P,
+  scale: S,
+  value: string,
+): decimal<P, S>;
+export function assertDecimal(
+  precisionOrValue: number | string,
+  scale?: number,
+  value?: string,
+): AnyDecimal {
+  if (typeof precisionOrValue === 'string') {
+    // Single argument: format validation only
+    if (CHECK_ASSERTS && !isNormalizedDecimalString(precisionOrValue)) {
+      throw new TypeError(`Invalid or non-normalized decimal format: ${precisionOrValue}`);
+    }
+    return precisionOrValue as AnyDecimal;
+  }
+
+  // Three arguments: full precision/scale validation
+  const precision = precisionOrValue;
+  if (CHECK_ASSERTS) {
+    if (!isDecimal(value, precision, scale!)) {
+      throw new TypeError(
+        `Value '${value}' does not match decimal<${precision}, ${scale}> (requires exact scale and valid precision)`,
+      );
+    }
+  }
+  return value as AnyDecimal;
+}
+
+/**
+ * Ensure a string is a normalized decimal format (always validates).
+ *
+ * Unlike `assertDecimal`, this always validates regardless of CHECK_ASSERTS.
+ * Use this at system boundaries where validation cannot be skipped.
+ *
+ * Has two forms:
+ * - `ensureDecimal(value)` - validates normalized format only
+ * - `ensureDecimal(precision, scale, value)` - validates format, precision, and exact scale
+ *
+ * Preserves type specificity: if you pass `decimal<10, 2>`, you get `decimal<10, 2>` back.
+ *
+ * @example
+ * ```typescript
+ * // Format-only validation
+ * ensureDecimal('123.45');  // OK, returns AnyDecimal
+ * ensureDecimal('00.10');   // Throws (not normalized)
+ *
+ * // Full precision/scale validation
+ * ensureDecimal(10, 2, '123.45');  // OK, returns decimal<10, 2>
+ * ensureDecimal(10, 2, '123.4');   // Throws (scale mismatch)
+ * ```
+ */
+export function ensureDecimal<T extends AnyDecimal>(value: T): T;
+export function ensureDecimal(value: string): AnyDecimal;
+export function ensureDecimal<P extends number, S extends number>(
+  precision: P,
+  scale: S,
+  value: string,
+): decimal<P, S>;
+export function ensureDecimal(
+  precisionOrValue: number | string,
+  scale?: number,
+  value?: string,
+): AnyDecimal {
+  if (typeof precisionOrValue === 'string') {
+    // Single argument: format validation only
+    if (!isNormalizedDecimalString(precisionOrValue)) {
+      throw new TypeError(`Invalid or non-normalized decimal format: ${precisionOrValue}`);
+    }
+    return precisionOrValue as AnyDecimal;
+  }
+
+  // Three arguments: full precision/scale validation
+  const precision = precisionOrValue;
+  if (!isDecimal(value, precision, scale!)) {
+    throw new TypeError(
+      `Value '${value}' does not match decimal<${precision}, ${scale}> (requires exact scale and valid precision)`,
+    );
+  }
+  return value as AnyDecimal;
+}
+
 // -----------------------------------------------------------------------------
 // Decimal Comparison Functions
 // -----------------------------------------------------------------------------
@@ -171,6 +280,9 @@ function compareAbsolute(a: string, b: string): ComparisonResult {
 /**
  * Compare two decimal values.
  *
+ * Handles non-normalized formats correctly (e.g., '00.1' equals '0.10').
+ * Normalizes by stripping leading zeros and comparing digit-by-digit.
+ *
  * @param a - First decimal value
  * @param b - Second decimal value
  * @returns -1 if a < b, 0 if a === b, 1 if a > b
@@ -179,6 +291,7 @@ function compareAbsolute(a: string, b: string): ComparisonResult {
  * ```typescript
  * decimalCompare(price1, price2);   // 0 (equal)
  * decimalCompare(amount, limit);    // 1 (a > b)
+ * decimalCompare('00.1', '0.10');   // 0 (equal after normalization)
  * ```
  */
 export function decimalCompare(a: AnyDecimal, b: AnyDecimal): ComparisonResult {
@@ -479,10 +592,14 @@ export function canBeDecimal(value: unknown, precision: number, scale: number): 
 }
 
 /**
- * Check if a string is a valid decimal format.
+ * Check if a string is a valid decimal format (lenient).
  *
- * This is a simple format check without precision/scale validation.
- * Use this for build-time validation of decimal string literals.
+ * This is a lenient format check without precision/scale validation.
+ * Accepts non-normalized formats like '00.1', '007', or '1.0'.
+ * All decimal comparison and sign-check functions handle these correctly
+ * by normalizing internally.
+ *
+ * For stricter validation requiring normalized form, use `isNormalizedDecimalString`.
  *
  * @param value - The string to check
  * @returns true if the string is a valid decimal format
@@ -492,6 +609,8 @@ export function canBeDecimal(value: unknown, precision: number, scale: number): 
  * isValidDecimalString('123.45');   // true
  * isValidDecimalString('-100.00');  // true
  * isValidDecimalString('100');      // true
+ * isValidDecimalString('00.10');    // true (non-normalized OK)
+ * isValidDecimalString('007');      // true (leading zeros OK)
  * isValidDecimalString('abc');      // false
  * isValidDecimalString('1.2.3');    // false
  * isValidDecimalString('');         // false
@@ -499,6 +618,35 @@ export function canBeDecimal(value: unknown, precision: number, scale: number): 
  */
 export function isValidDecimalString(value: string): boolean {
   return /^-?\d+(\.\d+)?$/.test(value);
+}
+
+/**
+ * Check if a string is a normalized decimal format (strict).
+ *
+ * Requires the string to be in normalized form:
+ * - No leading zeros in integer part (except single '0' for values < 1)
+ * - Valid decimal format
+ *
+ * Use this for validating values that should have been normalized by `toDecimal`.
+ * For lenient validation, use `isValidDecimalString`.
+ *
+ * @param value - The string to check
+ * @returns true if the string is a normalized decimal format
+ *
+ * @example
+ * ```typescript
+ * isNormalizedDecimalString('123.45');   // true
+ * isNormalizedDecimalString('0.10');     // true
+ * isNormalizedDecimalString('-0.5');     // true
+ * isNormalizedDecimalString('00.10');    // false (leading zero)
+ * isNormalizedDecimalString('007');      // false (leading zeros)
+ * isNormalizedDecimalString('abc');      // false
+ * ```
+ */
+export function isNormalizedDecimalString(value: string): boolean {
+  // Matches: optional minus, then either "0" or non-zero digit followed by digits,
+  // then optional decimal part
+  return /^-?(0|[1-9]\d*)(\.\d+)?$/.test(value);
 }
 
 // -----------------------------------------------------------------------------

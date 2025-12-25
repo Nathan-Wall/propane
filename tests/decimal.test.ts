@@ -2,6 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
   toDecimal,
+  assertDecimal,
+  ensureDecimal,
   decimalCompare,
   decimalEquals,
   decimalGreaterThan,
@@ -633,5 +635,144 @@ describe('decimalInRangeExclusive', () => {
     assert.strictEqual(decimalInRangeExclusive('-0.01', '0', '100'), false);
     // @ts-expect-error testing decimal functions with string literals
     assert.strictEqual(decimalInRangeExclusive('100.01', '0', '100'), false);
+  });
+});
+
+describe('assertDecimal', () => {
+  describe('single argument (format only)', () => {
+    it('should return the value for valid normalized decimal strings', () => {
+      assert.strictEqual(assertDecimal('123.45'), '123.45');
+      assert.strictEqual(assertDecimal('0'), '0');
+      assert.strictEqual(assertDecimal('-99.99'), '-99.99');
+      assert.strictEqual(assertDecimal('0.10'), '0.10');
+      assert.strictEqual(assertDecimal('1.0'), '1.0');
+    });
+
+    it('should throw for non-normalized formats', () => {
+      assert.throws(() => assertDecimal('00.1'), TypeError);
+      assert.throws(() => assertDecimal('007'), TypeError);
+      assert.throws(() => assertDecimal('00.10'), TypeError);
+      assert.throws(() => assertDecimal('01'), TypeError);
+    });
+
+    it('should throw for invalid formats', () => {
+      assert.throws(() => assertDecimal('abc'), TypeError);
+      assert.throws(() => assertDecimal('1.2.3'), TypeError);
+      assert.throws(() => assertDecimal(''), TypeError);
+      assert.throws(() => assertDecimal('$100'), TypeError);
+    });
+  });
+
+  describe('three arguments (precision, scale, value)', () => {
+    it('should return the value for valid decimal with exact scale', () => {
+      assert.strictEqual(assertDecimal(10, 2, '123.45'), '123.45');
+      assert.strictEqual(assertDecimal(10, 2, '0.00'), '0.00');
+      assert.strictEqual(assertDecimal(5, 0, '12345'), '12345');
+    });
+
+    it('should throw for scale mismatch', () => {
+      assert.throws(() => assertDecimal(10, 2, '123.4'), TypeError);
+      assert.throws(() => assertDecimal(10, 2, '123'), TypeError);
+      assert.throws(() => assertDecimal(10, 2, '123.456'), TypeError);
+    });
+
+    it('should throw for precision exceeded', () => {
+      assert.throws(() => assertDecimal(5, 2, '1234.56'), TypeError);
+    });
+  });
+});
+
+describe('ensureDecimal', () => {
+  describe('single argument (format only)', () => {
+    it('should return the value for valid normalized decimal strings', () => {
+      assert.strictEqual(ensureDecimal('123.45'), '123.45');
+      assert.strictEqual(ensureDecimal('0'), '0');
+      assert.strictEqual(ensureDecimal('-99.99'), '-99.99');
+      assert.strictEqual(ensureDecimal('0.10'), '0.10');
+      assert.strictEqual(ensureDecimal('1.0'), '1.0');
+    });
+
+    it('should throw for non-normalized formats', () => {
+      assert.throws(() => ensureDecimal('00.1'), TypeError);
+      assert.throws(() => ensureDecimal('007'), TypeError);
+      assert.throws(() => ensureDecimal('00.10'), TypeError);
+      assert.throws(() => ensureDecimal('01'), TypeError);
+    });
+
+    it('should throw for invalid formats', () => {
+      assert.throws(() => ensureDecimal('abc'), TypeError);
+      assert.throws(() => ensureDecimal('1.2.3'), TypeError);
+      assert.throws(() => ensureDecimal(''), TypeError);
+      assert.throws(() => ensureDecimal('$100'), TypeError);
+    });
+  });
+
+  describe('three arguments (precision, scale, value)', () => {
+    it('should return the value for valid decimal with exact scale', () => {
+      assert.strictEqual(ensureDecimal(10, 2, '123.45'), '123.45');
+      assert.strictEqual(ensureDecimal(10, 2, '0.00'), '0.00');
+      assert.strictEqual(ensureDecimal(5, 0, '12345'), '12345');
+    });
+
+    it('should throw for scale mismatch', () => {
+      assert.throws(() => ensureDecimal(10, 2, '123.4'), TypeError);
+      assert.throws(() => ensureDecimal(10, 2, '123'), TypeError);
+      assert.throws(() => ensureDecimal(10, 2, '123.456'), TypeError);
+    });
+
+    it('should throw for precision exceeded', () => {
+      assert.throws(() => ensureDecimal(5, 2, '1234.56'), TypeError);
+    });
+  });
+});
+
+describe('non-normalized format handling', () => {
+  it('decimalCompare should treat non-normalized formats as equal', () => {
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalCompare('00.1', '0.1'), 0);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalCompare('00.10', '0.1'), 0);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalCompare('007', '7'), 0);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalCompare('007.00', '7'), 0);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalCompare('-00.5', '-0.5'), 0);
+  });
+
+  it('decimalIsPositive should handle non-normalized formats', () => {
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsPositive('00.1'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsPositive('007'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsPositive('00.00'), false);
+  });
+
+  it('decimalIsNegative should handle non-normalized formats', () => {
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsNegative('-00.1'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsNegative('-007'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsNegative('-00.00'), false);
+  });
+
+  it('decimalIsZero should handle non-normalized formats', () => {
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsZero('00.00'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsZero('000'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsZero('-00.00'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalIsZero('00.01'), false);
+  });
+
+  it('decimalInRange should handle non-normalized formats', () => {
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalInRange('007', '0', '10'), true);
+    // @ts-expect-error testing with string literals
+    assert.strictEqual(decimalInRange('00.5', '00.0', '01.0'), true);
   });
 });

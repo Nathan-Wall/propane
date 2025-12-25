@@ -8,6 +8,7 @@
 
 import {
   type AnyDecimal,
+  assertDecimal,
   decimalCompare,
   decimalIsPositive,
   decimalIsNegative,
@@ -46,8 +47,8 @@ export type numeric = number | bigint | AnyDecimal;
 export function compare(a: numeric, b: numeric): ComparisonResult {
   // If either is a string (decimal), convert both to strings and use decimal comparison
   if (typeof a === 'string' || typeof b === 'string') {
-    const aStr = (typeof a === 'string' ? a : a.toString()) as AnyDecimal;
-    const bStr = (typeof b === 'string' ? b : b.toString()) as AnyDecimal;
+    const aStr = typeof a === 'string' ? assertDecimal(a) : assertDecimal(a.toString());
+    const bStr = typeof b === 'string' ? assertDecimal(b) : assertDecimal(b.toString());
     return decimalCompare(aStr, bStr);
   }
 
@@ -66,8 +67,8 @@ export function compare(a: numeric, b: numeric): ComparisonResult {
   }
 
   // Mixed number and bigint - convert to string for precise comparison
-  const aStr = a.toString() as AnyDecimal;
-  const bStr = b.toString() as AnyDecimal;
+  const aStr = assertDecimal(a.toString());
+  const bStr = assertDecimal(b.toString());
   return decimalCompare(aStr, bStr);
 }
 
@@ -127,7 +128,7 @@ export function lessThanOrEqual(a: numeric, b: numeric): boolean {
  */
 export function isPositive(value: numeric): boolean {
   if (typeof value === 'string') {
-    return decimalIsPositive(value as AnyDecimal);
+    return decimalIsPositive(assertDecimal(value));
   }
   return value > 0;
 }
@@ -145,7 +146,7 @@ export function isPositive(value: numeric): boolean {
  */
 export function isNegative(value: numeric): boolean {
   if (typeof value === 'string') {
-    return decimalIsNegative(value as AnyDecimal);
+    return decimalIsNegative(assertDecimal(value));
   }
   return value < 0;
 }
@@ -164,7 +165,7 @@ export function isNegative(value: numeric): boolean {
  */
 export function isZero(value: numeric): boolean {
   if (typeof value === 'string') {
-    return decimalIsZero(value as AnyDecimal);
+    return decimalIsZero(assertDecimal(value));
   }
   return value === 0 || value === 0n;
 }
@@ -182,7 +183,7 @@ export function isZero(value: numeric): boolean {
  */
 export function isNonNegative(value: numeric): boolean {
   if (typeof value === 'string') {
-    return decimalIsNonNegative(value as AnyDecimal);
+    return decimalIsNonNegative(assertDecimal(value));
   }
   return value >= 0;
 }
@@ -200,7 +201,7 @@ export function isNonNegative(value: numeric): boolean {
  */
 export function isNonPositive(value: numeric): boolean {
   if (typeof value === 'string') {
-    return decimalIsNonPositive(value as AnyDecimal);
+    return decimalIsNonPositive(assertDecimal(value));
   }
   return value <= 0;
 }
@@ -228,9 +229,9 @@ export function isNonPositive(value: numeric): boolean {
 export function inRange(value: numeric, min: numeric, max: numeric): boolean {
   // If any is a string, use decimal comparison for all
   if (typeof value === 'string' || typeof min === 'string' || typeof max === 'string') {
-    const vStr = (typeof value === 'string' ? value : value.toString()) as AnyDecimal;
-    const minStr = (typeof min === 'string' ? min : min.toString()) as AnyDecimal;
-    const maxStr = (typeof max === 'string' ? max : max.toString()) as AnyDecimal;
+    const vStr = typeof value === 'string' ? assertDecimal(value) : assertDecimal(value.toString());
+    const minStr = typeof min === 'string' ? assertDecimal(min) : assertDecimal(min.toString());
+    const maxStr = typeof max === 'string' ? assertDecimal(max) : assertDecimal(max.toString());
     return decimalInRange(vStr, minStr, maxStr);
   }
 
@@ -256,9 +257,9 @@ export function inRange(value: numeric, min: numeric, max: numeric): boolean {
 export function inRangeExclusive(value: numeric, min: numeric, max: numeric): boolean {
   // If any is a string, use decimal comparison for all
   if (typeof value === 'string' || typeof min === 'string' || typeof max === 'string') {
-    const vStr = (typeof value === 'string' ? value : value.toString()) as AnyDecimal;
-    const minStr = (typeof min === 'string' ? min : min.toString()) as AnyDecimal;
-    const maxStr = (typeof max === 'string' ? max : max.toString()) as AnyDecimal;
+    const vStr = typeof value === 'string' ? assertDecimal(value) : assertDecimal(value.toString());
+    const minStr = typeof min === 'string' ? assertDecimal(min) : assertDecimal(min.toString());
+    const maxStr = typeof max === 'string' ? assertDecimal(max) : assertDecimal(max.toString());
     return decimalInRangeExclusive(vStr, minStr, maxStr);
   }
 

@@ -14,6 +14,8 @@ export {
   decimal,
   type AnyDecimal,
   toDecimal,
+  assertDecimal,
+  ensureDecimal,
   decimalCompare,
   decimalEquals,
   decimalGreaterThan,
@@ -30,6 +32,7 @@ export {
   isDecimal,
   canBeDecimal,
   isValidDecimalString,
+  isNormalizedDecimalString,
   type ComparisonResult,
 } from './decimal.js';
 export {
