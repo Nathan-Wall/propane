@@ -4,6 +4,7 @@ export type {
   EndpointMessage,
   ResponseOf,
   MessageClass,
+  AnyMessage,
 } from './types.js';
 
 // Errors

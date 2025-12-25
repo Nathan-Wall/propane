@@ -6,10 +6,28 @@ function makeBuffer(bytes: number[]): ArrayBuffer {
   return new Uint8Array(bytes).buffer;
 }
 
-function buffersEqual(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  if (a.byteLength !== b.byteLength) return false;
-  const viewA = new Uint8Array(a);
-  const viewB = new Uint8Array(b);
+// Structural type for ImmutableArrayBuffer (avoids private field compatibility issues)
+type ImmutableArrayBufferLike = {
+  toArrayBuffer(): ArrayBuffer;
+  byteLength: number;
+};
+
+type BufferLike = ArrayBuffer | ImmutableArrayBufferLike;
+
+function isImmutableArrayBufferLike(buf: BufferLike): buf is ImmutableArrayBufferLike {
+  return typeof (buf as ImmutableArrayBufferLike).toArrayBuffer === 'function';
+}
+
+function toArrayBuffer(buf: BufferLike): ArrayBuffer {
+  return isImmutableArrayBufferLike(buf) ? buf.toArrayBuffer() : buf;
+}
+
+function buffersEqual(a: BufferLike, b: BufferLike): boolean {
+  const arrA = toArrayBuffer(a);
+  const arrB = toArrayBuffer(b);
+  if (arrA.byteLength !== arrB.byteLength) return false;
+  const viewA = new Uint8Array(arrA);
+  const viewB = new Uint8Array(arrB);
   for (let i = 0; i < viewA.length; i += 1) {
     if (viewA[i] !== viewB[i]) return false;
   }
@@ -61,8 +79,8 @@ export default function runArrayBufferTests() {
 
   const roundTripChunks = [...roundTrip.chunks];
   assert(roundTripChunks.length === 2, 'Chunk array should retain length.');
-  assert(buffersEqual(roundTripChunks[0], chunkA), 'First chunk should match.');
-  assert(buffersEqual(roundTripChunks[1], chunkB), 'Second chunk should match.');
+  assert(buffersEqual(roundTripChunks[0]!, chunkA), 'First chunk should match.');
+  assert(buffersEqual(roundTripChunks[1]!, chunkB), 'Second chunk should match.');
 
   const json = JSON.parse(JSON.stringify(message));
   assert(json.data === `base64:${toBase64(data)}`, 'ArrayBuffer should normalize to base64 string in JSON.');

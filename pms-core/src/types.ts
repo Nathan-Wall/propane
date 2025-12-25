@@ -1,4 +1,7 @@
-import type { Message, DataObject } from '@/runtime/index.js';
+import type { Message, DataObject, AnyMessage } from '@/runtime/index.js';
+
+// Re-export AnyMessage from runtime for consumers
+export type { AnyMessage };
 
 /**
  * Endpoint type for .pmsg source files.
@@ -23,8 +26,7 @@ import type { Message, DataObject } from '@/runtime/index.js';
  */
 export type Endpoint<
   Payload extends DataObject,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Response extends Message<any>,
+  Response extends AnyMessage,
 > = Message<Payload> & { readonly __responseType?: Response };
 
 /**
@@ -35,15 +37,12 @@ export type Endpoint<
  *
  * @example
  * ```typescript
- * async request<Payload extends Message<any>, Response extends Message<any>>(
+ * async request<Payload extends AnyMessage, Response extends AnyMessage>(
  *   request: EndpointMessage<Payload, Response>,
  *   responseClass: MessageClass<Response>
  * ): Promise<Response>
  * ```
  */
-// Helper type that structurally matches any Message instance
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyMessage = { $typeName: string; serialize(): string };
 
 export type EndpointMessage<
   Payload extends AnyMessage,
@@ -63,13 +62,12 @@ export type ResponseOf<T> =
 
 /**
  * Constraint for message classes that can be used in the RPC system.
- * Uses 'any' for internal types to avoid variance issues with Set<Listener<T>>.
+ * Uses structural AnyMessage type instead of Message<any> to avoid
+ * TypeScript's strict private field compatibility checks.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface MessageClass<T = any> {
   readonly TYPE_TAG: symbol;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new (props?: T): Message<any> & { readonly $typeName: string };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deserialize(message: string, options?: { skipValidation?: boolean }): Message<any>;
+  new (props?: T, options?: { skipValidation?: boolean }): AnyMessage;
+  deserialize(message: string, options?: { skipValidation?: boolean }): AnyMessage;
 }

@@ -1,10 +1,8 @@
 import {
-  type Message,
-  type DataObject,
   parseCerealString,
   isTaggedMessageData,
 } from '@/runtime/index.js';
-import { type MessageClass, type EndpointMessage, HandlerError } from '@/pms-core/src/index.js';
+import { type MessageClass, type EndpointMessage, type AnyMessage, HandlerError } from '@/pms-core/src/index.js';
 import { type Handler, type HandlerDescriptor, type HandlerContext, isResponseWithHeaders } from './handler.js';
 
 /**
@@ -29,8 +27,8 @@ export class HandlerRegistry {
    * The response type is inferred from the request type's EndpointMessage parameter.
    */
   register<
-    TRequest extends EndpointMessage<Message<DataObject>, TResponse>,
-    TResponse extends Message<DataObject>
+    TRequest extends EndpointMessage<AnyMessage, TResponse>,
+    TResponse extends AnyMessage
   >(
     messageClass: MessageClass,
     handler: Handler<TRequest, TResponse>
@@ -49,8 +47,7 @@ export class HandlerRegistry {
       messageClass,
       // Cast through unknown to store in the generic registry
       // Type safety is maintained by the register() method signature
-      handler: handler as unknown as
-        Handler<Message<DataObject>, Message<DataObject>>,
+      handler: handler as unknown as Handler<AnyMessage, AnyMessage>,
     });
 
     return this;
@@ -100,16 +97,20 @@ export class HandlerRegistry {
 
     // Construct the request message using $fromEntries via prototype access
     const proto = descriptor.messageClass.prototype as {
-      $fromEntries: (data: Record<string, unknown>) => DataObject;
+      $fromEntries: (data: Record<string, unknown>) => unknown;
     };
     const props = proto.$fromEntries(parsed.$data);
     const request = new descriptor.messageClass(props);
 
     // Call the handler
-    const result = await descriptor.handler(request, context);
+    // Cast request to AnyMessage - type safety is ensured by the register() signature
+    const result = await descriptor.handler(
+      request as AnyMessage,
+      context
+    );
 
     // Extract response and optional headers
-    let response: Message<DataObject>;
+    let response: AnyMessage;
     let headers: Record<string, string> | undefined;
 
     if (isResponseWithHeaders(result)) {
@@ -125,7 +126,8 @@ export class HandlerRegistry {
     }
 
     // Serialize response with type tag for RPC responses
-    const serializedBody = response.serialize({ includeTag: true });
+    // Cast to access the full serialize signature with options
+    const serializedBody = (response as { serialize(options?: { includeTag?: boolean }): string }).serialize({ includeTag: true });
 
     return { body: serializedBody, headers };
   }

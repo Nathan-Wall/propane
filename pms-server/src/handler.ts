@@ -1,5 +1,4 @@
-import type { Message, DataObject } from '@/runtime/index.js';
-import type { MessageClass } from '@/pms-core/src/index.js';
+import type { MessageClass, AnyMessage } from '@/pms-core/src/index.js';
 import { Response } from './response.pmsg.js';
 
 /**
@@ -17,15 +16,13 @@ export interface HandlerContext {
 /**
  * Handler result - either a simple response message or a Response wrapper with headers.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HandlerResult<TResponse extends Message<any>> =
+export type HandlerResult<TResponse extends AnyMessage> =
   TResponse | Response<TResponse>;
 
 /**
  * Type guard to check if result is a Response wrapper with headers.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function isResponseWithHeaders<T extends Message<any>>(
+export function isResponseWithHeaders<T extends AnyMessage>(
   result: HandlerResult<T>
 ): result is Response<T> {
   return result instanceof Response;
@@ -39,8 +36,7 @@ export function isResponseWithHeaders<T extends Message<any>>(
  * - A response message directly
  * - A Response wrapper with custom HTTP headers
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Handler<TRequest, TResponse extends Message<any>> = (
+export type Handler<TRequest, TResponse extends AnyMessage> = (
   request: TRequest,
   context: HandlerContext
 ) => Promise<HandlerResult<TResponse>> | HandlerResult<TResponse>;
@@ -49,10 +45,8 @@ export type Handler<TRequest, TResponse extends Message<any>> = (
  * Internal descriptor for a registered handler.
  */
 export interface HandlerDescriptor<
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  In extends Message<any> = Message<DataObject>,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  Out extends Message<any> = Message<DataObject>,
+  In extends AnyMessage = AnyMessage,
+  Out extends AnyMessage = AnyMessage,
 > {
   readonly typeName: string;
   readonly messageClass: MessageClass;

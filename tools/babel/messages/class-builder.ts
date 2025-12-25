@@ -308,8 +308,44 @@ function buildGenericQualifiedTypeReference(
 }
 
 /**
+ * Build a structural constraint for message type parameters.
+ * Uses AnyMessage shape to match the runtime's AnyMessage interface.
+ */
+function buildMessageConstraint(): t.TSTypeLiteral {
+  return t.tsTypeLiteral([
+    t.tsPropertySignature(
+      t.identifier('$typeName'),
+      t.tsTypeAnnotation(t.tsStringKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('serialize'),
+      null,
+      [],
+      t.tsTypeAnnotation(t.tsStringKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('hashCode'),
+      null,
+      [],
+      t.tsTypeAnnotation(t.tsNumberKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('equals'),
+      null,
+      [
+        {
+          ...t.identifier('other'),
+          typeAnnotation: t.tsTypeAnnotation(t.tsUnknownKeyword()),
+        } as t.Identifier,
+      ],
+      t.tsTypeAnnotation(t.tsBooleanKeyword())
+    ),
+  ]);
+}
+
+/**
  * Build the class type parameters for a generic message.
- * E.g., Container<T extends Message<any>> becomes:
+ * E.g., Container<T extends { $typeName: string; serialize(): string }> becomes:
  * t.tsTypeParameterDeclaration([t.tsTypeParameter('T', constraint, null)])
  */
 function buildClassTypeParameters(
@@ -320,11 +356,9 @@ function buildClassTypeParameters(
   }
 
   const params = typeParameters.map((param) => {
-    // Create the constraint: Message<any>
-    const constraint = t.tsTypeReference(
-      t.identifier('Message'),
-      t.tsTypeParameterInstantiation([t.tsAnyKeyword()])
-    );
+    // Create a structural constraint instead of Message<any>
+    // to avoid private field compatibility issues
+    const constraint = buildMessageConstraint();
 
     const tsParam = t.tsTypeParameter(constraint, null, param.name);
     return tsParam;
@@ -899,13 +933,9 @@ function buildGenericDeserializeMethod(
           )
         );
 
-    // Cast payload access to MessageValue<T> since we're parsing untyped data
-    // and MessageConstructor<T> expects MessageValue<T>
-    const messageValueType = t.tsTypeReference(
-      t.identifier('MessageValue'),
-      t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier(paramName))])
-    );
-    state.usesMessageValue = true;
+    // Cast payload access to `any` since we're parsing untyped data
+    // and the props type varies by message class
+    const messageValueType = t.tsAnyKeyword();
 
     // Pass options to nested message constructor for skipValidation propagation
     let constructExpr: t.Expression = t.newExpression(
@@ -922,7 +952,7 @@ function buildGenericDeserializeMethod(
           t.variableDeclarator(t.identifier(rawVarName), payloadAccess)
         ])
       );
-      // const inner = innerRaw !== undefined ? new tClass(innerRaw as MessageValue<T>, options) : undefined;
+      // const inner = innerRaw !== undefined ? new tClass(innerRaw as any, options) : undefined;
       constructExpr = t.conditionalExpression(
         t.binaryExpression('!==', t.identifier(rawVarName), t.identifier('undefined')),
         t.newExpression(t.identifier(tClassName), [

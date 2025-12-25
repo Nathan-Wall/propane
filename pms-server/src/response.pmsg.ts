@@ -14,9 +14,9 @@
  * ```
  */
 import { Message } from '@/runtime/index.js';
-import type { MessagePropDescriptor, MessageConstructor, MessageValue, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../../runtime/index.js";
+import type { AnyMessage, MessagePropDescriptor, MessageConstructor, MessageValue, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../../runtime/index.js";
 import { WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString, SKIP, ensure } from "../../runtime/index.js";
-export class Response<T extends Message<any>> extends Message<Response.Data<T>> {
+export class Response<T extends AnyMessage> extends Message<Response.Data<T>> {
   static TYPE_TAG = Symbol("Response");
   #body!: T;
   #headers!: ImmutableMap<string, string> | undefined;
@@ -66,7 +66,7 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
   override *[GET_MESSAGE_CHILDREN]() {
     yield ["headers", this.#headers] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+  static override bind<T extends AnyMessage>(tClass: MessageConstructor<T>): {
     (props: Response.Value<T>): Response<T>;
     new (props: Response.Value<T>): Response<T>;
     deserialize: (data: string, options?: { skipValidation?: boolean }) => Response<T>;
@@ -81,7 +81,7 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
     };
     boundCtor.deserialize = (data: string, options?: { skipValidation?: boolean }) => {
       const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
-      return boundCtor(payload as Response.Data<T>);
+      return boundCtor(payload as unknown as Response.Data<T>);
     };
     boundCtor.$typeName = `Response<${tClass.$typeName}>`;
     return boundCtor as {
@@ -91,11 +91,12 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
       $typeName: string;
     };
   }
-  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: { skipValidation?: boolean }): Response<T> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static deserialize<T extends AnyMessage>(tClass: MessageConstructor<T>, data: string, options?: { skipValidation?: boolean }): Response<T> {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
-    const body = new tClass((payload["1"] ?? payload["body"]) as MessageValue<T>, options);
+    const body = new tClass((payload["1"] ?? payload["body"]) as any, options);
     return new Response(tClass, {
-      ...(payload as Response.Data<T>),
+      ...(payload as unknown as Response.Data<T>),
       body
     }, options);
   }
@@ -230,9 +231,9 @@ export class Response<T extends Message<any>> extends Message<Response.Data<T>> 
   }
 }
 export namespace Response {
-  export type Data<T extends Message<any>> = {
+  export type Data<T extends AnyMessage> = {
     body: T;
     headers?: Map<string, string> | Iterable<[string, string]> | undefined;
   };
-  export type Value<T extends Message<any>> = Response<T> | Response.Data<T>;
+  export type Value<T extends AnyMessage> = Response<T> | Response.Data<T>;
 }

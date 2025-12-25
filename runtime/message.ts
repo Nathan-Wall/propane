@@ -109,12 +109,11 @@ export type MessageValue<T extends Message<any>> = T | MessageData<T>;
 /**
  * Interface for generic message constructors.
  * Used when passing constructors to generic message classes.
- * Uses Message<any> constraint to allow generic types like Response<T>
- * where T extends Message<any>.
+ * Uses structural AnyMessage constraint to avoid private field compatibility issues.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface MessageConstructor<T extends Message<any>> {
-  new (props?: MessageValue<T>, options?: { skipValidation?: boolean }): T;
+export interface MessageConstructor<T extends AnyMessage> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  new (props?: any, options?: { skipValidation?: boolean }): T;
   deserialize(data: string, options?: { skipValidation?: boolean }): T;
   readonly $typeName: string;
 }

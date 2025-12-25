@@ -239,7 +239,6 @@ export default function runGenericTypesTests() {
     const innerContainer = new Container(Item, { inner: innerItem });
     const BoundContainer = Container.bind(Item);
     const outerContainer = new Container(
-      // @ts-expect-error BoundContainer is a callable function, not a class constructor
       BoundContainer, { inner: innerContainer }
     );
 

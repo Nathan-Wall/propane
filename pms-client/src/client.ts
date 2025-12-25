@@ -1,9 +1,8 @@
 import {
-  type Message,
   parseCerealString,
   isTaggedMessageData,
 } from '@/runtime/index.js';
-import type { MessageClass, EndpointMessage } from '@/pms-core/src/index.js';
+import type { MessageClass, EndpointMessage, AnyMessage } from '@/pms-core/src/index.js';
 
 export interface PmsClientOptions {
   /** Base URL of the PMS server */
@@ -54,10 +53,8 @@ export class PmsClient {
    * @returns The deserialized response
    * @throws PmsProtocolError if the server returns a protocol error
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async request<TResponse extends Message<any>>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    request: EndpointMessage<Message<any>, TResponse>,
+  async request<TResponse extends AnyMessage>(
+    request: EndpointMessage<AnyMessage, TResponse>,
     responseClass: MessageClass<TResponse>
   ): Promise<TResponse> {
     // Serialize request with type tag

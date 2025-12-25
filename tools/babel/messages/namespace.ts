@@ -2,8 +2,44 @@ import * as t from '@babel/types';
 import type { PropDescriptor, PluginStateFlags } from './properties.js';
 
 /**
- * Fixes type parameters to ensure Message constraints have the required type argument.
- * Transforms `T extends Message` to `T extends Message<any>`.
+ * Build a structural constraint for message type parameters.
+ * Uses AnyMessage shape to match the runtime's AnyMessage interface.
+ */
+function buildMessageConstraint(): t.TSTypeLiteral {
+  return t.tsTypeLiteral([
+    t.tsPropertySignature(
+      t.identifier('$typeName'),
+      t.tsTypeAnnotation(t.tsStringKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('serialize'),
+      null,
+      [],
+      t.tsTypeAnnotation(t.tsStringKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('hashCode'),
+      null,
+      [],
+      t.tsTypeAnnotation(t.tsNumberKeyword())
+    ),
+    t.tsMethodSignature(
+      t.identifier('equals'),
+      null,
+      [
+        {
+          ...t.identifier('other'),
+          typeAnnotation: t.tsTypeAnnotation(t.tsUnknownKeyword()),
+        } as t.Identifier,
+      ],
+      t.tsTypeAnnotation(t.tsBooleanKeyword())
+    ),
+  ]);
+}
+
+/**
+ * Fixes type parameters to ensure Message constraints use structural typing.
+ * Transforms `T extends Message` to `T extends { $typeName: string; serialize(): string }`.
  */
 function fixTypeParameterConstraints(
   typeParams: t.TSTypeParameterDeclaration | null | undefined
@@ -12,18 +48,15 @@ function fixTypeParameterConstraints(
 
   const fixedParams = typeParams.params.map((param) => {
     const clonedParam = t.cloneNode(param);
-    // Check if constraint is just 'Message' (without type arguments)
+    // Check if constraint is just 'Message' (without type arguments) or Message<any>
     if (
       clonedParam.constraint
       && t.isTSTypeReference(clonedParam.constraint)
       && t.isIdentifier(clonedParam.constraint.typeName)
       && clonedParam.constraint.typeName.name === 'Message'
-      && !clonedParam.constraint.typeParameters
     ) {
-      // Add <any> type argument
-      clonedParam.constraint.typeParameters = t.tsTypeParameterInstantiation([
-        t.tsAnyKeyword()
-      ]);
+      // Replace with structural constraint to avoid private field compatibility issues
+      clonedParam.constraint = buildMessageConstraint();
     }
     return clonedParam;
   });

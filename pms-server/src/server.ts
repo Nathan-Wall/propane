@@ -1,7 +1,7 @@
-import type { Message } from '@/runtime/index.js';
 import {
   type MessageClass,
   type EndpointMessage,
+  type AnyMessage,
   HandlerError,
   ERROR_STATUS_MAP,
   type ProtocolError,
@@ -43,10 +43,8 @@ export class PmsServer {
    * @returns this - for method chaining
    */
   handle<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TRequest extends EndpointMessage<Message<any>, TResponse>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TResponse extends Message<any>
+    TRequest extends EndpointMessage<AnyMessage, TResponse>,
+    TResponse extends AnyMessage
   >(
     requestType: MessageClass,
     handler: Handler<TRequest, TResponse>

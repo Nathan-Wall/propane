@@ -13,7 +13,7 @@
  */
 import { Message } from '@/runtime/index.js';
 
-export type Response<T extends Message> = Message<{
+export type Response<T> = Message<{
   '1:body': T;
   '2:headers'?: Map<string, string>;
 }>;

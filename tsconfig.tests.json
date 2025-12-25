@@ -8,7 +8,11 @@
     "rewriteRelativeImportExtensions": true,
     "paths": {
       "react": ["node_modules/@types/react"],
-      "@/*": ["./build/*"]
+      "@/*": ["./build/*"],
+      "@propane/types": ["./types/src/index.ts"],
+      "@propane/postgres": ["./postgres/src/index.ts"],
+      "@propane/runtime": ["./runtime/index.ts"],
+      "postgres": ["node_modules/postgres"]
     }
   },
   "include": [

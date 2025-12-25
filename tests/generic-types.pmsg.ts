@@ -7,7 +7,7 @@ import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealSt
  */
 
 // Basic item type for testing
-import type { MessagePropDescriptor, MessageConstructor, MessageValue, DataObject, SetUpdates } from "../runtime/index.js";
+import type { MessagePropDescriptor, MessageConstructor, DataObject, SetUpdates } from "../runtime/index.js";
 export class Item extends Message<Item.Data> {
   static TYPE_TAG = Symbol("Item");
   static readonly $typeName = "Item";
@@ -94,7 +94,12 @@ export namespace Item {
   };
   export type Value = Item | Item.Data;
 } // Simple generic container with single type parameter
-export class Container<T extends Message<any>> extends Message<Container.Data<T>> {
+export class Container<T extends {
+  $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}> extends Message<Container.Data<T>> {
   static TYPE_TAG = Symbol("Container");
   #inner!: T;
   #tClass!: MessageConstructor<T>;
@@ -122,7 +127,12 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
     props.inner = innerValue as T;
     return props as Container.Data<T>;
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+  static override bind<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>): {
     (props: Container.Value<T>): Container<T>;
     new (props: Container.Value<T>): Container<T>;
     deserialize: (data: string, options?: {
@@ -152,11 +162,16 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
       $typeName: string;
     };
   }
-  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+  static deserialize<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Container<T> {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
-    const inner = new tClass((payload["1"] ?? payload["inner"]) as MessageValue<T>, options);
+    const inner = new tClass((payload["1"] ?? payload["inner"]) as any, options);
     return new Container(tClass, {
       inner
     }, options);
@@ -180,12 +195,27 @@ export class Container<T extends Message<any>> extends Message<Container.Data<T>
   }
 }
 export namespace Container {
-  export type Data<T extends Message<any>> = {
+  export type Data<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = {
     inner: T;
   };
-  export type Value<T extends Message<any>> = Container<T> | Container.Data<T>;
+  export type Value<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = Container<T> | Container.Data<T>;
 } // Generic with optional field
-export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> {
+export class Optional<T extends {
+  $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}> extends Message<Optional.Data<T>> {
   static TYPE_TAG = Symbol("Optional");
   #value!: T | undefined;
   #tClass!: MessageConstructor<T>;
@@ -213,7 +243,12 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
     props.value = valueNormalized as T;
     return props as Optional.Data<T>;
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+  static override bind<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>): {
     (props: Optional.Value<T>): Optional<T>;
     new (props: Optional.Value<T>): Optional<T>;
     deserialize: (data: string, options?: {
@@ -243,12 +278,17 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
       $typeName: string;
     };
   }
-  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+  static deserialize<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Optional<T> {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
     const valueRaw = payload["1"] ?? payload["value"];
-    const value = valueRaw !== undefined ? new tClass(valueRaw as MessageValue<T>, options) : undefined;
+    const value = valueRaw !== undefined ? new tClass(valueRaw as any, options) : undefined;
     return new Optional(tClass, {
       value
     }, options);
@@ -275,12 +315,32 @@ export class Optional<T extends Message<any>> extends Message<Optional.Data<T>> 
   }
 }
 export namespace Optional {
-  export type Data<T extends Message<any>> = {
+  export type Data<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = {
     value?: T | undefined;
   };
-  export type Value<T extends Message<any>> = Optional<T> | Optional.Data<T>;
+  export type Value<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = Optional<T> | Optional.Data<T>;
 } // Multiple type parameters
-export class Pair<T extends Message<any>, U extends Message<any>> extends Message<Pair.Data<T, U>> {
+export class Pair<T extends {
+  $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}, U extends {
+  $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}> extends Message<Pair.Data<T, U>> {
   static TYPE_TAG = Symbol("Pair");
   #first!: T;
   #second!: U;
@@ -319,7 +379,17 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
     props.second = secondValue as U;
     return props as Pair.Data<T, U>;
   }
-  static override bind<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>): {
+  static override bind<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }, U extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>): {
     (props: Pair.Value<T, U>): Pair<T, U>;
     new (props: Pair.Value<T, U>): Pair<T, U>;
     deserialize: (data: string, options?: {
@@ -351,12 +421,22 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
       $typeName: string;
     };
   }
-  static deserialize<T extends Message<any>, U extends Message<any>>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string, options?: {
+  static deserialize<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }, U extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string, options?: {
     skipValidation: boolean;
   }): Pair<T, U> {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
-    const first = new tClass((payload["1"] ?? payload["first"]) as MessageValue<T>, options);
-    const second = new uClass((payload["2"] ?? payload["second"]) as MessageValue<U>, options);
+    const first = new tClass((payload["1"] ?? payload["first"]) as any, options);
+    const second = new uClass((payload["2"] ?? payload["second"]) as any, options);
     return new Pair(tClass, uClass, {
       first,
       second
@@ -391,11 +471,31 @@ export class Pair<T extends Message<any>, U extends Message<any>> extends Messag
   }
 }
 export namespace Pair {
-  export type Data<T extends Message<any>, U extends Message<any>> = {
+  export type Data<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }, U extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = {
     first: T;
     second: U;
   };
-  export type Value<T extends Message<any>, U extends Message<any>> = Pair<T, U> | Pair.Data<T, U>;
+  export type Value<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }, U extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = Pair<T, U> | Pair.Data<T, U>;
 } // Non-generic type that can contain generic instances
 export class Parent extends Message<Parent.Data> {
   static TYPE_TAG = Symbol("Parent");
@@ -462,7 +562,12 @@ export namespace Parent {
   };
   export type Value = Parent | Parent.Data;
 } // Generic with both generic and non-generic fields - tests full validation in deserialize
-export class Timestamped<T extends Message<any>> extends Message<Timestamped.Data<T>> {
+export class Timestamped<T extends {
+  $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}> extends Message<Timestamped.Data<T>> {
   static TYPE_TAG = Symbol("Timestamped");
   #inner!: T;
   #timestamp!: ImmutableDate;
@@ -510,7 +615,12 @@ export class Timestamped<T extends Message<any>> extends Message<Timestamped.Dat
     props.label = labelValue as string;
     return props as Timestamped.Data<T>;
   }
-  static override bind<T extends Message<any>>(tClass: MessageConstructor<T>): {
+  static override bind<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>): {
     (props: Timestamped.Value<T>): Timestamped<T>;
     new (props: Timestamped.Value<T>): Timestamped<T>;
     deserialize: (data: string, options?: {
@@ -540,7 +650,12 @@ export class Timestamped<T extends Message<any>> extends Message<Timestamped.Dat
       $typeName: string;
     };
   }
-  static deserialize<T extends Message<any>>(tClass: MessageConstructor<T>, data: string, options?: {
+  static deserialize<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Timestamped<T> {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
@@ -552,7 +667,7 @@ export class Timestamped<T extends Message<any>> extends Message<Timestamped.Dat
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");
     if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
     const label = labelValue as string;
-    const inner = new tClass((payload["1"] ?? payload["inner"]) as MessageValue<T>, options);
+    const inner = new tClass((payload["1"] ?? payload["inner"]) as any, options);
     return new Timestamped(tClass, {
       timestamp,
       label,
@@ -600,10 +715,20 @@ export class Timestamped<T extends Message<any>> extends Message<Timestamped.Dat
   }
 }
 export namespace Timestamped {
-  export type Data<T extends Message<any>> = {
+  export type Data<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = {
     inner: T;
     timestamp: ImmutableDate | Date;
     label: string;
   };
-  export type Value<T extends Message<any>> = Timestamped<T> | Timestamped.Data<T>;
+  export type Value<T extends {
+    $typeName: string;
+    serialize(): string;
+    hashCode(): number;
+    equals(other: unknown): boolean;
+  }> = Timestamped<T> | Timestamped.Data<T>;
 }

@@ -18,10 +18,11 @@
     "examples/react-todo"
   ],
   "scripts": {
-    "build": "rm -rf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node build/scripts/compile-pmsg.js && (tsc -p tsconfig.tests.json || true) && tsc-alias -p tsconfig.tests.json && node build/scripts/fix-test-paths.js && node scripts/post-build.js",
+    "build": "rm -rf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node build/scripts/compile-pmsg.js && tsc -p tsconfig.tests.json && tsc-alias -p tsconfig.tests.json && node build/scripts/fix-test-paths.js && node scripts/post-build.js",
     "build:types": "tsc --emitDeclarationOnly",
     "bundle": "node scripts/bundle.mjs",
     "test": "node scripts/run-tests.js",
+    "test:types": "tsc -p tsconfig.tests.json --noEmit",
     "test:integration": "node --test 'build/postgres/tests/integration/**/*.test.js'",
     "lint": "eslint .",
     "propane:compile": "node build/scripts/propane-compiler.js",
