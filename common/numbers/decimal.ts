@@ -122,11 +122,12 @@ export function toDecimal<P extends number, S extends number>(
     );
   }
 
-  // Normalize: pad decimal part to match scale
+  // Normalize: strip leading zeros from integer part, pad decimal part to match scale
+  const normalizedInteger = integerPart.replace(/^0+/, '') || '0';
   const normalizedDecimal = decimalPart.padEnd(scale, '0');
   const normalized = scale > 0
-    ? `${isNegative ? '-' : ''}${integerPart}.${normalizedDecimal}`
-    : `${isNegative ? '-' : ''}${integerPart}`;
+    ? `${isNegative ? '-' : ''}${normalizedInteger}.${normalizedDecimal}`
+    : `${isNegative ? '-' : ''}${normalizedInteger}`;
 
   return normalized as decimal<P, S>;
 }
@@ -173,9 +174,12 @@ export function assertDecimal(
     return precisionOrValue as AnyDecimal;
   }
 
-  // Three arguments: full precision/scale validation
+  // Three arguments: full precision/scale validation with normalized format
   const precision = precisionOrValue;
   if (CHECK_ASSERTS) {
+    if (!isNormalizedDecimalString(value!)) {
+      throw new TypeError(`Invalid or non-normalized decimal format: ${value}`);
+    }
     if (!isDecimal(value, precision, scale!)) {
       throw new TypeError(
         `Value '${value}' does not match decimal<${precision}, ${scale}> (requires exact scale and valid precision)`,
@@ -228,8 +232,11 @@ export function ensureDecimal(
     return precisionOrValue as AnyDecimal;
   }
 
-  // Three arguments: full precision/scale validation
+  // Three arguments: full precision/scale validation with normalized format
   const precision = precisionOrValue;
+  if (!isNormalizedDecimalString(value!)) {
+    throw new TypeError(`Invalid or non-normalized decimal format: ${value}`);
+  }
   if (!isDecimal(value, precision, scale!)) {
     throw new TypeError(
       `Value '${value}' does not match decimal<${precision}, ${scale}> (requires exact scale and valid precision)`,

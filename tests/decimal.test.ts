@@ -52,9 +52,11 @@ describe('toDecimal', () => {
       assert.strictEqual(toDecimal(5, 0, '99999'), '99999');
     });
 
-    it('should handle leading zeros in integer part', () => {
-      assert.strictEqual(toDecimal(10, 2, '00123.45'), '00123.45');
-      assert.strictEqual(toDecimal(10, 2, '007'), '007.00');
+    it('should normalize leading zeros in integer part', () => {
+      // Leading zeros are stripped during normalization
+      assert.strictEqual(toDecimal(10, 2, '00123.45'), '123.45');
+      assert.strictEqual(toDecimal(10, 2, '007'), '7.00');
+      assert.strictEqual(toDecimal(10, 2, '00.5'), '0.50');
     });
   });
 
@@ -136,14 +138,16 @@ describe('toDecimal', () => {
     it('should count significant digits correctly for integers with leading zeros', () => {
       // Leading zeros in integer part don't count toward precision
       // 00123.45 = 123.45 = 5 significant digits (3 integer + 2 decimal)
-      assert.strictEqual(toDecimal(5, 2, '00123.45'), '00123.45');
+      // Output is normalized (leading zeros stripped)
+      assert.strictEqual(toDecimal(5, 2, '00123.45'), '123.45');
       assert.throws(
         () => toDecimal(4, 2, '00123.45'),
         /precision exceeded/i
       );
       // 007.00 = 7.00 = 3 digits (1 integer + 2 decimal places)
       // Decimal places always count toward precision
-      assert.strictEqual(toDecimal(3, 2, '007.00'), '007.00');
+      // Output is normalized (leading zeros stripped)
+      assert.strictEqual(toDecimal(3, 2, '007.00'), '7.00');
       assert.throws(
         () => toDecimal(2, 2, '007.00'),
         /precision exceeded/i
@@ -679,6 +683,32 @@ describe('assertDecimal', () => {
     it('should throw for precision exceeded', () => {
       assert.throws(() => assertDecimal(5, 2, '1234.56'), TypeError);
     });
+
+    it('should throw for non-normalized formats', () => {
+      assert.throws(() => assertDecimal(10, 2, '00.10'), TypeError);
+      assert.throws(() => assertDecimal(10, 2, '007.00'), TypeError);
+      assert.throws(() => assertDecimal(10, 2, '0123.45'), TypeError);
+    });
+  });
+
+  describe('toDecimal output compatibility', () => {
+    it('should accept toDecimal output in single-arg form', () => {
+      // This was the bug: toDecimal output with leading zeros in input
+      // would fail assertDecimal. Now toDecimal normalizes, so this works.
+      const val1 = toDecimal(10, 2, '00.1');
+      assert.doesNotThrow(() => assertDecimal(val1));
+      assert.strictEqual(assertDecimal(val1), '0.10');
+
+      const val2 = toDecimal(10, 2, '007');
+      assert.doesNotThrow(() => assertDecimal(val2));
+      assert.strictEqual(assertDecimal(val2), '7.00');
+    });
+
+    it('should accept toDecimal output in three-arg form', () => {
+      const val = toDecimal(10, 2, '00123.45');
+      assert.doesNotThrow(() => assertDecimal(10, 2, val));
+      assert.strictEqual(val, '123.45');
+    });
   });
 });
 
@@ -722,6 +752,30 @@ describe('ensureDecimal', () => {
 
     it('should throw for precision exceeded', () => {
       assert.throws(() => ensureDecimal(5, 2, '1234.56'), TypeError);
+    });
+
+    it('should throw for non-normalized formats', () => {
+      assert.throws(() => ensureDecimal(10, 2, '00.10'), TypeError);
+      assert.throws(() => ensureDecimal(10, 2, '007.00'), TypeError);
+      assert.throws(() => ensureDecimal(10, 2, '0123.45'), TypeError);
+    });
+  });
+
+  describe('toDecimal output compatibility', () => {
+    it('should accept toDecimal output in single-arg form', () => {
+      const val1 = toDecimal(10, 2, '00.1');
+      assert.doesNotThrow(() => ensureDecimal(val1));
+      assert.strictEqual(ensureDecimal(val1), '0.10');
+
+      const val2 = toDecimal(10, 2, '007');
+      assert.doesNotThrow(() => ensureDecimal(val2));
+      assert.strictEqual(ensureDecimal(val2), '7.00');
+    });
+
+    it('should accept toDecimal output in three-arg form', () => {
+      const val = toDecimal(10, 2, '00123.45');
+      assert.doesNotThrow(() => ensureDecimal(10, 2, val));
+      assert.strictEqual(val, '123.45');
     });
   });
 });
