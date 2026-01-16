@@ -250,14 +250,18 @@ export function buildDisplayType(
 function getGenericParamInfo(
   pmtType: PmtType,
   typeParameters: TypeParameter[]
-): { name: string; index: number } | null {
+): { name: string; index: number; requiresConstructor: boolean } | null {
   if (pmtType.kind !== 'reference') {
     return null;
   }
 
   const paramIndex = typeParameters.findIndex((p) => p.name === pmtType.name);
   if (paramIndex !== -1) {
-    return { name: pmtType.name, index: paramIndex };
+    return {
+      name: pmtType.name,
+      index: paramIndex,
+      requiresConstructor: typeParameters[paramIndex]!.requiresConstructor,
+    };
   }
 
   return null;
@@ -329,17 +333,25 @@ function extractUnionMessageTypes(
  * Convert PMT type parameters to Babel plugin TypeParameter format.
  */
 export function pmtTypeParametersToTypeParameters(
-  pmtTypeParams: PmtTypeParameter[]
+  pmtTypeParams: PmtTypeParameter[],
+  declaredMessageTypeNames: Set<string>
 ): TypeParameter[] {
   return pmtTypeParams.map((param) => {
-    // Extract constraint name from PmtType
-    let constraint = 'Message'; // Default constraint
-    if (param.constraint && param.constraint.kind === 'reference') {
-      constraint = param.constraint.name;
+    if (!param.constraint) {
+      throw new Error(
+        `Generic type parameter "${param.name}" must have an "extends" constraint. `
+        + `Example: ${param.name} extends Message`
+      );
     }
+    const constraintType = pmtTypeToBabelType(param.constraint);
+    const requiresConstructor =
+      param.constraint.kind === 'reference'
+      && (param.constraint.name === 'Message'
+        || declaredMessageTypeNames.has(param.constraint.name.split('.')[0]!));
     return {
       name: param.name,
-      constraint,
+      constraint: constraintType,
+      requiresConstructor,
     };
   });
 }
@@ -356,6 +368,30 @@ export function pmtPropertyToDescriptor(
   typeParameters: TypeParameter[]
 ): PropDescriptor {
   const messageTypeName = getMessageTypeName(prop.type, knownMessages);
+  const arrayElementMessageTypeName = prop.type.kind === 'array'
+    ? getMessageTypeName(prop.type.elementType, knownMessages)
+    : null;
+  const setElementMessageTypeName = prop.type.kind === 'set'
+    ? getMessageTypeName(prop.type.elementType, knownMessages)
+    : null;
+  const mapKeyMessageTypeName = prop.type.kind === 'map'
+    ? getMessageTypeName(prop.type.keyType, knownMessages)
+    : null;
+  const mapValueMessageTypeName = prop.type.kind === 'map'
+    ? getMessageTypeName(prop.type.valueType, knownMessages)
+    : null;
+  const arrayElementUnionMessageTypes = prop.type.kind === 'array'
+    ? extractUnionMessageTypes(prop.type.elementType, knownMessages)
+    : [];
+  const setElementUnionMessageTypes = prop.type.kind === 'set'
+    ? extractUnionMessageTypes(prop.type.elementType, knownMessages)
+    : [];
+  const mapKeyUnionMessageTypes = prop.type.kind === 'map'
+    ? extractUnionMessageTypes(prop.type.keyType, knownMessages)
+    : [];
+  const mapValueUnionMessageTypes = prop.type.kind === 'map'
+    ? extractUnionMessageTypes(prop.type.valueType, knownMessages)
+    : [];
 
   // Detect generic type parameters
   const genericInfo = getGenericParamInfo(prop.type, typeParameters);
@@ -377,7 +413,15 @@ export function pmtPropertyToDescriptor(
     isArrayBufferType: prop.type.kind === 'arraybuffer',
     isMessageType: messageTypeName !== null,
     messageTypeName,
+    arrayElementMessageTypeName,
+    setElementMessageTypeName,
+    mapKeyMessageTypeName,
+    mapValueMessageTypeName,
     unionMessageTypes: extractUnionMessageTypes(prop.type, knownMessages),
+    arrayElementUnionMessageTypes,
+    setElementUnionMessageTypes,
+    mapKeyUnionMessageTypes,
+    mapValueUnionMessageTypes,
 
     // Babel type fields
     typeAnnotation: pmtTypeToRuntimeType(prop.type),
@@ -414,6 +458,7 @@ export function pmtPropertyToDescriptor(
     isGenericParam: genericInfo !== null,
     genericParamName: genericInfo?.name ?? null,
     genericParamIndex: genericInfo?.index ?? null,
+    genericParamRequiresConstructor: genericInfo?.requiresConstructor ?? false,
     unionGenericParams,
   };
 }

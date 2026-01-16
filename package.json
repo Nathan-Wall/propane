@@ -18,7 +18,7 @@
     "examples/react-todo"
   ],
   "scripts": {
-    "build": "rm -rf build && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node build/scripts/compile-pmsg.js && tsc -p tsconfig.tests.json && tsc-alias -p tsconfig.tests.json && node build/scripts/fix-test-paths.js && node scripts/post-build.js",
+    "build": "rm -rf build && tsc -p tsconfig.pmsg-prebuild.json && tsc-alias -p tsconfig.pmsg-prebuild.json && node scripts/compile-pmsg-prebuild.js && tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json && node build/scripts/compile-pmsg.js && tsc -p tsconfig.tests.json && tsc-alias -p tsconfig.tests.json && node build/scripts/fix-test-paths.js && node scripts/post-build.js",
     "build:types": "tsc --emitDeclarationOnly",
     "bundle": "node scripts/bundle.mjs",
     "test": "node scripts/run-tests.js",

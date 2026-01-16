@@ -53,7 +53,10 @@ For projects with more complex compilation needs, or to avoid long command-line 
 {
   "include": ["src/models", "shared/types"],
   "outputDir": "dist/generated",
-  "watch": false
+  "watch": false,
+  "runtimeImportPath": "@propane/runtime",
+  "messageTypeIdPrefix": "com.example",
+  "messageTypeIdRoot": "."
 }
 ```
 
@@ -64,6 +67,9 @@ When `propanec` is run without arguments, it will automatically look for `propan
 *   **`include`**: An array of file paths or directories to compile. Similar to providing positional arguments to `propanec`. (e.g., `["src/models"]`)
 *   **`outputDir`**: A string specifying the root directory where generated `.pmsg.ts` files should be placed. The original directory structure of the source files will be preserved within this output directory. (e.g., `"dist/generated"`)
 *   **`watch`**: A boolean. If `true`, `propanec` will run in watch mode, regenerating files when changes are detected. Equivalent to `--watch` CLI flag.
+*   **`runtimeImportPath`**: Override the import path used for `@propane/runtime` in generated files.
+*   **`messageTypeIdPrefix`**: Prefix for generated message type IDs (helps avoid collisions across packages).
+*   **`messageTypeIdRoot`**: Root directory used to compute relative paths in generated type IDs (defaults to project root).
 
 **Use the generated class**:
 

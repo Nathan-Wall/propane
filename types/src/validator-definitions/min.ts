@@ -4,7 +4,7 @@
  */
 
 import type { ValidatorDefinition } from '../registry.js';
-import { isValidDecimalString } from '@/common/numbers/decimal.js';
+import { formatNumericBound } from './numeric-bounds.js';
 
 export const MinDefinition: ValidatorDefinition = {
   name: 'Min',
@@ -12,27 +12,18 @@ export const MinDefinition: ValidatorDefinition = {
   generateJs({ valueExpr, type, params, imports }) {
     const [min] = params as [number | bigint | string];
 
-    // Validate string bounds at build time
-    if (typeof min === 'string' && !isValidDecimalString(min)) {
-      throw new Error(`Invalid decimal bound in Min validator: '${min}'`);
-    }
-
     if (type.kind === 'number') {
+      if (typeof min === 'string' || typeof min === 'bigint') {
+        throw new Error('Min<number> requires a numeric bound.');
+      }
       return { condition: `${valueExpr} >= ${min}` };
     }
     if (type.kind === 'bigint') {
-      const bigintLiteral = typeof min === 'bigint' ? `${min}n` : `${min}n`;
-      return { condition: `${valueExpr} >= ${bigintLiteral}` };
+      return { condition: `${valueExpr} >= ${formatNumericBound(min, type, imports, 'Min')}` };
     }
     // For decimal or mixed numeric types, use runtime helper
     imports.add('greaterThanOrEqual', '@propane/runtime');
-    // String bounds are validated above, cast to AnyDecimal for type safety
-    const minArg = typeof min === 'string'
-      ? `'${min}' as AnyDecimal`
-      : String(min);
-    if (typeof min === 'string') {
-      imports.add('AnyDecimal', '@propane/runtime');
-    }
+    const minArg = formatNumericBound(min, type, imports, 'Min');
     return { condition: `greaterThanOrEqual(${valueExpr}, ${minArg})` };
   },
 

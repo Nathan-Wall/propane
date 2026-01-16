@@ -120,6 +120,12 @@ export interface PmtMessage {
   /** Path from // @extend('<path>') decorator, if present */
   extendPath: string | null;
 
+  /** Override for message type ID from @typeId decorator, if present */
+  typeId: string | null;
+
+  /** True if the message has a @compact decorator */
+  compact: boolean;
+
   /** Message properties (from the underlying object literal payload) */
   properties: PmtProperty[];
 

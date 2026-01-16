@@ -18,13 +18,13 @@
  *   Positive,
  *   Range,
  *   int32,
- *   decimal,
+ *   Decimal,
  * } from '@propane/types';
  *
  * export type User = Table<{
  *   '1:id': PrimaryKey<Auto<bigint>>;
  *   '2:score': Positive<int32>;
- *   '3:rating': Range<decimal<3, 2>, 0, 5>;
+ *   '3:rating': Range<Decimal<3, 2>, 0, 5>;
  *   '4:tags': Normalize<string[]>;
  * }>;
  * ```
@@ -70,7 +70,8 @@ export type {
 } from './validators.js';
 
 // Branded types
-export type { int32, int53, decimal } from './brands.js';
+export type { int32, int53 } from './brands.js';
+export type { Decimal, Rational, RoundingMode } from '@/common/numbers/decimal.js';
 
 // Registry for compiler configuration
 export {

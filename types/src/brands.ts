@@ -4,9 +4,6 @@
  * These types provide type-safety and map to specific SQL types.
  */
 
-// Re-export decimal from shared location for cross-package compatibility
-export type { decimal } from '@/common/numbers/decimal.js';
-
 /**
  * 32-bit signed integer type.
  *

@@ -8,13 +8,16 @@ interface PersonProps {
   age: number;
 }
 
+const TYPE_TAG_Person = Symbol('Person');
+
 class Person extends Message<PersonProps> {
-  static readonly TYPE_TAG = Symbol('Person');
+  static readonly $typeId = 'tests/message-intern#Person';
+  static readonly $typeHash = 'tests/message-intern#Person@v1';
   #name: string;
   #age: number;
 
   constructor(props: PersonProps) {
-    super(Person.TYPE_TAG, 'Person');
+    super(TYPE_TAG_Person, 'Person');
     this.#name = props.name;
     this.#age = props.age;
     return this.intern();

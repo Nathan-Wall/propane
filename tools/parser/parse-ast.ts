@@ -137,6 +137,26 @@ function processTypeAlias(
   // Detect Message/Table/Endpoint wrapper
   const wrapperResult = detectWrapper(typeAnnotation, ctx.imports);
 
+  if (decoratorInfo.compact && !wrapperResult.isMessageWrapper) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location,
+      severity: 'error',
+      code: 'PMT041',
+      message: '@compact decorator requires a Message<{...}> wrapper.',
+    });
+  }
+
+  if (decoratorInfo.compact && !decoratorInfo.extendPath) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location,
+      severity: 'error',
+      code: 'PMT042',
+      message: '@compact decorator requires @extend to define toCompact/fromCompact.',
+    });
+  }
+
   // Validate that object literals must use Message<{...}> wrapper
   validateObjectLiteralRequiresWrapper(
     typeAnnotation,
@@ -176,6 +196,8 @@ function processTypeAlias(
       isMessageType: true,
       isTableType: wrapperResult.isTableWrapper,
       extendPath: decoratorInfo.extendPath,
+      typeId: decoratorInfo.typeId,
+      compact: decoratorInfo.compact,
       properties,
       typeParameters,
       wrapper,

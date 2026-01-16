@@ -1,0 +1,10 @@
+import { Message, Decimal, Rational } from '@propane/runtime';
+
+export type NumericPair = Message<{
+  '1:amount': Decimal<10, 2>;
+  '2:ratio': Rational;
+}>;
+
+export type NumericUnion = Message<{
+  '1:value': Decimal<10, 2> | Rational;
+}>;

@@ -28,7 +28,7 @@ import { ImmutableMap } from '../runtime/common/map/immutable.js';
 import { ImmutableSet } from '../runtime/common/set/immutable.js';
 import { test } from 'node:test';
 
-// Type tags must be shared for equals() to work
+// Type tags are per-class; equality uses $typeId/$typeHash for identity
 const INNER_STATE_TAG = Symbol('InnerState');
 const OUTER_STATE_TAG = Symbol('OuterState');
 
@@ -43,6 +43,8 @@ interface ParentChainEntry {
 
 // Inner message class using hybrid approach
 class InnerState extends Message<{ value: string }> {
+  static readonly $typeId = 'tests/nested-memo-rerender#InnerState';
+  static readonly $typeHash = 'tests/nested-memo-rerender#InnerState@v1';
   #value: string;
 
   // Hybrid approach: parent chains and callbacks
@@ -119,6 +121,8 @@ class InnerState extends Message<{ value: string }> {
 
 // Outer message class containing inner message
 class OuterState extends Message<{ counter: number; inner: InnerState }> {
+  static readonly $typeId = 'tests/nested-memo-rerender#OuterState';
+  static readonly $typeHash = 'tests/nested-memo-rerender#OuterState@v1';
   #counter: number;
   #inner: InnerState;
 

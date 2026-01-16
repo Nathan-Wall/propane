@@ -19,7 +19,7 @@ import type {
   Length,
   int32,
   int53,
-  decimal,
+  Decimal,
 } from '@propane/types';
 
 // Test: Numeric sign validators
@@ -50,10 +50,10 @@ export type StringValidators = Message<{
 export type BrandedValidators = Message<{
   '1:positiveInt32': Positive<int32>;
   '2:positiveInt53': Positive<int53>;
-  '3:positiveDecimal': Positive<decimal<10, 2>>;
-  '4:minDecimal': Min<decimal<10, 2>, "100">;
-  '5:maxDecimal': Max<decimal<10, 2>, "1000">;
-  '6:rangeDecimal': Range<decimal<10, 2>, "0", "999.99">;
+  '3:positiveDecimal': Positive<Decimal<10, 2>>;
+  '4:minDecimal': Min<Decimal<10, 2>, "100">;
+  '5:maxDecimal': Max<Decimal<10, 2>, "1000">;
+  '6:rangeDecimal': Range<Decimal<10, 2>, "0", "999.99">;
 }>;
 
 // Test: Optional validated fields

@@ -1,18 +1,23 @@
+import path from 'node:path';
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
 import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
 import { buildClassFromProperties, type WrapperInfo, type ClassValidationContext } from './class-builder.js';
-import type { PropaneState, ExtendInfo } from './plugin.js';
+import type { PropaneState, ExtendInfo, PropanePluginOptions } from './plugin.js';
 import {
   type BrandImportTracker,
   findBrandUsages,
   createSymbolDeclaration,
   transformBrandToThreeParam,
 } from './brand-transform.js';
-import type { PmtMessage } from '@/tools/parser/types.js';
+import type { PmtMessage, PmtMessageWrapper } from '@/tools/parser/types.js';
+import { computeMessageTypeHash } from '@/tools/parser/type-hash.js';
+import { parseProperties } from '@/tools/parser/properties.js';
+import { parseType, parseTypeParameters, type TypeParserContext } from '@/tools/parser/type-parser.js';
 import { pmtTypeParametersToTypeParameters } from './pmt-adapter.js';
+import { getSourceFilename } from './babel-helpers.js';
 
 /**
  * Known message wrapper types.
@@ -74,7 +79,6 @@ function extractWrapperInfo(
 /**
  * Extract and validate type parameters from a TSTypeParameterDeclaration.
  * Returns an array of TypeParameter objects with name and constraint.
- * Throws an error if a type parameter doesn't have an `extends Message` constraint.
  */
 function extractTypeParameters(
   typeParams: t.TSTypeParameterDeclaration | null | undefined,
@@ -90,39 +94,33 @@ function extractTypeParameters(
     // Validate that the type parameter has a constraint
     if (!param.constraint) {
       throw new Error(
-        `Generic type parameter "${name}" must have an "extends Message" constraint. `
+        `Generic type parameter "${name}" must have an "extends" constraint. `
         + `Example: ${name} extends Message`
       );
     }
 
-    if (!t.isTSTypeReference(param.constraint)) {
-      throw new Error(
-        `Generic type parameter "${name}" constraint must be a type reference (extends Message or a message type).`
-      );
+    const constraintType = t.cloneNode(param.constraint);
+    let requiresConstructor = false;
+    if (t.isTSTypeReference(param.constraint)) {
+      let constraintName: string | null = null;
+      if (t.isIdentifier(param.constraint.typeName)) {
+        constraintName = param.constraint.typeName.name;
+      } else if (t.isTSQualifiedName(param.constraint.typeName)) {
+        constraintName = getQualifiedName(param.constraint.typeName);
+      }
+      if (constraintName) {
+        const baseConstraint = constraintName.split('.')[0]!;
+        if (baseConstraint === 'Message' || declaredMessageTypeNames.has(baseConstraint)) {
+          requiresConstructor = true;
+        }
+      }
     }
 
-    let constraint: string;
-    if (t.isIdentifier(param.constraint.typeName)) {
-      constraint = param.constraint.typeName.name;
-    } else if (t.isTSQualifiedName(param.constraint.typeName)) {
-      // Handle qualified names like Namespace.Type
-      constraint = getQualifiedName(param.constraint.typeName);
-    } else {
-      throw new Error(
-        `Generic type parameter "${name}" has an invalid constraint.`
-      );
-    }
-
-    // Validate that the constraint is Message or a declared message type
-    const baseConstraint = constraint.split('.')[0]!;
-    if (baseConstraint !== 'Message' && !declaredMessageTypeNames.has(baseConstraint)) {
-      throw new Error(
-        `Generic type parameter "${name}" must extend Message or a message type, `
-        + `but extends "${constraint}".`
-      );
-    }
-
-    return { name, constraint };
+    return {
+      name,
+      constraint: constraintType,
+      requiresConstructor,
+    };
   });
 }
 
@@ -153,6 +151,94 @@ interface BuildDeclarationsOptions {
   brandTracker?: BrandImportTracker;
   /** PMT message data from shared parser (if available) */
   pmtMessage?: PmtMessage;
+  /** Optional @typeId override from decorator parsing */
+  typeId?: string | null;
+  /** True if @compact decorator is present */
+  compact?: boolean;
+}
+
+function normalizePath(value: string): string {
+  return value.replaceAll('\\', '/');
+}
+
+function computeTypeId(
+  typeName: string,
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
+  opts?: PropanePluginOptions,
+  override?: string | null
+): string {
+  if (override) {
+    return override;
+  }
+
+  const filename = getSourceFilename(typeAliasPath);
+  const root = opts?.messageTypeIdRoot ?? opts?.runtimeImportBase ?? process.cwd();
+  let pathPart = filename;
+
+  if (filename && root) {
+    const relative = path.relative(root, filename);
+    if (relative && !relative.startsWith('..') && !path.isAbsolute(relative)) {
+      pathPart = relative;
+    }
+  }
+
+  const normalizedPath = normalizePath(pathPart || typeName);
+  const prefix = opts?.messageTypeIdPrefix?.trim();
+  const base = prefix ? `${prefix}:${normalizedPath}` : normalizedPath;
+  return `${base}#${typeName}`;
+}
+
+function computeImplicitTypeHash(
+  typeAlias: t.TSTypeAliasDeclaration,
+  typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
+  actualTypeLiteralPath: NodePath<t.TSType>,
+  typeLiteralPath: NodePath<t.TSType>,
+  wrapperInfo: WrapperInfo | undefined,
+  compact: boolean
+): string | undefined {
+  if (!actualTypeLiteralPath.isTSTypeLiteral()) {
+    return undefined;
+  }
+
+  const filePath = getSourceFilename(typeAliasPath) ?? 'unknown';
+  const ctx: TypeParserContext = { filePath, diagnostics: [] };
+
+  const properties = parseProperties(actualTypeLiteralPath.node, ctx);
+  const typeParameters = parseTypeParameters(typeAlias.typeParameters, ctx);
+
+  let wrapper: PmtMessageWrapper | null = null;
+  if (wrapperInfo) {
+    let responseType = null;
+    if (wrapperInfo.wrapperName === 'Endpoint' && typeLiteralPath.isTSTypeReference()) {
+      const params = typeLiteralPath.node.typeParameters?.params;
+      if (params && params[1]) {
+        responseType = parseType(params[1], ctx);
+      }
+    }
+
+    wrapper = {
+      localName: wrapperInfo.wrapperName,
+      responseType,
+    };
+  }
+
+  const implicitMessage: PmtMessage = {
+    name: t.isIdentifier(typeAlias.id) ? typeAlias.id.name : 'Unknown',
+    isMessageType: true,
+    isTableType: wrapperInfo?.wrapperName === 'Table',
+    extendPath: null,
+    typeId: null,
+    compact,
+    properties,
+    typeParameters,
+    wrapper,
+    location: {
+      start: { line: 0, column: 0 },
+      end: { line: 0, column: 0 },
+    },
+  };
+
+  return computeMessageTypeHash(implicitMessage);
 }
 
 export function buildDeclarations(
@@ -167,6 +253,8 @@ export function buildDeclarations(
     extendInfo,
     brandTracker,
     pmtMessage,
+    typeId,
+    compact = false,
   }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -273,18 +361,10 @@ export function buildDeclarations(
   let typeParameters: TypeParameter[];
   if (pmtMessage) {
     // Use PMT type parameters
-    typeParameters = pmtTypeParametersToTypeParameters(pmtMessage.typeParameters);
-
-    // Validate constraints (keep existing validation logic)
-    for (const param of typeParameters) {
-      const baseConstraint = param.constraint.split('.')[0]!;
-      if (baseConstraint !== 'Message' && !declaredMessageTypeNames.has(baseConstraint)) {
-        throw typeAliasPath.buildCodeFrameError(
-          `Generic type parameter "${param.name}" must extend Message or a message type, `
-          + `but extends "${param.constraint}".`
-        );
-      }
-    }
+    typeParameters = pmtTypeParametersToTypeParameters(
+      pmtMessage.typeParameters,
+      declaredMessageTypeNames
+    );
   } else {
     // Fallback to AST-based extraction (for non-PMT paths)
     typeParameters = extractTypeParameters(
@@ -301,16 +381,7 @@ export function buildDeclarations(
     typePath: NodePath<t.TSType>,
     declared: Set<string>
   ) => {
-    // Check if the type is a generic type parameter
-    if (typePath.isTSTypeReference()) {
-      const typeName = typePath.node.typeName;
-      if (t.isIdentifier(typeName) && typeParamNames.has(typeName.name)) {
-        // This is a generic type parameter reference, which is allowed
-        return;
-      }
-    }
-    // Fall back to standard validation
-    assertSupportedType(typePath, declared);
+    assertSupportedType(typePath, declared, typeParamNames);
   };
 
   const generatedTypes: t.TSTypeAliasDeclaration[] = [];
@@ -351,6 +422,22 @@ export function buildDeclarations(
   const isExtended = extendInfo !== undefined;
   // When extended, the class is TypeName$Base, otherwise TypeName
   const className = isExtended ? `${typeAlias.id.name}$Base` : typeAlias.id.name;
+  const computedTypeId = computeTypeId(
+    typeAlias.id.name,
+    typeAliasPath,
+    state.opts,
+    pmtMessage?.typeId ?? typeId
+  );
+  const computedTypeHash = pmtMessage
+    ? computeMessageTypeHash(pmtMessage)
+    : computeImplicitTypeHash(
+      typeAlias,
+      typeAliasPath,
+      actualTypeLiteralPath,
+      typeLiteralPath,
+      wrapperInfo,
+      compact
+    );
   const typeNamespace = buildTypeNamespace(
     typeAlias,
     properties,
@@ -370,7 +457,21 @@ export function buildDeclarations(
     state.validatorTracker
       ? { registry: state.typeRegistry, tracker: state.validatorTracker }
       : undefined,
-    typeAliasDefinitions
+    typeAliasDefinitions,
+    t.identifier(`TYPE_TAG_${className}`),
+    computedTypeId,
+    computedTypeHash,
+    compact
+  );
+
+  const typeTagDeclaration = t.variableDeclaration(
+    'const',
+    [
+      t.variableDeclarator(
+        t.identifier(`TYPE_TAG_${className}`),
+        t.callExpression(t.identifier('Symbol'), [t.stringLiteral(typeAlias.id.name)])
+      ),
+    ]
   );
 
   state.usesPropaneBase = true;
@@ -390,6 +491,7 @@ export function buildDeclarations(
     return [
       ...brandSymbolDeclarations,
       ...generatedStatements,
+      typeTagDeclaration,
       classExport,
       typeNamespace,
     ];
@@ -398,6 +500,7 @@ export function buildDeclarations(
   return [
     ...brandSymbolDeclarations,
     ...generatedStatements,
+    typeTagDeclaration,
     classDecl,
     typeNamespace,
   ];

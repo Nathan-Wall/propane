@@ -67,7 +67,6 @@ export type ResponseOf<T> =
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface MessageClass<T = any> {
-  readonly TYPE_TAG: symbol;
   new (props?: T, options?: { skipValidation?: boolean }): AnyMessage;
   deserialize(message: string, options?: { skipValidation?: boolean }): AnyMessage;
 }

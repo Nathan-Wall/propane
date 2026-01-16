@@ -7,10 +7,12 @@ import {
   getSetTypeArguments,
   isArrayBufferReference,
   isArrayTypeNode,
+  isDecimalReference,
   isDateReference,
   isImmutableArrayBufferReference,
   isMapReference,
   isMapTypeNode,
+  isRationalReference,
   isSetReference,
   isSetTypeNode,
   isUrlReference,
@@ -53,8 +55,10 @@ export interface PluginStateFlags {
   usesCharLength: boolean;
   usesIsInt32: boolean;
   usesIsInt53: boolean;
-  usesIsDecimal: boolean;
-  usesCanBeDecimal: boolean;
+  usesIsDecimalOf: boolean;
+  usesIsRational: boolean;
+  usesDecimalClass: boolean;
+  usesRationalClass: boolean;
   usesIsPositive: boolean;
   usesIsNegative: boolean;
   usesIsNonNegative: boolean;
@@ -64,16 +68,15 @@ export interface PluginStateFlags {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
-  // Type import for decimal bound casts
-  usesAnyDecimal: boolean;
 }
 
 /**
  * Represents a generic type parameter like T in `Container<T extends Message>`.
  */
 export interface TypeParameter {
-  name: string;           // e.g., 'T'
-  constraint: string;     // e.g., 'Message' or specific type like 'User'
+  name: string; // e.g., 'T'
+  constraint: t.TSType | null; // Constraint type node (e.g., number, Message, User)
+  requiresConstructor: boolean; // true if constraint is a Message or message type
 }
 
 export interface PropDescriptor {
@@ -89,7 +92,15 @@ export interface PropDescriptor {
   isArrayBufferType: boolean;
   isMessageType: boolean;
   messageTypeName: string | null;
+  arrayElementMessageTypeName: string | null;
+  setElementMessageTypeName: string | null;
+  mapKeyMessageTypeName: string | null;
+  mapValueMessageTypeName: string | null;
   unionMessageTypes: string[];
+  arrayElementUnionMessageTypes: string[];
+  setElementUnionMessageTypes: string[];
+  mapKeyUnionMessageTypes: string[];
+  mapValueUnionMessageTypes: string[];
   typeAnnotation: t.TSType;
   inputTypeAnnotation: t.TSType;
   arrayElementType: t.TSType | null;
@@ -104,6 +115,7 @@ export interface PropDescriptor {
   isGenericParam: boolean;              // true if type is a generic parameter (e.g., T)
   genericParamName: string | null;      // the parameter name (e.g., 'T')
   genericParamIndex: number | null;     // index in the type parameters array
+  genericParamRequiresConstructor: boolean; // true if generic param is a message type
   unionGenericParams: string[];         // for unions like T | U, lists ['T', 'U']
 }
 
@@ -200,7 +212,7 @@ export function assertValidPropertyName(
 function getGenericParamInfo(
   typePath: NodePath<t.TSType>,
   typeParameters: TypeParameter[]
-): { name: string; index: number } | null {
+): { name: string; index: number; requiresConstructor: boolean } | null {
   if (!typePath.isTSTypeReference()) {
     return null;
   }
@@ -210,7 +222,11 @@ function getGenericParamInfo(
   }
   const paramIndex = typeParameters.findIndex((p) => p.name === typeName.name);
   if (paramIndex !== -1) {
-    return { name: typeName.name, index: paramIndex };
+    return {
+      name: typeName.name,
+      index: paramIndex,
+      requiresConstructor: typeParameters[paramIndex]!.requiresConstructor,
+    };
   }
   return null;
 }
@@ -236,6 +252,109 @@ function extractUnionGenericParams(
     }
   }
   return genericParams;
+}
+
+function unwrapParenthesizedTypePath(
+  typePath: NodePath<t.TSType>
+): NodePath<t.TSType> {
+  if (typePath.isTSParenthesizedType()) {
+    return unwrapParenthesizedTypePath(typePath.get('typeAnnotation'));
+  }
+  return typePath;
+}
+
+function getArrayElementTypePath(
+  typePath: NodePath<t.TSType>
+): NodePath<t.TSType> | null {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (unwrapped.isTSArrayType()) {
+    return unwrapped.get('elementType');
+  }
+  if (unwrapped.isTSTypeReference()) {
+    const typeName = unwrapped.node.typeName;
+    if (
+      t.isIdentifier(typeName)
+      && (
+        typeName.name === 'Array'
+        || typeName.name === 'ReadonlyArray'
+        || typeName.name === 'ImmutableArray'
+      )
+    ) {
+      const paramsPath = unwrapped.get('typeParameters');
+      if (
+        !Array.isArray(paramsPath)
+        && paramsPath.node
+        && t.isTSTypeParameterInstantiation(paramsPath.node)
+      ) {
+        const params = paramsPath.get('params');
+        return Array.isArray(params) ? params[0] ?? null : null;
+      }
+    }
+  }
+  return null;
+}
+
+function getSetElementTypePath(
+  typePath: NodePath<t.TSType>
+): NodePath<t.TSType> | null {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (unwrapped.isTSTypeReference()) {
+    const typeName = unwrapped.node.typeName;
+    if (
+      t.isIdentifier(typeName)
+      && (
+        typeName.name === 'Set'
+        || typeName.name === 'ReadonlySet'
+        || typeName.name === 'ImmutableSet'
+      )
+    ) {
+      const paramsPath = unwrapped.get('typeParameters');
+      if (
+        !Array.isArray(paramsPath)
+        && paramsPath.node
+        && t.isTSTypeParameterInstantiation(paramsPath.node)
+      ) {
+        const params = paramsPath.get('params');
+        return Array.isArray(params) ? params[0] ?? null : null;
+      }
+    }
+  }
+  return null;
+}
+
+function getMapTypeArgumentPaths(
+  typePath: NodePath<t.TSType>
+): { keyPath: NodePath<t.TSType> | null; valuePath: NodePath<t.TSType> | null } | null {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSTypeReference()) {
+    return null;
+  }
+  const typeName = unwrapped.node.typeName;
+  if (
+    !t.isIdentifier(typeName)
+    || (
+      typeName.name !== 'Map'
+      && typeName.name !== 'ReadonlyMap'
+      && typeName.name !== 'ImmutableMap'
+    )
+  ) {
+    return null;
+  }
+  const paramsPath = unwrapped.get('typeParameters');
+  if (
+    !Array.isArray(paramsPath)
+    && paramsPath.node
+    && t.isTSTypeParameterInstantiation(paramsPath.node)
+  ) {
+    const params = paramsPath.get('params');
+    if (Array.isArray(params)) {
+      return {
+        keyPath: params[0] ?? null,
+        valuePath: params[1] ?? null,
+      };
+    }
+  }
+  return null;
 }
 
 export function extractProperties(
@@ -323,11 +442,38 @@ export function extractProperties(
       : null;
     const setType = isSetTypeNode(propTypePath.node);
     const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
+    const arrayElementPath = arrayType ? getArrayElementTypePath(propTypePath) : null;
+    const setElementPath = setType ? getSetElementTypePath(propTypePath) : null;
+    const mapArgPaths = mapType ? getMapTypeArgumentPaths(propTypePath) : null;
     const messageTypeName = getMessageReferenceName(propTypePath);
+    const arrayElementMessageTypeName = arrayElementPath
+      ? getMessageReferenceName(arrayElementPath)
+      : null;
+    const setElementMessageTypeName = setElementPath
+      ? getMessageReferenceName(setElementPath)
+      : null;
+    const mapKeyMessageTypeName = mapArgPaths?.keyPath
+      ? getMessageReferenceName(mapArgPaths.keyPath)
+      : null;
+    const mapValueMessageTypeName = mapArgPaths?.valuePath
+      ? getMessageReferenceName(mapArgPaths.valuePath)
+      : null;
     const unionMessageTypes = extractUnionMessageTypes(
       propTypePath,
       getMessageReferenceName
     );
+    const arrayElementUnionMessageTypes = arrayElementPath
+      ? extractUnionMessageTypes(arrayElementPath, getMessageReferenceName)
+      : [];
+    const setElementUnionMessageTypes = setElementPath
+      ? extractUnionMessageTypes(setElementPath, getMessageReferenceName)
+      : [];
+    const mapKeyUnionMessageTypes = mapArgPaths?.keyPath
+      ? extractUnionMessageTypes(mapArgPaths.keyPath, getMessageReferenceName)
+      : [];
+    const mapValueUnionMessageTypes = mapArgPaths?.valuePath
+      ? extractUnionMessageTypes(mapArgPaths.valuePath, getMessageReferenceName)
+      : [];
 
     // Detect generic type parameters
     const genericParamInfo = getGenericParamInfo(propTypePath, typeParameters);
@@ -336,7 +482,10 @@ export function extractProperties(
       typeParameters
     );
     const isGenericParam = genericParamInfo !== null;
-    if (isGenericParam || unionGenericParams.length > 0) {
+    const unionNeedsConstructor = unionGenericParams.some((paramName) =>
+      typeParameters.find((param) => param.name === paramName)?.requiresConstructor
+    );
+    if (genericParamInfo?.requiresConstructor || unionNeedsConstructor) {
       state.usesMessageConstructor = true;
     }
 
@@ -489,11 +638,18 @@ export function extractProperties(
     }
 
     if (messageTypeName) {
+      const typeArgs = t.isTSTypeReference(propTypePath.node)
+        && propTypePath.node.typeParameters
+        ? t.tsTypeParameterInstantiation(
+          propTypePath.node.typeParameters.params.map((param) => t.cloneNode(param))
+        )
+        : null;
       inputTypeAnnotation = t.tsTypeReference(
         t.tsQualifiedName(
           t.identifier(messageTypeName),
           t.identifier('Value')
-        )
+        ),
+        typeArgs ?? undefined
       );
       displayType = t.cloneNode(inputTypeAnnotation);
     }
@@ -511,7 +667,15 @@ export function extractProperties(
       isArrayBufferType,
       isMessageType: Boolean(messageTypeName),
       messageTypeName,
+      arrayElementMessageTypeName,
+      setElementMessageTypeName,
+      mapKeyMessageTypeName,
+      mapValueMessageTypeName,
       unionMessageTypes,
+      arrayElementUnionMessageTypes,
+      setElementUnionMessageTypes,
+      mapKeyUnionMessageTypes,
+      mapValueUnionMessageTypes,
       typeAnnotation: runtimeType,
       inputTypeAnnotation,
       arrayElementType,
@@ -530,6 +694,7 @@ export function extractProperties(
       isGenericParam,
       genericParamName: genericParamInfo?.name ?? null,
       genericParamIndex: genericParamInfo?.index ?? null,
+      genericParamRequiresConstructor: genericParamInfo?.requiresConstructor ?? false,
       unionGenericParams,
     });
   }
@@ -545,35 +710,92 @@ function handleImplicitTypes(
   declaredTypeNames: Set<string>,
   declaredMessageTypeNames: Set<string>
 ): void {
+  const namePrefix = `${parentName}_${capitalize(propName)}`;
+
+  const unwrapParenthesized = (path: NodePath<t.TSType>): NodePath<t.TSType> => (
+    path.isTSParenthesizedType() ? path.get('typeAnnotation') : path
+  );
+
+  const getTypeParamPath = (
+    typeRefPath: NodePath<t.TSTypeReference>,
+    index: number
+  ): NodePath<t.TSType> | null => {
+    const typeParamsPath = typeRefPath.get('typeParameters');
+    if (!isTSTypeParameterInstantiation(typeParamsPath)) {
+      return null;
+    }
+    const params = getTypeParams(typeParamsPath);
+    return params[index] ?? null;
+  };
+
+  const liftUnionLiteralMembers = (
+    unionPath: NodePath<t.TSUnionType>,
+    unionNamePrefix: string
+  ): void => {
+    let unionIndex = 1;
+    for (const memberPath of unionPath.get('types')) {
+      const unwrapped = unwrapParenthesized(memberPath);
+      if (unwrapped.isTSTypeLiteral()) {
+        const newTypeName = `${unionNamePrefix}_Union${unionIndex}`;
+        const newTypeAlias = t.tsTypeAliasDeclaration(
+          t.identifier(newTypeName),
+          null,
+          t.cloneNode(unwrapped.node)
+        );
+        generatedTypes.push(newTypeAlias);
+        declaredTypeNames.add(newTypeName);
+        declaredMessageTypeNames.add(newTypeName);
+        memberPath.replaceWith(t.tsTypeReference(t.identifier(newTypeName)));
+        unionIndex += 1;
+      }
+    }
+  };
+
+  if (propTypePath.isTSParenthesizedType()) {
+    handleImplicitTypes(
+      propTypePath.get('typeAnnotation'),
+      propName,
+      generatedTypes,
+      parentName,
+      declaredTypeNames,
+      declaredMessageTypeNames
+    );
+    return;
+  }
+
+  if (propTypePath.isTSUnionType()) {
+    liftUnionLiteralMembers(propTypePath, namePrefix);
+    return;
+  }
+
   if (isArrayTypeNode(propTypePath.node)) {
-    const elementType = getArrayElementType(propTypePath.node);
-    if (t.isTSTypeLiteral(elementType)) {
-      const newItemName = `${parentName}_${capitalize(propName)}_Item`;
-      const newTypeAlias = t.tsTypeAliasDeclaration(
-        t.identifier(newItemName),
-        null,
-        t.cloneNode(elementType)
-      );
-      generatedTypes.push(newTypeAlias);
-      declaredTypeNames.add(newItemName);
-      declaredMessageTypeNames.add(newItemName);
-
-      const newRef = t.tsTypeReference(t.identifier(newItemName));
-
-      if (t.isTSArrayType(propTypePath.node)) {
-        propTypePath.replaceWith(t.tsArrayType(newRef));
-      } else {
-        propTypePath.replaceWith(t.tsTypeReference(
-          (propTypePath.node as t.TSTypeReference).typeName,
-          t.tsTypeParameterInstantiation([newRef])
-        ));
+    const elementPath = propTypePath.isTSArrayType()
+      ? propTypePath.get('elementType')
+      : propTypePath.isTSTypeReference()
+        ? getTypeParamPath(propTypePath, 0)
+        : null;
+    if (elementPath) {
+      const unwrappedElement = unwrapParenthesized(elementPath);
+      if (unwrappedElement.isTSTypeLiteral()) {
+        const newItemName = `${namePrefix}_Item`;
+        const newTypeAlias = t.tsTypeAliasDeclaration(
+          t.identifier(newItemName),
+          null,
+          t.cloneNode(unwrappedElement.node)
+        );
+        generatedTypes.push(newTypeAlias);
+        declaredTypeNames.add(newItemName);
+        declaredMessageTypeNames.add(newItemName);
+        elementPath.replaceWith(t.tsTypeReference(t.identifier(newItemName)));
+      } else if (unwrappedElement.isTSUnionType()) {
+        liftUnionLiteralMembers(unwrappedElement, `${namePrefix}_Item`);
       }
     }
     return;
   }
 
   if (propTypePath.isTSTypeLiteral()) {
-    const newTypeName = `${parentName}_${capitalize(propName)}`;
+    const newTypeName = namePrefix;
     const newTypeAlias = t.tsTypeAliasDeclaration(
       t.identifier(newTypeName),
       null,
@@ -589,69 +811,68 @@ function handleImplicitTypes(
   }
 
   if (isSetTypeNode(propTypePath.node)) {
-    const elementType = getSetTypeArguments(propTypePath.node);
-    if (t.isTSTypeLiteral(elementType)) {
-      const newItemName = `${parentName}_${capitalize(propName)}_Item`;
-      const newTypeAlias = t.tsTypeAliasDeclaration(
-        t.identifier(newItemName),
-        null,
-        t.cloneNode(elementType)
-      );
-      generatedTypes.push(newTypeAlias);
-      declaredTypeNames.add(newItemName);
-      declaredMessageTypeNames.add(newItemName);
-
-      const newRef = t.tsTypeReference(t.identifier(newItemName));
-      propTypePath.replaceWith(t.tsTypeReference(
-        (propTypePath.node as t.TSTypeReference).typeName,
-        t.tsTypeParameterInstantiation([newRef])
-      ));
+    if (propTypePath.isTSTypeReference()) {
+      const elementPath = getTypeParamPath(propTypePath, 0);
+      if (elementPath) {
+        const unwrappedElement = unwrapParenthesized(elementPath);
+        if (unwrappedElement.isTSTypeLiteral()) {
+          const newItemName = `${namePrefix}_Item`;
+          const newTypeAlias = t.tsTypeAliasDeclaration(
+            t.identifier(newItemName),
+            null,
+            t.cloneNode(unwrappedElement.node)
+          );
+          generatedTypes.push(newTypeAlias);
+          declaredTypeNames.add(newItemName);
+          declaredMessageTypeNames.add(newItemName);
+          elementPath.replaceWith(t.tsTypeReference(t.identifier(newItemName)));
+        } else if (unwrappedElement.isTSUnionType()) {
+          liftUnionLiteralMembers(unwrappedElement, `${namePrefix}_Item`);
+        }
+      }
     }
     return;
   }
 
   if (isMapTypeNode(propTypePath.node)) {
-    const mapArgs = getMapTypeArguments(propTypePath.node);
-    if (mapArgs) {
-      let keyType = mapArgs.keyType;
-      let valueType = mapArgs.valueType;
-      let needsReplacement = false;
+    if (propTypePath.isTSTypeReference()) {
+      const keyPath = getTypeParamPath(propTypePath, 0);
+      const valuePath = getTypeParamPath(propTypePath, 1);
 
-      // Handle inline object key type
-      if (t.isTSTypeLiteral(keyType)) {
-        const newKeyName = `${parentName}_${capitalize(propName)}_Key`;
-        const newKeyAlias = t.tsTypeAliasDeclaration(
-          t.identifier(newKeyName),
-          null,
-          t.cloneNode(keyType)
-        );
-        generatedTypes.push(newKeyAlias);
-        declaredTypeNames.add(newKeyName);
-        declaredMessageTypeNames.add(newKeyName);
-        keyType = t.tsTypeReference(t.identifier(newKeyName));
-        needsReplacement = true;
+      if (keyPath) {
+        const unwrappedKey = unwrapParenthesized(keyPath);
+        if (unwrappedKey.isTSTypeLiteral()) {
+          const newKeyName = `${namePrefix}_Key`;
+          const newKeyAlias = t.tsTypeAliasDeclaration(
+            t.identifier(newKeyName),
+            null,
+            t.cloneNode(unwrappedKey.node)
+          );
+          generatedTypes.push(newKeyAlias);
+          declaredTypeNames.add(newKeyName);
+          declaredMessageTypeNames.add(newKeyName);
+          keyPath.replaceWith(t.tsTypeReference(t.identifier(newKeyName)));
+        } else if (unwrappedKey.isTSUnionType()) {
+          liftUnionLiteralMembers(unwrappedKey, `${namePrefix}_Key`);
+        }
       }
 
-      // Handle inline object value type
-      if (t.isTSTypeLiteral(valueType)) {
-        const newValueName = `${parentName}_${capitalize(propName)}_Value`;
-        const newValueAlias = t.tsTypeAliasDeclaration(
-          t.identifier(newValueName),
-          null,
-          t.cloneNode(valueType)
-        );
-        generatedTypes.push(newValueAlias);
-        declaredTypeNames.add(newValueName);
-        declaredMessageTypeNames.add(newValueName);
-        valueType = t.tsTypeReference(t.identifier(newValueName));
-        needsReplacement = true;
-      }
-
-      if (needsReplacement) {
-        propTypePath.replaceWith(t.tsTypeReference(
-          (propTypePath.node as t.TSTypeReference).typeName,
-          t.tsTypeParameterInstantiation([keyType, valueType])
-        ));
+      if (valuePath) {
+        const unwrappedValue = unwrapParenthesized(valuePath);
+        if (unwrappedValue.isTSTypeLiteral()) {
+          const newValueName = `${namePrefix}_Value`;
+          const newValueAlias = t.tsTypeAliasDeclaration(
+            t.identifier(newValueName),
+            null,
+            t.cloneNode(unwrappedValue.node)
+          );
+          generatedTypes.push(newValueAlias);
+          declaredTypeNames.add(newValueName);
+          declaredMessageTypeNames.add(newValueName);
+          valuePath.replaceWith(t.tsTypeReference(t.identifier(newValueName)));
+        } else if (unwrappedValue.isTSUnionType()) {
+          liftUnionLiteralMembers(unwrappedValue, `${namePrefix}_Value`);
+        }
       }
     }
   }
@@ -1039,13 +1260,16 @@ function extractUnionMessageTypes(
   typePath: NodePath<t.TSType>,
   getMessageReferenceName: (path: NodePath<t.TSType>) => string | null
 ): string[] {
-  if (!typePath.isTSUnionType()) {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSUnionType()) {
     return [];
   }
 
   const messageTypes: string[] = [];
-  for (const memberPath of typePath.get('types')) {
-    const messageName = getMessageReferenceName(memberPath);
+  for (const memberPath of unwrapped.get('types')) {
+    const messageName = getMessageReferenceName(
+      unwrapParenthesizedTypePath(memberPath)
+    );
     if (messageName) {
       messageTypes.push(messageName);
     }
@@ -1061,6 +1285,8 @@ function scanTypeForUsage(
   if (!typePath?.node) return;
 
   if (typePath.isTSTypeReference()) {
+    if (isDecimalReference(typePath.node)) state.usesDecimalClass = true;
+    if (isRationalReference(typePath.node)) state.usesRationalClass = true;
     if (isDateReference(typePath.node)) state.usesImmutableDate = true;
     if (isUrlReference(typePath.node)) state.usesImmutableUrl = true;
     if (
@@ -1106,12 +1332,12 @@ function scanTypeForUsage(
 
   if (typePath.isTSTypeLiteral()) {
      for (const member of typePath.get('members')) {
-         if (member.isTSPropertySignature()) {
-             const annotation = member.get('typeAnnotation');
-             if (isTSTypeAnnotation(annotation)) {
-                scanTypeForUsage(getTypeAnnotation(annotation), state);
-             }
-         }
+        if (member.isTSPropertySignature()) {
+            const annotation = member.get('typeAnnotation') as unknown as NodePath<t.Node>;
+            if (isTSTypeAnnotation(annotation)) {
+               scanTypeForUsage(getTypeAnnotation(annotation), state);
+            }
+        }
      }
   }
 

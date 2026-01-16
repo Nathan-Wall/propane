@@ -160,6 +160,12 @@ function generateUnionValidation(
   let firstIf: t.IfStatement | null = null;
 
   for (const branch of branches) {
+    if (branch.typeGuard.includes('Decimal.')) {
+      imports.add('Decimal', '@propane/runtime');
+    }
+    if (branch.typeGuard.includes('Rational.')) {
+      imports.add('Rational', '@propane/runtime');
+    }
     // Build condition from type guard
     const condition = parseTypeGuard(branch.typeGuard, ctx.valueExpr);
 
@@ -365,6 +371,17 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
   // Replace 'value' with the actual value expression
   const adjustedGuard = guard.replace(/\bvalue\b/g, valueExpr);
 
+  if (adjustedGuard.includes('&&')) {
+    const parts = adjustedGuard.split('&&').map((part) => part.trim()).filter(Boolean);
+    if (parts.length > 0) {
+      let expr = parseTypeGuard(parts[0]!, valueExpr);
+      for (let i = 1; i < parts.length; i += 1) {
+        expr = t.logicalExpression('&&', expr, parseTypeGuard(parts[i]!, valueExpr));
+      }
+      return expr;
+    }
+  }
+
   // Parse common patterns
   if (adjustedGuard.startsWith("typeof ")) {
     const match = adjustedGuard.match(/typeof (\w+) === '(\w+)'/);
@@ -396,6 +413,23 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
         t.identifier(match[2]!)
       );
     }
+  }
+
+  const callMatch = adjustedGuard.match(/^(\w+)\.(\w+)\((\w+)\)$/);
+  if (callMatch) {
+    return t.callExpression(
+      t.memberExpression(t.identifier(callMatch[1]!), t.identifier(callMatch[2]!)),
+      [t.identifier(callMatch[3]!)]
+    );
+  }
+
+  const eqMatch = adjustedGuard.match(/^(\w+)\.(\w+)\s*===\s*(-?\d+)$/);
+  if (eqMatch) {
+    return t.binaryExpression(
+      '===',
+      t.memberExpression(t.identifier(eqMatch[1]!), t.identifier(eqMatch[2]!)),
+      t.numericLiteral(Number(eqMatch[3]!))
+    );
   }
 
   // Fallback: use as identifier (this will cause syntax issues if not valid)

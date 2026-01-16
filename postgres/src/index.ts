@@ -5,8 +5,8 @@
  * working with Propane messages in PostgreSQL.
  */
 
-// Re-export scalar types from runtime for convenience
-export { int32, decimal, toInt32, toDecimal } from '@/common/numbers/scalars.js';
+// Re-export scalar types and numeric utilities from runtime for convenience
+export * from '@/common/numbers/scalars.js';
 
 // Export database wrapper types
 export {

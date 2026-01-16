@@ -1,0 +1,1427 @@
+/* eslint-disable @typescript-eslint/no-namespace*/
+// Generated from tests/unions.pmsg
+import { Email } from './email.pmsg.js';
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableSet, ImmutableArray, ImmutableDate, equals, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
+const TYPE_TAG_Unions_Metadata_Union1 = Symbol("Unions_Metadata_Union1");
+export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_Metadata_Union1";
+  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union1.$typeId);
+  static readonly $typeName = "Unions_Metadata_Union1";
+  static EMPTY: Unions_Metadata_Union1;
+  #created!: ImmutableDate;
+  constructor(props?: Unions_Metadata_Union1.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_Metadata_Union1.EMPTY) return Unions_Metadata_Union1.EMPTY;
+    super(TYPE_TAG_Unions_Metadata_Union1, "Unions_Metadata_Union1");
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    if (!props) Unions_Metadata_Union1.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union1.Data>[] {
+    return [{
+      name: "created",
+      fieldNumber: null,
+      getValue: () => this.#created as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_Metadata_Union1.Data {
+    const props = {} as Partial<Unions_Metadata_Union1.Data>;
+    const createdValue = entries["created"];
+    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
+    return props as Unions_Metadata_Union1.Data;
+  }
+  static from(value: Unions_Metadata_Union1.Value): Unions_Metadata_Union1 {
+    return value instanceof Unions_Metadata_Union1 ? value : new Unions_Metadata_Union1(value);
+  }
+  static deserialize<T extends typeof Unions_Metadata_Union1>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get created(): ImmutableDate {
+    return this.#created;
+  }
+  set(updates: Partial<SetUpdates<Unions_Metadata_Union1.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_Metadata_Union1)(data) as this);
+  }
+  setCreated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_Metadata_Union1)({
+      created: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_Metadata_Union1 {
+  export type Data = {
+    created: ImmutableDate | Date;
+  };
+  export type Value = Unions_Metadata_Union1 | Unions_Metadata_Union1.Data;
+}
+const TYPE_TAG_Unions_Metadata_Union2 = Symbol("Unions_Metadata_Union2");
+export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_Metadata_Union2";
+  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union2.$typeId);
+  static readonly $typeName = "Unions_Metadata_Union2";
+  static EMPTY: Unions_Metadata_Union2;
+  #updated!: ImmutableDate;
+  constructor(props?: Unions_Metadata_Union2.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_Metadata_Union2.EMPTY) return Unions_Metadata_Union2.EMPTY;
+    super(TYPE_TAG_Unions_Metadata_Union2, "Unions_Metadata_Union2");
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    if (!props) Unions_Metadata_Union2.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union2.Data>[] {
+    return [{
+      name: "updated",
+      fieldNumber: null,
+      getValue: () => this.#updated as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_Metadata_Union2.Data {
+    const props = {} as Partial<Unions_Metadata_Union2.Data>;
+    const updatedValue = entries["updated"];
+    if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
+    return props as Unions_Metadata_Union2.Data;
+  }
+  static from(value: Unions_Metadata_Union2.Value): Unions_Metadata_Union2 {
+    return value instanceof Unions_Metadata_Union2 ? value : new Unions_Metadata_Union2(value);
+  }
+  static deserialize<T extends typeof Unions_Metadata_Union2>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get updated(): ImmutableDate {
+    return this.#updated;
+  }
+  set(updates: Partial<SetUpdates<Unions_Metadata_Union2.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_Metadata_Union2)(data) as this);
+  }
+  setUpdated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_Metadata_Union2)({
+      updated: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_Metadata_Union2 {
+  export type Data = {
+    updated: ImmutableDate | Date;
+  };
+  export type Value = Unions_Metadata_Union2 | Unions_Metadata_Union2.Data;
+}
+const TYPE_TAG_Unions_Items_Item_Union1 = Symbol("Unions_Items_Item_Union1");
+export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union1";
+  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union1.$typeId);
+  static readonly $typeName = "Unions_Items_Item_Union1";
+  static EMPTY: Unions_Items_Item_Union1;
+  #created!: ImmutableDate;
+  constructor(props?: Unions_Items_Item_Union1.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_Items_Item_Union1.EMPTY) return Unions_Items_Item_Union1.EMPTY;
+    super(TYPE_TAG_Unions_Items_Item_Union1, "Unions_Items_Item_Union1");
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    if (!props) Unions_Items_Item_Union1.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union1.Data>[] {
+    return [{
+      name: "created",
+      fieldNumber: null,
+      getValue: () => this.#created as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_Items_Item_Union1.Data {
+    const props = {} as Partial<Unions_Items_Item_Union1.Data>;
+    const createdValue = entries["created"];
+    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
+    return props as Unions_Items_Item_Union1.Data;
+  }
+  static from(value: Unions_Items_Item_Union1.Value): Unions_Items_Item_Union1 {
+    return value instanceof Unions_Items_Item_Union1 ? value : new Unions_Items_Item_Union1(value);
+  }
+  static deserialize<T extends typeof Unions_Items_Item_Union1>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get created(): ImmutableDate {
+    return this.#created;
+  }
+  set(updates: Partial<SetUpdates<Unions_Items_Item_Union1.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_Items_Item_Union1)(data) as this);
+  }
+  setCreated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_Items_Item_Union1)({
+      created: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_Items_Item_Union1 {
+  export type Data = {
+    created: ImmutableDate | Date;
+  };
+  export type Value = Unions_Items_Item_Union1 | Unions_Items_Item_Union1.Data;
+}
+const TYPE_TAG_Unions_Items_Item_Union2 = Symbol("Unions_Items_Item_Union2");
+export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union2";
+  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union2.$typeId);
+  static readonly $typeName = "Unions_Items_Item_Union2";
+  static EMPTY: Unions_Items_Item_Union2;
+  #updated!: ImmutableDate;
+  constructor(props?: Unions_Items_Item_Union2.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_Items_Item_Union2.EMPTY) return Unions_Items_Item_Union2.EMPTY;
+    super(TYPE_TAG_Unions_Items_Item_Union2, "Unions_Items_Item_Union2");
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    if (!props) Unions_Items_Item_Union2.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union2.Data>[] {
+    return [{
+      name: "updated",
+      fieldNumber: null,
+      getValue: () => this.#updated as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_Items_Item_Union2.Data {
+    const props = {} as Partial<Unions_Items_Item_Union2.Data>;
+    const updatedValue = entries["updated"];
+    if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
+    return props as Unions_Items_Item_Union2.Data;
+  }
+  static from(value: Unions_Items_Item_Union2.Value): Unions_Items_Item_Union2 {
+    return value instanceof Unions_Items_Item_Union2 ? value : new Unions_Items_Item_Union2(value);
+  }
+  static deserialize<T extends typeof Unions_Items_Item_Union2>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get updated(): ImmutableDate {
+    return this.#updated;
+  }
+  set(updates: Partial<SetUpdates<Unions_Items_Item_Union2.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_Items_Item_Union2)(data) as this);
+  }
+  setUpdated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_Items_Item_Union2)({
+      updated: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_Items_Item_Union2 {
+  export type Data = {
+    updated: ImmutableDate | Date;
+  };
+  export type Value = Unions_Items_Item_Union2 | Unions_Items_Item_Union2.Data;
+}
+const TYPE_TAG_Unions_ItemSet_Item_Union1 = Symbol("Unions_ItemSet_Item_Union1");
+export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Union1.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union1";
+  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union1.$typeId);
+  static readonly $typeName = "Unions_ItemSet_Item_Union1";
+  static EMPTY: Unions_ItemSet_Item_Union1;
+  #created!: ImmutableDate;
+  constructor(props?: Unions_ItemSet_Item_Union1.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_ItemSet_Item_Union1.EMPTY) return Unions_ItemSet_Item_Union1.EMPTY;
+    super(TYPE_TAG_Unions_ItemSet_Item_Union1, "Unions_ItemSet_Item_Union1");
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    if (!props) Unions_ItemSet_Item_Union1.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union1.Data>[] {
+    return [{
+      name: "created",
+      fieldNumber: null,
+      getValue: () => this.#created as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_ItemSet_Item_Union1.Data {
+    const props = {} as Partial<Unions_ItemSet_Item_Union1.Data>;
+    const createdValue = entries["created"];
+    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
+    return props as Unions_ItemSet_Item_Union1.Data;
+  }
+  static from(value: Unions_ItemSet_Item_Union1.Value): Unions_ItemSet_Item_Union1 {
+    return value instanceof Unions_ItemSet_Item_Union1 ? value : new Unions_ItemSet_Item_Union1(value);
+  }
+  static deserialize<T extends typeof Unions_ItemSet_Item_Union1>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get created(): ImmutableDate {
+    return this.#created;
+  }
+  set(updates: Partial<SetUpdates<Unions_ItemSet_Item_Union1.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union1)(data) as this);
+  }
+  setCreated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union1)({
+      created: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_ItemSet_Item_Union1 {
+  export type Data = {
+    created: ImmutableDate | Date;
+  };
+  export type Value = Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union1.Data;
+}
+const TYPE_TAG_Unions_ItemSet_Item_Union2 = Symbol("Unions_ItemSet_Item_Union2");
+export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Union2.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union2";
+  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union2.$typeId);
+  static readonly $typeName = "Unions_ItemSet_Item_Union2";
+  static EMPTY: Unions_ItemSet_Item_Union2;
+  #updated!: ImmutableDate;
+  constructor(props?: Unions_ItemSet_Item_Union2.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_ItemSet_Item_Union2.EMPTY) return Unions_ItemSet_Item_Union2.EMPTY;
+    super(TYPE_TAG_Unions_ItemSet_Item_Union2, "Unions_ItemSet_Item_Union2");
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    if (!props) Unions_ItemSet_Item_Union2.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union2.Data>[] {
+    return [{
+      name: "updated",
+      fieldNumber: null,
+      getValue: () => this.#updated as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_ItemSet_Item_Union2.Data {
+    const props = {} as Partial<Unions_ItemSet_Item_Union2.Data>;
+    const updatedValue = entries["updated"];
+    if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
+    return props as Unions_ItemSet_Item_Union2.Data;
+  }
+  static from(value: Unions_ItemSet_Item_Union2.Value): Unions_ItemSet_Item_Union2 {
+    return value instanceof Unions_ItemSet_Item_Union2 ? value : new Unions_ItemSet_Item_Union2(value);
+  }
+  static deserialize<T extends typeof Unions_ItemSet_Item_Union2>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get updated(): ImmutableDate {
+    return this.#updated;
+  }
+  set(updates: Partial<SetUpdates<Unions_ItemSet_Item_Union2.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union2)(data) as this);
+  }
+  setUpdated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union2)({
+      updated: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_ItemSet_Item_Union2 {
+  export type Data = {
+    updated: ImmutableDate | Date;
+  };
+  export type Value = Unions_ItemSet_Item_Union2 | Unions_ItemSet_Item_Union2.Data;
+}
+const TYPE_TAG_Unions_ItemMap_Value_Union1 = Symbol("Unions_ItemMap_Value_Union1");
+export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Union1.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union1";
+  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union1.$typeId);
+  static readonly $typeName = "Unions_ItemMap_Value_Union1";
+  static EMPTY: Unions_ItemMap_Value_Union1;
+  #created!: ImmutableDate;
+  constructor(props?: Unions_ItemMap_Value_Union1.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_ItemMap_Value_Union1.EMPTY) return Unions_ItemMap_Value_Union1.EMPTY;
+    super(TYPE_TAG_Unions_ItemMap_Value_Union1, "Unions_ItemMap_Value_Union1");
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    if (!props) Unions_ItemMap_Value_Union1.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union1.Data>[] {
+    return [{
+      name: "created",
+      fieldNumber: null,
+      getValue: () => this.#created as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_ItemMap_Value_Union1.Data {
+    const props = {} as Partial<Unions_ItemMap_Value_Union1.Data>;
+    const createdValue = entries["created"];
+    if (createdValue === undefined) throw new Error("Missing required property \"created\".");
+    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdValue as Date;
+    return props as Unions_ItemMap_Value_Union1.Data;
+  }
+  static from(value: Unions_ItemMap_Value_Union1.Value): Unions_ItemMap_Value_Union1 {
+    return value instanceof Unions_ItemMap_Value_Union1 ? value : new Unions_ItemMap_Value_Union1(value);
+  }
+  static deserialize<T extends typeof Unions_ItemMap_Value_Union1>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get created(): ImmutableDate {
+    return this.#created;
+  }
+  set(updates: Partial<SetUpdates<Unions_ItemMap_Value_Union1.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union1)(data) as this);
+  }
+  setCreated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union1)({
+      created: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_ItemMap_Value_Union1 {
+  export type Data = {
+    created: ImmutableDate | Date;
+  };
+  export type Value = Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union1.Data;
+}
+const TYPE_TAG_Unions_ItemMap_Value_Union2 = Symbol("Unions_ItemMap_Value_Union2");
+export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Union2.Data> {
+  static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union2";
+  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union2.$typeId);
+  static readonly $typeName = "Unions_ItemMap_Value_Union2";
+  static EMPTY: Unions_ItemMap_Value_Union2;
+  #updated!: ImmutableDate;
+  constructor(props?: Unions_ItemMap_Value_Union2.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions_ItemMap_Value_Union2.EMPTY) return Unions_ItemMap_Value_Union2.EMPTY;
+    super(TYPE_TAG_Unions_ItemMap_Value_Union2, "Unions_ItemMap_Value_Union2");
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    if (!props) Unions_ItemMap_Value_Union2.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union2.Data>[] {
+    return [{
+      name: "updated",
+      fieldNumber: null,
+      getValue: () => this.#updated as ImmutableDate | Date
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions_ItemMap_Value_Union2.Data {
+    const props = {} as Partial<Unions_ItemMap_Value_Union2.Data>;
+    const updatedValue = entries["updated"];
+    if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
+    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedValue as Date;
+    return props as Unions_ItemMap_Value_Union2.Data;
+  }
+  static from(value: Unions_ItemMap_Value_Union2.Value): Unions_ItemMap_Value_Union2 {
+    return value instanceof Unions_ItemMap_Value_Union2 ? value : new Unions_ItemMap_Value_Union2(value);
+  }
+  static deserialize<T extends typeof Unions_ItemMap_Value_Union2>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get updated(): ImmutableDate {
+    return this.#updated;
+  }
+  set(updates: Partial<SetUpdates<Unions_ItemMap_Value_Union2.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union2)(data) as this);
+  }
+  setUpdated(value: ImmutableDate | Date) {
+    return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union2)({
+      updated: value as ImmutableDate | Date
+    }) as this);
+  }
+}
+export namespace Unions_ItemMap_Value_Union2 {
+  export type Data = {
+    updated: ImmutableDate | Date;
+  };
+  export type Value = Unions_ItemMap_Value_Union2 | Unions_ItemMap_Value_Union2.Data;
+}
+const TYPE_TAG_Unions = Symbol("Unions");
+export class Unions extends Message<Unions.Data> {
+  static $typeId = "tests/unions.pmsg#Unions";
+  static $typeHash = "sha256:3b86a011fe08547b4332d4e0df9f6eb7a66fda126292fe81096b4188be412b0e";
+  static $instanceTag = Symbol.for("propane:message:" + Unions.$typeId);
+  static readonly $typeName = "Unions";
+  static EMPTY: Unions;
+  #username!: string | null;
+  #email!: Email | null;
+  #metadata!: Unions_Metadata_Union1 | Unions_Metadata_Union2;
+  #items!: ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined;
+  #itemSet!: ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined;
+  #itemMap!: ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | undefined;
+  constructor(props?: Unions.Value, options?: {
+    skipValidation?: boolean;
+  }) {
+    if (!props && Unions.EMPTY) return Unions.EMPTY;
+    super(TYPE_TAG_Unions, "Unions");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
+    this.#username = (props ? props.username : "") as string | null;
+    this.#email = (props ? props.email : undefined) as Email | null;
+    this.#metadata = (props ? props.metadata : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
+    this.#items = props ? (props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
+    this.#itemSet = props ? (props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
+    this.#itemMap = props ? (props.itemMap === undefined || props.itemMap === null ? props.itemMap : props.itemMap as object instanceof ImmutableMap ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
+    if (!props) Unions.EMPTY = this;
+  }
+  protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
+    return [{
+      name: "username",
+      fieldNumber: null,
+      getValue: () => this.#username as string | null
+    }, {
+      name: "email",
+      fieldNumber: null,
+      getValue: () => this.#email as Email | null
+    }, {
+      name: "metadata",
+      fieldNumber: null,
+      getValue: () => this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      unionMessageTypes: ["Unions_Metadata_Union1", "Unions_Metadata_Union2"]
+    }, {
+      name: "items",
+      fieldNumber: null,
+      getValue: () => this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      arrayElementUnionMessageTypes: ["Unions_Items_Item_Union1", "Unions_Items_Item_Union2"]
+    }, {
+      name: "itemSet",
+      fieldNumber: null,
+      getValue: () => this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      setElementUnionMessageTypes: ["Unions_ItemSet_Item_Union1", "Unions_ItemSet_Item_Union2"]
+    }, {
+      name: "itemMap",
+      fieldNumber: null,
+      getValue: () => this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>,
+      mapValueUnionMessageTypes: ["Unions_ItemMap_Value_Union1", "Unions_ItemMap_Value_Union2"]
+    }];
+  }
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Unions.Data {
+    const props = {} as Partial<Unions.Data>;
+    const usernameValue = entries["username"];
+    if (usernameValue === undefined) throw new Error("Missing required property \"username\".");
+    if (!(typeof usernameValue === "string" || usernameValue === null)) throw new Error("Invalid value for property \"username\".");
+    props.username = usernameValue as string | null;
+    const emailValue = entries["email"];
+    if (emailValue === undefined) throw new Error("Missing required property \"email\".");
+    if (!(emailValue === null)) throw new Error("Invalid value for property \"email\".");
+    props.email = emailValue as Email | null;
+    const metadataValue = entries["metadata"];
+    if (metadataValue === undefined) throw new Error("Missing required property \"metadata\".");
+    let metadataUnionValue: any = metadataValue as any;
+    if (isTaggedMessageData(metadataValue)) {
+      if (metadataValue.$tag === "Unions_Metadata_Union1") {
+        if (typeof metadataValue.$data === "string") {
+          if (Unions_Metadata_Union1.$compact === true) {
+            metadataUnionValue = Unions_Metadata_Union1.fromCompact(metadataValue.$data, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union1).");
+          }
+        } else {
+          metadataUnionValue = new Unions_Metadata_Union1(Unions_Metadata_Union1.prototype.$fromEntries(metadataValue.$data, options), options);
+        }
+      } else if (metadataValue.$tag === "Unions_Metadata_Union2") {
+        if (typeof metadataValue.$data === "string") {
+          if (Unions_Metadata_Union2.$compact === true) {
+            metadataUnionValue = Unions_Metadata_Union2.fromCompact(metadataValue.$data, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union2).");
+          }
+        } else {
+          metadataUnionValue = new Unions_Metadata_Union2(Unions_Metadata_Union2.prototype.$fromEntries(metadataValue.$data, options), options);
+        }
+      }
+    }
+    if (!isTaggedMessageData(metadataValue) && typeof metadataValue === "object" && metadataValue !== null) {
+      let metadataUnionValueMatched = false;
+      if (!metadataUnionValueMatched) {
+        if (metadataValue as object instanceof Unions_Metadata_Union1) {
+          metadataUnionValue = metadataValue as any;
+          metadataUnionValueMatched = true;
+        } else {
+          try {
+            metadataUnionValue = new Unions_Metadata_Union1(Unions_Metadata_Union1.prototype.$fromEntries(metadataValue as Record<string, unknown>, options), options);
+            metadataUnionValueMatched = true;
+          } catch (e) {}
+        }
+      }
+      if (!metadataUnionValueMatched) {
+        if (metadataValue as object instanceof Unions_Metadata_Union2) {
+          metadataUnionValue = metadataValue as any;
+          metadataUnionValueMatched = true;
+        } else {
+          try {
+            metadataUnionValue = new Unions_Metadata_Union2(Unions_Metadata_Union2.prototype.$fromEntries(metadataValue as Record<string, unknown>, options), options);
+            metadataUnionValueMatched = true;
+          } catch (e) {}
+        }
+      }
+    }
+    if (!(Unions_Metadata_Union1.isInstance(metadataUnionValue) || Unions_Metadata_Union2.isInstance(metadataUnionValue))) throw new Error("Invalid value for property \"metadata\".");
+    props.metadata = metadataUnionValue;
+    const itemsValue = entries["items"];
+    const itemsNormalized = itemsValue === null ? undefined : itemsValue;
+    const itemsArrayValue = itemsNormalized === undefined || itemsNormalized === null ? itemsNormalized : itemsNormalized as object instanceof ImmutableArray ? itemsNormalized : new ImmutableArray(itemsNormalized as Iterable<unknown>);
+    const itemsArrayValueConverted = itemsArrayValue === undefined || itemsArrayValue === null ? itemsArrayValue : (itemsArrayValue as ImmutableArray<unknown> | unknown[]).map(element => (value => {
+      let unionValue: any = value as any;
+      if (isTaggedMessageData(value)) {
+        if (value.$tag === "Unions_Items_Item_Union1") {
+          if (typeof value.$data === "string") {
+            if (Unions_Items_Item_Union1.$compact === true) {
+              unionValue = Unions_Items_Item_Union1.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union1).");
+            }
+          } else {
+            unionValue = new Unions_Items_Item_Union1(Unions_Items_Item_Union1.prototype.$fromEntries(value.$data, options), options);
+          }
+        } else if (value.$tag === "Unions_Items_Item_Union2") {
+          if (typeof value.$data === "string") {
+            if (Unions_Items_Item_Union2.$compact === true) {
+              unionValue = Unions_Items_Item_Union2.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union2).");
+            }
+          } else {
+            unionValue = new Unions_Items_Item_Union2(Unions_Items_Item_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
+        let unionValueMatched = false;
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_Items_Item_Union1) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_Items_Item_Union1(Unions_Items_Item_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_Items_Item_Union2) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_Items_Item_Union2(Unions_Items_Item_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+      }
+      return unionValue;
+    })(element));
+    if (itemsArrayValueConverted !== undefined && !(itemsArrayValueConverted as object instanceof ImmutableArray || Array.isArray(itemsArrayValueConverted))) throw new Error("Invalid value for property \"items\".");
+    props.items = itemsArrayValueConverted as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>;
+    const itemSetValue = entries["itemSet"];
+    const itemSetNormalized = itemSetValue === null ? undefined : itemSetValue;
+    const itemSetSetValue = itemSetNormalized === undefined || itemSetNormalized === null ? itemSetNormalized : itemSetNormalized as object instanceof ImmutableSet ? itemSetNormalized : new ImmutableSet(itemSetNormalized as Iterable<unknown>);
+    const itemSetSetValueConverted = itemSetSetValue === undefined || itemSetSetValue === null ? itemSetSetValue : new ImmutableSet(Array.from(itemSetSetValue as Iterable<unknown>, element => (value => {
+      let unionValue: any = value as any;
+      if (isTaggedMessageData(value)) {
+        if (value.$tag === "Unions_ItemSet_Item_Union1") {
+          if (typeof value.$data === "string") {
+            if (Unions_ItemSet_Item_Union1.$compact === true) {
+              unionValue = Unions_ItemSet_Item_Union1.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union1).");
+            }
+          } else {
+            unionValue = new Unions_ItemSet_Item_Union1(Unions_ItemSet_Item_Union1.prototype.$fromEntries(value.$data, options), options);
+          }
+        } else if (value.$tag === "Unions_ItemSet_Item_Union2") {
+          if (typeof value.$data === "string") {
+            if (Unions_ItemSet_Item_Union2.$compact === true) {
+              unionValue = Unions_ItemSet_Item_Union2.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union2).");
+            }
+          } else {
+            unionValue = new Unions_ItemSet_Item_Union2(Unions_ItemSet_Item_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
+        let unionValueMatched = false;
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_ItemSet_Item_Union1) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_ItemSet_Item_Union1(Unions_ItemSet_Item_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_ItemSet_Item_Union2) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_ItemSet_Item_Union2(Unions_ItemSet_Item_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+      }
+      return unionValue;
+    })(element)));
+    if (itemSetSetValueConverted !== undefined && !(itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set)) throw new Error("Invalid value for property \"itemSet\".");
+    props.itemSet = itemSetSetValueConverted as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>;
+    const itemMapValue = entries["itemMap"];
+    const itemMapNormalized = itemMapValue === null ? undefined : itemMapValue;
+    const itemMapMapValue = itemMapNormalized === undefined || itemMapNormalized === null ? itemMapNormalized : itemMapNormalized as object instanceof ImmutableMap ? itemMapNormalized : new ImmutableMap(itemMapNormalized as Iterable<[unknown, unknown]>);
+    const itemMapMapValueConverted = itemMapMapValue === undefined || itemMapMapValue === null ? itemMapMapValue : new ImmutableMap([...(itemMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, (value => {
+      let unionValue: any = value as any;
+      if (isTaggedMessageData(value)) {
+        if (value.$tag === "Unions_ItemMap_Value_Union1") {
+          if (typeof value.$data === "string") {
+            if (Unions_ItemMap_Value_Union1.$compact === true) {
+              unionValue = Unions_ItemMap_Value_Union1.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union1).");
+            }
+          } else {
+            unionValue = new Unions_ItemMap_Value_Union1(Unions_ItemMap_Value_Union1.prototype.$fromEntries(value.$data, options), options);
+          }
+        } else if (value.$tag === "Unions_ItemMap_Value_Union2") {
+          if (typeof value.$data === "string") {
+            if (Unions_ItemMap_Value_Union2.$compact === true) {
+              unionValue = Unions_ItemMap_Value_Union2.fromCompact(value.$data, options);
+            } else {
+              throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union2).");
+            }
+          } else {
+            unionValue = new Unions_ItemMap_Value_Union2(Unions_ItemMap_Value_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
+        let unionValueMatched = false;
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_ItemMap_Value_Union1) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_ItemMap_Value_Union1(Unions_ItemMap_Value_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+        if (!unionValueMatched) {
+          if (value as object instanceof Unions_ItemMap_Value_Union2) {
+            unionValue = value as any;
+            unionValueMatched = true;
+          } else {
+            try {
+              unionValue = new Unions_ItemMap_Value_Union2(Unions_ItemMap_Value_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
+              unionValueMatched = true;
+            } catch (e) {}
+          }
+        }
+      }
+      return unionValue;
+    })(v)]));
+    if (itemMapMapValueConverted !== undefined && !((itemMapMapValueConverted as object instanceof ImmutableMap || itemMapMapValueConverted as object instanceof Map) && [...(itemMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"itemMap\".");
+    props.itemMap = itemMapMapValueConverted as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>;
+    return props as Unions.Data;
+  }
+  static from(value: Unions.Value): Unions {
+    return value instanceof Unions ? value : new Unions(value);
+  }
+  #validate(data: Unions.Value | undefined) {
+    if (data === undefined) return;
+  }
+  static validateAll(data: Unions.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "items":
+        return new (this.constructor as typeof Unions)({
+          username: this.#username as string | null,
+          email: this.#email as Email | null,
+          metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+          items: child as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+          itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+          itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+        }) as this;
+      case "itemSet":
+        return new (this.constructor as typeof Unions)({
+          username: this.#username as string | null,
+          email: this.#email as Email | null,
+          metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+          items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+          itemSet: child as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+          itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+        }) as this;
+      case "itemMap":
+        return new (this.constructor as typeof Unions)({
+          username: this.#username as string | null,
+          email: this.#email as Email | null,
+          metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+          items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+          itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+          itemMap: child as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["items", this.#items] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["itemSet", this.#itemSet] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["itemMap", this.#itemMap] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof Unions>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
+  }
+  get username(): string | null {
+    return this.#username;
+  }
+  get email(): Email | null {
+    return this.#email;
+  }
+  get metadata(): Unions_Metadata_Union1 | Unions_Metadata_Union2 {
+    return this.#metadata;
+  }
+  get items(): ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined {
+    return this.#items;
+  }
+  get itemSet(): ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined {
+    return this.#itemSet;
+  }
+  get itemMap(): ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | undefined {
+    return this.#itemMap;
+  }
+  addItemSet(value: Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    itemSetSetNext.add(value);
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  addItemSets(values: Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    for (const toAdd of values) {
+      itemSetSetNext.add(toAdd);
+    }
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  clearItemMap() {
+    const itemMapCurrent = this.itemMap;
+    if (itemMapCurrent === undefined || itemMapCurrent.size === 0) return this;
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    itemMapMapNext.clear();
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  clearItemSet() {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    itemSetSetNext.clear();
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  copyWithinItems(target: number, start: number, end?: number) {
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    itemsNext.copyWithin(target, start, end);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  deleteItemMapEntry(key: string) {
+    const itemMapCurrent = this.itemMap;
+    if (!itemMapCurrent?.has(key)) return this;
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    itemMapMapNext.delete(key);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  deleteItemSet(value: Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    itemSetSetNext.delete(value);
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  deleteItemSets(values: Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    for (const del of values) {
+      itemSetSetNext.delete(del);
+    }
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  fillItem(value: Unions_Items_Item_Union1 | Unions_Items_Item_Union2, start?: number, end?: number) {
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    (itemsNext as unknown as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]).fill(value, start, end);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  filterItemMapEntries(predicate: (value: Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2, key: string) => boolean) {
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    for (const [entryKey, entryValue] of itemMapMapNext) {
+      if (!predicate(entryValue, entryKey)) itemMapMapNext.delete(entryKey);
+    }
+    if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  filterItemSet(predicate: (value: Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2) => boolean) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    const itemSetFiltered = [];
+    for (const value of itemSetSetNext) {
+      if (predicate(value)) itemSetFiltered.push(value);
+    }
+    itemSetSetNext.clear();
+    for (const value of itemSetFiltered) {
+      itemSetSetNext.add(value);
+    }
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  mapItemMapEntries(mapper: (value: Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2, key: string) => [string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]) {
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    const itemMapMappedEntries: [string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2][] = [];
+    for (const [entryKey, entryValue] of itemMapMapNext) {
+      const mappedEntry = mapper(entryValue, entryKey);
+      itemMapMappedEntries.push(mappedEntry);
+    }
+    itemMapMapNext.clear();
+    for (const [newKey, newValue] of itemMapMappedEntries) {
+      itemMapMapNext.set(newKey, newValue);
+    }
+    if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  mapItemSet(mapper: (value: Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2) => Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    const itemSetMapped = [];
+    for (const value of itemSetSetNext) {
+      const mappedValue = mapper(value);
+      itemSetMapped.push(mappedValue);
+    }
+    itemSetSetNext.clear();
+    for (const value of itemSetMapped) {
+      itemSetSetNext.add(value);
+    }
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  mergeItemMapEntries(entries: ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | ReadonlyMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>) {
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    for (const [mergeKey, mergeValue] of entries) {
+      itemMapMapNext.set(mergeKey, mergeValue);
+    }
+    if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  popItem() {
+    if ((this.items ?? []).length === 0) return this;
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    itemsNext.pop();
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  pushItem(...values: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]) {
+    if (values.length === 0) return this;
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray, ...values];
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  reverseItems() {
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    itemsNext.reverse();
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  set(updates: Partial<SetUpdates<Unions.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Unions)(data) as this);
+  }
+  setEmail(value: Email | null) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: value as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setItemMap(value: Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]> | undefined) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: (value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setItemMapEntry(key: string, value: Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2) {
+    const itemMapCurrent = this.itemMap;
+    if (itemMapCurrent?.has(key)) {
+      const existing = itemMapCurrent.get(key);
+      if (equals(existing, value)) return this;
+    }
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    itemMapMapNext.set(key, value);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setItemSet(value: Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: (value === undefined || value === null ? value : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setItems(value: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: value as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setMetadata(value: Unions_Metadata_Union1 | Unions_Metadata_Union2) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: value as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  setUsername(value: string | null) {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: value as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  shiftItem() {
+    if ((this.items ?? []).length === 0) return this;
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    itemsNext.shift();
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  sortItems(compareFn?: (a: Unions_Items_Item_Union1 | Unions_Items_Item_Union2, b: Unions_Items_Item_Union1 | Unions_Items_Item_Union2) => number) {
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    (itemsNext as unknown as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]).sort(compareFn);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  spliceItem(start: number, deleteCount?: number, ...items: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]) {
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...itemsArray];
+    itemsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  unsetItemMap() {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>
+    }) as this);
+  }
+  unsetItemSet() {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  unsetItems() {
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  unshiftItem(...values: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]) {
+    if (values.length === 0) return this;
+    const itemsArray = this.#items === undefined ? [] : this.#items;
+    const itemsNext = [...values, ...itemsArray];
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  updateItemMapEntry(key: string, updater: (currentValue: Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2 | undefined) => Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2) {
+    const itemMapMapSource = this.#itemMap;
+    const itemMapMapEntries = itemMapMapSource === undefined ? [] : [...itemMapMapSource.entries()];
+    const itemMapMapNext = new Map(itemMapMapEntries);
+    const currentValue = itemMapMapNext.get(key);
+    const updatedValue = updater(currentValue);
+    itemMapMapNext.set(key, updatedValue);
+    if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: itemMapMapNext as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+  updateItemSet(updater: (current: Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>) => Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>) {
+    const itemSetSetSource = this.itemSet ?? [];
+    const itemSetSetEntries = [...itemSetSetSource];
+    const itemSetSetNext = new Set(itemSetSetEntries);
+    const updated = updater(itemSetSetNext);
+    itemSetSetNext.clear();
+    for (const updatedItem of updated) {
+      itemSetSetNext.add(updatedItem);
+    }
+    if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
+    return this.$update(new (this.constructor as typeof Unions)({
+      username: this.#username as string | null,
+      email: this.#email as Email | null,
+      metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
+      items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
+      itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+    }) as this);
+  }
+}
+export namespace Unions {
+  export type Data = {
+    username: string | null;
+    email: Email | null;
+    metadata: Unions_Metadata_Union1 | Unions_Metadata_Union2;
+    items?: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined;
+    itemSet?: Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined;
+    itemMap?: Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]> | undefined;
+  };
+  export type Value = Unions | Unions.Data;
+  export import Metadata_Union1 = Unions_Metadata_Union1;
+  export import Metadata_Union2 = Unions_Metadata_Union2;
+  export import Items_Item_Union1 = Unions_Items_Item_Union1;
+  export import Items_Item_Union2 = Unions_Items_Item_Union2;
+  export import ItemSet_Item_Union1 = Unions_ItemSet_Item_Union1;
+  export import ItemSet_Item_Union2 = Unions_ItemSet_Item_Union2;
+  export import ItemMap_Value_Union1 = Unions_ItemMap_Value_Union1;
+  export import ItemMap_Value_Union2 = Unions_ItemMap_Value_Union2;
+}

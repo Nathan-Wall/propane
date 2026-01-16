@@ -6,10 +6,9 @@
  */
 
 import { Message } from '@propane/runtime';
-import type { Min } from '@propane/types';
-import type { decimal } from '@propane/runtime';
+import type { Min, Decimal } from '@propane/types';
 
 // ERROR: Invalid decimal string bound
 export type InvalidBound = Message<{
-  '1:value': Min<decimal<10, 2>, 'not-a-number'>;
+  '1:value': Min<Decimal<10, 2>, 'not-a-number'>;
 }>;

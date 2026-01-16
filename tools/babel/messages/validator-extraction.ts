@@ -35,7 +35,7 @@ export interface ExtractedValidator {
 export interface ExtractedBrand {
   /** Brand registration from the registry */
   registration: BrandRegistration;
-  /** Type parameters passed to the brand (e.g., [10, 2] for decimal<10, 2>) */
+  /** Type parameters passed to the brand (e.g., [10, 2]) */
   params: unknown[];
 }
 
@@ -157,7 +157,7 @@ function extractSingleTypeValidation(
       return;
     }
 
-    // Check for brand type (e.g., int32, decimal<10, 2>)
+    // Check for brand type (e.g., int32, int53)
     const brandReg = resolveBrandReference(typeNode.typeName, tracker, registry);
     if (brandReg) {
       result.brand = extractBrandFromTypeRef(typeNode, brandReg);
@@ -299,7 +299,7 @@ function extractValidatorFromTypeRef(
   // Compile-time validation for bounds
   validateValidatorParams(registration.name, params);
 
-  // Normalize decimal bounds if applicable
+  // Normalize Decimal bounds if applicable
   const normalizedParams = normalizeDecimalBounds(registration.name, params, innerType);
 
   return {
@@ -335,10 +335,10 @@ function validateValidatorTypeCompatibility(validatorName: string, innerType: Ty
   }
 
   if (numericValidators.includes(validatorName)) {
-    const validNumericTypes = ['number', 'bigint', 'decimal'];
+    const validNumericTypes = ['number', 'bigint', 'Decimal', 'Rational'];
     if (!validNumericTypes.includes(innerType.kind)) {
       throw new Error(
-        `Type mismatch: ${validatorName}<T> requires a numeric type (number, bigint, or decimal). ` +
+        `Type mismatch: ${validatorName}<T> requires a numeric type (number, bigint, Decimal, or Rational). ` +
         `Found: ${validatorName}<${innerType.kind}>.`
       );
     }
@@ -461,24 +461,111 @@ function validateValidatorParams(validatorName: string, params: unknown[]): void
 }
 
 /**
- * Normalize decimal bounds at compile time.
+ * Normalize Decimal bounds at compile time.
  *
- * For validators on decimal types (Min, Max, Range, etc.), this normalizes
- * string bounds to match the decimal's scale. For example, "100" becomes
- * "100.00" for decimal<10,2>.
+ * For validators on Decimal types (Min, Max, Range, etc.), this normalizes
+ * string bounds to match the Decimal's scale. For example, "100" becomes
+ * "100.00" for Decimal<10,2>.
  *
  * @param validatorName - The validator name (e.g., 'Min', 'Max', 'Range')
  * @param params - The validator parameters (bounds)
- * @param innerType - The inner type info (includes precision/scale for decimals)
- * @returns The params array with normalized decimal bounds
+ * @param innerType - The inner type info (includes precision/scale for Decimal)
+ * @returns The params array with normalized Decimal bounds
  */
+function parseStrictDecimal(
+  raw: string,
+  context: string
+): { sign: -1 | 1; digits: string; scale: number } {
+  if (/\s/.test(raw)) {
+    throw new SyntaxError(`Invalid ${context} format: whitespace not allowed`);
+  }
+  if (raw.length === 0) {
+    throw new SyntaxError(`Invalid ${context} format: empty string`);
+  }
+
+  let input = raw;
+  let sign: -1 | 1 = 1;
+  if (input[0] === '+' || input[0] === '-') {
+    if (input[0] === '-') sign = -1;
+    input = input.slice(1);
+  }
+
+  if (input.length === 0) {
+    throw new SyntaxError(`Invalid ${context} format: missing digits`);
+  }
+
+  const dotIndex = input.indexOf('.');
+  let intPart = input;
+  let fracPart = '';
+  if (dotIndex !== -1) {
+    intPart = input.slice(0, dotIndex);
+    fracPart = input.slice(dotIndex + 1);
+    if (intPart.length === 0 || fracPart.length === 0) {
+      throw new SyntaxError(`Invalid ${context} format: invalid decimal point`);
+    }
+  }
+
+  if (!/^\d+$/.test(intPart) || (fracPart && !/^\d+$/.test(fracPart))) {
+    throw new SyntaxError(`Invalid ${context} digits: ${raw}`);
+  }
+
+  const rawDigits = `${intPart}${fracPart}`;
+  const digits = rawDigits.replace(/^0+(?=\d)/, '');
+  return {
+    sign,
+    digits: digits.length === 0 ? '0' : digits,
+    scale: fracPart.length,
+  };
+}
+
+function normalizeDecimalBoundString(
+  precision: number,
+  scale: number,
+  value: string
+): string {
+  const parsed = parseStrictDecimal(value, 'decimal bound');
+  let digits = parsed.digits;
+  const scaleDiff = parsed.scale - scale;
+
+  if (scaleDiff > 0) {
+    const cutIndex = digits.length - scaleDiff;
+    const dropped = cutIndex > 0 ? digits.slice(cutIndex) : digits;
+    if (/[1-9]/.test(dropped)) {
+      throw new RangeError(
+        `Value is not exactly representable at scale ${scale}`
+      );
+    }
+    digits = cutIndex > 0 ? digits.slice(0, cutIndex) : '0';
+  } else if (scaleDiff < 0) {
+    digits = `${digits}${'0'.repeat(-scaleDiff)}`;
+  }
+
+  const normalizedDigits = digits.replace(/^0+(?=\d)/, '');
+  if (normalizedDigits.length > precision) {
+    throw new RangeError(
+      `Value has ${normalizedDigits.length} digits, exceeds precision ${precision}`
+    );
+  }
+
+  const signPrefix = parsed.sign < 0 && normalizedDigits !== '0' ? '-' : '';
+
+  if (scale <= 0) {
+    return `${signPrefix}${normalizedDigits}${'0'.repeat(-scale)}`;
+  }
+
+  const padded = normalizedDigits.padStart(scale + 1, '0');
+  const intPart = padded.slice(0, -scale) || '0';
+  const fracPart = padded.slice(-scale);
+  return `${signPrefix}${intPart}.${fracPart}`;
+}
+
 function normalizeDecimalBounds(
   validatorName: string,
   params: unknown[],
   innerType: TypeInfo
 ): unknown[] {
-  // Only apply to decimal types with known precision and scale
-  if (innerType.kind !== 'decimal' || innerType.scale === undefined) {
+  // Only apply to Decimal types with known precision and scale
+  if (innerType.kind !== 'Decimal' || innerType.scale === undefined) {
     return params;
   }
 
@@ -496,68 +583,21 @@ function normalizeDecimalBounds(
       return param; // Only normalize string bounds
     }
 
-    // Validate and normalize the decimal bound
-    return normalizeDecimalBound(param, precision!, scale, validatorName, index);
+    if (precision === undefined || scale === undefined) {
+      throw new Error(
+        `Decimal bounds require precision and scale for ${validatorName}.`
+      );
+    }
+
+    try {
+      return normalizeDecimalBoundString(precision, scale, param);
+    } catch (err) {
+      const suffix = err instanceof Error ? ` (${err.message})` : '';
+      throw new Error(
+        `Invalid decimal bound '${param}' in ${validatorName} at index ${index}.${suffix}`
+      );
+    }
   });
-}
-
-/**
- * Normalize a single decimal bound string to exact scale.
- *
- * @param bound - The bound value as a string (e.g., "100")
- * @param precision - The decimal precision
- * @param scale - The decimal scale
- * @param validatorName - The validator name (for error messages)
- * @param paramIndex - The parameter index (for error messages)
- * @returns The normalized bound string (e.g., "100.00" for scale 2)
- */
-function normalizeDecimalBound(
-  bound: string,
-  precision: number,
-  scale: number,
-  validatorName: string,
-  paramIndex: number
-): string {
-  // Validate format
-  if (!/^-?\d+(\.\d+)?$/.test(bound)) {
-    throw new Error(
-      `Invalid decimal bound '${bound}' in ${validatorName}: must be a valid decimal number.`
-    );
-  }
-
-  // Parse parts
-  const isNegative = bound.startsWith('-');
-  const absolute = isNegative ? bound.slice(1) : bound;
-  const parts = absolute.split('.');
-  const integerPart = parts[0] ?? '0';
-  const decimalPart = parts[1] ?? '';
-
-  // Check that decimal places don't exceed scale
-  if (decimalPart.length > scale) {
-    throw new Error(
-      `Decimal bound '${bound}' has more decimal places than scale ${scale}.`
-    );
-  }
-
-  // Check precision (total significant digits)
-  const trimmedInteger = integerPart.replace(/^0+/, '') || '0';
-  const totalDigits = trimmedInteger === '0' && decimalPart.length > 0
-    ? decimalPart.replace(/^0+/, '').length
-    : trimmedInteger.length + decimalPart.length;
-
-  if (totalDigits > precision) {
-    throw new Error(
-      `Decimal bound '${bound}' exceeds precision ${precision} for decimal<${precision},${scale}>.`
-    );
-  }
-
-  // Normalize: pad decimal part to exact scale
-  const normalizedDecimal = decimalPart.padEnd(scale, '0');
-  const normalized = scale > 0
-    ? `${isNegative ? '-' : ''}${integerPart}.${normalizedDecimal}`
-    : `${isNegative ? '-' : ''}${integerPart}`;
-
-  return normalized;
 }
 
 /**
@@ -574,7 +614,7 @@ function extractBrandFromTypeRef(
 
 /**
  * Extract ALL type parameters from a brand type reference.
- * Unlike validators, brands use all params as data (e.g., decimal<10, 2> → [10, 2]).
+ * Unlike validators, brands use all params as data.
  */
 function extractBrandTypeParams(typeRef: t.TSTypeReference): unknown[] {
   if (!typeRef.typeParameters?.params) {
@@ -673,9 +713,9 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
   if (t.isTSTypeReference(node)) {
     // Check for known types
     if (t.isIdentifier(node.typeName)) {
-      const name = node.typeName.name.toLowerCase();
-      if (name === 'decimal') {
-        // Extract precision and scale from decimal<P, S>
+      const name = node.typeName.name;
+      if (name === 'Decimal') {
+        // Extract precision and scale from Decimal<P, S>
         const typeParams = node.typeParameters?.params;
         let precision: number | undefined;
         let scale: number | undefined;
@@ -689,9 +729,12 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
             scale = scaleNode.literal.value;
           }
         }
-        return { kind: 'decimal', precision, scale };
+        return { kind: 'Decimal', precision, scale };
       }
-      if (name === 'array') {
+      if (name === 'Rational') {
+        return { kind: 'Rational' };
+      }
+      if (name.toLowerCase() === 'array') {
         return { kind: 'array' };
       }
     }
@@ -753,12 +796,31 @@ function generateTypeGuard(node: t.TSType): { guardKey: string; typeGuard: strin
           typeGuard: 'value instanceof Date',
         };
       }
-      if (name === 'decimal') {
-        // Decimals are represented as strings at runtime
-        return {
-          guardKey: 'string',
-          typeGuard: "typeof value === 'string'",
-        };
+      if (name === 'Decimal') {
+        const typeParams = node.typeParameters?.params;
+        let precision: number | undefined;
+        let scale: number | undefined;
+        if (typeParams && typeParams.length >= 2) {
+          const precisionNode = typeParams[0];
+          const scaleNode = typeParams[1];
+          if (t.isTSLiteralType(precisionNode) && t.isNumericLiteral(precisionNode.literal)) {
+            precision = precisionNode.literal.value;
+          }
+          if (t.isTSLiteralType(scaleNode) && t.isNumericLiteral(scaleNode.literal)) {
+            scale = scaleNode.literal.value;
+          }
+        }
+        const baseGuard = 'Decimal.isInstance(value)';
+        if (precision !== undefined && scale !== undefined) {
+          return {
+            guardKey: 'Decimal',
+            typeGuard: `${baseGuard} && value.precision === ${precision} && value.scale === ${scale}`,
+          };
+        }
+        return { guardKey: 'Decimal', typeGuard: baseGuard };
+      }
+      if (name === 'Rational') {
+        return { guardKey: 'Rational', typeGuard: 'Rational.isInstance(value)' };
       }
     }
     // Default for class types: instanceof check

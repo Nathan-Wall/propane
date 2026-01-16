@@ -4,7 +4,7 @@
  */
 
 import type { ValidatorDefinition } from '../registry.js';
-import { isValidDecimalString } from '@/common/numbers/decimal.js';
+import { formatNumericBound } from './numeric-bounds.js';
 
 export const MaxDefinition: ValidatorDefinition = {
   name: 'Max',
@@ -12,27 +12,18 @@ export const MaxDefinition: ValidatorDefinition = {
   generateJs({ valueExpr, type, params, imports }) {
     const [max] = params as [number | bigint | string];
 
-    // Validate string bounds at build time
-    if (typeof max === 'string' && !isValidDecimalString(max)) {
-      throw new Error(`Invalid decimal bound in Max validator: '${max}'`);
-    }
-
     if (type.kind === 'number') {
+      if (typeof max === 'string' || typeof max === 'bigint') {
+        throw new Error('Max<number> requires a numeric bound.');
+      }
       return { condition: `${valueExpr} <= ${max}` };
     }
     if (type.kind === 'bigint') {
-      const bigintLiteral = typeof max === 'bigint' ? `${max}n` : `${max}n`;
-      return { condition: `${valueExpr} <= ${bigintLiteral}` };
+      return { condition: `${valueExpr} <= ${formatNumericBound(max, type, imports, 'Max')}` };
     }
     // For decimal or mixed numeric types, use runtime helper
     imports.add('lessThanOrEqual', '@propane/runtime');
-    // String bounds are validated above, cast to AnyDecimal for type safety
-    const maxArg = typeof max === 'string'
-      ? `'${max}' as AnyDecimal`
-      : String(max);
-    if (typeof max === 'string') {
-      imports.add('AnyDecimal', '@propane/runtime');
-    }
+    const maxArg = formatNumericBound(max, type, imports, 'Max');
     return { condition: `lessThanOrEqual(${valueExpr}, ${maxArg})` };
   },
 

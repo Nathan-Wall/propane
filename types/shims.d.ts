@@ -23,6 +23,7 @@ declare module 'path' {
     join(...segments: string[]): string;
     relative(from: string, to: string): string;
     basename(path: string, ext?: string): string;
+    isAbsolute(path: string): boolean;
     sep: string;
   }
 
@@ -59,4 +60,3 @@ declare module '@babel/core' {
     code?: string;
   };
 }
-

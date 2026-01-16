@@ -6,15 +6,18 @@
  * - In the database via CHECK constraints (for Table types)
  */
 
+import type { Decimal, Rational } from '@/common/numbers/decimal.js';
+
 /**
  * Union of all numeric types that can be validated.
  *
  * Covers:
  * - `number` (including branded types like int32, int53)
  * - `bigint`
- * - `string` (for decimal values which are string-based at runtime)
+ * - `Decimal<P,S>`
+ * - `Rational`
  */
-export type numeric = number | bigint | string;
+export type numeric = number | bigint | Decimal<any, any> | Rational;
 
 /**
  * Value must be greater than zero.
@@ -23,7 +26,7 @@ export type numeric = number | bigint | string;
  * ```typescript
  * '1:price': Positive<number>;
  * '2:quantity': Positive<bigint>;
- * '3:amount': Positive<decimal<10,2>>;
+ * '3:amount': Positive<Decimal<10,2>>;
  * ```
  */
 export type Positive<T extends numeric> = T & {
@@ -80,7 +83,7 @@ export type NumericBound = number | bigint | string;
  * ```typescript
  * '1:age': Min<number, 0>;
  * '2:year': Min<number, 1900>;
- * '3:price': Min<decimal<10,2>, '0.00'>;
+ * '3:price': Min<Decimal<10,2>, '0.00'>;
  * ```
  */
 export type Min<T extends numeric, MinValue extends NumericBound> = T & {
@@ -94,7 +97,7 @@ export type Min<T extends numeric, MinValue extends NumericBound> = T & {
  * ```typescript
  * '1:percentage': Max<number, 100>;
  * '2:hour': Max<number, 23>;
- * '3:price': Max<decimal<10,2>, '999.99'>;
+ * '3:price': Max<Decimal<10,2>, '999.99'>;
  * ```
  */
 export type Max<T extends numeric, MaxValue extends NumericBound> = T & {
@@ -107,7 +110,7 @@ export type Max<T extends numeric, MaxValue extends NumericBound> = T & {
  * @example
  * ```typescript
  * '1:id': GreaterThan<number, 0>;
- * '2:amount': GreaterThan<decimal<10,2>, '0.00'>;
+ * '2:amount': GreaterThan<Decimal<10,2>, '0.00'>;
  * ```
  */
 export type GreaterThan<
@@ -123,7 +126,7 @@ export type GreaterThan<
  * @example
  * ```typescript
  * '1:discount': LessThan<number, 100>;
- * '2:fee': LessThan<decimal<5,2>, '100.00'>;
+ * '2:fee': LessThan<Decimal<5,2>, '100.00'>;
  * ```
  */
 export type LessThan<T extends numeric, Bound extends NumericBound> = T & {
@@ -137,7 +140,7 @@ export type LessThan<T extends numeric, Bound extends NumericBound> = T & {
  * ```typescript
  * '1:rating': Range<number, 1, 5>;
  * '2:month': Range<number, 1, 12>;
- * '3:price': Range<decimal<10,2>, '0.00', '999.99'>;
+ * '3:price': Range<Decimal<10,2>, '0.00', '999.99'>;
  * ```
  */
 export type Range<

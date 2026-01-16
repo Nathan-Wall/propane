@@ -290,6 +290,51 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(file.messages[0]!.extendPath, './user.ext.ts');
   });
 
+  it('should detect @typeId decorator', () => {
+    const source = `
+      import { Message } from '@propane/runtime';
+
+      // @typeId('com.example:messages/user')
+      export type User = Message<{
+        '1:id': number;
+      }>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg');
+    assert.strictEqual(file.messages[0]!.typeId, 'com.example:messages/user');
+  });
+
+  it('should detect @compact decorator', () => {
+    const source = `
+      import { Message } from '@propane/runtime';
+
+      // @extend('./user.ext.ts')
+      // @compact
+      export type User = Message<{
+        '1:id': number;
+      }>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg');
+    assert.strictEqual(file.messages[0]!.compact, true);
+  });
+
+  it('should error on @compact with arguments', () => {
+    const source = `
+      import { Message } from '@propane/runtime';
+
+      // @extend('./user.ext.ts')
+      // @compact()
+      export type User = Message<{
+        '1:id': number;
+      }>;
+    `;
+
+    const { diagnostics } = parseSource(source, 'test.pmsg');
+    const error = diagnostics.find(d => d.code === 'PMT040');
+    assert.ok(error, 'Should have PMT040 error for @compact with arguments');
+  });
+
   it('should error on deprecated @message decorator', () => {
     const source = `
       // @message

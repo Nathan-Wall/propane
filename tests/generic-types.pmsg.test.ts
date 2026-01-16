@@ -3,7 +3,7 @@
  */
 
 import { assert } from './assert.js';
-import { Item, Container, Optional, Pair, Parent, Timestamped } from './generic-types.pmsg.js';
+import { Item, Container, Optional, Pair, Parent, Timestamped, Sized } from './generic-types.pmsg.js';
 import { ImmutableDate } from '../runtime/index.js';
 import { test } from 'node:test';
 
@@ -220,6 +220,16 @@ export default function runGenericTypesTests() {
     assert(container.inner instanceof Item, 'Bound constructor reconstructs Item from raw object');
 
     console.log('[PASS] Bound constructor with raw object data');
+  }
+
+  // Test 12h: Non-message generic constraint
+  {
+    const sized = new Sized<number>({ size: 3 });
+    assert(sized.size === 3, 'Sized size');
+    assert(sized.$typeName === 'Sized', 'Sized $typeName');
+    const updated = sized.setSize(4);
+    assert(updated.size === 4, 'Sized setSize');
+    console.log('[PASS] Sized<P extends number> works');
   }
 
   // Test 13: Equality works for generic messages

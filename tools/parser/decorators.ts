@@ -17,6 +17,10 @@ import { getSourceLocation } from './type-parser.js';
 export interface DecoratorInfo {
   /** Path from @extend decorator, if present */
   extendPath: string | null;
+  /** Override for message type ID from @typeId decorator, if present */
+  typeId: string | null;
+  /** True if @compact decorator is present */
+  compact: boolean;
 }
 
 /**
@@ -24,6 +28,8 @@ export interface DecoratorInfo {
  * Captures the path in single or double quotes.
  */
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+const TYPE_ID_PATTERN = /(?:^|\s)@typeId\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+const COMPACT_PATTERN = /(?:^|\s)@compact(?!\w)/;
 
 /**
  * Pattern to detect any decorator-like syntax at the start of a line.
@@ -36,7 +42,7 @@ const DECORATOR_LINE_PATTERN = /^\s*\*?\s*@(\w+)/;
  * Known decorators for validation.
  * Note: @message is no longer supported - use Message<T> wrapper instead.
  */
-const KNOWN_DECORATORS = new Set(['extend']);
+const KNOWN_DECORATORS = new Set(['extend', 'typeid', 'compact']);
 
 /**
  * Extract decorator info from leading comments of a node.
@@ -49,6 +55,10 @@ export function extractDecorators(
   const comments = node.leadingComments ?? [];
   let extendPath: string | null = null;
   let extendCount = 0;
+  let typeId: string | null = null;
+  let typeIdCount = 0;
+  let compact = false;
+  let compactCount = 0;
 
   for (const comment of comments) {
     const lines = comment.type === 'CommentLine'
@@ -73,6 +83,39 @@ export function extractDecorators(
           });
         } else {
           extendPath = extendMatch[1] ?? null;
+        }
+      }
+
+      // Check for @typeId
+      const typeIdMatch = TYPE_ID_PATTERN.exec(cleanLine);
+      if (typeIdMatch) {
+        typeIdCount++;
+        if (typeIdCount > 1) {
+          diagnostics.push({
+            filePath,
+            location: getCommentLocation(comment),
+            severity: 'error',
+            code: 'PMT036',
+            message: 'Multiple @typeId decorators are not allowed on a single type.',
+          });
+        } else {
+          typeId = typeIdMatch[1] ?? null;
+        }
+      }
+
+      // Check for @compact
+      if (COMPACT_PATTERN.test(cleanLine)) {
+        compactCount++;
+        if (compactCount > 1) {
+          diagnostics.push({
+            filePath,
+            location: getCommentLocation(comment),
+            severity: 'error',
+            code: 'PMT039',
+            message: 'Multiple @compact decorators are not allowed on a single type.',
+          });
+        } else {
+          compact = true;
         }
       }
 
@@ -101,6 +144,44 @@ export function extractDecorators(
             message: '@extend decorator requires a file path argument.',
           });
         }
+      }
+
+      if (
+        /@typeId(?!\s*\()/.test(cleanLine)
+        && !TYPE_ID_PATTERN.test(cleanLine)
+      ) {
+        const endsWithTypeId = /^\s*@typeId\s*$/.test(cleanLine)
+          || /(?:^|\s)@typeId\s*$/.test(cleanLine);
+        if (endsWithTypeId) {
+          diagnostics.push({
+            filePath,
+            location: getCommentLocation(comment),
+            severity: 'error',
+            code: 'PMT037',
+            message: "@typeId decorator requires parentheses with a string value, e.g. @typeId('com.example:messages/user').",
+          });
+        } else if (/@typeId\s*\(\s*\)/.test(cleanLine)) {
+          diagnostics.push({
+            filePath,
+            location: getCommentLocation(comment),
+            severity: 'error',
+            code: 'PMT038',
+            message: '@typeId decorator requires a string argument.',
+          });
+        }
+      }
+
+      if (
+        /@compact(?!\s*$)/.test(cleanLine)
+        && /@compact\s*\(/.test(cleanLine)
+      ) {
+        diagnostics.push({
+          filePath,
+          location: getCommentLocation(comment),
+          severity: 'error',
+          code: 'PMT040',
+          message: '@compact decorator does not take arguments.',
+        });
       }
 
       // Check for unknown decorators (including deprecated @message)
@@ -136,7 +217,7 @@ export function extractDecorators(
     }
   }
 
-  return { extendPath };
+  return { extendPath, typeId, compact };
 }
 
 /**

@@ -1,0 +1,16 @@
+import { Message } from '@propane/runtime';
+
+export type Alpha = Message<{
+  name: string;
+}>;
+
+export type Beta = Message<{
+  name: string;
+}>;
+
+export type Wrapper = Message<{
+  union: Alpha | Beta;
+  list?: (Alpha | Beta)[];
+  itemSet?: Set<Alpha | Beta>;
+  map?: Map<string, Alpha | Beta>;
+}>;

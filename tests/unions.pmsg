@@ -5,4 +5,7 @@ export type Unions = Message<{
   username: string | null;
   email: Email | null;
   metadata: { created: Date } | { updated: Date };
+  items?: ({ created: Date } | { updated: Date })[];
+  itemSet?: Set<{ created: Date } | { updated: Date }>;
+  itemMap?: Map<string, { created: Date } | { updated: Date }>;
 }>;

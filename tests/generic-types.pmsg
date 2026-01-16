@@ -37,3 +37,8 @@ export type Timestamped<T extends Message> = Message<{
   '2:timestamp': Date;
   '3:label': string;
 }>;
+
+// Generic with non-message constraint
+export type Sized<P extends number> = Message<{
+  '1:size': P;
+}>;

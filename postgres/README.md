@@ -286,7 +286,7 @@ export class UserRoleRepository extends BaseRepository<UserRole & Record<string,
 | `int32` | `INTEGER` | 32-bit signed integer |
 | `bigint` | `BIGINT` | 64-bit signed integer |
 | `number` | `DOUBLE PRECISION` | 64-bit float |
-| `decimal<P,S>` | `NUMERIC(P,S)` | Arbitrary precision |
+| `Decimal<P,S>` | `NUMERIC(P,S)` | Arbitrary precision |
 | `string` | `TEXT` | Variable-length text |
 | `boolean` | `BOOLEAN` | True/false |
 | `Date` | `TIMESTAMPTZ` | Timestamp with timezone |
@@ -295,16 +295,16 @@ export class UserRoleRepository extends BaseRepository<UserRole & Record<string,
 
 ### Decimal Type
 
-Use `decimal<Precision, Scale>` for exact numeric values (e.g., money):
+Use `Decimal<Precision, Scale>` for exact numeric values (e.g., money):
 
 ```typescript
-import { Table, PrimaryKey, Auto, decimal } from '@propane/postgres';
+import { Table, PrimaryKey, Auto, Decimal } from '@propane/postgres';
 
 export type Product = Table<{
   '1:id': PrimaryKey<Auto<bigint>>;
   '2:name': string;
-  '3:price': decimal<10, 2>;    // NUMERIC(10,2) - up to $99,999,999.99
-  '4:weight': decimal<8, 4>;    // NUMERIC(8,4) - e.g., 1234.5678 kg
+  '3:price': Decimal<10, 2>;    // NUMERIC(10,2) - up to $99,999,999.99
+  '4:weight': Decimal<8, 4>;    // NUMERIC(8,4) - e.g., 1234.5678 kg
 }>;
 ```
 

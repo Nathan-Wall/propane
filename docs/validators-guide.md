@@ -55,7 +55,7 @@ CREATE TABLE products (
 | `GreaterThan<T, N>` | value > N | `GreaterThan<number, 0>` |
 | `LessThan<T, N>` | value < N | `LessThan<number, 100>` |
 
-Numeric validators work with `number`, `bigint`, `int32`, `int53`, and `decimal<P,S>`.
+Numeric validators work with `number`, `bigint`, `int32`, `int53`, and `Decimal<P,S>`.
 
 ### String Validators
 

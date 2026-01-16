@@ -11,7 +11,7 @@ export type TypeCategory =
   | 'db-wrapper'  // Normalize, Json, Index, Unique, PrimaryKey, Auto, References
   | 'message'     // Message<T>
   | 'table'       // Table<T>
-  | 'brand';      // int32, int53, decimal
+  | 'brand';      // int32, int53
 
 /** Base registration for all types */
 export interface TypeRegistration {
@@ -108,10 +108,10 @@ export interface MessageGeneratorContext {
 
 /** Information about a value's type */
 export interface TypeInfo {
-  kind: 'number' | 'bigint' | 'string' | 'array' | 'decimal' | 'unknown';
-  /** For decimal types: precision (total digits) */
+  kind: 'number' | 'bigint' | 'string' | 'array' | 'Decimal' | 'Rational' | 'unknown';
+  /** For Decimal types: precision (total digits) */
   precision?: number;
-  /** For decimal types: scale (digits after decimal point) */
+  /** For Decimal types: scale (digits after decimal point) */
   scale?: number;
 }
 
@@ -183,7 +183,7 @@ export interface ValidatorDefinition {
 export interface BrandSqlContext {
   /** Column name in the database */
   columnName: string;
-  /** Type parameters (e.g., [precision, scale] for decimal) */
+  /** Type parameters (e.g., [precision, scale] for Decimal) */
   params: unknown[];
 }
 
@@ -456,7 +456,7 @@ export const propaneTypes: AnyTypeRegistration[] = [
   } as BrandRegistration,
   {
     package: '@propane/types',
-    name: 'decimal',
+    name: 'Decimal',
     category: 'brand',
     runtimePackage: '@propane/runtime',
     definition: {
@@ -464,16 +464,37 @@ export const propaneTypes: AnyTypeRegistration[] = [
         return `NUMERIC(${precision},${scale})`;
       },
       generateJs({ valueExpr, params, imports }) {
-        imports.add('canBeDecimal', '@propane/runtime');
+        imports.add('isDecimalOf', '@propane/runtime');
         const [precision, scale] = params as [number, number];
-        return { condition: `canBeDecimal(${valueExpr}, ${precision}, ${scale})` };
+        return { condition: `isDecimalOf(${valueExpr}, ${precision}, ${scale})` };
       },
       generateMessage({ params }) {
         const [precision, scale] = params as [number, number];
-        return `must be a valid decimal(${precision},${scale})`;
+        return `must be a valid Decimal(${precision},${scale})`;
       },
       generateCode() {
         return 'DECIMAL';
+      },
+    },
+  } as BrandRegistration,
+  {
+    package: '@propane/types',
+    name: 'Rational',
+    category: 'brand',
+    runtimePackage: '@propane/runtime',
+    definition: {
+      sqlType() {
+        return 'JSONB';
+      },
+      generateJs({ valueExpr, imports }) {
+        imports.add('isRational', '@propane/runtime');
+        return { condition: `isRational(${valueExpr})` };
+      },
+      generateMessage() {
+        return 'must be a valid Rational';
+      },
+      generateCode() {
+        return 'RATIONAL';
       },
     },
   } as BrandRegistration,

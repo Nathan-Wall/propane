@@ -1,8 +1,6 @@
 import { assert } from './assert.js';
-// Import from extension file to get the extended class with custom methods.
-// Note: Due to ES module circular dependency limitations, we can't re-export
-// from the generated file. See planning/wip/type-system-limitations.md
-import { Person } from './extend-basic.pmsg.ext.js';
+// Import from the generated .pmsg.js re-export to get the extended class.
+import { Person } from './extend-basic.pmsg.js';
 import { test } from 'node:test';
 
 // Note: We can't use `ReturnType<typeof Person.deserialize>` to verify the return type

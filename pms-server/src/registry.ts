@@ -95,12 +95,28 @@ export class HandlerRegistry {
       );
     }
 
-    // Construct the request message using $fromEntries via prototype access
-    const proto = descriptor.messageClass.prototype as {
-      $fromEntries: (data: Record<string, unknown>) => unknown;
-    };
-    const props = proto.$fromEntries(parsed.$data);
-    const request = new descriptor.messageClass(props);
+    let request: AnyMessage;
+    if (typeof parsed.$data === 'string') {
+      const compactCtor = descriptor.messageClass as unknown as {
+        $compact?: boolean;
+        fromCompact?: (...args: unknown[]) => AnyMessage;
+      };
+      if (compactCtor.$compact === true && typeof compactCtor.fromCompact === 'function') {
+        request = compactCtor.fromCompact(parsed.$data) as AnyMessage;
+      } else {
+        throw new HandlerError(
+          'PARSE_ERROR',
+          `Invalid compact tagged request for type: ${parsed.$tag}`
+        );
+      }
+    } else {
+      // Construct the request message using $fromEntries via prototype access
+      const proto = descriptor.messageClass.prototype as {
+        $fromEntries: (data: Record<string, unknown>) => unknown;
+      };
+      const props = proto.$fromEntries(parsed.$data);
+      request = new descriptor.messageClass(props) as AnyMessage;
+    }
 
     // Call the handler
     // Cast request to AnyMessage - type safety is ensured by the register() signature

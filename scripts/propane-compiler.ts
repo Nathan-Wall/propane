@@ -7,6 +7,8 @@ import propanePlugin from '@/tools/babel/messages/index.js';
 
 interface PropaneConfig {
   runtimeImportPath?: string;
+  messageTypeIdPrefix?: string;
+  messageTypeIdRoot?: string;
 }
 
 interface LoadedConfig {
@@ -55,6 +57,47 @@ function collectPropaneFiles(targetPath: string): string[] {
   return [];
 }
 
+function toJsPath(value: string): string {
+  if (value.endsWith('.ts')) {
+    return value.slice(0, -3) + '.js';
+  }
+  if (value.endsWith('.tsx')) {
+    return value.slice(0, -4) + '.js';
+  }
+  return value;
+}
+
+function writeIfChanged(outputPath: string, content: string): void {
+  const normalized = content.endsWith('\n') ? content : content + '\n';
+  if (fs.existsSync(outputPath)) {
+    const existing = fs.readFileSync(outputPath, 'utf8');
+    if (existing === normalized) {
+      return;
+    }
+  }
+  fs.writeFileSync(outputPath, normalized, 'utf8');
+}
+
+function generateReexportFile(
+  sourcePath: string,
+  messageTypes: string[],
+  extendedTypes: Record<string, { path: string }>
+): string {
+  const baseName = path.basename(sourcePath, '.pmsg');
+  const relative = path.relative(process.cwd(), sourcePath).replaceAll('\\', '/');
+  const lines: string[] = [];
+  lines.push(`// Generated from ${relative}`);
+
+  for (const typeName of messageTypes) {
+    const extendInfo = extendedTypes[typeName];
+    if (!extendInfo?.path) continue;
+    lines.push(`export { ${typeName} } from '${toJsPath(extendInfo.path)}';`);
+  }
+
+  lines.push(`export * from './${baseName}.pmsg.base.js';`);
+  return lines.join('\n');
+}
+
 function transpileFile(sourcePath: string): void {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
   const pluginOptions: Record<string, unknown> = {};
@@ -63,6 +106,15 @@ function transpileFile(sourcePath: string): void {
   }
   if (configDir) {
     pluginOptions['runtimeImportBase'] = configDir;
+  }
+  if (propaneConfig.messageTypeIdPrefix) {
+    pluginOptions['messageTypeIdPrefix'] = propaneConfig.messageTypeIdPrefix;
+  }
+  if (propaneConfig.messageTypeIdRoot) {
+    pluginOptions['messageTypeIdRoot'] = path.resolve(
+      configDir ?? process.cwd(),
+      propaneConfig.messageTypeIdRoot
+    );
   }
   const result = transformSync(sourceCode, {
     filename: sourcePath,
@@ -83,10 +135,28 @@ function transpileFile(sourcePath: string): void {
     throw new Error(`Failed to transpile ${sourcePath}`);
   }
 
-  const outputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.ts');
-  const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
-  fs.writeFileSync(outputPath, code, 'utf8');
-  console.log(`Transpiled ${path.relative(process.cwd(), sourcePath)} -> ${path.relative(process.cwd(), outputPath)}`);
+  const metadata = (result as {
+    metadata?: {
+      propane?: {
+        messageTypes?: string[];
+        extendedTypes?: Record<string, { path: string }>;
+      };
+    };
+  }).metadata?.propane;
+  const messageTypes = metadata?.messageTypes ?? [];
+  const extendedTypes = metadata?.extendedTypes ?? {};
+
+  const baseCode = result.code.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
+  const baseOutputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.base.ts');
+  writeIfChanged(baseOutputPath, baseCode);
+
+  const reexportOutputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.ts');
+  const reexportCode = generateReexportFile(sourcePath, messageTypes, extendedTypes);
+  writeIfChanged(reexportOutputPath, reexportCode);
+
+  console.log(
+    `Transpiled ${path.relative(process.cwd(), sourcePath)} -> ${path.relative(process.cwd(), reexportOutputPath)}`
+  );
 }
 
 const propaneFiles = [

@@ -51,6 +51,67 @@ if (fs.existsSync(postgresDir)) {
   fixPostgresImports(postgresDir);
 }
 
+// 0c. Fix directory imports (e.g. ../common/assert -> ../common/assert/index.js)
+// Node ESM does not allow directory imports without an explicit file target.
+const fixDirectoryImports = (dir) => {
+  const rewriteSpecifier = (specifier, fileDir) => {
+    if (!specifier.startsWith('.')) return specifier;
+    if (path.extname(specifier)) return specifier;
+    const resolved = path.resolve(fileDir, specifier);
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+      return specifier;
+    }
+    const indexPath = path.join(resolved, 'index.js');
+    if (!fs.existsSync(indexPath)) {
+      return specifier;
+    }
+    return `${specifier.replace(/\/+$/, '')}/index.js`;
+  };
+
+  const rewriteFile = (filePath) => {
+    let content = fs.readFileSync(filePath, 'utf8');
+    let changed = false;
+    const fileDir = path.dirname(filePath);
+
+    const replaceWith = (match, specifier) => {
+      const next = rewriteSpecifier(specifier, fileDir);
+      if (next !== specifier) {
+        changed = true;
+        return match.replace(specifier, next);
+      }
+      return match;
+    };
+
+    content = content.replaceAll(
+      /\b(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g,
+      replaceWith
+    );
+    content = content.replaceAll(
+      /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+      replaceWith
+    );
+
+    if (changed) {
+      fs.writeFileSync(filePath, content);
+    }
+  };
+
+  const walk = (currentDir) => {
+    for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+      const fullPath = path.join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+      } else if (entry.name.endsWith('.js')) {
+        rewriteFile(fullPath);
+      }
+    }
+  };
+
+  walk(dir);
+};
+
+fixDirectoryImports(buildDir);
+
 // Packages with src/ subdirectory have different output structure
 const packagesWithSrc = new Set(['types', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'postgres']);
 

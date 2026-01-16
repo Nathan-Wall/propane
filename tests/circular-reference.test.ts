@@ -7,12 +7,15 @@ interface ObjectFieldProps {
   data: DataObject;
 }
 
+const TYPE_TAG_ObjectFieldMessage = Symbol('ObjectFieldMessage');
+
 class ObjectFieldMessage extends Message<ObjectFieldProps> {
-  static readonly TYPE_TAG = Symbol('ObjectFieldMessage');
+  static readonly $typeId = 'tests/circular-reference#ObjectFieldMessage';
+  static readonly $typeHash = 'tests/circular-reference#ObjectFieldMessage@v1';
   #data: DataObject;
 
   constructor(data: DataObject) {
-    super(ObjectFieldMessage.TYPE_TAG, 'ObjectFieldMessage');
+    super(TYPE_TAG_ObjectFieldMessage, 'ObjectFieldMessage');
     this.#data = data;
   }
 

@@ -176,7 +176,8 @@ function toScalarType(type: PmtType): ScalarType {
     case 'reference':
       // Check for special scalar types
       if (type.name === 'int32') return 'int32';
-      if (type.name === 'decimal') return 'decimal';
+      if (type.name === 'Decimal') return 'decimal';
+      if (type.name === 'Rational') return 'rational';
       // Other references are treated as objects (nested messages)
       return 'object';
   }
@@ -184,12 +185,12 @@ function toScalarType(type: PmtType): ScalarType {
 }
 
 /**
- * Extract decimal precision and scale from a decimal<P,S> type.
+ * Extract precision and scale from a Decimal<P,S> type.
  *
  * @throws Error if precision or scale are out of PostgreSQL bounds
  */
 function extractDecimalOptions(type: PmtType): { precision?: number; scale?: number } {
-  if (type.kind === 'reference' && type.name === 'decimal' && type.typeArguments.length >= 2) {
+  if (type.kind === 'reference' && type.name === 'Decimal' && type.typeArguments.length >= 2) {
     const precArg = type.typeArguments[0];
     const scaleArg = type.typeArguments[1];
 
@@ -207,11 +208,8 @@ function extractDecimalOptions(type: PmtType): { precision?: number; scale?: num
     if (precision !== undefined && (precision < 1 || precision > 1000)) {
       throw new Error(`Decimal precision must be between 1 and 1000, got: ${precision}`);
     }
-    if (scale !== undefined && scale < 0) {
-      throw new Error(`Decimal scale must be non-negative, got: ${scale}`);
-    }
-    if (scale !== undefined && precision !== undefined && scale > precision) {
-      throw new Error(`Decimal scale (${scale}) cannot exceed precision (${precision})`);
+    if (scale !== undefined && (scale < -1000 || scale > 1000)) {
+      throw new Error(`Decimal scale must be between -1000 and 1000, got: ${scale}`);
     }
 
     return { precision, scale };

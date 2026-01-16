@@ -25,6 +25,8 @@ function createMessage(
     isMessageType: true,
     isTableType: true,
     extendPath: null,
+    typeId: null,
+    compact: false,
     properties: properties.map(p => ({
       name: p.name,
       fieldNumber: p.fieldNumber ?? null,
@@ -288,6 +290,8 @@ describe('Repository Generator', () => {
         isMessageType: true,
         isTableType: false,
         extendPath: null,
+        typeId: null,
+        compact: false,
         properties: [],
         typeParameters: [],
         wrapper: null,

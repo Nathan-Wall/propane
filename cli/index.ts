@@ -24,6 +24,10 @@ interface PropaneConfig {
   outputDir?: string;
   /** Custom import path for @propane/runtime in generated files. */
   runtimeImportPath?: string;
+  /** Prefix used to generate stable message type IDs. */
+  messageTypeIdPrefix?: string;
+  /** Root directory used to compute relative paths for message type IDs. */
+  messageTypeIdRoot?: string;
 }
 
 interface LoadedConfig {
@@ -93,6 +97,10 @@ if (config.outputDir) {
 
 const runtimeImportPath = config.runtimeImportPath;
 const runtimeImportBase = configDir;
+const messageTypeIdPrefix = config.messageTypeIdPrefix;
+const messageTypeIdRoot = config.messageTypeIdRoot
+  ? path.resolve(configDir ?? process.cwd(), config.messageTypeIdRoot)
+  : undefined;
 
 function printUsage() {
   console.log(`
@@ -113,7 +121,9 @@ Configuration:
     "exclude": [],
     "outputDir": "dist",
     "watch": false,
-    "runtimeImportPath": "@propane/runtime"
+    "runtimeImportPath": "@propane/runtime",
+    "messageTypeIdPrefix": "com.example",
+    "messageTypeIdRoot": "."
   }
 
 Examples:
@@ -159,6 +169,8 @@ function transpileFile(sourcePath: string) {
     type PluginOpts = {
       runtimeImportPath?: string;
       runtimeImportBase?: string;
+      messageTypeIdPrefix?: string;
+      messageTypeIdRoot?: string;
     };
     const pluginOptions: PluginOpts = {};
     if (runtimeImportPath) {
@@ -166,6 +178,12 @@ function transpileFile(sourcePath: string) {
     }
     if (runtimeImportBase) {
       pluginOptions.runtimeImportBase = runtimeImportBase;
+    }
+    if (messageTypeIdPrefix) {
+      pluginOptions.messageTypeIdPrefix = messageTypeIdPrefix;
+    }
+    if (messageTypeIdRoot) {
+      pluginOptions.messageTypeIdRoot = messageTypeIdRoot;
     }
     const result = transformSync(sourceCode, {
       filename: sourcePath,

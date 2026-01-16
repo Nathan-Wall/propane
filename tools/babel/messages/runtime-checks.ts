@@ -4,12 +4,15 @@ import {
   getMapTypeArguments,
   getSetTypeArguments,
   isArrayBufferReference,
+  getDecimalTypeArgs,
+  isDecimalReference,
   isBrandReference,
   isDateReference,
   isImmutableArrayBufferReference,
   isImmutableDateReference,
   isImmutableUrlReference,
   isMapReference,
+  isRationalReference,
   isSetReference,
   isUrlReference,
 } from './type-guards.js';
@@ -114,6 +117,39 @@ export function buildRuntimeTypeCheckExpression(
       || isImmutableArrayBufferReference(typeNode)
     ) {
       return buildArrayBufferCheckExpression(valueId);
+    }
+
+    if (isDecimalReference(typeNode)) {
+      const decimalCheck = t.callExpression(
+        t.memberExpression(t.identifier('Decimal'), t.identifier('isInstance')),
+        [t.cloneNode(valueId)]
+      );
+      const params = getDecimalTypeArgs(typeNode);
+      if (!params) {
+        return decimalCheck;
+      }
+      const precisionCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.cloneNode(valueId), t.identifier('precision')),
+        t.numericLiteral(params.precision)
+      );
+      const scaleCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.cloneNode(valueId), t.identifier('scale')),
+        t.numericLiteral(params.scale)
+      );
+      return t.logicalExpression(
+        '&&',
+        decimalCheck,
+        t.logicalExpression('&&', precisionCheck, scaleCheck)
+      );
+    }
+
+    if (isRationalReference(typeNode)) {
+      return t.callExpression(
+        t.memberExpression(t.identifier('Rational'), t.identifier('isInstance')),
+        [t.cloneNode(valueId)]
+      );
     }
 
     if (isBrandReference(typeNode)) {

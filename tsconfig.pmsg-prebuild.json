@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./build",
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false
+  },
+  "include": [
+    "tools/babel/messages/**/*.ts",
+    "tools/parser/**/*.ts",
+    "types/src/registry.ts",
+    "types/src/validator-definitions/**/*.ts",
+    "common/strings/**/*.ts"
+  ],
+  "exclude": [
+    "common/numbers/**",
+    "node_modules",
+    "build",
+    "dist",
+    "examples",
+    "tests",
+    "pms-server/tests",
+    "**/*.test.ts"
+  ]
+}

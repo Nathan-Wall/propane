@@ -9,10 +9,24 @@ export function ensureBaseImport(
   state: PropaneState
 ) {
   const program = programPath.node;
-  const hasImportBinding = (name: string) =>
+  const hasAnyImportBinding = (name: string) =>
     program.body.some(
       (stmt) =>
         t.isImportDeclaration(stmt)
+        && stmt.specifiers.some(
+          (spec) =>
+            t.isImportSpecifier(spec)
+            || t.isImportDefaultSpecifier(spec)
+            || t.isImportNamespaceSpecifier(spec)
+              ? spec.local.name === name
+              : false
+        )
+    );
+  const hasValueImportBinding = (name: string) =>
+    program.body.some(
+      (stmt) =>
+        t.isImportDeclaration(stmt)
+        && stmt.importKind !== 'type'
         && stmt.specifiers.some(
           (spec) =>
             t.isImportSpecifier(spec)
@@ -46,32 +60,32 @@ export function ensureBaseImport(
   );
   // Build list of required specifiers, checking if already imported
   const requiredSpecifiers: string[] = [];
-  if (!hasImportBinding('Message')) {
+  if (!hasValueImportBinding('Message')) {
     requiredSpecifiers.push('Message');
   }
   // Hybrid approach symbols
-  if (!hasImportBinding('WITH_CHILD')) {
+  if (!hasValueImportBinding('WITH_CHILD')) {
     requiredSpecifiers.push('WITH_CHILD');
   }
-  if (!hasImportBinding('GET_MESSAGE_CHILDREN')) {
+  if (!hasValueImportBinding('GET_MESSAGE_CHILDREN')) {
     requiredSpecifiers.push('GET_MESSAGE_CHILDREN');
   }
-  if (state.usesImmutableMap && !hasImportBinding('ImmutableMap')) {
+  if (state.usesImmutableMap && !hasValueImportBinding('ImmutableMap')) {
     requiredSpecifiers.push('ImmutableMap');
   }
-  if (state.usesImmutableSet && !hasImportBinding('ImmutableSet')) {
+  if (state.usesImmutableSet && !hasValueImportBinding('ImmutableSet')) {
     requiredSpecifiers.push('ImmutableSet');
   }
-  if (state.usesImmutableArray && !hasImportBinding('ImmutableArray')) {
+  if (state.usesImmutableArray && !hasValueImportBinding('ImmutableArray')) {
     requiredSpecifiers.push('ImmutableArray');
   }
-  if (state.usesImmutableDate && !hasImportBinding('ImmutableDate')) {
+  if (state.usesImmutableDate && !hasValueImportBinding('ImmutableDate')) {
     requiredSpecifiers.push('ImmutableDate');
   }
-  if (state.usesImmutableUrl && !hasImportBinding('ImmutableUrl')) {
+  if (state.usesImmutableUrl && !hasValueImportBinding('ImmutableUrl')) {
     requiredSpecifiers.push('ImmutableUrl');
   }
-  if (state.usesImmutableArrayBuffer && !hasImportBinding('ImmutableArrayBuffer')) {
+  if (state.usesImmutableArrayBuffer && !hasValueImportBinding('ImmutableArrayBuffer')) {
     requiredSpecifiers.push('ImmutableArrayBuffer');
   }
   if (state.usesEquals) {
@@ -80,73 +94,107 @@ export function ensureBaseImport(
   if (state.usesTaggedMessageData) {
     requiredSpecifiers.push('isTaggedMessageData');
   }
-  if (state.usesParseCerealString && !hasImportBinding('parseCerealString')) {
+  if (state.usesParseCerealString && !hasValueImportBinding('parseCerealString')) {
     requiredSpecifiers.push('parseCerealString');
   }
-  if (state.usesEnsure && !hasImportBinding('ensure')) {
+  if (state.usesEnsure && !hasValueImportBinding('ensure')) {
     requiredSpecifiers.push('ensure');
   }
-  if (state.usesSkip && !hasImportBinding('SKIP')) {
+  if (state.usesSkip && !hasValueImportBinding('SKIP')) {
     requiredSpecifiers.push('SKIP');
   }
   // Validation-related imports
-  if (state.usesValidationError && !hasImportBinding('ValidationError')) {
+  if (state.usesValidationError && !hasValueImportBinding('ValidationError')) {
     requiredSpecifiers.push('ValidationError');
   }
-  if (state.usesCharLength && !hasImportBinding('charLength')) {
+  if (state.usesCharLength && !hasValueImportBinding('charLength')) {
     requiredSpecifiers.push('charLength');
   }
-  if (state.usesIsInt32 && !hasImportBinding('isInt32')) {
+  if (state.usesIsInt32 && !hasValueImportBinding('isInt32')) {
     requiredSpecifiers.push('isInt32');
   }
-  if (state.usesIsInt53 && !hasImportBinding('isInt53')) {
+  if (state.usesIsInt53 && !hasValueImportBinding('isInt53')) {
     requiredSpecifiers.push('isInt53');
   }
-  if (state.usesIsDecimal && !hasImportBinding('isDecimal')) {
-    requiredSpecifiers.push('isDecimal');
+  if (state.usesIsDecimalOf && !hasValueImportBinding('isDecimalOf')) {
+    requiredSpecifiers.push('isDecimalOf');
   }
-  if (state.usesCanBeDecimal && !hasImportBinding('canBeDecimal')) {
-    requiredSpecifiers.push('canBeDecimal');
+  if (state.usesIsRational && !hasValueImportBinding('isRational')) {
+    requiredSpecifiers.push('isRational');
   }
-  if (state.usesIsPositive && !hasImportBinding('isPositive')) {
+  if (state.usesDecimalClass && !hasValueImportBinding('Decimal')) {
+    requiredSpecifiers.push('Decimal');
+  }
+  if (state.usesRationalClass && !hasValueImportBinding('Rational')) {
+    requiredSpecifiers.push('Rational');
+  }
+  if (state.usesIsPositive && !hasValueImportBinding('isPositive')) {
     requiredSpecifiers.push('isPositive');
   }
-  if (state.usesIsNegative && !hasImportBinding('isNegative')) {
+  if (state.usesIsNegative && !hasValueImportBinding('isNegative')) {
     requiredSpecifiers.push('isNegative');
   }
-  if (state.usesIsNonNegative && !hasImportBinding('isNonNegative')) {
+  if (state.usesIsNonNegative && !hasValueImportBinding('isNonNegative')) {
     requiredSpecifiers.push('isNonNegative');
   }
-  if (state.usesIsNonPositive && !hasImportBinding('isNonPositive')) {
+  if (state.usesIsNonPositive && !hasValueImportBinding('isNonPositive')) {
     requiredSpecifiers.push('isNonPositive');
   }
-  if (state.usesGreaterThan && !hasImportBinding('greaterThan')) {
+  if (state.usesGreaterThan && !hasValueImportBinding('greaterThan')) {
     requiredSpecifiers.push('greaterThan');
   }
-  if (state.usesGreaterThanOrEqual && !hasImportBinding('greaterThanOrEqual')) {
+  if (state.usesGreaterThanOrEqual && !hasValueImportBinding('greaterThanOrEqual')) {
     requiredSpecifiers.push('greaterThanOrEqual');
   }
-  if (state.usesLessThan && !hasImportBinding('lessThan')) {
+  if (state.usesLessThan && !hasValueImportBinding('lessThan')) {
     requiredSpecifiers.push('lessThan');
   }
-  if (state.usesLessThanOrEqual && !hasImportBinding('lessThanOrEqual')) {
+  if (state.usesLessThanOrEqual && !hasValueImportBinding('lessThanOrEqual')) {
     requiredSpecifiers.push('lessThanOrEqual');
   }
-  if (state.usesInRange && !hasImportBinding('inRange')) {
+  if (state.usesInRange && !hasValueImportBinding('inRange')) {
     requiredSpecifiers.push('inRange');
+  }
+
+  const removeTypeOnlyBindings = new Set<string>();
+  if (state.usesDecimalClass) {
+    removeTypeOnlyBindings.add('Decimal');
+  }
+  if (state.usesRationalClass) {
+    removeTypeOnlyBindings.add('Rational');
+  }
+  if (removeTypeOnlyBindings.size > 0) {
+    for (let i = 0; i < program.body.length; i += 1) {
+      const stmt = program.body[i];
+      if (t.isImportDeclaration(stmt) && stmt.importKind === 'type') {
+        const filtered = stmt.specifiers.filter((spec) => {
+          if (!t.isImportSpecifier(spec)) return true;
+          const localName = spec.local.name;
+          return !removeTypeOnlyBindings.has(localName);
+        });
+        if (filtered.length !== stmt.specifiers.length) {
+          if (filtered.length === 0) {
+            program.body.splice(i, 1);
+            i -= 1;
+          } else {
+            stmt.specifiers = filtered;
+          }
+        }
+      }
+    }
   }
   // MessageConstructor, MessagePropDescriptor, DataValue, and DataObject are type-only imports
   const typeOnlyImports: string[] = ['MessagePropDescriptor'];
-  if (state.usesMessageConstructor && !hasImportBinding('MessageConstructor')) {
+  if (state.usesMessageConstructor && !hasAnyImportBinding('MessageConstructor')) {
     typeOnlyImports.push('MessageConstructor');
   }
-  if (state.usesDataValue && !hasImportBinding('DataValue')) {
+  if (state.usesDataValue && !hasAnyImportBinding('DataValue')) {
     typeOnlyImports.push('DataValue');
   }
-  if (state.usesMessageValue && !hasImportBinding('MessageValue')) {
+  if (state.usesMessageValue && !hasAnyImportBinding('MessageValue')) {
     typeOnlyImports.push('MessageValue');
   }
-  if (state.usesDataObject && !hasImportBinding('DataObject')) {
+  if (state.usesDataObject && !hasAnyImportBinding('DataObject')) {
     typeOnlyImports.push('DataObject');
   }
   // Add ImmutableArray/Set/Map as type imports when only needed for type annotations
@@ -154,32 +202,27 @@ export function ensureBaseImport(
   if (
     state.needsImmutableArrayType
     && !state.usesImmutableArray
-    && !hasImportBinding('ImmutableArray')
+    && !hasAnyImportBinding('ImmutableArray')
   ) {
     typeOnlyImports.push('ImmutableArray');
   }
   if (
     state.needsImmutableSetType
     && !state.usesImmutableSet
-    && !hasImportBinding('ImmutableSet')
+    && !hasAnyImportBinding('ImmutableSet')
   ) {
     typeOnlyImports.push('ImmutableSet');
   }
   if (
     state.needsImmutableMapType
     && !state.usesImmutableMap
-    && !hasImportBinding('ImmutableMap')
+    && !hasAnyImportBinding('ImmutableMap')
   ) {
     typeOnlyImports.push('ImmutableMap');
   }
-  if (state.needsSetUpdatesType && !hasImportBinding('SetUpdates')) {
+  if (state.needsSetUpdatesType && !hasAnyImportBinding('SetUpdates')) {
     typeOnlyImports.push('SetUpdates');
   }
-  // AnyDecimal is needed for type-safe decimal bound casts in validation code
-  if (state.usesAnyDecimal && !hasImportBinding('AnyDecimal')) {
-    typeOnlyImports.push('AnyDecimal');
-  }
-
   if (typeOnlyImports.length > 0) {
     // Check if type import already exists
     const existingTypeImport = program.body.find(

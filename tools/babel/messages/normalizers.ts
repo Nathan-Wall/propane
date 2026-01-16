@@ -333,6 +333,9 @@ export function buildMessageNormalizationExpression(
     allowNull = false,
     optionsExpr,
     castToAny = false,
+    compactArgs = [],
+    valueTypeArgs = [],
+    allowCompact = true,
   }: {
     allowUndefined?: boolean;
     allowNull?: boolean;
@@ -340,6 +343,12 @@ export function buildMessageNormalizationExpression(
     optionsExpr?: t.Expression;
     /** When true, cast valueExpr to Class.Value for unknown values from $fromEntries */
     castToAny?: boolean;
+    /** Optional type arguments to pass to fromCompact before the value */
+    compactArgs?: t.Expression[];
+    /** Optional type arguments to use for ClassName.Value casts */
+    valueTypeArgs?: t.TSType[];
+    /** When true, allow compact string coercion via fromCompact */
+    allowCompact?: boolean;
   } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
@@ -353,7 +362,12 @@ export function buildMessageNormalizationExpression(
     ? t.tsAsExpression(
         t.cloneNode(valueExpr),
         t.tsTypeReference(
-          t.tsQualifiedName(t.identifier(className), t.identifier('Value'))
+          t.tsQualifiedName(t.identifier(className), t.identifier('Value')),
+          valueTypeArgs.length > 0
+            ? t.tsTypeParameterInstantiation(
+              valueTypeArgs.map((arg) => t.cloneNode(arg))
+            )
+            : undefined
         )
       )
     : t.cloneNode(valueExpr);
@@ -368,6 +382,39 @@ export function buildMessageNormalizationExpression(
     t.cloneNode(valueExpr),
     newInstance
   );
+
+  if (allowCompact) {
+    const compactCheck = t.binaryExpression(
+      '===',
+      t.memberExpression(t.identifier(className), t.identifier('$compact')),
+      t.booleanLiteral(true)
+    );
+    const stringCheck = t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(valueExpr)),
+      t.stringLiteral('string')
+    );
+    const fromCompactArgs: t.Expression[] = [
+      ...compactArgs.map((arg) => t.cloneNode(arg)),
+      t.cloneNode(valueExpr),
+    ];
+    if (optionsExpr) {
+      fromCompactArgs.push(t.cloneNode(optionsExpr));
+    }
+    const fromCompactCall = t.callExpression(
+      t.memberExpression(t.identifier(className), t.identifier('fromCompact')),
+      fromCompactArgs
+    );
+    const typedFromCompact = t.tsAsExpression(
+      fromCompactCall,
+      t.tsAnyKeyword()
+    );
+    normalized = t.conditionalExpression(
+      t.logicalExpression('&&', stringCheck, compactCheck),
+      typedFromCompact,
+      normalized
+    );
+  }
 
   if (allowNull) {
     normalized = t.conditionalExpression(
@@ -647,9 +694,9 @@ export interface MapConversionInfo {
 export function buildImmutableMapWithConversionsExpression(
   valueExpr: t.Expression,
   conversions: MapConversionInfo,
-  options: { castToAny?: boolean; allowUndefined?: boolean } = {}
+  options: { castToAny?: boolean; allowUndefined?: boolean; allowCompact?: boolean } = {}
 ): t.Expression {
-  const { castToAny = false, allowUndefined = true } = options;
+  const { castToAny = false, allowUndefined = true, allowCompact = true } = options;
 
   const nilCheck = t.logicalExpression(
     '||',
@@ -733,14 +780,33 @@ export function buildImmutableMapWithConversionsExpression(
       [keyArrayConstructorArg]
     );
   } else if (conversions.keyIsMessage) {
-    // MessageType.from(k)
-    keyConversion = t.callExpression(
+    // MessageType.from(k), unless compact strings should pass through
+    const keyFromCall = t.callExpression(
       t.memberExpression(
         t.identifier(conversions.keyIsMessage),
         t.identifier('from')
       ),
       [keyMessageConstructorArg(conversions.keyIsMessage)]
     );
+    if (allowCompact) {
+      const keyStringCheck = t.binaryExpression(
+        '===',
+        t.unaryExpression('typeof', t.cloneNode(keyId)),
+        t.stringLiteral('string')
+      );
+      const keyCompactCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.identifier(conversions.keyIsMessage), t.identifier('$compact')),
+        t.booleanLiteral(true)
+      );
+      keyConversion = t.conditionalExpression(
+        t.logicalExpression('&&', keyStringCheck, keyCompactCheck),
+        t.cloneNode(keyId),
+        keyFromCall
+      );
+    } else {
+      keyConversion = keyFromCall;
+    }
   }
 
   // Build the value conversion expression
@@ -782,14 +848,33 @@ export function buildImmutableMapWithConversionsExpression(
       [urlConstructorArg]
     );
   } else if (conversions.valueIsMessage) {
-    // MessageType.from(v)
-    valueConversion = t.callExpression(
+    // MessageType.from(v), unless compact strings should pass through
+    const valueFromCall = t.callExpression(
       t.memberExpression(
         t.identifier(conversions.valueIsMessage),
         t.identifier('from')
       ),
       [messageConstructorArg(conversions.valueIsMessage)]
     );
+    if (allowCompact) {
+      const valueStringCheck = t.binaryExpression(
+        '===',
+        t.unaryExpression('typeof', t.cloneNode(valueId)),
+        t.stringLiteral('string')
+      );
+      const valueCompactCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.identifier(conversions.valueIsMessage), t.identifier('$compact')),
+        t.booleanLiteral(true)
+      );
+      valueConversion = t.conditionalExpression(
+        t.logicalExpression('&&', valueStringCheck, valueCompactCheck),
+        t.cloneNode(valueId),
+        valueFromCall
+      );
+    } else {
+      valueConversion = valueFromCall;
+    }
   }
 
   // If no conversions needed, use the simple ImmutableMap expression

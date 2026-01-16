@@ -4,7 +4,7 @@ import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.js';
 import { equals } from '../runtime/common/data/equals.js';
 import { test } from 'node:test';
 
-// Shared type tag for UserState - must be the same symbol for equals() to work
+// Type tags are per-class; equality uses $typeId/$typeHash for identity
 const USER_STATE_TAG = Symbol('UserState');
 
 // Type for update listener callback
@@ -12,6 +12,8 @@ type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
 // Test message class using hybrid approach
 class UserState extends Message<{ name: string; age: number }> {
+  static readonly $typeId = 'tests/use-propane-selector#UserState';
+  static readonly $typeHash = 'tests/use-propane-selector#UserState@v1';
   #name: string;
   #age: number;
 

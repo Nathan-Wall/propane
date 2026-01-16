@@ -15,6 +15,7 @@ export function createMessageReferenceResolver(
   declaredMessageTypeNames: Set<string>
 ): MessageReferenceResolver {
   const messageModuleCache = new Map<string, Set<string>>();
+  const builtinMessageNames = new Set(['Decimal', 'Rational']);
 
   return function getMessageReferenceName(
     typePath: NodePath<t.TSType>
@@ -31,6 +32,10 @@ export function createMessageReferenceResolver(
     const name = typeName.name;
 
     if (declaredMessageTypeNames.has(name)) {
+      return name;
+    }
+
+    if (builtinMessageNames.has(name)) {
       return name;
     }
 

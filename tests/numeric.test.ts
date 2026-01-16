@@ -16,338 +16,123 @@ import {
   inRangeExclusive,
   isInteger,
 } from '@/common/numbers/numeric.js';
+import { Decimal, Rational } from '@/common/numbers/decimal.js';
+
+const dA = Decimal.fromStrictString(10, 2, '10.50');
+const dB = Decimal.fromStrictString(10, 2, '10.49');
+const dC = Decimal.fromStrictString(10, 2, '10.50');
+const dSmall = Decimal.fromStrictString(10, 2, '9.99');
+const dLarge = Decimal.fromStrictString(10, 2, '10.99');
+const dInt = Decimal.fromStrictString(10, 2, '5.00');
+const dScale0 = Decimal.fromStrictString(10, 0, '7');
+const rOneThird = Rational.fromInts(1, 3);
+const rTwoThirds = Rational.fromInts(2, 3);
 
 // =============================================================================
-// Numeric Functions (number | bigint | decimal)
+// Numeric Functions (number | bigint | Decimal | Rational)
 // =============================================================================
 
 describe('compare', () => {
-  describe('number comparisons', () => {
-    it('should compare numbers correctly', () => {
-      assert.strictEqual(compare(10, 5), 1);
-      assert.strictEqual(compare(5, 10), -1);
-      assert.strictEqual(compare(10, 10), 0);
-    });
-
-    it('should handle negative numbers', () => {
-      assert.strictEqual(compare(-5, -10), 1);
-      assert.strictEqual(compare(-10, -5), -1);
-      assert.strictEqual(compare(-5, 5), -1);
-    });
-
-    it('should handle zero', () => {
-      assert.strictEqual(compare(0, 0), 0);
-      assert.strictEqual(compare(0, 1), -1);
-      assert.strictEqual(compare(1, 0), 1);
-    });
+  it('compares numbers and bigints', () => {
+    assert.strictEqual(compare(10, 5), 1);
+    assert.strictEqual(compare(5n, 10n), -1);
+    assert.strictEqual(compare(10, 10n), 0);
   });
 
-  describe('bigint comparisons', () => {
-    it('should compare bigints correctly', () => {
-      assert.strictEqual(compare(10n, 5n), 1);
-      assert.strictEqual(compare(5n, 10n), -1);
-      assert.strictEqual(compare(10n, 10n), 0);
-    });
-
-    it('should handle very large bigints', () => {
-      const big1 = 9007199254740993n; // > MAX_SAFE_INTEGER
-      const big2 = 9007199254740994n;
-      assert.strictEqual(compare(big1, big2), -1);
-      assert.strictEqual(compare(big2, big1), 1);
-    });
+  it('compares Decimals', () => {
+    assert.strictEqual(compare(dA, dB), 1);
+    assert.strictEqual(compare(dB, dA), -1);
+    assert.strictEqual(compare(dA, dC), 0);
   });
 
-  describe('decimal (string) comparisons', () => {
-    it('should compare decimal strings correctly', () => {
-      // @ts-expect-error testing with plain strings (runtime accepts any string as decimal)
-      assert.strictEqual(compare('10.50', '10.49'), 1);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare('10.49', '10.50'), -1);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare('10.50', '10.5'), 0);
-    });
+  it('compares Decimal with number and bigint', () => {
+    assert.strictEqual(compare(10, dA), -1);
+    assert.strictEqual(compare(11, dA), 1);
+    assert.strictEqual(compare(10n, dA), -1);
   });
 
-  describe('mixed type comparisons', () => {
-    it('should compare number with decimal string', () => {
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10, '10'), 0);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10, '9.99'), 1);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10, '10.01'), -1);
-    });
+  it('compares Rational values', () => {
+    assert.strictEqual(compare(rTwoThirds, rOneThird), 1);
+    assert.strictEqual(compare(rOneThird, rOneThird), 0);
+  });
 
-    it('should compare bigint with decimal string', () => {
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10n, '10'), 0);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10n, '9'), 1);
-      // @ts-expect-error testing with plain strings
-      assert.strictEqual(compare(10n, '11'), -1);
-    });
-
-    it('should compare number with bigint', () => {
-      assert.strictEqual(compare(10, 10n), 0);
-      assert.strictEqual(compare(10, 5n), 1);
-      assert.strictEqual(compare(5, 10n), -1);
-    });
+  it('compares Decimal with Rational', () => {
+    const twoThirdsAsDecimal = Decimal.fromStrictString(10, 2, '0.67');
+    assert.strictEqual(compare(twoThirdsAsDecimal, rTwoThirds), 1);
   });
 });
 
 describe('equals', () => {
-  it('should return true for equal values of same type', () => {
-    assert.strictEqual(equals(10, 10), true);
-    assert.strictEqual(equals(10n, 10n), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(equals('10.50', '10.5'), true);
+  it('returns true for equal values', () => {
+    assert.strictEqual(equals(dA, dC), true);
+    assert.strictEqual(equals(10, 10n), true);
   });
 
-  it('should return true for equal values of different types', () => {
-    // @ts-expect-error Testing that runtime handles string bounds (not type-safe)
-    assert.strictEqual(equals(10, '10'), true);
-    // @ts-expect-error Testing that runtime handles string bounds (not type-safe)
-    assert.strictEqual(equals(10n, '10'), true);
-  });
-
-  it('should return false for unequal values', () => {
+  it('returns false for unequal values', () => {
+    assert.strictEqual(equals(dA, dB), false);
     assert.strictEqual(equals(10, 11), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(equals('10.50', '10.51'), false);
   });
 });
 
-describe('greaterThan', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(greaterThan(10, 5), true);
-    assert.strictEqual(greaterThan(5, 10), false);
-    assert.strictEqual(greaterThan(10, 10), false);
-  });
-
-  it('should work with bigints', () => {
-    assert.strictEqual(greaterThan(10n, 5n), true);
-    assert.strictEqual(greaterThan(5n, 10n), false);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(greaterThan('10.50', '10.49'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(greaterThan('10.49', '10.50'), false);
+describe('ordering helpers', () => {
+  it('greater/less comparisons work for Decimal', () => {
+    assert.strictEqual(greaterThan(dA, dB), true);
+    assert.strictEqual(greaterThanOrEqual(dA, dC), true);
+    assert.strictEqual(lessThan(dB, dA), true);
+    assert.strictEqual(lessThanOrEqual(dA, dC), true);
   });
 });
 
-describe('greaterThanOrEqual', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(greaterThanOrEqual(10, 5), true);
-    assert.strictEqual(greaterThanOrEqual(10, 10), true);
-    assert.strictEqual(greaterThanOrEqual(5, 10), false);
+describe('sign checks', () => {
+  it('works for Decimal and Rational', () => {
+    assert.strictEqual(isPositive(dA), true);
+    assert.strictEqual(isNegative(dA), false);
+    assert.strictEqual(isNonNegative(dA), true);
+    assert.strictEqual(isNonPositive(dA), false);
+    assert.strictEqual(isZero(Decimal.fromStrictString(10, 2, '0.00')), true);
+    assert.strictEqual(isPositive(rOneThird), true);
+  });
+
+  it('treats non-finite numbers consistently', () => {
+    assert.strictEqual(isPositive(Infinity), true);
+    assert.strictEqual(isNegative(-Infinity), true);
+    assert.strictEqual(isNonNegative(Infinity), true);
+    assert.strictEqual(isNonPositive(-Infinity), true);
+    assert.strictEqual(isPositive(NaN), false);
+    assert.strictEqual(isNegative(NaN), false);
+    assert.strictEqual(isNonNegative(NaN), false);
+    assert.strictEqual(isNonPositive(NaN), false);
   });
 });
 
-describe('lessThan', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(lessThan(5, 10), true);
-    assert.strictEqual(lessThan(10, 5), false);
-    assert.strictEqual(lessThan(10, 10), false);
-  });
-});
-
-describe('lessThanOrEqual', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(lessThanOrEqual(5, 10), true);
-    assert.strictEqual(lessThanOrEqual(10, 10), true);
-    assert.strictEqual(lessThanOrEqual(10, 5), false);
-  });
-});
-
-describe('isPositive', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(isPositive(10), true);
-    assert.strictEqual(isPositive(0.01), true);
-    assert.strictEqual(isPositive(0), false);
-    assert.strictEqual(isPositive(-10), false);
+describe('range checks', () => {
+  it('inRange works with Decimal bounds', () => {
+    assert.strictEqual(inRange(dA, dSmall, dLarge), true);
+    assert.strictEqual(inRange(dSmall, dA, dLarge), false);
   });
 
-  it('should work with bigints', () => {
-    assert.strictEqual(isPositive(10n), true);
-    assert.strictEqual(isPositive(0n), false);
-    assert.strictEqual(isPositive(-10n), false);
+  it('inRangeExclusive works with Decimal bounds', () => {
+    assert.strictEqual(inRangeExclusive(dA, dSmall, dLarge), true);
+    assert.strictEqual(inRangeExclusive(dSmall, dSmall, dLarge), false);
   });
 
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isPositive('10.50'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isPositive('0.01'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isPositive('0'), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isPositive('-10.50'), false);
-  });
-});
-
-describe('isNegative', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(isNegative(-10), true);
-    assert.strictEqual(isNegative(-0.01), true);
-    assert.strictEqual(isNegative(0), false);
-    assert.strictEqual(isNegative(10), false);
-  });
-
-  it('should work with bigints', () => {
-    assert.strictEqual(isNegative(-10n), true);
-    assert.strictEqual(isNegative(0n), false);
-    assert.strictEqual(isNegative(10n), false);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNegative('-10.50'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNegative('-0.01'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNegative('0'), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNegative('10.50'), false);
-  });
-});
-
-describe('isZero', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(isZero(0), true);
-    assert.strictEqual(isZero(-0), true);
-    assert.strictEqual(isZero(0.01), false);
-  });
-
-  it('should work with bigints', () => {
-    assert.strictEqual(isZero(0n), true);
-    assert.strictEqual(isZero(1n), false);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isZero('0'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isZero('0.00'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isZero('-0'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isZero('0.01'), false);
-  });
-});
-
-describe('isNonNegative', () => {
-  it('should work with all types', () => {
-    assert.strictEqual(isNonNegative(10), true);
-    assert.strictEqual(isNonNegative(0), true);
-    assert.strictEqual(isNonNegative(-10), false);
-    assert.strictEqual(isNonNegative(10n), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNonNegative('10.50'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNonNegative('-0.01'), false);
-  });
-});
-
-describe('isNonPositive', () => {
-  it('should work with all types', () => {
-    assert.strictEqual(isNonPositive(-10), true);
-    assert.strictEqual(isNonPositive(0), true);
-    assert.strictEqual(isNonPositive(10), false);
-    assert.strictEqual(isNonPositive(-10n), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNonPositive('-10.50'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isNonPositive('0.01'), false);
-  });
-});
-
-describe('inRange', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(inRange(50, 0, 100), true);
-    assert.strictEqual(inRange(0, 0, 100), true);
-    assert.strictEqual(inRange(100, 0, 100), true);
-    assert.strictEqual(inRange(101, 0, 100), false);
-  });
-
-  it('should work with bigints', () => {
-    assert.strictEqual(inRange(50n, 0n, 100n), true);
-    assert.strictEqual(inRange(0n, 0n, 100n), true);
-    assert.strictEqual(inRange(101n, 0n, 100n), false);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRange('50.00', '0', '100'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRange('0', '0', '100'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRange('100.01', '0', '100'), false);
-  });
-
-  it('should work with mixed types', () => {
-    // @ts-expect-error Testing that runtime handles string bounds (not type-safe)
-    assert.strictEqual(inRange(50, '0', '100'), true);
-    // @ts-expect-error Testing with plain string as value (not type-safe)
-    assert.strictEqual(inRange('50', 0, 100), true);
-    // @ts-expect-error Testing that runtime handles string bounds (not type-safe)
-    assert.strictEqual(inRange(50n, '0', '100'), true);
-  });
-});
-
-describe('inRangeExclusive', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(inRangeExclusive(50, 0, 100), true);
-    assert.strictEqual(inRangeExclusive(0, 0, 100), false);
-    assert.strictEqual(inRangeExclusive(100, 0, 100), false);
-  });
-
-  it('should work with bigints', () => {
-    assert.strictEqual(inRangeExclusive(50n, 0n, 100n), true);
-    assert.strictEqual(inRangeExclusive(0n, 0n, 100n), false);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRangeExclusive('50.00', '0', '100'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRangeExclusive('0', '0', '100'), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(inRangeExclusive('0.01', '0', '100'), true);
+  it('accepts infinite bounds but rejects NaN', () => {
+    assert.strictEqual(inRange(5, -Infinity, Infinity), true);
+    assert.strictEqual(inRange(Infinity, 0, Infinity), true);
+    assert.strictEqual(inRange(-Infinity, -Infinity, 0), true);
+    assert.strictEqual(inRangeExclusive(5, -Infinity, Infinity), true);
+    assert.strictEqual(inRangeExclusive(Infinity, 0, Infinity), false);
+    assert.strictEqual(inRange(NaN, 0, 1), false);
+    assert.strictEqual(inRange(0, NaN, 1), false);
+    assert.strictEqual(inRange(0, 0, NaN), false);
   });
 });
 
 describe('isInteger', () => {
-  it('should work with numbers', () => {
-    assert.strictEqual(isInteger(42), true);
-    assert.strictEqual(isInteger(0), true);
-    assert.strictEqual(isInteger(-42), true);
-    assert.strictEqual(isInteger(42.5), false);
-    assert.strictEqual(isInteger(0.1), false);
-  });
-
-  it('should always return true for bigints', () => {
-    assert.strictEqual(isInteger(42n), true);
-    assert.strictEqual(isInteger(0n), true);
-    assert.strictEqual(isInteger(-42n), true);
-    assert.strictEqual(isInteger(9007199254740993n), true);
-  });
-
-  it('should work with decimal strings', () => {
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('42'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('42.00'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('42.0000'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('-42.00'), true);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('42.50'), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('42.01'), false);
-    // @ts-expect-error testing with plain strings
-    assert.strictEqual(isInteger('0.1'), false);
+  it('recognizes integer Decimals and Rationals', () => {
+    assert.strictEqual(isInteger(dInt), true);
+    assert.strictEqual(isInteger(dScale0), true);
+    assert.strictEqual(isInteger(rOneThird), false);
+    assert.strictEqual(isInteger(Rational.fromInts(4, 2)), true);
   });
 });

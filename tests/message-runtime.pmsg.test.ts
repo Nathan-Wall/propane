@@ -8,12 +8,15 @@ interface SimpleProps {
   text: string;
 }
 
+const TYPE_TAG_SimpleMessage = Symbol('SimpleMessage');
+
 class SimpleMessage extends Message<SimpleProps> {
-  static readonly TYPE_TAG = Symbol('SimpleMessage');
+  static readonly $typeId = 'tests/message-runtime#SimpleMessage';
+  static readonly $typeHash = 'tests/message-runtime#SimpleMessage@v1';
   #text: string;
 
   constructor(text: string) {
-    super(SimpleMessage.TYPE_TAG, 'SimpleMessage');
+    super(TYPE_TAG_SimpleMessage, 'SimpleMessage');
     this.#text = text;
   }
 

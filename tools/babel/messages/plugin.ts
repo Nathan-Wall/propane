@@ -35,6 +35,10 @@ export interface PropanePluginOptions {
   runtimeImportPath?: string;
   /** Base directory for resolving runtimeImportPath (typically the config file directory). */
   runtimeImportBase?: string;
+  /** Prefix used to generate stable message type IDs. */
+  messageTypeIdPrefix?: string;
+  /** Root directory used to compute relative paths for message type IDs. */
+  messageTypeIdRoot?: string;
   /** Path aliases for resolving @extend paths (mirrors tsconfig paths). */
   paths?: Record<string, string[]>;
   /** Base directory for resolving paths (typically the project root). */
@@ -93,8 +97,10 @@ export interface PropaneState {
   usesCharLength: boolean;
   usesIsInt32: boolean;
   usesIsInt53: boolean;
-  usesIsDecimal: boolean;
-  usesCanBeDecimal: boolean;
+  usesIsDecimalOf: boolean;
+  usesIsRational: boolean;
+  usesDecimalClass: boolean;
+  usesRationalClass: boolean;
   usesIsPositive: boolean;
   usesIsNegative: boolean;
   usesIsNonNegative: boolean;
@@ -104,7 +110,6 @@ export interface PropaneState {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
-  usesAnyDecimal: boolean;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -246,7 +251,7 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
 // ============================================
 
 /** Known decorators for suggestion matching */
-const KNOWN_DECORATORS = ['extend'];
+const KNOWN_DECORATORS = ['extend', 'typeId', 'compact'];
 
 /** Maximum edit distance for suggesting a decorator correction */
 const MAX_SUGGESTION_DISTANCE = 3;
@@ -256,6 +261,8 @@ const MAX_SUGGESTION_DISTANCE = 3;
  * Captures the path in single or double quotes.
  */
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+const TYPE_ID_PATTERN = /(?:^|\s)@typeId\s*\(\s*['"]([^'"]+)['"]\s*\)/;
+const COMPACT_PATTERN = /(?:^|\s)@compact(?!\w)/;
 
 /**
  * Check if a comment line starts with a decorator (@ at line start).
@@ -324,14 +331,18 @@ function resolveExtensionPath(
  * @param isMessageWrapper - Whether this is a Message/Table/Endpoint wrapper
  * @param opts - Plugin options
  */
-function extractExtendDecorator(
+function extractDecoratorInfo(
   typeAliasPath: NodePath<t.TSTypeAliasDeclaration>,
   commentSourcePath: NodePath<t.Node>,
   isMessageWrapper: boolean,
   opts?: PropanePluginOptions
-): ExtendInfo | null {
+): { extendInfo: ExtendInfo | null; typeId: string | null; compact: boolean } {
   const comments = commentSourcePath.node.leadingComments ?? [];
   const extendInfos: { comment: t.Comment; path: string }[] = [];
+  let typeId: string | null = null;
+  let typeIdCount = 0;
+  let compact = false;
+  let compactCount = 0;
   const sourceFilename = getSourceFilename(typeAliasPath);
 
   for (const comment of comments) {
@@ -347,9 +358,7 @@ function extractExtendDecorator(
 
       const cleanLine = line.replace(/^\s*\*?\s*/, '');
 
-      // Check if the line contains @extend
       const hasExtendOnLine = /@extend(?!\w)/.test(cleanLine);
-
       if (hasExtendOnLine) {
         // Parse the full @extend decorator
         const extendMatch = EXTEND_PATTERN.exec(cleanLine);
@@ -388,34 +397,104 @@ function extractExtendDecorator(
           extPath, sourceFilename, opts
         );
         extendInfos.push({ comment, path: resolvedPath });
-      } else {
-        // No @extend on this line - check for unknown decorators
-        // Find all decorator names on this line
-        const decoratorMatches = cleanLine.matchAll(/@(\w+)/g);
-        for (const match of decoratorMatches) {
-          const decoratorName = match[1]!;
-          // Skip known decorators
-          if (decoratorName.toLowerCase() === 'extend') {
-            continue; // Already handled above
-          }
-          // Special error for deprecated @message
-          if (decoratorName.toLowerCase() === 'message') {
+      }
+
+      const hasTypeIdOnLine = /@typeId(?!\w)/.test(cleanLine);
+      if (hasTypeIdOnLine) {
+        const typeIdMatch = TYPE_ID_PATTERN.exec(cleanLine);
+        if (!typeIdMatch) {
+          if (/^\s*@typeId\s*$/.test(cleanLine)) {
             throw typeAliasPath.buildCodeFrameError(
-              `The @message decorator has been replaced by the Message<T> wrapper.\n\n`
-              + `Change to: export type ${typeAliasPath.node.id.name} = Message<{ ... }>;`
+              '@typeId decorator requires parentheses with a string value.\n\n'
+              + 'Example:\n'
+              + "  // @typeId('com.example:messages/user')"
             );
           }
-          // Unknown decorator - check if it might be a typo
-          const suggestion = findClosestDecorator(decoratorName);
-          const error = suggestion ? typeAliasPath.buildCodeFrameError(
+          if (/@typeId\s*\(\s*\)/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@typeId decorator requires a string argument.\n\n'
+              + "Example: // @typeId('com.example:messages/user')"
+            );
+          }
+          if (/@typeId\s*\([^)]*$/.test(cleanLine)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@typeId decorator has unclosed parentheses.\n\n'
+              + "Add the closing parenthesis:\n  // @typeId('com.example:messages/user')"
+            );
+          }
+          throw typeAliasPath.buildCodeFrameError(
+            'Invalid @typeId decorator syntax.\n\n'
+            + "Expected: // @typeId('com.example:messages/user')"
+          );
+        }
+
+        typeIdCount++;
+        if (typeIdCount > 1) {
+          throw typeAliasPath.buildCodeFrameError(
+            'Multiple @typeId decorators are not allowed on a single type.'
+          );
+        }
+        typeId = typeIdMatch[1]!;
+      }
+
+      const hasCompactOnLine = /@compact(?!\w)/.test(cleanLine);
+      if (hasCompactOnLine) {
+        if (/@compact\s*\(/.test(cleanLine)) {
+          throw typeAliasPath.buildCodeFrameError(
+            '@compact decorator does not take arguments.\n\n'
+            + 'Use: // @compact'
+          );
+        }
+        compactCount++;
+        if (compactCount > 1) {
+          throw typeAliasPath.buildCodeFrameError(
+            'Multiple @compact decorators are not allowed on a single type.'
+          );
+        }
+        compact = true;
+      }
+
+      // Check for unknown decorators (including deprecated @message)
+      const decoratorMatches = cleanLine.matchAll(/@(\w+)/g);
+      for (const match of decoratorMatches) {
+        const decoratorName = match[1]!;
+        const normalizedName = decoratorName.toLowerCase();
+        if (normalizedName === 'extend' || normalizedName === 'typeid' || normalizedName === 'compact') {
+          continue;
+        }
+        if (normalizedName === 'message') {
+          throw typeAliasPath.buildCodeFrameError(
+            `The @message decorator has been replaced by the Message<T> wrapper.\n\n`
+            + `Change to: export type ${typeAliasPath.node.id.name} = Message<{ ... }>;`
+          );
+        }
+        const suggestion = findClosestDecorator(decoratorName);
+        if (suggestion) {
+          if (suggestion === 'extend') {
+            throw typeAliasPath.buildCodeFrameError(
               `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
               + `Use '@${suggestion}' to extend this type with custom methods:\n`
               + `  // @${suggestion}('./foo.ext.ts')`
-            ) : typeAliasPath.buildCodeFrameError(
-              `Unknown decorator '@${decoratorName}'.`
             );
-          throw error;
+          }
+          if (suggestion === 'typeId') {
+            throw typeAliasPath.buildCodeFrameError(
+              `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
+              + `Use '@${suggestion}' to override the generated type ID:\n`
+              + `  // @${suggestion}('com.example:messages/user')`
+            );
+          }
+          if (suggestion === 'compact') {
+            throw typeAliasPath.buildCodeFrameError(
+              `Unknown decorator '@${decoratorName}'. Did you mean '@${suggestion}'?\n\n`
+              + `Use '@${suggestion}' to enable compact serialization:\n`
+              + '  // @compact'
+            );
+          }
         }
+        throw typeAliasPath.buildCodeFrameError(
+          `Unknown decorator '@${decoratorName}'.`
+        );
       }
     }
   }
@@ -439,7 +518,36 @@ function extractExtendDecorator(
     );
   }
 
-  return extendInfos.length > 0 ? { path: extendInfos[0]!.path } : null;
+  if (typeId && !isMessageWrapper) {
+    throw typeAliasPath.buildCodeFrameError(
+      '@typeId decorator requires a Message<T> wrapper.\n\n'
+      + 'Use a message wrapper type:\n'
+      + "  // @typeId('com.example:messages/user')\n"
+      + '  export type User = Message<{ ... }>;'
+    );
+  }
+
+  if (compact && !isMessageWrapper) {
+    throw typeAliasPath.buildCodeFrameError(
+      '@compact decorator requires a Message<T> wrapper.\n\n'
+      + 'Use a message wrapper type:\n'
+      + '  // @compact\n'
+      + '  export type User = Message<{ ... }>;'
+    );
+  }
+
+  if (compact && extendInfos.length === 0) {
+    throw typeAliasPath.buildCodeFrameError(
+      '@compact decorator requires an @extend file to implement toCompact/fromCompact.\n\n'
+      + "Add an extension file:\n  // @extend('./foo.ext.ts')"
+    );
+  }
+
+  return {
+    extendInfo: extendInfos.length > 0 ? { path: extendInfos[0]!.path } : null,
+    typeId,
+    compact,
+  };
 }
 
 export default function propanePlugin() {
@@ -482,8 +590,10 @@ export default function propanePlugin() {
           state.usesCharLength = false;
           state.usesIsInt32 = false;
           state.usesIsInt53 = false;
-          state.usesIsDecimal = false;
-          state.usesCanBeDecimal = false;
+          state.usesIsDecimalOf = false;
+          state.usesIsRational = false;
+          state.usesDecimalClass = false;
+          state.usesRationalClass = false;
           state.usesIsPositive = false;
           state.usesIsNegative = false;
           state.usesIsNonNegative = false;
@@ -493,7 +603,6 @@ export default function propanePlugin() {
           state.usesLessThan = false;
           state.usesLessThanOrEqual = false;
           state.usesInRange = false;
-          state.usesAnyDecimal = false;
           state.runtimeImportPath = computeRuntimeImportPath(state);
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
@@ -552,10 +661,17 @@ export default function propanePlugin() {
             ensureBaseImport(path, state);
           }
 
-          // Note: We don't generate re-exports for extended types because it causes
-          // circular dependency issues with ES modules. Users should import the
-          // extended class directly from the extension file instead.
-          // Example: import { Person } from './person.ext.ts'
+          const messageTypes = state.pmtFile?.messages.map((m) => m.name) ?? [];
+          const extendedTypes: Record<string, ExtendInfo> = {};
+          for (const [name, info] of state.extendedTypes) {
+            extendedTypes[name] = info;
+          }
+          const fileMeta = state.file as unknown as {
+            metadata?: Record<string, unknown>;
+          };
+          const metadata = fileMeta.metadata ?? {};
+          metadata['propane'] = { messageTypes, extendedTypes };
+          fileMeta.metadata = metadata;
 
           // Add eslint-disable comment based on what was encountered
           // Generic types need no-explicit-any for Message<any> constraints
@@ -624,7 +740,7 @@ export default function propanePlugin() {
         // and apply Brand auto-namespace transformation
         if (!isMessage) {
           // Still extract @extend to validate it's not used without a message wrapper
-          extractExtendDecorator(
+          extractDecoratorInfo(
             declarationPath, path, false, state.opts
           );
 
@@ -647,13 +763,13 @@ export default function propanePlugin() {
         }
 
         // Extract @extend decorator if present
-        const extendInfo = extractExtendDecorator(
+        const decoratorInfo = extractDecoratorInfo(
           declarationPath, path, true, state.opts
         );
 
         // Track extended types for re-export generation
-        if (extendInfo) {
-          state.extendedTypes.set(typeName, extendInfo);
+        if (decoratorInfo.extendInfo) {
+          state.extendedTypes.set(typeName, decoratorInfo.extendInfo);
         }
 
         const replacement = buildDeclarations(declarationPath, {
@@ -663,9 +779,11 @@ export default function propanePlugin() {
           declaredMessageTypeNames,
           typeAliasDefinitions,
           getMessageReferenceName,
-          extendInfo: extendInfo ?? undefined,
+          extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,
+          typeId: decoratorInfo.typeId ?? undefined,
+          compact: decoratorInfo.compact,
         });
 
         if (replacement) {
@@ -704,7 +822,7 @@ export default function propanePlugin() {
         // and apply Brand auto-namespace transformation
         if (!isMessage) {
           // Still extract @extend to validate it's not used without a message wrapper
-          extractExtendDecorator(path, path, false, state.opts);
+          extractDecoratorInfo(path, path, false, state.opts);
 
           // Apply Brand auto-namespace transformation for non-message types
           const brandResult = transformBrandInTypeAlias(
@@ -725,11 +843,11 @@ export default function propanePlugin() {
         }
 
         // Extract @extend decorator if present
-        const extendInfo = extractExtendDecorator(path, path, true, state.opts);
+        const decoratorInfo = extractDecoratorInfo(path, path, true, state.opts);
 
         // Track extended types for re-export generation
-        if (extendInfo) {
-          state.extendedTypes.set(typeName, extendInfo);
+        if (decoratorInfo.extendInfo) {
+          state.extendedTypes.set(typeName, decoratorInfo.extendInfo);
         }
 
         const replacement = buildDeclarations(path, {
@@ -739,9 +857,11 @@ export default function propanePlugin() {
           declaredMessageTypeNames,
           typeAliasDefinitions,
           getMessageReferenceName,
-          extendInfo: extendInfo ?? undefined,
+          extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,
+          typeId: decoratorInfo.typeId ?? undefined,
+          compact: decoratorInfo.compact,
         });
 
         if (replacement) {

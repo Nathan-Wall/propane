@@ -95,6 +95,16 @@ export class PmsClient {
       // We need to parse the tagged message and reconstruct without the tag
       const parsed = parseCerealString(responseBody);
       if (isTaggedMessageData(parsed)) {
+        if (typeof parsed.$data === 'string') {
+          const compactCtor = responseClass as unknown as {
+            $compact?: boolean;
+            fromCompact?: (...args: unknown[]) => TResponse;
+          };
+          if (compactCtor.$compact === true && typeof compactCtor.fromCompact === 'function') {
+            return compactCtor.fromCompact(parsed.$data) as TResponse;
+          }
+          throw new Error('Invalid compact tagged response payload.');
+        }
         // Reconstruct the message from the parsed data
         // Use type assertion for prototype access to $fromEntries
         type FromEntriesProto = {

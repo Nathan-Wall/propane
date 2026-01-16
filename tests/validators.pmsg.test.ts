@@ -6,12 +6,12 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { ValidationError } from '@propane/runtime';
+import { ValidationError, Decimal } from '@propane/runtime';
 import type {
   Positive, Negative, NonNegative, NonPositive,
   Min, Max, Range,
   NonEmpty, MinLength, MaxLength, Length,
-  int32, int53, decimal,
+  int32, int53,
 } from '@propane/types';
 import {
   NumericSignValidators,
@@ -155,28 +155,27 @@ describe('BrandedValidators', () => {
     const msg = new BrandedValidators({
       positiveInt32: 1 as Positive<int32>,
       positiveInt53: 1 as Positive<int53>,
-      positiveDecimal: '1.00' as Positive<decimal<10, 2>>,
-      minDecimal: '100.00' as Min<decimal<10, 2>, '100'>,
-      maxDecimal: '500.00' as Max<decimal<10, 2>, '1000'>,
-      rangeDecimal: '500.00' as Range<decimal<10, 2>, '0', '999.99'>,
+      positiveDecimal: Decimal.fromStrictString(10, 2, '1.00') as Positive<Decimal<10, 2>>,
+      minDecimal: Decimal.fromStrictString(10, 2, '100.00') as Min<Decimal<10, 2>, '100'>,
+      maxDecimal: Decimal.fromStrictString(10, 2, '500.00') as Max<Decimal<10, 2>, '1000'>,
+      rangeDecimal: Decimal.fromStrictString(10, 2, '500.00') as Range<Decimal<10, 2>, '0', '999.99'>,
     });
     assert.strictEqual(msg.positiveInt32, 1);
-    assert.strictEqual(msg.minDecimal, '100.00');
+    assert.strictEqual(msg.minDecimal.toString(), '100.00');
   });
 
-  it('should accept decimal as number input', () => {
-    // Validators accept numbers for decimal fields but don't transform them
-    // (transformation to decimal string is a separate concern handled by toDecimal)
-    const msg = new BrandedValidators({
-      positiveInt32: 1 as Positive<int32>,
-      positiveInt53: 1 as Positive<int53>,
-      positiveDecimal: 1 as unknown as Positive<decimal<10, 2>>,
-      minDecimal: 100 as unknown as Min<decimal<10, 2>, '100'>,
-      maxDecimal: 500 as unknown as Max<decimal<10, 2>, '1000'>,
-      rangeDecimal: 500 as unknown as Range<decimal<10, 2>, '0', '999.99'>,
-    });
-    // Number is accepted (validates via canBeDecimal) but not transformed
-    assert.strictEqual(msg.positiveDecimal, 1);
+  it('should reject decimal as number input', () => {
+    assert.throws(
+      () => new BrandedValidators({
+        positiveInt32: 1 as Positive<int32>,
+        positiveInt53: 1 as Positive<int53>,
+        positiveDecimal: 1 as unknown as Positive<Decimal<10, 2>>,
+        minDecimal: 100 as unknown as Min<Decimal<10, 2>, '100'>,
+        maxDecimal: 500 as unknown as Max<Decimal<10, 2>, '1000'>,
+        rangeDecimal: 500 as unknown as Range<Decimal<10, 2>, '0', '999.99'>,
+      }),
+      ValidationError
+    );
   });
 
   it('should reject decimal below min', () => {
@@ -184,10 +183,10 @@ describe('BrandedValidators', () => {
       () => new BrandedValidators({
         positiveInt32: 1 as Positive<int32>,
         positiveInt53: 1 as Positive<int53>,
-        positiveDecimal: '1.00' as Positive<decimal<10, 2>>,
-        minDecimal: '99.99' as Min<decimal<10, 2>, '100'>,
-        maxDecimal: '500.00' as Max<decimal<10, 2>, '1000'>,
-        rangeDecimal: '500.00' as Range<decimal<10, 2>, '0', '999.99'>,
+        positiveDecimal: Decimal.fromStrictString(10, 2, '1.00') as Positive<Decimal<10, 2>>,
+        minDecimal: Decimal.fromStrictString(10, 2, '99.99') as Min<Decimal<10, 2>, '100'>,
+        maxDecimal: Decimal.fromStrictString(10, 2, '500.00') as Max<Decimal<10, 2>, '1000'>,
+        rangeDecimal: Decimal.fromStrictString(10, 2, '500.00') as Range<Decimal<10, 2>, '0', '999.99'>,
       }),
       ValidationError
     );

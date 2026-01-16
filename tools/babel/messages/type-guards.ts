@@ -32,6 +32,14 @@ export function isImmutableArrayBufferReference(
   );
 }
 
+export function isDecimalReference(node: t.TSTypeReference): boolean {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'Decimal';
+}
+
+export function isRationalReference(node: t.TSTypeReference): boolean {
+  return t.isIdentifier(node.typeName) && node.typeName.name === 'Rational';
+}
+
 export function isSetReference(node: t.TSTypeReference): boolean {
   return (
     t.isIdentifier(node.typeName)
@@ -65,6 +73,45 @@ export function isBrandReference(node: t.TSTypeReference): boolean {
 
   const [first] = node.typeParameters.params;
   return t.isTSStringKeyword(first);
+}
+
+function parseNumericLiteral(typeNode: t.TSType): number | null {
+  if (!t.isTSLiteralType(typeNode)) {
+    return null;
+  }
+  const literal = typeNode.literal;
+  if (t.isNumericLiteral(literal)) {
+    return literal.value;
+  }
+  if (
+    t.isUnaryExpression(literal)
+    && t.isNumericLiteral(literal.argument)
+    && (literal.operator === '-' || literal.operator === '+')
+  ) {
+    return literal.operator === '-' ? -literal.argument.value : literal.argument.value;
+  }
+  return null;
+}
+
+export function getDecimalTypeArgs(
+  node: t.TSTypeReference
+): { precision: number; scale: number } | null {
+  if (!isDecimalReference(node)) {
+    return null;
+  }
+  const params = node.typeParameters?.params;
+  if (!params || params.length < 2) {
+    return null;
+  }
+  const precision = parseNumericLiteral(params[0]!);
+  const scale = parseNumericLiteral(params[1]!);
+  if (precision === null || scale === null) {
+    return null;
+  }
+  if (!Number.isInteger(precision) || !Number.isInteger(scale)) {
+    return null;
+  }
+  return { precision, scale };
 }
 
 export function isPrimitiveKeyword(

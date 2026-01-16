@@ -8,7 +8,8 @@
  * | number          | DOUBLE PRECISION   | number     | double     | double                               | double                     |
  * | int32           | INTEGER            | number     | int        | int32_t                              | int32                      |
  * | bigint          | BIGINT             | bigint     | long       | int64_t                              | int64                      |
- * | decimal<P,S>    | NUMERIC(P,S)       | string     | BigDecimal | std::string                          | string                     |
+ * | Decimal<P,S>    | NUMERIC(P,S)       | Decimal    | BigDecimal | std::string                          | string                     |
+ * | Rational        | JSONB              | Rational   | BigDecimal | std::string                          | string                     |
  * | string          | TEXT               | string     | String     | std::string                          | string                     |
  * | boolean         | BOOLEAN            | boolean    | boolean    | bool                                 | bool                       |
  * | Date            | TIMESTAMPTZ        | Date       | Instant    | chrono::system_clock::time_point     | google.protobuf.Timestamp  |
@@ -69,6 +70,7 @@ export type ScalarType =
   | 'int32'
   | 'bigint'
   | 'decimal'
+  | 'rational'
   | 'boolean'
   | 'Date'
   | 'URL'
@@ -108,6 +110,8 @@ export function mapScalarType(scalarType: ScalarType, options?: {
         precision: options?.precision,
         scale: options?.scale,
       };
+    case 'rational':
+      return { sqlType: 'JSONB', isJsonb: true };
 
     case 'boolean':
       return { sqlType: 'BOOLEAN', isJsonb: false };

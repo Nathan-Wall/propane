@@ -76,6 +76,29 @@ export type User = Message<{
 | **String Literals** | `'admin' \| 'user'` | Enum-like validation |
 | **Validators** | `Positive<number>` | See [Validators Guide](./validators-guide.md) |
 
+## Generics
+
+Propane message types can be generic. Each type parameter must have an
+`extends` constraint. Constraints can be `Message` (or a message type) or
+non-message types like `number`.
+
+```typescript
+import { Message } from '@propane/runtime';
+
+// Message-constrained generic
+export type Container<T extends Message> = Message<{
+  '1:value': T;
+}>;
+
+// Non-message constraint (type-level only)
+export type Sized<P extends number> = Message<{
+  '1:size': P;
+}>;
+```
+
+Non-message generic parameters are type-level only and do not affect runtime
+serialization or `$typeName`.
+
 ## Nested Messages
 
 ```typescript
@@ -245,3 +268,54 @@ console.log(older.serialize());
 - Only one `@extend` decorator is allowed per type
 - The extension file must export a class with the same name as the type
 - The extension class must extend the `$Base` class from the generated file
+
+## Type Identity and `Message.isInstance`
+
+Propane generates a stable type ID for each message type and uses it to tag
+instances at construction time. This allows `Message.isInstance(value)` to work
+across multiple versions of the same library as long as the type ID stays the
+same.
+
+### `@typeId` Override
+
+You can override the generated type ID with `@typeId`:
+
+```typescript
+import { Message } from '@propane/runtime';
+
+// @typeId('com.example:messages/user')
+export type User = Message<{
+  '1:id': number;
+  '2:name': string;
+}>;
+```
+
+### Default Type ID Generation
+
+When `@typeId` is not provided, Propane builds a type ID from:
+
+- `messageTypeIdPrefix` (optional)
+- The relative path from `messageTypeIdRoot` to the `.pmsg` file
+- The type name
+
+Configure these in `propane.config.json` to keep IDs stable across builds:
+
+```json
+{
+  "messageTypeIdPrefix": "com.example",
+  "messageTypeIdRoot": "."
+}
+```
+
+### Checking Instances
+
+```typescript
+import { User } from './user.pmsg.js';
+
+const value: unknown = getValue();
+
+if (User.isInstance(value)) {
+  // value is User here
+  console.log(value.name);
+}
+```

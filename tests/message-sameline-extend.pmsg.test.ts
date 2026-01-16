@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-// Import from extension file to get the extended class with custom methods
-import { SameLineExtend } from './message-sameline-extend.pmsg.ext.js';
+// Import from the generated .pmsg.js re-export to get the extended class.
+import { SameLineExtend } from './message-sameline-extend.pmsg.js';
 
 describe('Message<{...}> with @extend decorator', () => {
   it('works with Message wrapper and @extend decorator', () => {

@@ -1,4 +1,4 @@
-import { SameLineExtend$Base } from './message-sameline-extend.pmsg.js';
+import { SameLineExtend$Base } from './message-sameline-extend.pmsg.base.js';
 
 export class SameLineExtend extends SameLineExtend$Base {
   get fullName(): string {

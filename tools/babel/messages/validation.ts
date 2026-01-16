@@ -15,9 +15,24 @@ import {
   resolveQualifiedRoot,
 } from './type-guards.js';
 
+function isGenericTypeReference(
+  typePath: NodePath<t.TSType>,
+  typeParamNames?: Set<string>
+): boolean {
+  if (!typeParamNames || typeParamNames.size === 0) {
+    return false;
+  }
+  if (!typePath.isTSTypeReference()) {
+    return false;
+  }
+  const typeName = typePath.node.typeName;
+  return t.isIdentifier(typeName) && typeParamNames.has(typeName.name);
+}
+
 export function assertSupportedMapType(
   typePath: NodePath<t.TSTypeReference>,
-  declaredTypeNames: Set<string>
+  declaredTypeNames: Set<string>,
+  typeParamNames?: Set<string>
 ): void {
   const typeParametersPath = typePath.get('typeParameters');
   if (typeParametersPath?.node?.params.length !== 2) {
@@ -27,13 +42,14 @@ export function assertSupportedMapType(
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames);
-  assertSupportedType(valueTypePath!, declaredTypeNames);
+  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames, typeParamNames);
+  assertSupportedType(valueTypePath!, declaredTypeNames, typeParamNames);
 }
 
 export function assertSupportedSetType(
   typePath: NodePath<t.TSTypeReference>,
-  declaredTypeNames: Set<string>
+  declaredTypeNames: Set<string>,
+  typeParamNames?: Set<string>
 ): void {
   const typeNode = typePath.node;
 
@@ -50,25 +66,34 @@ export function assertSupportedSetType(
   }
 
   const elementPath = typePath.get('typeParameters').get('params')[0]!;
-  assertSupportedType(elementPath, declaredTypeNames);
+  assertSupportedType(elementPath, declaredTypeNames, typeParamNames);
 }
 
 export function assertSupportedMapKeyType(
   typePath: NodePath<t.TSType>,
-  declaredTypeNames: Set<string>
+  declaredTypeNames: Set<string>,
+  typeParamNames?: Set<string>
 ): void {
   if (!typePath?.node) {
     throw typePath.buildCodeFrameError('Missing Map key type.');
   }
 
+  if (isGenericTypeReference(typePath, typeParamNames)) {
+    return;
+  }
+
   if (typePath.isTSParenthesizedType()) {
-    assertSupportedMapKeyType(typePath.get('typeAnnotation'), declaredTypeNames);
+    assertSupportedMapKeyType(
+      typePath.get('typeAnnotation'),
+      declaredTypeNames,
+      typeParamNames
+    );
     return;
   }
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath, declaredTypeNames);
+      assertSupportedMapKeyType(memberPath, declaredTypeNames, typeParamNames);
     }
     return;
   }
@@ -95,14 +120,19 @@ export function assertSupportedMapKeyType(
       }
       assertSupportedType(
         nestedTypeAnnotation.get('typeAnnotation'),
-        declaredTypeNames
+        declaredTypeNames,
+        typeParamNames
       );
     }
     return;
   }
 
   if (typePath.isTSArrayType()) {
-    assertSupportedType(typePath.get('elementType'), declaredTypeNames);
+    assertSupportedType(
+      typePath.get('elementType'),
+      declaredTypeNames,
+      typeParamNames
+    );
     return; // Arrays are allowed as map keys
   }
 
@@ -115,7 +145,7 @@ export function assertSupportedMapKeyType(
   }
 
   // key types must still be valid primitives/identifiers
-  assertSupportedType(typePath, declaredTypeNames);
+  assertSupportedType(typePath, declaredTypeNames, typeParamNames);
 }
 
 export function assertSupportedTopLevelType(
@@ -134,10 +164,15 @@ export function assertSupportedTopLevelType(
 
 export function assertSupportedType(
   typePath: NodePath<t.TSType>,
-  declaredTypeNames: Set<string>
+  declaredTypeNames: Set<string>,
+  typeParamNames?: Set<string>
 ): void {
   if (!typePath?.node) {
     throw new Error('Missing type information for propane property.');
+  }
+
+  if (isGenericTypeReference(typePath, typeParamNames)) {
+    return;
   }
 
   if (isPrimitiveKeyword(typePath) || isPrimitiveLiteral(typePath)) {
@@ -146,13 +181,17 @@ export function assertSupportedType(
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedType(memberPath, declaredTypeNames);
+      assertSupportedType(memberPath, declaredTypeNames, typeParamNames);
     }
     return;
   }
 
   if (typePath.isTSArrayType()) {
-    assertSupportedType(typePath.get('elementType'), declaredTypeNames);
+    assertSupportedType(
+      typePath.get('elementType'),
+      declaredTypeNames,
+      typeParamNames
+    );
     return;
   }
 
@@ -177,12 +216,12 @@ export function assertSupportedType(
     }
 
     if (isMapReference(typePath.node)) {
-      assertSupportedMapType(typePath, declaredTypeNames);
+      assertSupportedMapType(typePath, declaredTypeNames, typeParamNames);
       return;
     }
 
     if (isSetReference(typePath.node)) {
-      assertSupportedSetType(typePath, declaredTypeNames);
+      assertSupportedSetType(typePath, declaredTypeNames, typeParamNames);
       return;
     }
 
@@ -197,7 +236,11 @@ export function assertSupportedType(
   }
 
   if (typePath.isTSParenthesizedType()) {
-    assertSupportedType(typePath.get('typeAnnotation'), declaredTypeNames);
+    assertSupportedType(
+      typePath.get('typeAnnotation'),
+      declaredTypeNames,
+      typeParamNames
+    );
     return;
   }
 
@@ -228,7 +271,8 @@ export function assertSupportedType(
 
       assertSupportedType(
         nestedTypeAnnotation.get('typeAnnotation'),
-        declaredTypeNames
+        declaredTypeNames,
+        typeParamNames
       );
     }
     return;

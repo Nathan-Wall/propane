@@ -1,5 +1,6 @@
 /**
- * Compiles all .pmsg files to .pmsg.ts using the Babel plugin.
+ * Compiles all .pmsg files to .pmsg.base.ts plus a re-export .pmsg.ts file
+ * using the Babel plugin.
  * This script must be run AFTER the babel plugin has been built.
  */
 import fs from 'node:fs';
@@ -15,6 +16,8 @@ const projectRoot = path.resolve(__dirname, '../..');
 
 interface PropaneConfig {
   runtimeImportPath?: string;
+  messageTypeIdPrefix?: string;
+  messageTypeIdRoot?: string;
 }
 
 // Load propane config
@@ -35,6 +38,7 @@ const propaneConfig = loadPropaneConfig();
 // Directories to scan for .pmsg files (test directories only)
 // pms-server/src is excluded because response.pmsg.ts is checked in
 const scanDirs = [
+  'common/numbers',
   'tests',
   'pms-server/tests',
 ];
@@ -65,6 +69,51 @@ function findPmsgFiles(dir: string): string[] {
   return files;
 }
 
+function toJsPath(value: string): string {
+  if (value.endsWith('.ts')) {
+    return value.slice(0, -3) + '.js';
+  }
+  if (value.endsWith('.tsx')) {
+    return value.slice(0, -4) + '.js';
+  }
+  return value;
+}
+
+function writeIfChanged(outputPath: string, content: string): void {
+  const normalized = content.endsWith('\n') ? content : content + '\n';
+  if (fs.existsSync(outputPath)) {
+    const existing = fs.readFileSync(outputPath, 'utf8');
+    if (existing === normalized) {
+      return;
+    }
+  }
+  fs.writeFileSync(outputPath, normalized, 'utf8');
+}
+
+function generateReexportFile(
+  filePath: string,
+  messageTypes: string[],
+  extendedTypes: Record<string, { path: string }>
+): string {
+  const baseName = path.basename(filePath, '.pmsg');
+  const relative = path
+    .relative(projectRoot, filePath)
+    .replaceAll('\\', '/');
+  const lines: string[] = [];
+  lines.push(`// Generated from ${relative}`);
+
+  for (const typeName of messageTypes) {
+    const extendInfo = extendedTypes[typeName];
+    if (!extendInfo?.path) continue;
+    lines.push(
+      `export { ${typeName} } from '${toJsPath(extendInfo.path)}';`
+    );
+  }
+
+  lines.push(`export * from './${baseName}.pmsg.base.js';`);
+  return lines.join('\n');
+}
+
 function compilePmsgFile(filePath: string): void {
   const source = fs.readFileSync(filePath, 'utf8');
 
@@ -73,6 +122,15 @@ function compilePmsgFile(filePath: string): void {
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
     pluginOptions['runtimeImportBase'] = projectRoot;
+  }
+  if (propaneConfig.messageTypeIdPrefix) {
+    pluginOptions['messageTypeIdPrefix'] = propaneConfig.messageTypeIdPrefix;
+  }
+  if (propaneConfig.messageTypeIdRoot) {
+    pluginOptions['messageTypeIdRoot'] = path.resolve(
+      projectRoot,
+      propaneConfig.messageTypeIdRoot
+    );
   }
 
   const result = transformSync(source, {
@@ -88,21 +146,27 @@ function compilePmsgFile(filePath: string): void {
     throw new Error(`Failed to compile ${filePath}`);
   }
 
+  const metadata = (result as {
+    metadata?: {
+      propane?: {
+        messageTypes?: string[];
+        extendedTypes?: Record<string, { path: string }>;
+      };
+    };
+  }).metadata?.propane;
+  const messageTypes = metadata?.messageTypes ?? [];
+  const extendedTypes = metadata?.extendedTypes ?? {};
+
   // Rewrite .pmsg imports to .pmsg.js for ESM compatibility
-  let code = result.code.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
+  const baseCode = result.code.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
 
-  const outputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
-  code = code.endsWith('\n') ? code : code + '\n';
+  const baseOutputPath = filePath.replace(/\.pmsg$/, '.pmsg.base.ts');
+  writeIfChanged(baseOutputPath, baseCode);
 
-  // Only write if content changed
-  if (fs.existsSync(outputPath)) {
-    const existing = fs.readFileSync(outputPath, 'utf8');
-    if (existing === code) {
-      return; // No change
-    }
-  }
+  const reexportOutputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
+  const reexportCode = generateReexportFile(filePath, messageTypes, extendedTypes);
+  writeIfChanged(reexportOutputPath, reexportCode);
 
-  fs.writeFileSync(outputPath, code, 'utf8');
   console.log(`Compiled: ${path.relative(projectRoot, filePath)}`);
 }
 

@@ -37,10 +37,10 @@ describe('Brand auto-namespace transformation', () => {
 
   describe('transformation verification', () => {
     it('should generate unique symbols for each Brand type', async () => {
-      // Read the generated .pmsg.ts file to verify symbols
+      // Read the generated .pmsg.base.ts file to verify symbols
       const fileUrl = new URL(import.meta.url);
       const testDir = path.dirname(fileUrl.pathname);
-      const pmsgPath = path.join(testDir, '..', '..', 'tests', 'brand.pmsg.ts');
+      const pmsgPath = path.join(testDir, '..', '..', 'tests', 'brand.pmsg.base.ts');
 
       const content = await fs.readFile(pmsgPath, 'utf8');
 
@@ -78,10 +78,10 @@ describe('Brand auto-namespace transformation', () => {
     });
 
     it('should not transform non-Brand types', async () => {
-      // Read the generated .pmsg.ts file to verify symbols
+      // Read the generated .pmsg.base.ts file to verify symbols
       const fileUrl = new URL(import.meta.url);
       const testDir = path.dirname(fileUrl.pathname);
-      const pmsgPath = path.join(testDir, '..', '..', 'tests', 'brand.pmsg.ts');
+      const pmsgPath = path.join(testDir, '..', '..', 'tests', 'brand.pmsg.base.ts');
 
       const content = await fs.readFile(pmsgPath, 'utf8');
 

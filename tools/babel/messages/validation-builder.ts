@@ -359,11 +359,17 @@ function trackValidationImport(name: string, state: PluginStateFlags): void {
     case 'isInt53':
       state.usesIsInt53 = true;
       break;
-    case 'isDecimal':
-      state.usesIsDecimal = true;
+    case 'isDecimalOf':
+      state.usesIsDecimalOf = true;
       break;
-    case 'canBeDecimal':
-      state.usesCanBeDecimal = true;
+    case 'isRational':
+      state.usesIsRational = true;
+      break;
+    case 'Decimal':
+      state.usesDecimalClass = true;
+      break;
+    case 'Rational':
+      state.usesRationalClass = true;
       break;
     case 'isPositive':
       state.usesIsPositive = true;
@@ -391,9 +397,6 @@ function trackValidationImport(name: string, state: PluginStateFlags): void {
       break;
     case 'inRange':
       state.usesInRange = true;
-      break;
-    case 'AnyDecimal':
-      state.usesAnyDecimal = true;
       break;
   }
 }
