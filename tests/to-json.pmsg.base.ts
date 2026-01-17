@@ -468,7 +468,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : props.imap as object instanceof ImmutableMap ? props.imap : new ImmutableMap(props.imap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#big = (props ? props.big : 0n) as bigint;
-    this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date) : new ImmutableDate(0);
+    this.#date = props ? props.date instanceof ImmutableDate ? props.date : ImmutableDate.from(props.date) : new ImmutableDate(0);
     this.#optional = (props ? props.optional : undefined) as string;
     this.#nonFinite = (props ? props.nonFinite : 0) as number;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested, options) : new ToJson_Nested();

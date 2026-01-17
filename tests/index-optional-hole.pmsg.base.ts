@@ -19,7 +19,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(TYPE_TAG_OptionalHole, "OptionalHole");
     this.#id = (props ? props.id : 0) as number;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     this.#note = (props ? props.note : undefined) as string;
     this.#name = (props ? props.name : "") as string;
     if (!props) OptionalHole.EMPTY = this;

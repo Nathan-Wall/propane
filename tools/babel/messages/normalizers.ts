@@ -184,9 +184,10 @@ export function buildImmutableDateNormalizationExpression(
     t.cloneNode(valueExpr),
     t.identifier('ImmutableDate')
   );
-  const newInstance = t.newExpression(t.identifier('ImmutableDate'), [
-    t.cloneNode(valueExpr),
-  ]);
+  const newInstance = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
+    [t.cloneNode(valueExpr)]
+  );
 
   let normalized: t.Expression = t.conditionalExpression(
     instanceCheck,

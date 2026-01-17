@@ -101,11 +101,17 @@ function generateReexportFile(
 function transpileFile(sourcePath: string): void {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
   const pluginOptions: Record<string, unknown> = {};
+  const relativePath = path.relative(process.cwd(), sourcePath).replaceAll('\\', '/');
+  const isImmutableDatePmsg = relativePath === 'runtime/common/time/date.pmsg';
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
   }
   if (configDir) {
     pluginOptions['runtimeImportBase'] = configDir;
+  }
+  if (isImmutableDatePmsg) {
+    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
+    pluginOptions['runtimeImportBase'] = configDir ?? process.cwd();
   }
   if (propaneConfig.messageTypeIdPrefix) {
     pluginOptions['messageTypeIdPrefix'] = propaneConfig.messageTypeIdPrefix;

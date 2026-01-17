@@ -15,7 +15,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
   }) {
     if (!props && Wrapper_Payload_Union1.EMPTY) return Wrapper_Payload_Union1.EMPTY;
     super(TYPE_TAG_Wrapper_Payload_Union1, "Wrapper_Payload_Union1");
-    this.#d = props ? props.d instanceof ImmutableDate ? props.d : new ImmutableDate(props.d) : new ImmutableDate(0);
+    this.#d = props ? props.d instanceof ImmutableDate ? props.d : ImmutableDate.from(props.d) : new ImmutableDate(0);
     if (!props) Wrapper_Payload_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper_Payload_Union1.Data>[] {

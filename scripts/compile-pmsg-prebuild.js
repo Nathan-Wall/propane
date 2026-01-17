@@ -26,7 +26,7 @@ function loadPropaneConfig() {
 
 const propaneConfig = loadPropaneConfig();
 
-const scanDirs = ['common/numbers'];
+const scanDirs = ['common/numbers', 'runtime/common/time'];
 const failSuffix = '-fail.pmsg';
 
 function findPmsgFiles(dir) {
@@ -90,10 +90,16 @@ function generateReexportFile(filePath, messageTypes, extendedTypes) {
 
 function compilePmsgFile(filePath) {
   const source = fs.readFileSync(filePath, 'utf8');
+  const relativePath = path.relative(projectRoot, filePath).replaceAll('\\', '/');
+  const isImmutableDatePmsg = relativePath === 'runtime/common/time/date.pmsg';
 
   const pluginOptions = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
+    pluginOptions['runtimeImportBase'] = projectRoot;
+  }
+  if (isImmutableDatePmsg) {
+    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
     pluginOptions['runtimeImportBase'] = projectRoot;
   }
   if (propaneConfig.messageTypeIdPrefix) {

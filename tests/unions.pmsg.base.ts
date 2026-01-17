@@ -16,7 +16,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
   }) {
     if (!props && Unions_Metadata_Union1.EMPTY) return Unions_Metadata_Union1.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union1, "Unions_Metadata_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     if (!props) Unions_Metadata_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union1.Data>[] {
@@ -84,7 +84,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
   }) {
     if (!props && Unions_Metadata_Union2.EMPTY) return Unions_Metadata_Union2.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union2, "Unions_Metadata_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     if (!props) Unions_Metadata_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union2.Data>[] {
@@ -152,7 +152,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
   }) {
     if (!props && Unions_Items_Item_Union1.EMPTY) return Unions_Items_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union1, "Unions_Items_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     if (!props) Unions_Items_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union1.Data>[] {
@@ -220,7 +220,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
   }) {
     if (!props && Unions_Items_Item_Union2.EMPTY) return Unions_Items_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union2, "Unions_Items_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     if (!props) Unions_Items_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union2.Data>[] {
@@ -288,7 +288,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union1.EMPTY) return Unions_ItemSet_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union1, "Unions_ItemSet_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     if (!props) Unions_ItemSet_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union1.Data>[] {
@@ -356,7 +356,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union2.EMPTY) return Unions_ItemSet_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union2, "Unions_ItemSet_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     if (!props) Unions_ItemSet_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union2.Data>[] {
@@ -424,7 +424,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union1.EMPTY) return Unions_ItemMap_Value_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union1, "Unions_ItemMap_Value_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     if (!props) Unions_ItemMap_Value_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union1.Data>[] {
@@ -492,7 +492,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union2.EMPTY) return Unions_ItemMap_Value_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union2, "Unions_ItemMap_Value_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     if (!props) Unions_ItemMap_Value_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union2.Data>[] {

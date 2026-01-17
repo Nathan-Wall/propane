@@ -5,7 +5,7 @@ import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
 import { ImmutableArray } from './common/array/immutable.js';
 import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
-import { ImmutableDate } from './common/time/date.js';
+import type { ImmutableDate } from './common/time/date.js';
 import { ImmutableUrl } from './common/web/url.js';
 import type { Decimal, Rational } from '@/common/numbers/decimal.js';
 import {
@@ -1109,7 +1109,7 @@ function hashString(value: string): number {
   return hash;
 }
 
-function jsonStringifyDate(value: Date | ImmutableDate): string {
+function jsonStringifyDate(value: Date | { toString(): string }): string {
   if (value instanceof Date) {
     return JSON.stringify(value.toISOString());
   }
@@ -1137,7 +1137,7 @@ function serializePrimitive(
     tagMapValues = false,
   } = tags;
 
-  if (tagMessage && Message.isMessage(value)) {
+  if (tagMessage && Message.isMessage(value) && !isDateValue(value)) {
     return serializeTaggedMessage(value as Message<DataObject>, ancestors);
   }
 
@@ -1187,6 +1187,10 @@ function serializePrimitive(
     return `${value.toString()}n`;
   }
 
+  if (isDateValue(value)) {
+    return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
+  }
+
   if (Message.isMessage(value)) {
     const ctor = value.constructor as { $compact?: boolean };
     if (ctor.$compact === true) {
@@ -1214,9 +1218,6 @@ function serializePrimitive(
   }
 
   if (value && typeof value === 'object') {
-    if (isDateValue(value)) {
-      return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
-    }
     return serializeObjectLiteral(value as DataObject, ancestors);
   }
 
@@ -1345,8 +1346,12 @@ function isSetValue(value: unknown): value is ReadonlySet<unknown> {
   return value instanceof Set || value instanceof ImmutableSet;
 }
 
-function isDateValue(value: unknown): value is Date {
-  return value instanceof Date || value instanceof ImmutableDate;
+function isDateValue(value: unknown): value is Date | ImmutableDate {
+  if (value instanceof Date) {
+    return true;
+  }
+  return Message.isMessage(value)
+    && (value as { $typeName?: string }).$typeName === 'ImmutableDate';
 }
 
 function isUrlValue(value: unknown): value is URL {

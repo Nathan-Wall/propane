@@ -33,8 +33,8 @@ export class User extends Message<User.Data> {
     this.#name = (props ? props.name : "") as string;
     this.#email = (props ? props.email : undefined) as Email;
     this.#passwordHash = (props ? props.passwordHash : undefined) as Hash;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     this.#active = (props ? props.active : false) as boolean;
     this.#eyeColor = (props ? props.eyeColor : "blue") as 'blue' | 'green' | 'brown' | 'hazel';
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height, options) : new Distance();

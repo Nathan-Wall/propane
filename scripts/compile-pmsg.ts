@@ -39,6 +39,7 @@ const propaneConfig = loadPropaneConfig();
 // pms-server/src is excluded because response.pmsg.ts is checked in
 const scanDirs = [
   'common/numbers',
+  'runtime/common/time',
   'tests',
   'pms-server/tests',
 ];
@@ -116,11 +117,19 @@ function generateReexportFile(
 
 function compilePmsgFile(filePath: string): void {
   const source = fs.readFileSync(filePath, 'utf8');
+  const relativePath = path
+    .relative(projectRoot, filePath)
+    .replaceAll('\\', '/');
+  const isImmutableDatePmsg = relativePath === 'runtime/common/time/date.pmsg';
 
   // Use config if available, otherwise use relative path
   const pluginOptions: Record<string, unknown> = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
+    pluginOptions['runtimeImportBase'] = projectRoot;
+  }
+  if (isImmutableDatePmsg) {
+    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
     pluginOptions['runtimeImportBase'] = projectRoot;
   }
   if (propaneConfig.messageTypeIdPrefix) {

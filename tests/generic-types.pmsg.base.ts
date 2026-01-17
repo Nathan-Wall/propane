@@ -627,7 +627,7 @@ export class Timestamped<T extends {
     super(TYPE_TAG_Timestamped, `Timestamped<${tClass.$typeName}>`);
     this.#tClass = tClass;
     this.#inner = (props ? props.inner : new this.#tClass(undefined)) as T;
-    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : new ImmutableDate(props.timestamp) : new ImmutableDate(0);
+    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : ImmutableDate.from(props.timestamp) : new ImmutableDate(0);
     this.#label = (props ? props.label : "") as string;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Timestamped.Data<T>>[] {

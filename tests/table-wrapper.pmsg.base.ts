@@ -29,7 +29,7 @@ export class User extends Message<User.Data> {
     this.#email = (props ? props.email : "") as string;
     this.#name = (props ? props.name : "") as string;
     this.#active = (props ? props.active : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -196,8 +196,8 @@ export class Post extends Message<Post.Data> {
     this.#title = (props ? props.title : "") as string;
     this.#content = (props ? props.content : "") as string;
     this.#published = (props ? props.published : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created) : new ImmutableDate(0);
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
     if (!props) Post.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Post.Data>[] {
