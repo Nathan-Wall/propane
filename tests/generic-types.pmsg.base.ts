@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/no-explicit-any*/
 // Generated from tests/generic-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 /**
  * Test file for generic message types.
  */
 
 // Basic item type for testing
-import type { MessagePropDescriptor, MessageConstructor, DataObject, SetUpdates } from "../runtime/index.js";
+import type { MessagePropDescriptor, MessageConstructor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Item = Symbol("Item");
 export class Item extends Message<Item.Data> {
   static $typeId = "tests/generic-types.pmsg#Item";
-  static $typeHash = "sha256:31dd5c614a9f645e29b72cb60fea0551de8d58d05c28f49551fa6d87ffe6f2a2";
+  static $typeHash = "sha256:6d609cc9f87ef00493f1438e7b911e67d72038015b432841bee7ed8132ead8b2";
   static $instanceTag = Symbol.for("propane:message:" + Item.$typeId);
   static readonly $typeName = "Item";
   static EMPTY: Item;
@@ -58,7 +58,30 @@ export class Item extends Message<Item.Data> {
   static deserialize<T extends typeof Item>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Item.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Item.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -105,7 +128,7 @@ export class Container<T extends {
   equals(other: unknown): boolean;
 }> extends Message<Container.Data<T>> {
   static $typeId = "tests/generic-types.pmsg#Container";
-  static $typeHash = "sha256:d55eb13e738efa051308ecb07097b81d356a4f465b5cb32e1260f75dd70872d7";
+  static $typeHash = "sha256:2b9c9763b8bc6ab3b6c630839e4add04a9369683e891afcbb0eec7780475afb9";
   static $instanceTag = Symbol.for("propane:message:" + Container.$typeId);
   #inner!: T;
   #tClass!: MessageConstructor<T>;
@@ -165,6 +188,7 @@ export class Container<T extends {
     boundCtor.$typeId = Container.$typeId;
     boundCtor.$typeHash = Container.$typeHash;
     boundCtor.$compact = Container.$compact;
+    boundCtor.$compactTag = Container.$compactTag;
     boundCtor.isInstance = (value: unknown) => Container.isInstance(value);
     return boundCtor as unknown as {
       (props: Container.Value<T>): Container<T>;
@@ -186,7 +210,30 @@ export class Container<T extends {
   }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Container<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (Container.$compact === true) {
+        return Container.fromCompact(Container.$compactTag && parsed.startsWith(Container.$compactTag) ? parsed.slice(Container.$compactTag.length) : parsed, options) as any;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === "Container") {
+        if (typeof parsed.$data === "string") {
+          if (Container.$compact === true) {
+            return Container.fromCompact(Container.$compactTag && parsed.$data.startsWith(Container.$compactTag) ? parsed.$data.slice(Container.$compactTag.length) : parsed.$data, options) as any;
+          } else {
+            throw new Error("Invalid compact tagged value for Container.");
+          }
+        } else {
+          return new Container(tClass, Container.prototype.$fromEntries(parsed.$data, options), options);
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Container.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const inner = new tClass((payload["1"] ?? payload["inner"]) as any, options);
     return new Container(tClass, {
       inner
@@ -234,7 +281,7 @@ export class Optional<T extends {
   equals(other: unknown): boolean;
 }> extends Message<Optional.Data<T>> {
   static $typeId = "tests/generic-types.pmsg#Optional";
-  static $typeHash = "sha256:2e014837a5c3c19745dd57144a35589658f9fc29d7b4e99a1fc5c819b3256d38";
+  static $typeHash = "sha256:073d113cc49e44e6741df889768b43ba872bbdc2de33ed4fd5ba7c171fcfe6ea";
   static $instanceTag = Symbol.for("propane:message:" + Optional.$typeId);
   #value!: T | undefined;
   #tClass!: MessageConstructor<T>;
@@ -294,6 +341,7 @@ export class Optional<T extends {
     boundCtor.$typeId = Optional.$typeId;
     boundCtor.$typeHash = Optional.$typeHash;
     boundCtor.$compact = Optional.$compact;
+    boundCtor.$compactTag = Optional.$compactTag;
     boundCtor.isInstance = (value: unknown) => Optional.isInstance(value);
     return boundCtor as unknown as {
       (props: Optional.Value<T>): Optional<T>;
@@ -315,7 +363,30 @@ export class Optional<T extends {
   }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Optional<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (Optional.$compact === true) {
+        return Optional.fromCompact(Optional.$compactTag && parsed.startsWith(Optional.$compactTag) ? parsed.slice(Optional.$compactTag.length) : parsed, options) as any;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === "Optional") {
+        if (typeof parsed.$data === "string") {
+          if (Optional.$compact === true) {
+            return Optional.fromCompact(Optional.$compactTag && parsed.$data.startsWith(Optional.$compactTag) ? parsed.$data.slice(Optional.$compactTag.length) : parsed.$data, options) as any;
+          } else {
+            throw new Error("Invalid compact tagged value for Optional.");
+          }
+        } else {
+          return new Optional(tClass, Optional.prototype.$fromEntries(parsed.$data, options), options);
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Optional.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const valueRaw = payload["1"] ?? payload["value"];
     const value = valueRaw !== undefined ? new tClass(valueRaw as any, options) : undefined;
     return new Optional(tClass, {
@@ -372,7 +443,7 @@ export class Pair<T extends {
   equals(other: unknown): boolean;
 }> extends Message<Pair.Data<T, U>> {
   static $typeId = "tests/generic-types.pmsg#Pair";
-  static $typeHash = "sha256:18907f158369cbd52913fc2c081ec9cb3b3669bf3ff20fe93594df2cc3f9ba54";
+  static $typeHash = "sha256:03e37bdb30b8ccf3dcfeb01c3735e7312e09f40845fbb10c811e184553fb4daa";
   static $instanceTag = Symbol.for("propane:message:" + Pair.$typeId);
   #first!: T;
   #second!: U;
@@ -450,6 +521,7 @@ export class Pair<T extends {
     boundCtor.$typeId = Pair.$typeId;
     boundCtor.$typeHash = Pair.$typeHash;
     boundCtor.$compact = Pair.$compact;
+    boundCtor.$compactTag = Pair.$compactTag;
     boundCtor.isInstance = (value: unknown) => Pair.isInstance(value);
     return boundCtor as unknown as {
       (props: Pair.Value<T, U>): Pair<T, U>;
@@ -476,7 +548,30 @@ export class Pair<T extends {
   }>(tClass: MessageConstructor<T>, uClass: MessageConstructor<U>, data: string, options?: {
     skipValidation: boolean;
   }): Pair<T, U> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (Pair.$compact === true) {
+        return Pair.fromCompact(Pair.$compactTag && parsed.startsWith(Pair.$compactTag) ? parsed.slice(Pair.$compactTag.length) : parsed, options) as any;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === "Pair") {
+        if (typeof parsed.$data === "string") {
+          if (Pair.$compact === true) {
+            return Pair.fromCompact(Pair.$compactTag && parsed.$data.startsWith(Pair.$compactTag) ? parsed.$data.slice(Pair.$compactTag.length) : parsed.$data, options) as any;
+          } else {
+            throw new Error("Invalid compact tagged value for Pair.");
+          }
+        } else {
+          return new Pair(tClass, uClass, Pair.prototype.$fromEntries(parsed.$data, options), options);
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Pair.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const first = new tClass((payload["1"] ?? payload["first"]) as any, options);
     const second = new uClass((payload["2"] ?? payload["second"]) as any, options);
     return new Pair(tClass, uClass, {
@@ -542,7 +637,7 @@ export namespace Pair {
 const TYPE_TAG_Parent = Symbol("Parent");
 export class Parent extends Message<Parent.Data> {
   static $typeId = "tests/generic-types.pmsg#Parent";
-  static $typeHash = "sha256:8e4f5777d106ce5486748735bd3e81185b11249be9ee5ab004be2d1b7e5469f1";
+  static $typeHash = "sha256:fbadf683d6b7d4b4a8ca1ea499825be12793ae5c0dab2286f9c45c8e52435de7";
   static $instanceTag = Symbol.for("propane:message:" + Parent.$typeId);
   static readonly $typeName = "Parent";
   static EMPTY: Parent;
@@ -579,7 +674,30 @@ export class Parent extends Message<Parent.Data> {
   static deserialize<T extends typeof Parent>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Parent.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Parent.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -615,7 +733,7 @@ export class Timestamped<T extends {
   equals(other: unknown): boolean;
 }> extends Message<Timestamped.Data<T>> {
   static $typeId = "tests/generic-types.pmsg#Timestamped";
-  static $typeHash = "sha256:f76ef5efe2c55cc59ff4d4ed332d3870099d7f81ac3c1d7de6ecf117a99e92f4";
+  static $typeHash = "sha256:80e90fd2d6cd64329403fb2da22f9c9a36c2d10f7826e8afcb80fb8f6edc943d";
   static $instanceTag = Symbol.for("propane:message:" + Timestamped.$typeId);
   #inner!: T;
   #timestamp!: ImmutableDate;
@@ -627,7 +745,7 @@ export class Timestamped<T extends {
     super(TYPE_TAG_Timestamped, `Timestamped<${tClass.$typeName}>`);
     this.#tClass = tClass;
     this.#inner = (props ? props.inner : new this.#tClass(undefined)) as T;
-    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : ImmutableDate.from(props.timestamp) : new ImmutableDate(0);
+    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : new ImmutableDate(props.timestamp, options) : new ImmutableDate();
     this.#label = (props ? props.label : "") as string;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Timestamped.Data<T>>[] {
@@ -655,13 +773,57 @@ export class Timestamped<T extends {
     props.inner = innerValue as T;
     const timestampValue = entries["2"] === undefined ? entries["timestamp"] : entries["2"];
     if (timestampValue === undefined) throw new Error("Missing required property \"timestamp\".");
-    if (!(timestampValue as object instanceof Date || timestampValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
-    props.timestamp = timestampValue as Date;
+    const timestampMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(timestampValue);
+    if (!(timestampMessageValue as object instanceof Date || timestampMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
+    props.timestamp = timestampMessageValue as ImmutableDate | Date;
     const labelValue = entries["3"] === undefined ? entries["label"] : entries["3"];
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");
     if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
     props.label = labelValue as string;
     return props as Timestamped.Data<T>;
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "timestamp":
+        return new Timestamped(this.#tClass, {
+          inner: this.#inner,
+          timestamp: child as ImmutableDate | Date,
+          label: this.#label
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["timestamp", this.#timestamp] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   static override bind<T extends {
     $typeName: string;
@@ -695,6 +857,7 @@ export class Timestamped<T extends {
     boundCtor.$typeId = Timestamped.$typeId;
     boundCtor.$typeHash = Timestamped.$typeHash;
     boundCtor.$compact = Timestamped.$compact;
+    boundCtor.$compactTag = Timestamped.$compactTag;
     boundCtor.isInstance = (value: unknown) => Timestamped.isInstance(value);
     return boundCtor as unknown as {
       (props: Timestamped.Value<T>): Timestamped<T>;
@@ -716,11 +879,63 @@ export class Timestamped<T extends {
   }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Timestamped<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (Timestamped.$compact === true) {
+        return Timestamped.fromCompact(Timestamped.$compactTag && parsed.startsWith(Timestamped.$compactTag) ? parsed.slice(Timestamped.$compactTag.length) : parsed, options) as any;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === "Timestamped") {
+        if (typeof parsed.$data === "string") {
+          if (Timestamped.$compact === true) {
+            return Timestamped.fromCompact(Timestamped.$compactTag && parsed.$data.startsWith(Timestamped.$compactTag) ? parsed.$data.slice(Timestamped.$compactTag.length) : parsed.$data, options) as any;
+          } else {
+            throw new Error("Invalid compact tagged value for Timestamped.");
+          }
+        } else {
+          return new Timestamped(tClass, Timestamped.prototype.$fromEntries(parsed.$data, options), options);
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Timestamped.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const timestampValue = payload["2"] === undefined ? payload["timestamp"] : payload["2"];
     if (timestampValue === undefined) throw new Error("Missing required property \"timestamp\".");
-    if (!(timestampValue as object instanceof Date || timestampValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
-    const timestamp = timestampValue as Date;
+    const timestampMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(timestampValue);
+    if (!(timestampMessageValue as object instanceof Date || timestampMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
+    const timestamp = timestampMessageValue as ImmutableDate | Date;
     const labelValue = payload["3"] === undefined ? payload["label"] : payload["3"];
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");
     if (!(typeof labelValue === "string")) throw new Error("Invalid value for property \"label\".");
@@ -767,7 +982,7 @@ export class Timestamped<T extends {
   setTimestamp(value: ImmutableDate | Date) {
     return this.$update(new Timestamped(this.#tClass, {
       inner: this.#inner,
-      timestamp: value as ImmutableDate | Date,
+      timestamp: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       label: this.#label
     }) as this as this);
   }
@@ -793,7 +1008,7 @@ export namespace Timestamped {
 const TYPE_TAG_Sized = Symbol("Sized");
 export class Sized<P extends number> extends Message<Sized.Data<P>> {
   static $typeId = "tests/generic-types.pmsg#Sized";
-  static $typeHash = "sha256:d2e3ff201ae097d64aff33ec9007c8f122ea5e5fe00a9aa90d048904591cda6e";
+  static $typeHash = "sha256:ee8369a33fc3787dceca06c8a0deaa1e4f5581d0dac82d1dd6d4eaf1884349eb";
   static $instanceTag = Symbol.for("propane:message:" + Sized.$typeId);
   static readonly $typeName = "Sized";
   static EMPTY: Sized<any>;
@@ -823,10 +1038,33 @@ export class Sized<P extends number> extends Message<Sized.Data<P>> {
     props.size = sizeValue as P;
     return props as Sized.Data<P>;
   }
-  static deserialize<T extends typeof Sized>(this: T, data: string, options?: {
+  static deserialize<T extends typeof Sized>(this: T, P: number, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(P, this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(P, this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Sized.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Sized.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

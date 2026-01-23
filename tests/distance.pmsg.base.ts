@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/distance.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 export type DistanceUnit = 'm' | 'ft';
 const TYPE_TAG_Distance = Symbol("Distance");
 export class Distance extends Message<Distance.Data> {
   static $typeId = "tests/distance.pmsg#Distance";
-  static $typeHash = "sha256:d0a784525994729d16dab5957d420b8a270aeaddeacd0521a28fcaba1c43e12b";
+  static $typeHash = "sha256:0e1d6c5f183dc88018a39105358d133a7c04a8d7271ffb6a8c55b2b54efc2915";
   static $instanceTag = Symbol.for("propane:message:" + Distance.$typeId);
   static readonly $typeName = "Distance";
   static EMPTY: Distance;
@@ -52,7 +52,30 @@ export class Distance extends Message<Distance.Data> {
   static deserialize<T extends typeof Distance>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Distance.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Distance.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

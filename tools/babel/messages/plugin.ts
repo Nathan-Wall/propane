@@ -110,6 +110,8 @@ export interface PropaneState {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
+  /** Map of message type name to its compact tag (or full tag fallback) */
+  messageTagsByName?: Map<string, string>;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -263,6 +265,7 @@ const MAX_SUGGESTION_DISTANCE = 3;
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 const TYPE_ID_PATTERN = /(?:^|\s)@typeId\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 const COMPACT_PATTERN = /(?:^|\s)@compact(?!\w)/;
+const COMPACT_TAG_PATTERN = /(?:^|\s)@compact\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
  * Check if a comment line starts with a decorator (@ at line start).
@@ -289,6 +292,10 @@ function findClosestDecorator(unknown: string): string | null {
   }
 
   return closest;
+}
+
+function isValidCompactTag(tag: string): boolean {
+  return (tag.length === 1 && /[A-Za-z]/.test(tag)) || tag === '#';
 }
 
 /**
@@ -336,13 +343,19 @@ function extractDecoratorInfo(
   commentSourcePath: NodePath<t.Node>,
   isMessageWrapper: boolean,
   opts?: PropanePluginOptions
-): { extendInfo: ExtendInfo | null; typeId: string | null; compact: boolean } {
+): {
+  extendInfo: ExtendInfo | null;
+  typeId: string | null;
+  compact: boolean;
+  compactTag: string | null;
+} {
   const comments = commentSourcePath.node.leadingComments ?? [];
   const extendInfos: { comment: t.Comment; path: string }[] = [];
   let typeId: string | null = null;
   let typeIdCount = 0;
   let compact = false;
   let compactCount = 0;
+  let compactTag: string | null = null;
   const sourceFilename = getSourceFilename(typeAliasPath);
 
   for (const comment of comments) {
@@ -439,10 +452,10 @@ function extractDecoratorInfo(
 
       const hasCompactOnLine = /@compact(?!\w)/.test(cleanLine);
       if (hasCompactOnLine) {
-        if (/@compact\s*\(/.test(cleanLine)) {
+        const compactTagMatch = COMPACT_TAG_PATTERN.exec(cleanLine);
+        if (/@compact\s*\(/.test(cleanLine) && !compactTagMatch) {
           throw typeAliasPath.buildCodeFrameError(
-            '@compact decorator does not take arguments.\n\n'
-            + 'Use: // @compact'
+            '@compact decorator expects a single tag string, e.g. @compact(\'D\').'
           );
         }
         compactCount++;
@@ -452,6 +465,14 @@ function extractDecoratorInfo(
           );
         }
         compact = true;
+        if (compactTagMatch) {
+          compactTag = compactTagMatch[1] ?? null;
+          if (compactTag && !isValidCompactTag(compactTag)) {
+            throw typeAliasPath.buildCodeFrameError(
+              '@compact tag must be a single ASCII letter or "#".'
+            );
+          }
+        }
       }
 
       // Check for unknown decorators (including deprecated @message)
@@ -536,17 +557,11 @@ function extractDecoratorInfo(
     );
   }
 
-  if (compact && extendInfos.length === 0) {
-    throw typeAliasPath.buildCodeFrameError(
-      '@compact decorator requires an @extend file to implement toCompact/fromCompact.\n\n'
-      + "Add an extension file:\n  // @extend('./foo.ext.ts')"
-    );
-  }
-
   return {
     extendInfo: extendInfos.length > 0 ? { path: extendInfos[0]!.path } : null,
     typeId,
     compact,
+    compactTag,
   };
 }
 
@@ -643,6 +658,9 @@ export default function propanePlugin() {
           state.pmtFile = pmtFile;
           state.pmtMessages = new Map(
             pmtFile.messages.map((m) => [m.name, m])
+          );
+          state.messageTagsByName = new Map(
+            pmtFile.messages.map((m) => [m.name, m.compactTag ?? m.name])
           );
 
           const relative = filename ? pathTransform(filename) : 'unknown';
@@ -784,6 +802,7 @@ export default function propanePlugin() {
           pmtMessage,
           typeId: decoratorInfo.typeId ?? undefined,
           compact: decoratorInfo.compact,
+          compactTag: decoratorInfo.compactTag ?? undefined,
         });
 
         if (replacement) {
@@ -862,6 +881,7 @@ export default function propanePlugin() {
           pmtMessage,
           typeId: decoratorInfo.typeId ?? undefined,
           compact: decoratorInfo.compact,
+          compactTag: decoratorInfo.compactTag ?? undefined,
         });
 
         if (replacement) {

@@ -6,12 +6,12 @@ import { Table } from '@propane/postgres';
  * Test Table<T> wrapper for database types.
  * Table types are message types that also generate database schema.
  */
-import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 const TYPE_TAG_User = Symbol("User");
 export class User extends Message<User.Data> {
   static $typeId = "tests/table-wrapper.pmsg#User";
-  static $typeHash = "sha256:ff96e03d2e955b46229d7258f6d2a9432d51c4a4ccc93893c2a2a7df759f7128";
+  static $typeHash = "sha256:6023ade2fcdc1500dd5759e6f011e62ce50be8b855d698cdfd55e76125eb48ba";
   static $instanceTag = Symbol.for("propane:message:" + User.$typeId);
   static readonly $typeName = "User";
   static EMPTY: User;
@@ -29,7 +29,7 @@ export class User extends Message<User.Data> {
     this.#email = (props ? props.email : "") as string;
     this.#name = (props ? props.name : "") as string;
     this.#active = (props ? props.active : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -78,17 +78,86 @@ export class User extends Message<User.Data> {
     props.active = activeValue as boolean;
     const createdValue = entries["5"] === undefined ? entries["created"] : entries["5"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     return props as User.Data;
   }
   static from(value: User.Value): User {
     return value instanceof User ? value : new User(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof User)({
+          id: this.#id,
+          email: this.#email,
+          name: this.#name,
+          active: this.#active,
+          created: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof User>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for User.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected User.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -131,7 +200,7 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: this.#name,
       active: this.#active,
-      created: value as ImmutableDate | Date
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
   setEmail(value: string) {
@@ -175,7 +244,7 @@ export namespace User {
 const TYPE_TAG_Post = Symbol("Post");
 export class Post extends Message<Post.Data> {
   static $typeId = "tests/table-wrapper.pmsg#Post";
-  static $typeHash = "sha256:0957a5a39c4a32182e1be3f7200f0f2e3e966ed19d683c6d49e5422da9fe6d1a";
+  static $typeHash = "sha256:0ca590ea0d7a06bda1236a49a861654dd7929c2c65774066bc2994c413c8cc17";
   static $instanceTag = Symbol.for("propane:message:" + Post.$typeId);
   static readonly $typeName = "Post";
   static EMPTY: Post;
@@ -196,8 +265,8 @@ export class Post extends Message<Post.Data> {
     this.#title = (props ? props.title : "") as string;
     this.#content = (props ? props.content : "") as string;
     this.#published = (props ? props.published : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Post.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Post.Data>[] {
@@ -258,21 +327,132 @@ export class Post extends Message<Post.Data> {
     props.published = publishedValue as boolean;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Post.Data;
   }
   static from(value: Post.Value): Post {
     return value instanceof Post ? value : new Post(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof Post)({
+          id: this.#id,
+          userId: this.#userId,
+          title: this.#title,
+          content: this.#content,
+          published: this.#published,
+          created: child as ImmutableDate | Date,
+          updated: this.#updated as ImmutableDate | Date
+        }) as this;
+      case "updated":
+        return new (this.constructor as typeof Post)({
+          id: this.#id,
+          userId: this.#userId,
+          title: this.#title,
+          content: this.#content,
+          published: this.#published,
+          created: this.#created as ImmutableDate | Date,
+          updated: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Post>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Post.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Post.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -324,7 +504,7 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: value as ImmutableDate | Date,
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date
     }) as this);
   }
@@ -369,7 +549,7 @@ export class Post extends Message<Post.Data> {
       content: this.#content,
       published: this.#published,
       created: this.#created as ImmutableDate | Date,
-      updated: value as ImmutableDate | Date
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
   setUserId(value: bigint) {

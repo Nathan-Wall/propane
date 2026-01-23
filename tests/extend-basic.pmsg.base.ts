@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/extend-basic.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // @extend('./extend-basic.pmsg.ext.ts')
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Person$Base = Symbol("Person");
 export class Person$Base extends Message<Person.Data> {
   static $typeId = "tests/extend-basic.pmsg#Person";
-  static $typeHash = "sha256:f8ce602250e03d8eb5043186fc78c39a2ce8d81133bc45d1c8d4a3e7db00cf9d";
+  static $typeHash = "sha256:8c2541fc00cea481e882dd9d20afb0942dc6c171d46f87e5cec0879e6fa693be";
   static $instanceTag = Symbol.for("propane:message:" + Person$Base.$typeId);
   static readonly $typeName = "Person";
   static EMPTY: Person$Base;
@@ -64,7 +64,30 @@ export class Person$Base extends Message<Person.Data> {
   static deserialize<T extends typeof Person$Base>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Person.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Person.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

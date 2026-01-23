@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/primitives.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Primitives = Symbol("Primitives");
 export class Primitives extends Message<Primitives.Data> {
   static $typeId = "tests/primitives.pmsg#Primitives";
-  static $typeHash = "sha256:b97f127f2aa566ade4f46bd74195959cc5a9b1ed990a96ef4eeda052f4339522";
+  static $typeHash = "sha256:813158f36347d1993ab4a8099129136978f4d84c989d99412d3f6c11ece28f16";
   static $instanceTag = Symbol.for("propane:message:" + Primitives.$typeId);
   static readonly $typeName = "Primitives";
   static EMPTY: Primitives;
@@ -92,7 +92,30 @@ export class Primitives extends Message<Primitives.Data> {
   static deserialize<T extends typeof Primitives>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Primitives.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Primitives.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

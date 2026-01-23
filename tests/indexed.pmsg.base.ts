@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Indexed = Symbol("Indexed");
 export class Indexed extends Message<Indexed.Data> {
   static $typeId = "tests/indexed.pmsg#Indexed";
-  static $typeHash = "sha256:9a67fc70069c9e4e68fd4b94149fd1786dad337888c4d7e7d8fa15427400c35e";
+  static $typeHash = "sha256:e62a74166f211c1b5065ea74593e8de80145df2d65655f953becf7174cee44c4";
   static $instanceTag = Symbol.for("propane:message:" + Indexed.$typeId);
   static readonly $typeName = "Indexed";
   static EMPTY: Indexed;
@@ -60,7 +60,8 @@ export class Indexed extends Message<Indexed.Data> {
     }, {
       name: "alias",
       fieldNumber: 7,
-      getValue: () => this.#alias as string | null
+      getValue: () => this.#alias as string | null,
+      unionHasString: true
     }, {
       name: "status",
       fieldNumber: 8,
@@ -111,7 +112,30 @@ export class Indexed extends Message<Indexed.Data> {
   static deserialize<T extends typeof Indexed>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Indexed.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Indexed.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -1,16 +1,17 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from runtime/common/time/date.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
 
 // @extend('./date.pmsg.ext.ts')
-// @compact
+// @compact('D')
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../pmsg-base.js";
 const TYPE_TAG_ImmutableDate$Base = Symbol("ImmutableDate");
 export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
   static $typeId = "runtime/common/time/date.pmsg#ImmutableDate";
-  static $typeHash = "sha256:aa401276ed6b23307b915916c2cfa572399e5bc33853d52d07333d87a9a5d54f";
+  static $typeHash = "sha256:21c96c8ee9f69febb7b38bb56f5e78ccbed843348a1533947a8cd9c9d391efe1";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableDate$Base.$typeId);
   static override readonly $compact = true;
+  static override readonly $compactTag = "D";
   static readonly $typeName = "ImmutableDate";
   static EMPTY: ImmutableDate$Base;
   #epochMs!: number;
@@ -46,7 +47,30 @@ export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
   static deserialize<T extends typeof ImmutableDate$Base>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ImmutableDate.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

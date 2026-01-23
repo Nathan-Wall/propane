@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/set.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableSet, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_SetMessage = Symbol("SetMessage");
 export class SetMessage extends Message<SetMessage.Data> {
   static $typeId = "tests/set.pmsg#SetMessage";
-  static $typeHash = "sha256:b0fd419b9ccbd0317e0810709ede88d9be5c2c988e588ef43e71c303c3ea5032";
+  static $typeHash = "sha256:4e004b488d94512d6b97e6b86490a4c510bc31f07d3c3010698587ddd33777dc";
   static $instanceTag = Symbol.for("propane:message:" + SetMessage.$typeId);
   static readonly $typeName = "SetMessage";
   static EMPTY: SetMessage;
@@ -74,7 +74,30 @@ export class SetMessage extends Message<SetMessage.Data> {
   static deserialize<T extends typeof SetMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for SetMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected SetMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

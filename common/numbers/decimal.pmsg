@@ -1,7 +1,7 @@
 import { Message } from '@propane/runtime';
 
 // @extend('./decimal.pmsg.ext.ts')
-// @compact
+// @compact('#')
 export type Decimal<P extends number, S extends number> = Message<{
   '1:mantissa': bigint;
   '2:precision': number;

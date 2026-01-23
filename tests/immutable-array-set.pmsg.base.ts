@@ -2,12 +2,12 @@
 // Generated from tests/immutable-array-set.pmsg
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_ImmutableArraySet = Symbol("ImmutableArraySet");
 export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static $typeId = "tests/immutable-array-set.pmsg#ImmutableArraySet";
-  static $typeHash = "sha256:178dd9cb33b9f75f27304f809f79b873d9b03dd62c0f1099e7a464b7b502f09a";
+  static $typeHash = "sha256:79db19b97fb6e8f9f77575b4782b28f2adb5112fb6cd72149bc70d0ec981db22";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableArraySet.$typeId);
   static readonly $typeName = "ImmutableArraySet";
   static EMPTY: ImmutableArraySet;
@@ -76,7 +76,30 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   static deserialize<T extends typeof ImmutableArraySet>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ImmutableArraySet.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ImmutableArraySet.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -6,7 +6,7 @@
  * Tests validation code generation for various validator types.
  */
 
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
 import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53 } from '@propane/types';
 
 // Test: Numeric sign validators
@@ -14,7 +14,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_NumericSignValidators = Symbol("NumericSignValidators");
 export class NumericSignValidators extends Message<NumericSignValidators.Data> {
   static $typeId = "tests/validators.pmsg#NumericSignValidators";
-  static $typeHash = "sha256:36a19b973bb17ef7ca9958fffa8017b033ac9fe7600a3ab602416c4ce9691503";
+  static $typeHash = "sha256:3675be2c18b6fae26861147b6d5b5ebd27c7fad0ef19aed7e5492dd506373c27";
   static $instanceTag = Symbol.for("propane:message:" + NumericSignValidators.$typeId);
   static readonly $typeName = "NumericSignValidators";
   static EMPTY: NumericSignValidators;
@@ -127,7 +127,30 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
   static deserialize<T extends typeof NumericSignValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for NumericSignValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected NumericSignValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -197,7 +220,7 @@ export namespace NumericSignValidators {
 const TYPE_TAG_NumericBoundValidators = Symbol("NumericBoundValidators");
 export class NumericBoundValidators extends Message<NumericBoundValidators.Data> {
   static $typeId = "tests/validators.pmsg#NumericBoundValidators";
-  static $typeHash = "sha256:2b864e109df7262920a4e25d84492f529e77778bfd49ab7007a1dc5c63a4f1f6";
+  static $typeHash = "sha256:3a16c8065527929137fd1b12ff9f0b2b4de5df772d47a699f363e97f1525095e";
   static $instanceTag = Symbol.for("propane:message:" + NumericBoundValidators.$typeId);
   static readonly $typeName = "NumericBoundValidators";
   static EMPTY: NumericBoundValidators;
@@ -291,7 +314,30 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
   static deserialize<T extends typeof NumericBoundValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for NumericBoundValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected NumericBoundValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -347,7 +393,7 @@ export namespace NumericBoundValidators {
 const TYPE_TAG_StringValidators = Symbol("StringValidators");
 export class StringValidators extends Message<StringValidators.Data> {
   static $typeId = "tests/validators.pmsg#StringValidators";
-  static $typeHash = "sha256:7be7a68596ee8b760d8b68bf9d51b819b557fde7ebdd7d5bf2e4187b4262e4de";
+  static $typeHash = "sha256:bf7c767b1141b90b32775818cb7975d9c1eccc137eed46736422b7b16e6fb870";
   static $instanceTag = Symbol.for("propane:message:" + StringValidators.$typeId);
   static readonly $typeName = "StringValidators";
   static EMPTY: StringValidators;
@@ -460,7 +506,30 @@ export class StringValidators extends Message<StringValidators.Data> {
   static deserialize<T extends typeof StringValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for StringValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected StringValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -530,7 +599,7 @@ export namespace StringValidators {
 const TYPE_TAG_BrandedValidators = Symbol("BrandedValidators");
 export class BrandedValidators extends Message<BrandedValidators.Data> {
   static $typeId = "tests/validators.pmsg#BrandedValidators";
-  static $typeHash = "sha256:57794d2132c0099241010e739b1c3744c9ea6b0d84595b1c87b23f60c04af039";
+  static $typeHash = "sha256:6310d50bc3ecd5e3bdde152ef3e8a936704da99479b6985d1ed2836abf8927b1";
   static $instanceTag = Symbol.for("propane:message:" + BrandedValidators.$typeId);
   static readonly $typeName = "BrandedValidators";
   static EMPTY: BrandedValidators;
@@ -717,7 +786,30 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   static deserialize<T extends typeof BrandedValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for BrandedValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected BrandedValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -823,7 +915,7 @@ export namespace BrandedValidators {
 const TYPE_TAG_OptionalValidators = Symbol("OptionalValidators");
 export class OptionalValidators extends Message<OptionalValidators.Data> {
   static $typeId = "tests/validators.pmsg#OptionalValidators";
-  static $typeHash = "sha256:75e0bf7234d0d429d2cdfbc89b2a6a9ab6bf3e37674eadf8cf56e4779d70206b";
+  static $typeHash = "sha256:76a7787fc4e985aef504dd49cbbaedce634446db44752851afd09601f2cc0d55";
   static $instanceTag = Symbol.for("propane:message:" + OptionalValidators.$typeId);
   static readonly $typeName = "OptionalValidators";
   static EMPTY: OptionalValidators;
@@ -949,7 +1041,30 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
   static deserialize<T extends typeof OptionalValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for OptionalValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected OptionalValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -1033,7 +1148,7 @@ export namespace OptionalValidators {
 const TYPE_TAG_ArrayValidators = Symbol("ArrayValidators");
 export class ArrayValidators extends Message<ArrayValidators.Data> {
   static $typeId = "tests/validators.pmsg#ArrayValidators";
-  static $typeHash = "sha256:5b76c597b7294cbc7a38c7d0fec0a814af34bdd74abb4354d9c4ffd825ed9504";
+  static $typeHash = "sha256:173dbbb54086d56eb389666b3c11a5b845160b8fb638e1022c9b86b26c393397";
   static $instanceTag = Symbol.for("propane:message:" + ArrayValidators.$typeId);
   static readonly $typeName = "ArrayValidators";
   static EMPTY: ArrayValidators;
@@ -1127,7 +1242,30 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
   static deserialize<T extends typeof ArrayValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ArrayValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ArrayValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -1182,7 +1320,7 @@ export namespace ArrayValidators {
 const TYPE_TAG_BigintValidators = Symbol("BigintValidators");
 export class BigintValidators extends Message<BigintValidators.Data> {
   static $typeId = "tests/validators.pmsg#BigintValidators";
-  static $typeHash = "sha256:019dda557de27ec65a24190949e9707c636852ee46409ce659e57dac66f0d8a8";
+  static $typeHash = "sha256:db66524fbaf0d42bf2de5f6041121dd6e6255a0461f027a103f5448c5a038075";
   static $instanceTag = Symbol.for("propane:message:" + BigintValidators.$typeId);
   static readonly $typeName = "BigintValidators";
   static EMPTY: BigintValidators;
@@ -1295,7 +1433,30 @@ export class BigintValidators extends Message<BigintValidators.Data> {
   static deserialize<T extends typeof BigintValidators>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for BigintValidators.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected BigintValidators.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

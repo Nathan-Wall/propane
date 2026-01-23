@@ -24,7 +24,7 @@ export default function runMapPropaneTests() {
     extras: extras as Map<string, MapMessage_Extras_Value>,
   });
   assert(
-    mapInstance.serialize() === ':{M[[one,1],[2,4]],M[[owner,{value:Alice}]],M[[alpha,{note:A}],[beta,{note:null}]]}',
+    mapInstance.serialize() === ':{M[["one",1],[2,4]],M[[owner,{value:Alice}]],M[[alpha,{note:"A"}],[beta,{note:null}]]}',
     'Map serialization incorrect.'
   );
   assert(isMapValue(mapInstance.labels), 'Labels should stay Map.');

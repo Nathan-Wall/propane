@@ -20,6 +20,30 @@ export default function runObjectOnlyTests() {
   const objectRoundTrip = ObjectOnly.deserialize(objectSerialized);
   assert(objectRoundTrip.name === 'ObjectOnly', 'Compact object serialization should be readable.');
 
+  const spacedName = new ObjectOnly({
+    id: 11,
+    name: 'Alpha Beta',
+    age: 40,
+    active: true,
+  });
+  const spacedSerialized = spacedName.serialize();
+  assert(
+    spacedSerialized === ':{id:11,name:"Alpha Beta",age:40,active:true}',
+    `String with spaces should serialize with quotes. Got: ${spacedSerialized}`
+  );
+
+  const slashName = new ObjectOnly({
+    id: 12,
+    name: 'A/B',
+    age: 41,
+    active: false,
+  });
+  const slashSerialized = slashName.serialize();
+  assert(
+    slashSerialized === ':{id:12,name:A/B,age:41,active:false}',
+    `String with "/" should serialize without quotes. Got: ${slashSerialized}`
+  );
+
   const compactRaw = ':{id:30,name:Obj,age:60,active:true}';
   const compactHydrated = ObjectOnly.deserialize(compactRaw);
   assert(compactHydrated.name === 'Obj', 'Compact object raw deserialize lost name.');

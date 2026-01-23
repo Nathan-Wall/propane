@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/object-only.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_ObjectOnly = Symbol("ObjectOnly");
 export class ObjectOnly extends Message<ObjectOnly.Data> {
   static $typeId = "tests/object-only.pmsg#ObjectOnly";
-  static $typeHash = "sha256:2e5832d3f7368c3b1995af784289d77b9e5042d07ffc3b2700564af64b4c2626";
+  static $typeHash = "sha256:cc2dd7b5a80886210b2681984939955b8ade2c4ffceb7d8e4c241f7d8077ae78";
   static $instanceTag = Symbol.for("propane:message:" + ObjectOnly.$typeId);
   static readonly $typeName = "ObjectOnly";
   static EMPTY: ObjectOnly;
@@ -72,7 +72,30 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
   static deserialize<T extends typeof ObjectOnly>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ObjectOnly.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ObjectOnly.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

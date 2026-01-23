@@ -3,12 +3,12 @@
 import { Distance } from './distance.pmsg.js';
 import { Email } from './email.pmsg.js';
 import { Hash } from './hash.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_User = Symbol("User");
 export class User extends Message<User.Data> {
   static $typeId = "tests/user.pmsg#User";
-  static $typeHash = "sha256:2ee83b1cdb57b43fd741da41beecf093eeb31f5f9c2d7d97327cf7a701ea99ac";
+  static $typeHash = "sha256:943e8277dce255d01d16cd77717e14102159c3f64a93bad0ce4f248eaf0e9190";
   static $instanceTag = Symbol.for("propane:message:" + User.$typeId);
   static readonly $typeName = "User";
   static EMPTY: User;
@@ -33,8 +33,8 @@ export class User extends Message<User.Data> {
     this.#name = (props ? props.name : "") as string;
     this.#email = (props ? props.email : undefined) as Email;
     this.#passwordHash = (props ? props.passwordHash : undefined) as Hash;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     this.#active = (props ? props.active : false) as boolean;
     this.#eyeColor = (props ? props.eyeColor : "blue") as 'blue' | 'green' | 'brown' | 'hazel';
     this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height, options) : new Distance();
@@ -72,7 +72,8 @@ export class User extends Message<User.Data> {
     }, {
       name: "eyeColor",
       fieldNumber: null,
-      getValue: () => this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel'
+      getValue: () => this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+      unionHasString: true
     }, {
       name: "height",
       fieldNumber: null,
@@ -100,12 +101,70 @@ export class User extends Message<User.Data> {
     props.passwordHash = passwordHashValue as Hash;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     const activeValue = entries["active"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");
     if (!(typeof activeValue === "boolean")) throw new Error("Invalid value for property \"active\".");
@@ -116,7 +175,35 @@ export class User extends Message<User.Data> {
     props.eyeColor = eyeColorValue as 'blue' | 'green' | 'brown' | 'hazel';
     const heightValue = entries["height"];
     if (heightValue === undefined) throw new Error("Missing required property \"height\".");
-    const heightMessageValue = typeof heightValue === "string" && Distance.$compact === true ? Distance.fromCompact(heightValue, options) as any : heightValue instanceof Distance ? heightValue : new Distance(heightValue as Distance.Value, options);
+    const heightMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && Distance.$compact === true) {
+        result = Distance.fromCompact(Distance.$compactTag && value.startsWith(Distance.$compactTag) ? value.slice(Distance.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "Distance") {
+            if (typeof value.$data === "string") {
+              if (Distance.$compact === true) {
+                result = Distance.fromCompact(Distance.$compactTag && value.$data.startsWith(Distance.$compactTag) ? value.$data.slice(Distance.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for Distance.");
+              }
+            } else {
+              result = new Distance(Distance.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected Distance.");
+          }
+        } else {
+          if (value instanceof Distance) {
+            result = value;
+          } else {
+            result = new Distance(value as Distance.Value, options);
+          }
+        }
+      }
+      return result;
+    })(heightValue);
     props.height = heightMessageValue;
     return props as User.Data;
   }
@@ -135,6 +222,30 @@ export class User extends Message<User.Data> {
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
+      case "created":
+        return new (this.constructor as typeof User)({
+          id: this.#id,
+          name: this.#name,
+          email: this.#email,
+          passwordHash: this.#passwordHash,
+          created: child as ImmutableDate | Date,
+          updated: this.#updated as ImmutableDate | Date,
+          active: this.#active,
+          eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+          height: this.#height as Distance.Value
+        }) as this;
+      case "updated":
+        return new (this.constructor as typeof User)({
+          id: this.#id,
+          name: this.#name,
+          email: this.#email,
+          passwordHash: this.#passwordHash,
+          created: this.#created as ImmutableDate | Date,
+          updated: child as ImmutableDate | Date,
+          active: this.#active,
+          eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
+          height: this.#height as Distance.Value
+        }) as this;
       case "height":
         return new (this.constructor as typeof User)({
           id: this.#id,
@@ -152,12 +263,37 @@ export class User extends Message<User.Data> {
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
     yield ["height", this.#height] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   static deserialize<T extends typeof User>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for User.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected User.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -216,7 +352,7 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email,
       passwordHash: this.#passwordHash,
-      created: value as ImmutableDate | Date,
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
       eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
@@ -308,7 +444,7 @@ export class User extends Message<User.Data> {
       email: this.#email,
       passwordHash: this.#passwordHash,
       created: this.#created as ImmutableDate | Date,
-      updated: value as ImmutableDate | Date,
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       active: this.#active,
       eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
       height: this.#height as Distance.Value

@@ -40,9 +40,14 @@ const propaneConfig = loadPropaneConfig();
 const scanDirs = [
   'common/numbers',
   'runtime/common/time',
+  'runtime/common/web',
   'tests',
   'pms-server/tests',
 ];
+const runtimeOverrides = new Set([
+  'runtime/common/time/date.pmsg',
+  'runtime/common/web/url.pmsg',
+]);
 
 // Suffix for files expected to fail (don't compile these)
 const failSuffix = '-fail.pmsg';
@@ -120,7 +125,7 @@ function compilePmsgFile(filePath: string): void {
   const relativePath = path
     .relative(projectRoot, filePath)
     .replaceAll('\\', '/');
-  const isImmutableDatePmsg = relativePath === 'runtime/common/time/date.pmsg';
+  const isRuntimeOverride = runtimeOverrides.has(relativePath);
 
   // Use config if available, otherwise use relative path
   const pluginOptions: Record<string, unknown> = {};
@@ -128,7 +133,7 @@ function compilePmsgFile(filePath: string): void {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
     pluginOptions['runtimeImportBase'] = projectRoot;
   }
-  if (isImmutableDatePmsg) {
+  if (isRuntimeOverride) {
     pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
     pluginOptions['runtimeImportBase'] = projectRoot;
   }

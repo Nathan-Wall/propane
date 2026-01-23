@@ -257,76 +257,6 @@ export class Rational extends Rational$Base {
     return new Rational({ numerator: 1n, denominator: 1n });
   }
 
-  static override deserialize<T extends typeof Rational$Base>(
-    this: T,
-    data: string,
-    options?: { skipValidation: boolean }
-  ): InstanceType<T> {
-    if (!data.startsWith(':')) {
-      throw new Error('Invalid Propane message. Expected ":" prefix.');
-    }
-
-    if (data.startsWith(':$')) {
-      const tagStart = 2;
-      const braceIndex = data.indexOf('{', tagStart);
-      const quoteIndex = data.indexOf('"', tagStart);
-      if (braceIndex !== -1 && (quoteIndex === -1 || braceIndex < quoteIndex)) {
-        const tag = data.slice(tagStart, braceIndex);
-        if (tag !== 'Rational') {
-          throw new Error(`Tagged message type mismatch: expected Rational, got ${tag}`);
-        }
-        const payload = `:${data.slice(braceIndex)}`;
-        return super.deserialize(payload, options) as InstanceType<T>;
-      }
-      if (quoteIndex !== -1 && (braceIndex === -1 || quoteIndex < braceIndex)) {
-        const tag = data.slice(tagStart, quoteIndex);
-        if (tag !== 'Rational') {
-          throw new Error(`Tagged message type mismatch: expected Rational, got ${tag}`);
-        }
-        let raw: unknown;
-        try {
-          raw = JSON.parse(data.slice(quoteIndex));
-        } catch {
-          throw new Error('Invalid Rational cereal string');
-        }
-        if (typeof raw !== 'string') {
-          throw new Error('Invalid Rational cereal string');
-        }
-        const parsed = Rational.fromCompact(raw, options);
-        const ctor = this as unknown as typeof Rational;
-        if (ctor === Rational) {
-          return parsed as InstanceType<T>;
-        }
-        return new this({
-          numerator: parsed.numerator,
-          denominator: parsed.denominator,
-        }, options) as InstanceType<T>;
-      }
-    }
-
-    if (data.startsWith(':"')) {
-      let raw: unknown;
-      try {
-        raw = JSON.parse(data.slice(1));
-      } catch {
-        throw new Error('Invalid Rational cereal string');
-      }
-      if (typeof raw !== 'string') {
-        throw new Error('Invalid Rational cereal string');
-      }
-      const parsed = Rational.fromCompact(raw, options);
-      const ctor = this as unknown as typeof Rational;
-      if (ctor === Rational) {
-        return parsed as InstanceType<T>;
-      }
-      return new this({
-        numerator: parsed.numerator,
-        denominator: parsed.denominator,
-      }, options) as InstanceType<T>;
-    }
-
-    return super.deserialize(data, options) as InstanceType<T>;
-  }
 
   add(other: Rational | Decimal<any, any>): Rational {
     const rhs = Rational.toRationalValue(other);
@@ -482,14 +412,11 @@ export class Rational extends Rational$Base {
   }
 
   override serialize(options?: { includeTag?: boolean }): string {
-    return this.#reduce().#serialize(options);
+    return this.#reduce().#serializeSuper(options);
   }
 
-  #serialize(options?: { includeTag?: boolean }): string {
-    if (options?.includeTag) {
-      return super.serialize(options);
-    }
-    return `:${JSON.stringify(this.#toString())}`;
+  #serializeSuper(options?: { includeTag?: boolean }): string {
+    return super.serialize(options);
   }
 
   #equals(other: unknown): boolean {

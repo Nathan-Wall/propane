@@ -58,8 +58,8 @@ describe('Rational value equality and canonical outputs', () => {
     assert.strictEqual(unreduced.toString(), '1/3');
     assert.strictEqual(unreduced.toCompact(), '1/3');
     assert.strictEqual(unreduced.toJSON(), '1/3');
-    assert.strictEqual(unreduced.serialize(), ':"1/3"');
-    assert.strictEqual(unreduced.serialize({ includeTag: true }), ':$Rational"1/3"');
+    assert.strictEqual(unreduced.serialize(), ':Q1/3');
+    assert.strictEqual(unreduced.serialize({ includeTag: true }), ':Q1/3');
     assert.strictEqual(unreduced.hashCode(), reduced.hashCode());
   });
 });

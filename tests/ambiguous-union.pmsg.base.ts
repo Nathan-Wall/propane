@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_Alpha = Symbol("Alpha");
 export class Alpha extends Message<Alpha.Data> {
   static $typeId = "tests/ambiguous-union.pmsg#Alpha";
-  static $typeHash = "sha256:cc4a6ac0dbf36ad630ba1ec71126e55e04153e24d56cf754eefecf119610fa48";
+  static $typeHash = "sha256:f835bf77c106ac1e30631ee5a01a2e7cba6488b76f243871059c65d93ccfd0a0";
   static $instanceTag = Symbol.for("propane:message:" + Alpha.$typeId);
   static readonly $typeName = "Alpha";
   static EMPTY: Alpha;
@@ -42,7 +42,30 @@ export class Alpha extends Message<Alpha.Data> {
   static deserialize<T extends typeof Alpha>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Alpha.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Alpha.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -73,7 +96,7 @@ export namespace Alpha {
 const TYPE_TAG_Beta = Symbol("Beta");
 export class Beta extends Message<Beta.Data> {
   static $typeId = "tests/ambiguous-union.pmsg#Beta";
-  static $typeHash = "sha256:cc4a6ac0dbf36ad630ba1ec71126e55e04153e24d56cf754eefecf119610fa48";
+  static $typeHash = "sha256:f835bf77c106ac1e30631ee5a01a2e7cba6488b76f243871059c65d93ccfd0a0";
   static $instanceTag = Symbol.for("propane:message:" + Beta.$typeId);
   static readonly $typeName = "Beta";
   static EMPTY: Beta;
@@ -110,7 +133,30 @@ export class Beta extends Message<Beta.Data> {
   static deserialize<T extends typeof Beta>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Beta.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Beta.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -141,7 +187,7 @@ export namespace Beta {
 const TYPE_TAG_Wrapper = Symbol("Wrapper");
 export class Wrapper extends Message<Wrapper.Data> {
   static $typeId = "tests/ambiguous-union.pmsg#Wrapper";
-  static $typeHash = "sha256:09683fd2542c19f7101b4b4d5a180a4aa1fdbdef747753d908bb5d1f06318a9e";
+  static $typeHash = "sha256:077e3c3fd049909057ddca4c506d8e4f032fb60e28fbddea825811df2a66cb30";
   static $instanceTag = Symbol.for("propane:message:" + Wrapper.$typeId);
   static readonly $typeName = "Wrapper";
   static EMPTY: Wrapper;
@@ -157,7 +203,40 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#union = (props ? props.union : new Alpha()) as Alpha | Beta;
+    this.#union = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Alpha.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Alpha(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+        if (!matched) {
+          if (Beta.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Beta(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.union) : new Alpha()) as Alpha | Beta;
     this.#list = props ? (props.list === undefined || props.list === null ? props.list : props.list as object instanceof ImmutableArray ? props.list : new ImmutableArray(props.list as Iterable<unknown>)) as ImmutableArray<(Alpha | Beta)> : undefined;
     this.#itemSet = props ? (props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Alpha | Beta> : undefined;
     this.#map = props ? (props.map === undefined || props.map === null ? props.map : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Alpha | Beta> : undefined;
@@ -198,7 +277,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       if (unionValue.$tag === "Alpha") {
         if (typeof unionValue.$data === "string") {
           if (Alpha.$compact === true) {
-            unionUnionValue = Alpha.fromCompact(unionValue.$data, options);
+            unionUnionValue = Alpha.fromCompact(Alpha.$compactTag && unionValue.$data.startsWith(Alpha.$compactTag) ? unionValue.$data.slice(Alpha.$compactTag.length) : unionValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"union\" (Alpha).");
           }
@@ -208,12 +287,27 @@ export class Wrapper extends Message<Wrapper.Data> {
       } else if (unionValue.$tag === "Beta") {
         if (typeof unionValue.$data === "string") {
           if (Beta.$compact === true) {
-            unionUnionValue = Beta.fromCompact(unionValue.$data, options);
+            unionUnionValue = Beta.fromCompact(Beta.$compactTag && unionValue.$data.startsWith(Beta.$compactTag) ? unionValue.$data.slice(Beta.$compactTag.length) : unionValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"union\" (Beta).");
           }
         } else {
           unionUnionValue = new Beta(Beta.prototype.$fromEntries(unionValue.$data, options), options);
+        }
+      }
+    }
+    if (typeof unionValue === "string") {
+      if (Alpha.$compactTag && unionValue.startsWith(Alpha.$compactTag)) {
+        if (Alpha.$compact === true) {
+          unionUnionValue = Alpha.fromCompact(Alpha.$compactTag && unionValue.startsWith(Alpha.$compactTag) ? unionValue.slice(Alpha.$compactTag.length) : unionValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"union\" (Alpha).");
+        }
+      } else if (Beta.$compactTag && unionValue.startsWith(Beta.$compactTag)) {
+        if (Beta.$compact === true) {
+          unionUnionValue = Beta.fromCompact(Beta.$compactTag && unionValue.startsWith(Beta.$compactTag) ? unionValue.slice(Beta.$compactTag.length) : unionValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"union\" (Beta).");
         }
       }
     }
@@ -253,7 +347,7 @@ export class Wrapper extends Message<Wrapper.Data> {
         if (value.$tag === "Alpha") {
           if (typeof value.$data === "string") {
             if (Alpha.$compact === true) {
-              unionValue = Alpha.fromCompact(value.$data, options);
+              unionValue = Alpha.fromCompact(Alpha.$compactTag && value.$data.startsWith(Alpha.$compactTag) ? value.$data.slice(Alpha.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"list element\" (Alpha).");
             }
@@ -263,12 +357,27 @@ export class Wrapper extends Message<Wrapper.Data> {
         } else if (value.$tag === "Beta") {
           if (typeof value.$data === "string") {
             if (Beta.$compact === true) {
-              unionValue = Beta.fromCompact(value.$data, options);
+              unionValue = Beta.fromCompact(Beta.$compactTag && value.$data.startsWith(Beta.$compactTag) ? value.$data.slice(Beta.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"list element\" (Beta).");
             }
           } else {
             unionValue = new Beta(Beta.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Alpha.$compactTag && value.startsWith(Alpha.$compactTag)) {
+          if (Alpha.$compact === true) {
+            unionValue = Alpha.fromCompact(Alpha.$compactTag && value.startsWith(Alpha.$compactTag) ? value.slice(Alpha.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"list element\" (Alpha).");
+          }
+        } else if (Beta.$compactTag && value.startsWith(Beta.$compactTag)) {
+          if (Beta.$compact === true) {
+            unionValue = Beta.fromCompact(Beta.$compactTag && value.startsWith(Beta.$compactTag) ? value.slice(Beta.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"list element\" (Beta).");
           }
         }
       }
@@ -310,7 +419,7 @@ export class Wrapper extends Message<Wrapper.Data> {
         if (value.$tag === "Alpha") {
           if (typeof value.$data === "string") {
             if (Alpha.$compact === true) {
-              unionValue = Alpha.fromCompact(value.$data, options);
+              unionValue = Alpha.fromCompact(Alpha.$compactTag && value.$data.startsWith(Alpha.$compactTag) ? value.$data.slice(Alpha.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemSet element\" (Alpha).");
             }
@@ -320,12 +429,27 @@ export class Wrapper extends Message<Wrapper.Data> {
         } else if (value.$tag === "Beta") {
           if (typeof value.$data === "string") {
             if (Beta.$compact === true) {
-              unionValue = Beta.fromCompact(value.$data, options);
+              unionValue = Beta.fromCompact(Beta.$compactTag && value.$data.startsWith(Beta.$compactTag) ? value.$data.slice(Beta.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemSet element\" (Beta).");
             }
           } else {
             unionValue = new Beta(Beta.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Alpha.$compactTag && value.startsWith(Alpha.$compactTag)) {
+          if (Alpha.$compact === true) {
+            unionValue = Alpha.fromCompact(Alpha.$compactTag && value.startsWith(Alpha.$compactTag) ? value.slice(Alpha.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemSet element\" (Alpha).");
+          }
+        } else if (Beta.$compactTag && value.startsWith(Beta.$compactTag)) {
+          if (Beta.$compact === true) {
+            unionValue = Beta.fromCompact(Beta.$compactTag && value.startsWith(Beta.$compactTag) ? value.slice(Beta.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemSet element\" (Beta).");
           }
         }
       }
@@ -367,7 +491,7 @@ export class Wrapper extends Message<Wrapper.Data> {
         if (value.$tag === "Alpha") {
           if (typeof value.$data === "string") {
             if (Alpha.$compact === true) {
-              unionValue = Alpha.fromCompact(value.$data, options);
+              unionValue = Alpha.fromCompact(Alpha.$compactTag && value.$data.startsWith(Alpha.$compactTag) ? value.$data.slice(Alpha.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"map value\" (Alpha).");
             }
@@ -377,12 +501,27 @@ export class Wrapper extends Message<Wrapper.Data> {
         } else if (value.$tag === "Beta") {
           if (typeof value.$data === "string") {
             if (Beta.$compact === true) {
-              unionValue = Beta.fromCompact(value.$data, options);
+              unionValue = Beta.fromCompact(Beta.$compactTag && value.$data.startsWith(Beta.$compactTag) ? value.$data.slice(Beta.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"map value\" (Beta).");
             }
           } else {
             unionValue = new Beta(Beta.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Alpha.$compactTag && value.startsWith(Alpha.$compactTag)) {
+          if (Alpha.$compact === true) {
+            unionValue = Alpha.fromCompact(Alpha.$compactTag && value.startsWith(Alpha.$compactTag) ? value.slice(Alpha.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"map value\" (Alpha).");
+          }
+        } else if (Beta.$compactTag && value.startsWith(Beta.$compactTag)) {
+          if (Beta.$compact === true) {
+            unionValue = Beta.fromCompact(Beta.$compactTag && value.startsWith(Beta.$compactTag) ? value.slice(Beta.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"map value\" (Beta).");
           }
         }
       }
@@ -465,7 +604,30 @@ export class Wrapper extends Message<Wrapper.Data> {
   static deserialize<T extends typeof Wrapper>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Wrapper.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Wrapper.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

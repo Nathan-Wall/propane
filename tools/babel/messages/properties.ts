@@ -9,6 +9,7 @@ import {
   isArrayTypeNode,
   isDecimalReference,
   isDateReference,
+  isImmutableDateReference,
   isImmutableArrayBufferReference,
   isMapReference,
   isMapTypeNode,
@@ -16,6 +17,7 @@ import {
   isSetReference,
   isSetTypeNode,
   isUrlReference,
+  isImmutableUrlReference,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getTypeName,
 } from './type-guards.js';
@@ -68,6 +70,8 @@ export interface PluginStateFlags {
   usesLessThan: boolean;
   usesLessThanOrEqual: boolean;
   usesInRange: boolean;
+  /** Map of message type name to its compact tag (or full tag fallback) */
+  messageTagsByName?: Map<string, string>;
 }
 
 /**
@@ -101,6 +105,13 @@ export interface PropDescriptor {
   setElementUnionMessageTypes: string[];
   mapKeyUnionMessageTypes: string[];
   mapValueUnionMessageTypes: string[];
+  unionHasString: boolean;
+  arrayElementUnionHasString: boolean;
+  setElementUnionHasString: boolean;
+  mapKeyUnionHasString: boolean;
+  mapValueUnionHasString: boolean;
+  unionHasDate: boolean;
+  unionHasUrl: boolean;
   typeAnnotation: t.TSType;
   inputTypeAnnotation: t.TSType;
   arrayElementType: t.TSType | null;
@@ -458,6 +469,10 @@ export function extractProperties(
     const mapValueMessageTypeName = mapArgPaths?.valuePath
       ? getMessageReferenceName(mapArgPaths.valuePath)
       : null;
+    const resolvedArrayElementMessageTypeName = arrayElementMessageTypeName;
+    const resolvedSetElementMessageTypeName = setElementMessageTypeName;
+    const resolvedMapKeyMessageTypeName = mapKeyMessageTypeName;
+    const resolvedMapValueMessageTypeName = mapValueMessageTypeName;
     const unionMessageTypes = extractUnionMessageTypes(
       propTypePath,
       getMessageReferenceName
@@ -474,6 +489,55 @@ export function extractProperties(
     const mapValueUnionMessageTypes = mapArgPaths?.valuePath
       ? extractUnionMessageTypes(mapArgPaths.valuePath, getMessageReferenceName)
       : [];
+    const unionHasString = extractUnionHasString(propTypePath);
+    const unionHasDate = extractUnionHasDate(propTypePath);
+    const unionHasUrl = extractUnionHasUrl(propTypePath);
+    const arrayElementUnionHasString = arrayElementPath
+      ? extractUnionHasString(arrayElementPath)
+      : false;
+    const setElementUnionHasString = setElementPath
+      ? extractUnionHasString(setElementPath)
+      : false;
+    const mapKeyUnionHasString = mapArgPaths?.keyPath
+      ? extractUnionHasString(mapArgPaths.keyPath)
+      : false;
+    const mapValueUnionHasString = mapArgPaths?.valuePath
+      ? extractUnionHasString(mapArgPaths.valuePath)
+      : false;
+
+    assertUnionTagsUnique(unionMessageTypes, state, memberPath, `"${name}"`);
+    if (arrayElementUnionMessageTypes.length > 0) {
+      assertUnionTagsUnique(
+        arrayElementUnionMessageTypes,
+        state,
+        memberPath,
+        `"${name}" array element`
+      );
+    }
+    if (setElementUnionMessageTypes.length > 0) {
+      assertUnionTagsUnique(
+        setElementUnionMessageTypes,
+        state,
+        memberPath,
+        `"${name}" set element`
+      );
+    }
+    if (mapKeyUnionMessageTypes.length > 0) {
+      assertUnionTagsUnique(
+        mapKeyUnionMessageTypes,
+        state,
+        memberPath,
+        `"${name}" map key`
+      );
+    }
+    if (mapValueUnionMessageTypes.length > 0) {
+      assertUnionTagsUnique(
+        mapValueUnionMessageTypes,
+        state,
+        memberPath,
+        `"${name}" map value`
+      );
+    }
 
     // Detect generic type parameters
     const genericParamInfo = getGenericParamInfo(propTypePath, typeParameters);
@@ -505,24 +569,8 @@ export function extractProperties(
       state.usesEquals = true;
       // Check if map key or value types need ImmutableDate/ImmutableUrl/ImmutableArray
       if (mapArgs) {
-        if (t.isTSTypeReference(mapArgs.keyType)
-          && isDateReference(mapArgs.keyType)) {
-          state.usesImmutableDate = true;
-        }
-        if (t.isTSTypeReference(mapArgs.keyType)
-          && isUrlReference(mapArgs.keyType)) {
-          state.usesImmutableUrl = true;
-        }
         if (isArrayTypeNode(mapArgs.keyType)) {
           state.usesImmutableArray = true;
-        }
-        if (t.isTSTypeReference(mapArgs.valueType)
-          && isDateReference(mapArgs.valueType)) {
-          state.usesImmutableDate = true;
-        }
-        if (t.isTSTypeReference(mapArgs.valueType)
-          && isUrlReference(mapArgs.valueType)) {
-          state.usesImmutableUrl = true;
         }
       }
     }
@@ -637,7 +685,12 @@ export function extractProperties(
       ]);
     }
 
-    if (messageTypeName) {
+    const unionDateUrlDisplayType = buildUnionDateUrlDisplayType(propTypePath);
+    if (unionDateUrlDisplayType) {
+      displayType = unionDateUrlDisplayType;
+    }
+
+    if (messageTypeName && !isDateType && !isUrlType) {
       const typeArgs = t.isTSTypeReference(propTypePath.node)
         && propTypePath.node.typeParameters
         ? t.tsTypeParameterInstantiation(
@@ -667,15 +720,22 @@ export function extractProperties(
       isArrayBufferType,
       isMessageType: Boolean(messageTypeName),
       messageTypeName,
-      arrayElementMessageTypeName,
-      setElementMessageTypeName,
-      mapKeyMessageTypeName,
-      mapValueMessageTypeName,
+      arrayElementMessageTypeName: resolvedArrayElementMessageTypeName,
+      setElementMessageTypeName: resolvedSetElementMessageTypeName,
+      mapKeyMessageTypeName: resolvedMapKeyMessageTypeName,
+      mapValueMessageTypeName: resolvedMapValueMessageTypeName,
       unionMessageTypes,
       arrayElementUnionMessageTypes,
       setElementUnionMessageTypes,
       mapKeyUnionMessageTypes,
       mapValueUnionMessageTypes,
+      unionHasString,
+      arrayElementUnionHasString,
+      setElementUnionHasString,
+      mapKeyUnionHasString,
+      mapValueUnionHasString,
+      unionHasDate,
+      unionHasUrl,
       typeAnnotation: runtimeType,
       inputTypeAnnotation,
       arrayElementType,
@@ -1032,6 +1092,27 @@ export function wrapImmutableType(
     );
   }
 
+  if (t.isTSUnionType(node)) {
+    const mapped = node.types.map((member) => {
+      const inner = t.isTSParenthesizedType(member)
+        ? member.typeAnnotation
+        : member;
+      if (
+        t.isTSTypeReference(inner)
+        && t.isIdentifier(inner.typeName)
+      ) {
+        if (inner.typeName.name === 'Date') {
+          return t.tsTypeReference(t.identifier('ImmutableDate'));
+        }
+        if (inner.typeName.name === 'URL') {
+          return t.tsTypeReference(t.identifier('ImmutableUrl'));
+        }
+      }
+      return t.cloneNode(member);
+    });
+    return t.tsUnionType(mapped);
+  }
+
   if (t.isTSArrayType(node)) {
     return t.tsTypeReference(
       t.identifier('ImmutableArray'),
@@ -1267,15 +1348,121 @@ function extractUnionMessageTypes(
 
   const messageTypes: string[] = [];
   for (const memberPath of unwrapped.get('types')) {
-    const messageName = getMessageReferenceName(
-      unwrapParenthesizedTypePath(memberPath)
-    );
+    const memberUnwrapped = unwrapParenthesizedTypePath(memberPath);
+    const messageName = getMessageReferenceName(memberUnwrapped);
     if (messageName) {
       messageTypes.push(messageName);
     }
   }
 
-  return messageTypes;
+  return Array.from(new Set(messageTypes));
+}
+
+function extractUnionHasString(typePath: NodePath<t.TSType>): boolean {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSUnionType()) {
+    return false;
+  }
+  return unwrapped.get('types').some((memberPath) =>
+    isStringType(memberPath)
+  );
+}
+
+function extractUnionHasDate(typePath: NodePath<t.TSType>): boolean {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSUnionType()) {
+    return false;
+  }
+  return unwrapped.get('types').some((memberPath) => {
+    const member = unwrapParenthesizedTypePath(memberPath);
+    return member.isTSTypeReference()
+      && (isDateReference(member.node) || isImmutableDateReference(member.node));
+  });
+}
+
+function extractUnionHasUrl(typePath: NodePath<t.TSType>): boolean {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSUnionType()) {
+    return false;
+  }
+  return unwrapped.get('types').some((memberPath) => {
+    const member = unwrapParenthesizedTypePath(memberPath);
+    return member.isTSTypeReference()
+      && (isUrlReference(member.node) || isImmutableUrlReference(member.node));
+  });
+}
+
+function buildUnionDateUrlDisplayType(
+  typePath: NodePath<t.TSType>
+): t.TSType | null {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (!unwrapped.isTSUnionType()) {
+    return null;
+  }
+
+  const members = unwrapped.get('types');
+  let hasDateOrUrl = false;
+  const types: t.TSType[] = [];
+
+  for (const memberPath of members) {
+    const member = unwrapParenthesizedTypePath(memberPath);
+    if (member.isTSTypeReference() && isDateReference(member.node)) {
+      hasDateOrUrl = true;
+      types.push(t.cloneNode(member.node));
+      types.push(t.tsTypeReference(t.identifier('ImmutableDate')));
+      continue;
+    }
+    if (member.isTSTypeReference() && isUrlReference(member.node)) {
+      hasDateOrUrl = true;
+      types.push(t.cloneNode(member.node));
+      types.push(t.tsTypeReference(t.identifier('ImmutableUrl')));
+      continue;
+    }
+    types.push(t.cloneNode(member.node));
+  }
+
+  if (!hasDateOrUrl) {
+    return null;
+  }
+
+  return t.tsUnionType(types);
+}
+
+function isStringType(typePath: NodePath<t.TSType>): boolean {
+  const unwrapped = unwrapParenthesizedTypePath(typePath);
+  if (unwrapped.isTSStringKeyword()) {
+    return true;
+  }
+  if (unwrapped.isTSLiteralType() && t.isStringLiteral(unwrapped.node.literal)) {
+    return true;
+  }
+  if (unwrapped.isTSUnionType()) {
+    return unwrapped.get('types').some((memberPath) => isStringType(memberPath));
+  }
+  return false;
+}
+
+function assertUnionTagsUnique(
+  unionMessageTypes: string[],
+  state: PluginStateFlags,
+  memberPath: NodePath<t.TSPropertySignature>,
+  label: string
+): void {
+  if (unionMessageTypes.length < 2) return;
+  const tagMap = state.messageTagsByName;
+  if (!tagMap) return;
+  const seen = new Map<string, string>();
+  for (const name of unionMessageTypes) {
+    const tag = tagMap.get(name);
+    if (!tag) continue;
+    const existing = seen.get(tag);
+    if (existing && existing !== name) {
+      throw memberPath.buildCodeFrameError(
+        `Union ${label} has conflicting message tags "${tag}" for ${existing} and ${name}.`
+      );
+    }
+    seen.set(tag, name);
+  }
 }
 
 function scanTypeForUsage(
@@ -1287,8 +1474,12 @@ function scanTypeForUsage(
   if (typePath.isTSTypeReference()) {
     if (isDecimalReference(typePath.node)) state.usesDecimalClass = true;
     if (isRationalReference(typePath.node)) state.usesRationalClass = true;
-    if (isDateReference(typePath.node)) state.usesImmutableDate = true;
-    if (isUrlReference(typePath.node)) state.usesImmutableUrl = true;
+    if (isDateReference(typePath.node) || isImmutableDateReference(typePath.node)) {
+      state.usesImmutableDate = true;
+    }
+    if (isUrlReference(typePath.node) || isImmutableUrlReference(typePath.node)) {
+      state.usesImmutableUrl = true;
+    }
     if (
       isArrayBufferReference(typePath.node)
       || isImmutableArrayBufferReference(typePath.node)

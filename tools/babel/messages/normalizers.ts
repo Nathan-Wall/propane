@@ -172,97 +172,6 @@ export function buildImmutableSetExpression(
   );
 }
 
-export function buildImmutableDateNormalizationExpression(
-  valueExpr: t.Expression,
-  {
-    allowUndefined = false,
-    allowNull = false
-  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
-): t.Expression {
-  const instanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('ImmutableDate')
-  );
-  const newInstance = t.callExpression(
-    t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
-    [t.cloneNode(valueExpr)]
-  );
-
-  let normalized: t.Expression = t.conditionalExpression(
-    instanceCheck,
-    t.cloneNode(valueExpr),
-    newInstance
-  );
-
-  if (allowNull) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral()),
-      t.cloneNode(valueExpr),
-      normalized
-    );
-  }
-
-  if (allowUndefined) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression(
-        '===',
-        t.cloneNode(valueExpr),
-        t.identifier('undefined')
-      ),
-      t.identifier('undefined'),
-      normalized
-    );
-  }
-
-  return normalized;
-}
-
-export function buildImmutableUrlNormalizationExpression(
-  valueExpr: t.Expression,
-  {
-    allowUndefined = false,
-    allowNull = false
-  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
-): t.Expression {
-  const instanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('ImmutableUrl')
-  );
-  const newInstance = t.newExpression(t.identifier('ImmutableUrl'), [
-    t.cloneNode(valueExpr),
-  ]);
-
-  let normalized: t.Expression = t.conditionalExpression(
-    instanceCheck,
-    t.cloneNode(valueExpr),
-    newInstance
-  );
-
-  if (allowNull) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral()),
-      t.cloneNode(valueExpr),
-      normalized
-    );
-  }
-
-  if (allowUndefined) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression(
-        '===',
-        t.cloneNode(valueExpr),
-        t.identifier('undefined')
-      ),
-      t.identifier('undefined'),
-      normalized
-    );
-  }
-
-  return normalized;
-}
-
 export function buildImmutableArrayBufferNormalizationExpression(
   valueExpr: t.Expression,
   {
@@ -337,6 +246,7 @@ export function buildMessageNormalizationExpression(
     compactArgs = [],
     valueTypeArgs = [],
     allowCompact = true,
+    allowTagged = false,
   }: {
     allowUndefined?: boolean;
     allowNull?: boolean;
@@ -350,6 +260,8 @@ export function buildMessageNormalizationExpression(
     valueTypeArgs?: t.TSType[];
     /** When true, allow compact string coercion via fromCompact */
     allowCompact?: boolean;
+    /** When true, allow TaggedMessageData inputs */
+    allowTagged?: boolean;
   } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
@@ -357,31 +269,251 @@ export function buildMessageNormalizationExpression(
     t.cloneNode(valueExpr),
     t.identifier(className)
   );
-  // Pass options to nested message constructor if provided
-  // Cast to ClassName.Value when coming from $fromEntries (unknown type)
-  const constructorArg = castToAny
-    ? t.tsAsExpression(
-        t.cloneNode(valueExpr),
-        t.tsTypeReference(
-          t.tsQualifiedName(t.identifier(className), t.identifier('Value')),
-          valueTypeArgs.length > 0
-            ? t.tsTypeParameterInstantiation(
-              valueTypeArgs.map((arg) => t.cloneNode(arg))
-            )
-            : undefined
+  const buildNewInstance = (inputExpr: t.Expression) => {
+    // Pass options to nested message constructor if provided
+    // Cast to ClassName.Value when coming from $fromEntries (unknown type)
+    const constructorArg = castToAny
+      ? t.tsAsExpression(
+          t.cloneNode(inputExpr),
+          t.tsTypeReference(
+            t.tsQualifiedName(t.identifier(className), t.identifier('Value')),
+            valueTypeArgs.length > 0
+              ? t.tsTypeParameterInstantiation(
+                valueTypeArgs.map((arg) => t.cloneNode(arg))
+              )
+              : undefined
+          )
         )
-      )
-    : t.cloneNode(valueExpr);
-  const newInstanceArgs: t.Expression[] = [constructorArg];
-  if (optionsExpr) {
-    newInstanceArgs.push(t.cloneNode(optionsExpr));
-  }
-  const newInstance = t.newExpression(t.identifier(className), newInstanceArgs);
+      : t.cloneNode(inputExpr);
+    const newInstanceArgs: t.Expression[] = [constructorArg];
+    if (optionsExpr) {
+      newInstanceArgs.push(t.cloneNode(optionsExpr));
+    }
+    return t.newExpression(t.identifier(className), newInstanceArgs);
+  };
+  const newInstance = buildNewInstance(t.cloneNode(valueExpr));
 
-  let normalized: t.Expression = t.conditionalExpression(
+  const buildFromCompact = (inputExpr: t.Expression) => {
+    const fromCompactArgs: t.Expression[] = [
+      ...compactArgs.map((arg) => t.cloneNode(arg)),
+      inputExpr,
+    ];
+    if (optionsExpr) {
+      fromCompactArgs.push(t.cloneNode(optionsExpr));
+    }
+    return t.callExpression(
+      t.memberExpression(t.identifier(className), t.identifier('fromCompact')),
+      fromCompactArgs
+    );
+  };
+
+  const buildCompactPayload = (inputExpr: t.Expression) => {
+    const compactTag = t.memberExpression(t.identifier(className), t.identifier('$compactTag'));
+    const startsWith = t.callExpression(
+      t.memberExpression(t.cloneNode(inputExpr), t.identifier('startsWith')),
+      [t.cloneNode(compactTag)]
+    );
+    const shouldStrip = t.logicalExpression(
+      '&&',
+      t.cloneNode(compactTag),
+      startsWith
+    );
+    return t.conditionalExpression(
+      shouldStrip,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(inputExpr), t.identifier('slice')),
+        [t.memberExpression(t.cloneNode(compactTag), t.identifier('length'))]
+      ),
+      t.cloneNode(inputExpr)
+    );
+  };
+
+  const normalizedBase = t.conditionalExpression(
     instanceCheck,
     t.cloneNode(valueExpr),
     newInstance
+  );
+
+  if (!allowTagged) {
+    let normalized: t.Expression = normalizedBase;
+    if (allowCompact) {
+      const compactCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.identifier(className), t.identifier('$compact')),
+        t.booleanLiteral(true)
+      );
+      const stringCheck = t.binaryExpression(
+        '===',
+        t.unaryExpression('typeof', t.cloneNode(valueExpr)),
+        t.stringLiteral('string')
+      );
+      const payloadExpr = buildCompactPayload(t.cloneNode(valueExpr));
+      const fromCompactCall = buildFromCompact(payloadExpr);
+      const typedFromCompact = t.tsAsExpression(
+        fromCompactCall,
+        t.tsAnyKeyword()
+      );
+      normalized = t.conditionalExpression(
+        t.logicalExpression('&&', stringCheck, compactCheck),
+        typedFromCompact,
+        normalized
+      );
+    }
+
+    if (allowNull) {
+      normalized = t.conditionalExpression(
+        t.binaryExpression(
+          '===',
+          t.cloneNode(valueExpr),
+          t.nullLiteral()
+        ),
+        t.cloneNode(valueExpr),
+        normalized
+      );
+    }
+
+    if (allowUndefined) {
+      normalized = t.conditionalExpression(
+        t.binaryExpression(
+          '===',
+          t.cloneNode(valueExpr),
+          t.identifier('undefined')
+        ),
+        t.cloneNode(valueExpr),
+        normalized
+      );
+    }
+
+    return normalized;
+  }
+
+  const valueId = t.identifier('value');
+  const resultId = t.identifier('result');
+  const statements: t.Statement[] = [
+    t.variableDeclaration('let', [
+      t.variableDeclarator(
+        resultId,
+        t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
+      ),
+    ]),
+  ];
+
+  const instanceCheckTagged = t.binaryExpression(
+    'instanceof',
+    t.cloneNode(valueId),
+    t.identifier(className)
+  );
+  const instanceAssign = t.ifStatement(
+    instanceCheckTagged,
+    t.blockStatement([
+      t.expressionStatement(
+        t.assignmentExpression('=', t.cloneNode(resultId), t.cloneNode(valueId))
+      ),
+    ]),
+    t.blockStatement([
+      t.expressionStatement(
+        t.assignmentExpression(
+          '=',
+          t.cloneNode(resultId),
+          buildNewInstance(t.cloneNode(valueId))
+        )
+      ),
+    ])
+  );
+
+  const taggedCheck = t.callExpression(
+    t.identifier('isTaggedMessageData'),
+    [t.cloneNode(valueId)]
+  );
+  const tagMatch = t.binaryExpression(
+    '===',
+    t.memberExpression(t.cloneNode(valueId), t.identifier('$tag')),
+    t.stringLiteral(className)
+  );
+  const dataExpr = t.memberExpression(t.cloneNode(valueId), t.identifier('$data'));
+  const taggedStringCheck = t.binaryExpression(
+    '===',
+    t.unaryExpression('typeof', t.cloneNode(dataExpr)),
+    t.stringLiteral('string')
+  );
+  const compactCheck = t.binaryExpression(
+    '===',
+    t.memberExpression(t.identifier(className), t.identifier('$compact')),
+    t.booleanLiteral(true)
+  );
+  const payloadExpr = buildCompactPayload(t.cloneNode(dataExpr));
+  const fromCompactCall = buildFromCompact(payloadExpr);
+  const fromEntriesCall = t.newExpression(
+    t.identifier(className),
+    optionsExpr
+      ? [
+        t.callExpression(
+          t.memberExpression(
+            t.memberExpression(t.identifier(className), t.identifier('prototype')),
+            t.identifier('$fromEntries')
+          ),
+          [t.cloneNode(dataExpr), t.cloneNode(optionsExpr)]
+        ),
+        t.cloneNode(optionsExpr),
+      ]
+      : [
+        t.callExpression(
+          t.memberExpression(
+            t.memberExpression(t.identifier(className), t.identifier('prototype')),
+            t.identifier('$fromEntries')
+          ),
+          [t.cloneNode(dataExpr)]
+        ),
+      ]
+  );
+
+  const invalidTagThrow = t.throwStatement(
+    t.newExpression(t.identifier('Error'), [
+      t.stringLiteral(`Tagged message type mismatch: expected ${className}.`),
+    ])
+  );
+  const invalidCompactThrow = t.throwStatement(
+    t.newExpression(t.identifier('Error'), [
+      t.stringLiteral(`Invalid compact tagged value for ${className}.`),
+    ])
+  );
+
+  const taggedBlock = t.blockStatement([
+    t.ifStatement(
+      tagMatch,
+      t.blockStatement([
+        t.ifStatement(
+          taggedStringCheck,
+          t.blockStatement([
+            t.ifStatement(
+              compactCheck,
+              t.blockStatement([
+                t.expressionStatement(
+                  t.assignmentExpression(
+                    '=',
+                    t.cloneNode(resultId),
+                    t.tsAsExpression(fromCompactCall, t.tsAnyKeyword())
+                  )
+                ),
+              ]),
+              t.blockStatement([invalidCompactThrow])
+            ),
+          ]),
+          t.blockStatement([
+            t.expressionStatement(
+              t.assignmentExpression('=', t.cloneNode(resultId), fromEntriesCall)
+            ),
+          ])
+        ),
+      ]),
+      t.blockStatement([invalidTagThrow])
+    ),
+  ]);
+
+  const taggedIf = t.ifStatement(
+    taggedCheck,
+    taggedBlock,
+    t.blockStatement([instanceAssign])
   );
 
   if (allowCompact) {
@@ -392,56 +524,63 @@ export function buildMessageNormalizationExpression(
     );
     const stringCheck = t.binaryExpression(
       '===',
-      t.unaryExpression('typeof', t.cloneNode(valueExpr)),
+      t.unaryExpression('typeof', t.cloneNode(valueId)),
       t.stringLiteral('string')
     );
-    const fromCompactArgs: t.Expression[] = [
-      ...compactArgs.map((arg) => t.cloneNode(arg)),
-      t.cloneNode(valueExpr),
-    ];
-    if (optionsExpr) {
-      fromCompactArgs.push(t.cloneNode(optionsExpr));
-    }
-    const fromCompactCall = t.callExpression(
-      t.memberExpression(t.identifier(className), t.identifier('fromCompact')),
-      fromCompactArgs
+    const payloadExpr = buildCompactPayload(t.cloneNode(valueId));
+    const fromCompactCall = buildFromCompact(payloadExpr);
+    const typedFromCompact = t.tsAsExpression(fromCompactCall, t.tsAnyKeyword());
+    statements.push(
+      t.ifStatement(
+        t.logicalExpression('&&', stringCheck, compactCheck),
+        t.blockStatement([
+          t.expressionStatement(
+            t.assignmentExpression('=', t.cloneNode(resultId), typedFromCompact)
+          ),
+        ]),
+        t.blockStatement([taggedIf])
+      )
     );
-    const typedFromCompact = t.tsAsExpression(
-      fromCompactCall,
-      t.tsAnyKeyword()
-    );
-    normalized = t.conditionalExpression(
-      t.logicalExpression('&&', stringCheck, compactCheck),
-      typedFromCompact,
-      normalized
-    );
+  } else {
+    statements.push(taggedIf);
   }
 
   if (allowNull) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression(
-        '===',
-        t.cloneNode(valueExpr),
-        t.nullLiteral()
-      ),
-      t.cloneNode(valueExpr),
-      normalized
+    statements.push(
+      t.ifStatement(
+        t.binaryExpression('===', t.cloneNode(valueId), t.nullLiteral()),
+        t.blockStatement([
+          t.expressionStatement(
+            t.assignmentExpression('=', t.cloneNode(resultId), t.cloneNode(valueId))
+          ),
+        ])
+      )
     );
   }
 
   if (allowUndefined) {
-    normalized = t.conditionalExpression(
-      t.binaryExpression(
-        '===',
-        t.cloneNode(valueExpr),
-        t.identifier('undefined')
-      ),
-      t.cloneNode(valueExpr),
-      normalized
+    statements.push(
+      t.ifStatement(
+        t.binaryExpression(
+          '===',
+          t.cloneNode(valueId),
+          t.identifier('undefined')
+        ),
+        t.blockStatement([
+          t.expressionStatement(
+            t.assignmentExpression('=', t.cloneNode(resultId), t.cloneNode(valueId))
+          ),
+        ])
+      )
     );
   }
 
-  return normalized;
+  statements.push(t.returnStatement(t.cloneNode(resultId)));
+
+  return t.callExpression(
+    t.arrowFunctionExpression([valueId], t.blockStatement(statements)),
+    [t.cloneNode(valueExpr)]
+  );
 }
 
 export function buildImmutableArrayOfMessagesExpression(
@@ -682,13 +821,9 @@ export function buildImmutableMapOfMessagesExpression(
 }
 
 export interface MapConversionInfo {
-  keyIsDate?: boolean;
-  keyIsUrl?: boolean;
   keyIsArray?: boolean;
   keyIsMap?: boolean;
   keyIsMessage?: string;
-  valueIsDate?: boolean;
-  valueIsUrl?: boolean;
   valueIsMessage?: string;
 }
 
@@ -724,10 +859,6 @@ export function buildImmutableMapWithConversionsExpression(
   const keyId = t.identifier('k');
   let keyConversion: t.Expression = keyId;
 
-  // When castToAny is true, cast keyId to 'object' for instanceof checks
-  const keyInstanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(keyId), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(keyId);
   // Cast keyId for constructor calls when castToAny is true (values are 'unknown')
   const keyArrayConstructorArg = castToAny
     ? t.tsAsExpression(
@@ -737,14 +868,6 @@ export function buildImmutableMapWithConversionsExpression(
         t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
       )
     )
-    : t.cloneNode(keyId);
-  // Cast for Date constructor (needs Date-compatible type)
-  const keyDateConstructorArg = castToAny
-    ? t.tsAsExpression(t.cloneNode(keyId), t.tsTypeReference(t.identifier('Date')))
-    : t.cloneNode(keyId);
-  // Cast for URL constructor (needs URL-compatible type)
-  const keyUrlConstructorArg = castToAny
-    ? t.tsAsExpression(t.cloneNode(keyId), t.tsTypeReference(t.identifier('URL')))
     : t.cloneNode(keyId);
   // Cast for message key constructor - creates MessageType.Value type
   const keyMessageConstructorArg = (messageTypeName: string) => castToAny
@@ -756,19 +879,7 @@ export function buildImmutableMapWithConversionsExpression(
     )
     : t.cloneNode(keyId);
 
-  if (conversions.keyIsDate) {
-    // ImmutableDate.from(k) - returns k if already ImmutableDate, else wraps it
-    keyConversion = t.callExpression(
-      t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
-      [keyDateConstructorArg]
-    );
-  } else if (conversions.keyIsUrl) {
-    // ImmutableUrl.from(k)
-    keyConversion = t.callExpression(
-      t.memberExpression(t.identifier('ImmutableUrl'), t.identifier('from')),
-      [keyUrlConstructorArg]
-    );
-  } else if (conversions.keyIsArray) {
+  if (conversions.keyIsArray) {
     // ImmutableArray.from(k)
     keyConversion = t.callExpression(
       t.memberExpression(t.identifier('ImmutableArray'), t.identifier('from')),
@@ -814,18 +925,6 @@ export function buildImmutableMapWithConversionsExpression(
   const valueId = t.identifier('v');
   let valueConversion: t.Expression = valueId;
 
-  // When castToAny is true, cast valueId for instanceof checks and constructor args
-  const valueInstanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueId), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(valueId);
-  // Cast for Date constructor (needs Date-compatible type)
-  const dateConstructorArg = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueId), t.tsTypeReference(t.identifier('Date')))
-    : t.cloneNode(valueId);
-  // Cast for URL constructor (needs URL-compatible type)
-  const urlConstructorArg = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueId), t.tsTypeReference(t.identifier('URL')))
-    : t.cloneNode(valueId);
   // Cast for message constructor - creates MessageType.Value type
   const messageConstructorArg = (messageTypeName: string) => castToAny
     ? t.tsAsExpression(
@@ -836,19 +935,7 @@ export function buildImmutableMapWithConversionsExpression(
     )
     : t.cloneNode(valueId);
 
-  if (conversions.valueIsDate) {
-    // ImmutableDate.from(v) - returns v if already ImmutableDate, else wraps it
-    valueConversion = t.callExpression(
-      t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
-      [dateConstructorArg]
-    );
-  } else if (conversions.valueIsUrl) {
-    // ImmutableUrl.from(v)
-    valueConversion = t.callExpression(
-      t.memberExpression(t.identifier('ImmutableUrl'), t.identifier('from')),
-      [urlConstructorArg]
-    );
-  } else if (conversions.valueIsMessage) {
+  if (conversions.valueIsMessage) {
     // MessageType.from(v), unless compact strings should pass through
     const valueFromCall = t.callExpression(
       t.memberExpression(
@@ -880,12 +967,8 @@ export function buildImmutableMapWithConversionsExpression(
 
   // If no conversions needed, use the simple ImmutableMap expression
   const needsConversion =
-    conversions.keyIsDate
-    || conversions.keyIsUrl
-    || conversions.keyIsArray
+    conversions.keyIsArray
     || conversions.keyIsMessage
-    || conversions.valueIsDate
-    || conversions.valueIsUrl
     || conversions.valueIsMessage;
 
   // When castToAny is true, cast the value to Iterable for the ImmutableMap constructor

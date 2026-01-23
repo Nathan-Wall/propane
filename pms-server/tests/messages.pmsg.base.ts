@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from pms-server/tests/messages.pmsg
 import { Endpoint } from '@/pms-core/src/index.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../runtime/index.js";
 const TYPE_TAG_EchoRequest = Symbol("EchoRequest");
 export class EchoRequest extends Message<EchoRequest.Data> {
   static $typeId = "pms-server/tests/messages.pmsg#EchoRequest";
-  static $typeHash = "sha256:3fd8a0601111a3181fa2ee5aa00e1d1ceeb3bc3f516dbe7d2dbe2aad01adf13b";
+  static $typeHash = "sha256:f553c1bb276a58a105658f731b7e13af9d259501b30f11b4357b1eb51f4b1a25";
   static $instanceTag = Symbol.for("propane:message:" + EchoRequest.$typeId);
   static readonly $typeName = "EchoRequest";
   static EMPTY: EchoRequest;
@@ -43,7 +43,30 @@ export class EchoRequest extends Message<EchoRequest.Data> {
   static deserialize<T extends typeof EchoRequest>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for EchoRequest.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected EchoRequest.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -75,7 +98,7 @@ export namespace EchoRequest {
 const TYPE_TAG_EchoResponse = Symbol("EchoResponse");
 export class EchoResponse extends Message<EchoResponse.Data> {
   static $typeId = "pms-server/tests/messages.pmsg#EchoResponse";
-  static $typeHash = "sha256:27b21885a2c8ff849d1a4abdae1d22833be58f4344ba27df56c2bb669698f4d9";
+  static $typeHash = "sha256:dc3f906d2040ea94916e9f47b2bfca0e6fc43e1e85fce5e35c35d83a38c14e76";
   static $instanceTag = Symbol.for("propane:message:" + EchoResponse.$typeId);
   static readonly $typeName = "EchoResponse";
   static EMPTY: EchoResponse;
@@ -122,7 +145,30 @@ export class EchoResponse extends Message<EchoResponse.Data> {
   static deserialize<T extends typeof EchoResponse>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for EchoResponse.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected EchoResponse.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -164,7 +210,7 @@ export namespace EchoResponse {
 const TYPE_TAG_AddRequest = Symbol("AddRequest");
 export class AddRequest extends Message<AddRequest.Data> {
   static $typeId = "pms-server/tests/messages.pmsg#AddRequest";
-  static $typeHash = "sha256:49a7a7a1355b0ce311605df8f03eb62ad9bf69c9a1340b3bfa7d2fab97fffbe5";
+  static $typeHash = "sha256:08ae05aed55e804b5e4acad7e076bdc594ebfa64d205c780e0fa2b5c00f98d92";
   static $instanceTag = Symbol.for("propane:message:" + AddRequest.$typeId);
   static readonly $typeName = "AddRequest";
   static EMPTY: AddRequest;
@@ -211,7 +257,30 @@ export class AddRequest extends Message<AddRequest.Data> {
   static deserialize<T extends typeof AddRequest>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for AddRequest.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected AddRequest.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -254,7 +323,7 @@ export namespace AddRequest {
 const TYPE_TAG_AddResponse = Symbol("AddResponse");
 export class AddResponse extends Message<AddResponse.Data> {
   static $typeId = "pms-server/tests/messages.pmsg#AddResponse";
-  static $typeHash = "sha256:cc3119023788f05301077f91d746a1459d71c933a34d4d8a980f67830df77360";
+  static $typeHash = "sha256:6ef240906013ee9427a9a2bc745a1baeb578b11209a98c666abf9cd64b25ee00";
   static $instanceTag = Symbol.for("propane:message:" + AddResponse.$typeId);
   static readonly $typeName = "AddResponse";
   static EMPTY: AddResponse;
@@ -291,7 +360,30 @@ export class AddResponse extends Message<AddResponse.Data> {
   static deserialize<T extends typeof AddResponse>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for AddResponse.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected AddResponse.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

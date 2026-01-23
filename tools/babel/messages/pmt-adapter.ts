@@ -169,6 +169,13 @@ export function buildDisplayType(
     );
   }
 
+  if (pmtType.kind === 'union') {
+    const unionDisplay = buildUnionDateUrlDisplayType(pmtType);
+    if (unionDisplay) {
+      return unionDisplay;
+    }
+  }
+
   // Date/URL/ArrayBuffer show both variants
   if (pmtType.kind === 'date') {
     return t.tsUnionType([
@@ -240,6 +247,31 @@ export function buildDisplayType(
   return pmtTypeToBabelType(pmtType);
 }
 
+function buildUnionDateUrlDisplayType(pmtType: PmtType): t.TSType | null {
+  if (pmtType.kind !== 'union') return null;
+  let hasDateOrUrl = false;
+  const types: t.TSType[] = [];
+
+  for (const member of pmtType.types) {
+    if (member.kind === 'date') {
+      hasDateOrUrl = true;
+      types.push(t.tsTypeReference(t.identifier('Date')));
+      types.push(t.tsTypeReference(t.identifier('ImmutableDate')));
+      continue;
+    }
+    if (member.kind === 'url') {
+      hasDateOrUrl = true;
+      types.push(t.tsTypeReference(t.identifier('URL')));
+      types.push(t.tsTypeReference(t.identifier('ImmutableUrl')));
+      continue;
+    }
+    types.push(pmtTypeToBabelType(member));
+  }
+
+  if (!hasDateOrUrl) return null;
+  return t.tsUnionType(types);
+}
+
 // ============================================================================
 // Generic Type Parameter Helpers
 // ============================================================================
@@ -300,7 +332,11 @@ function getMessageTypeName(
   pmtType: PmtType,
   knownMessages: Set<string>
 ): string | null {
-  if (pmtType.kind === 'reference' && knownMessages.has(pmtType.name)) {
+  if (pmtType.kind === 'reference'
+    && (knownMessages.has(pmtType.name)
+      || pmtType.name === 'ImmutableDate'
+      || pmtType.name === 'ImmutableUrl')
+  ) {
     return pmtType.name;
   }
   return null;
@@ -320,7 +356,10 @@ function extractUnionMessageTypes(
   return pmtType.types
     .filter(
       (memberType) =>
-        memberType.kind === 'reference' && knownMessages.has(memberType.name)
+        memberType.kind === 'reference'
+        && (knownMessages.has(memberType.name)
+          || memberType.name === 'ImmutableDate'
+          || memberType.name === 'ImmutableUrl')
     )
     .map((memberType) => (memberType as { kind: 'reference'; name: string }).name);
 }
@@ -392,6 +431,21 @@ export function pmtPropertyToDescriptor(
   const mapValueUnionMessageTypes = prop.type.kind === 'map'
     ? extractUnionMessageTypes(prop.type.valueType, knownMessages)
     : [];
+  const unionHasString = extractUnionHasString(prop.type);
+  const unionHasDate = extractUnionHasDate(prop.type);
+  const unionHasUrl = extractUnionHasUrl(prop.type);
+  const arrayElementUnionHasString = prop.type.kind === 'array'
+    ? extractUnionHasString(prop.type.elementType)
+    : false;
+  const setElementUnionHasString = prop.type.kind === 'set'
+    ? extractUnionHasString(prop.type.elementType)
+    : false;
+  const mapKeyUnionHasString = prop.type.kind === 'map'
+    ? extractUnionHasString(prop.type.keyType)
+    : false;
+  const mapValueUnionHasString = prop.type.kind === 'map'
+    ? extractUnionHasString(prop.type.valueType)
+    : false;
 
   // Detect generic type parameters
   const genericInfo = getGenericParamInfo(prop.type, typeParameters);
@@ -422,6 +476,13 @@ export function pmtPropertyToDescriptor(
     setElementUnionMessageTypes,
     mapKeyUnionMessageTypes,
     mapValueUnionMessageTypes,
+    unionHasString,
+    arrayElementUnionHasString,
+    setElementUnionHasString,
+    mapKeyUnionHasString,
+    mapValueUnionHasString,
+    unionHasDate,
+    unionHasUrl,
 
     // Babel type fields
     typeAnnotation: pmtTypeToRuntimeType(prop.type),
@@ -461,4 +522,48 @@ export function pmtPropertyToDescriptor(
     genericParamRequiresConstructor: genericInfo?.requiresConstructor ?? false,
     unionGenericParams,
   };
+}
+
+function extractUnionHasString(type: PmtType): boolean {
+  if (type.kind !== 'union') return false;
+  return type.types.some((member) => isStringType(member));
+}
+
+function extractUnionHasDate(type: PmtType): boolean {
+  if (type.kind !== 'union') return false;
+  return type.types.some((member) => isDateType(member));
+}
+
+function extractUnionHasUrl(type: PmtType): boolean {
+  if (type.kind !== 'union') return false;
+  return type.types.some((member) => isUrlType(member));
+}
+
+function isStringType(type: PmtType): boolean {
+  if (type.kind === 'primitive') {
+    return type.primitive === 'string';
+  }
+  if (type.kind === 'literal') {
+    return typeof type.value === 'string';
+  }
+  if (type.kind === 'union') {
+    return type.types.some((member) => isStringType(member));
+  }
+  return false;
+}
+
+function isDateType(type: PmtType): boolean {
+  if (type.kind === 'date') return true;
+  if (type.kind === 'union') {
+    return type.types.some((member) => isDateType(member));
+  }
+  return false;
+}
+
+function isUrlType(type: PmtType): boolean {
+  if (type.kind === 'url') return true;
+  if (type.kind === 'union') {
+    return type.types.some((member) => isUrlType(member));
+  }
+  return false;
 }

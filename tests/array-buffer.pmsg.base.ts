@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/array-buffer.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableArrayBuffer, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_ArrayBufferMessage = Symbol("ArrayBufferMessage");
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static $typeId = "tests/array-buffer.pmsg#ArrayBufferMessage";
-  static $typeHash = "sha256:e35459963c3a4b82622e7d715c7323e2dde5a8311a9a3b0b4cfda1b036e455bd";
+  static $typeHash = "sha256:c722f9ec54cdd2ab8cd197b01e5de0f50750d370f456f7272470b32108d71102";
   static $instanceTag = Symbol.for("propane:message:" + ArrayBufferMessage.$typeId);
   static readonly $typeName = "ArrayBufferMessage";
   static EMPTY: ArrayBufferMessage;
@@ -91,7 +91,30 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static deserialize<T extends typeof ArrayBufferMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ArrayBufferMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ArrayBufferMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

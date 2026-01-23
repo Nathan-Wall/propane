@@ -15,6 +15,14 @@ export default function runUrlPropaneTests() {
     new URL('https://beta.test/resource'),
   ];
 
+  const direct = new ImmutableUrl(primary);
+  const directSerialized = direct.serialize();
+  const expectedDirect = `:U${JSON.stringify(primary.toString())}`;
+  assert(
+    directSerialized === expectedDirect,
+    `ImmutableUrl serialize should use compact tag form. Got: ${directSerialized}`
+  );
+
   const message = new UrlMessage({
     id: 5,
     primary,

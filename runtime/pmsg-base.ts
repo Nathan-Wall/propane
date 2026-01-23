@@ -1,4 +1,4 @@
-export { Message, parseCerealString } from './message.js';
+export { Message, parseCerealString, isTaggedMessageData } from './message.js';
 export type { MessagePropDescriptor, DataObject } from './message.js';
 export { REACT_LISTENER_KEY, SET_UPDATE_LISTENER, FROM_ROOT, REGISTER_PATH, PROPAGATE_UPDATE, WITH_CHILD, GET_MESSAGE_CHILDREN, EQUALS_FROM_ROOT } from './symbols.js';
 export { ensure } from '@/common/assert/index.js';
@@ -9,4 +9,3 @@ export { ImmutableMap, equalValues as equals } from './common/map/immutable.js';
 export * from './common/set/immutable.js';
 export * from './common/array/immutable.js';
 export * from './common/data/immutable-array-buffer.js';
-export * from './common/web/url.js';

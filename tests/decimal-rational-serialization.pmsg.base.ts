@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, I
 const TYPE_TAG_NumericPair = Symbol("NumericPair");
 export class NumericPair extends Message<NumericPair.Data> {
   static $typeId = "tests/decimal-rational-serialization.pmsg#NumericPair";
-  static $typeHash = "sha256:62a9d6dbc90976724256e01d9e449c9aaf16a5625cbc2a1152846f3c7234824f";
+  static $typeHash = "sha256:ceb3b781258879bfaf04cfebf468c32bbef0810a49592876528d26c62e83e867";
   static $instanceTag = Symbol.for("propane:message:" + NumericPair.$typeId);
   static readonly $typeName = "NumericPair";
   static EMPTY: NumericPair;
@@ -38,12 +38,68 @@ export class NumericPair extends Message<NumericPair.Data> {
     const props = {} as Partial<NumericPair.Data>;
     const amountValue = entries["1"] === undefined ? entries["amount"] : entries["1"];
     if (amountValue === undefined) throw new Error("Missing required property \"amount\".");
-    const amountMessageValue = typeof amountValue === "string" && Decimal.$compact === true ? Decimal.fromCompact(10, 2, amountValue, options) as any : amountValue instanceof Decimal ? amountValue : new Decimal(amountValue as Decimal.Value<10, 2>, options);
+    const amountMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && Decimal.$compact === true) {
+        result = Decimal.fromCompact(10, 2, Decimal.$compactTag && value.startsWith(Decimal.$compactTag) ? value.slice(Decimal.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "Decimal") {
+            if (typeof value.$data === "string") {
+              if (Decimal.$compact === true) {
+                result = Decimal.fromCompact(10, 2, Decimal.$compactTag && value.$data.startsWith(Decimal.$compactTag) ? value.$data.slice(Decimal.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for Decimal.");
+              }
+            } else {
+              result = new Decimal(Decimal.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected Decimal.");
+          }
+        } else {
+          if (value instanceof Decimal) {
+            result = value;
+          } else {
+            result = new Decimal(value as Decimal.Value<10, 2>, options);
+          }
+        }
+      }
+      return result;
+    })(amountValue);
     if (!(Decimal.isInstance(amountMessageValue) && amountMessageValue.precision === 10 && amountMessageValue.scale === 2)) throw new Error("Invalid value for property \"amount\".");
     props.amount = amountMessageValue;
     const ratioValue = entries["2"] === undefined ? entries["ratio"] : entries["2"];
     if (ratioValue === undefined) throw new Error("Missing required property \"ratio\".");
-    const ratioMessageValue = typeof ratioValue === "string" && Rational.$compact === true ? Rational.fromCompact(ratioValue, options) as any : ratioValue instanceof Rational ? ratioValue : new Rational(ratioValue as Rational.Value, options);
+    const ratioMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && Rational.$compact === true) {
+        result = Rational.fromCompact(Rational.$compactTag && value.startsWith(Rational.$compactTag) ? value.slice(Rational.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "Rational") {
+            if (typeof value.$data === "string") {
+              if (Rational.$compact === true) {
+                result = Rational.fromCompact(Rational.$compactTag && value.$data.startsWith(Rational.$compactTag) ? value.$data.slice(Rational.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for Rational.");
+              }
+            } else {
+              result = new Rational(Rational.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected Rational.");
+          }
+        } else {
+          if (value instanceof Rational) {
+            result = value;
+          } else {
+            result = new Rational(value as Rational.Value, options);
+          }
+        }
+      }
+      return result;
+    })(ratioValue);
     if (!Rational.isInstance(ratioMessageValue)) throw new Error("Invalid value for property \"ratio\".");
     props.ratio = ratioMessageValue;
     return props as NumericPair.Data;
@@ -74,7 +130,30 @@ export class NumericPair extends Message<NumericPair.Data> {
   static deserialize<T extends typeof NumericPair>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for NumericPair.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected NumericPair.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -116,7 +195,7 @@ export namespace NumericPair {
 const TYPE_TAG_NumericUnion = Symbol("NumericUnion");
 export class NumericUnion extends Message<NumericUnion.Data> {
   static $typeId = "tests/decimal-rational-serialization.pmsg#NumericUnion";
-  static $typeHash = "sha256:c039c495ecd3d8cc06208a167099f500d4f2e8773ff2727cc41337c94f4d1082";
+  static $typeHash = "sha256:2340fe64b280bec9578fc724950f6628ab8f526195f998f7098f1e7f223ef62c";
   static $instanceTag = Symbol.for("propane:message:" + NumericUnion.$typeId);
   static readonly $typeName = "NumericUnion";
   static EMPTY: NumericUnion;
@@ -129,7 +208,40 @@ export class NumericUnion extends Message<NumericUnion.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#value = (props ? props.value : undefined) as Decimal<10, 2> | Rational;
+    this.#value = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Decimal.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Decimal(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+        if (!matched) {
+          if (Rational.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Rational(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.value) : undefined) as Decimal<10, 2> | Rational;
     if (!props) NumericUnion.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumericUnion.Data>[] {
@@ -152,7 +264,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
       if (valueValue.$tag === "Decimal") {
         if (typeof valueValue.$data === "string") {
           if (Decimal.$compact === true) {
-            valueUnionValue = Decimal.fromCompact(10, 2, valueValue.$data, options);
+            valueUnionValue = Decimal.fromCompact(10, 2, Decimal.$compactTag && valueValue.$data.startsWith(Decimal.$compactTag) ? valueValue.$data.slice(Decimal.$compactTag.length) : valueValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"value\" (Decimal).");
           }
@@ -162,12 +274,27 @@ export class NumericUnion extends Message<NumericUnion.Data> {
       } else if (valueValue.$tag === "Rational") {
         if (typeof valueValue.$data === "string") {
           if (Rational.$compact === true) {
-            valueUnionValue = Rational.fromCompact(valueValue.$data, options);
+            valueUnionValue = Rational.fromCompact(Rational.$compactTag && valueValue.$data.startsWith(Rational.$compactTag) ? valueValue.$data.slice(Rational.$compactTag.length) : valueValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"value\" (Rational).");
           }
         } else {
           valueUnionValue = new Rational(Rational.prototype.$fromEntries(valueValue.$data, options), options);
+        }
+      }
+    }
+    if (typeof valueValue === "string") {
+      if (Decimal.$compactTag && valueValue.startsWith(Decimal.$compactTag)) {
+        if (Decimal.$compact === true) {
+          valueUnionValue = Decimal.fromCompact(10, 2, Decimal.$compactTag && valueValue.startsWith(Decimal.$compactTag) ? valueValue.slice(Decimal.$compactTag.length) : valueValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"value\" (Decimal).");
+        }
+      } else if (Rational.$compactTag && valueValue.startsWith(Rational.$compactTag)) {
+        if (Rational.$compact === true) {
+          valueUnionValue = Rational.fromCompact(Rational.$compactTag && valueValue.startsWith(Rational.$compactTag) ? valueValue.slice(Rational.$compactTag.length) : valueValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"value\" (Rational).");
         }
       }
     }
@@ -216,7 +343,30 @@ export class NumericUnion extends Message<NumericUnion.Data> {
   static deserialize<T extends typeof NumericUnion>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for NumericUnion.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected NumericUnion.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

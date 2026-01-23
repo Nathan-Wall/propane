@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_MapMessage_Metadata_Value = Symbol("MapMessage_Metadata_Value");
 export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value.Data> {
   static $typeId = "tests/map.pmsg#MapMessage_Metadata_Value";
-  static $typeHash = "sha256:f25e6457167a766a424c221449f2f858bb2850b41842b96390f76a87880f911e";
+  static $typeHash = "sha256:b77d08b0c47ab3af08091073f5948427a451236c7dbfd711cb0ea7970b4243cb";
   static $instanceTag = Symbol.for("propane:message:" + MapMessage_Metadata_Value.$typeId);
   static readonly $typeName = "MapMessage_Metadata_Value";
   static EMPTY: MapMessage_Metadata_Value;
@@ -42,7 +42,30 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
   static deserialize<T extends typeof MapMessage_Metadata_Value>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapMessage_Metadata_Value.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapMessage_Metadata_Value.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -73,7 +96,7 @@ export namespace MapMessage_Metadata_Value {
 const TYPE_TAG_MapMessage_Extras_Value = Symbol("MapMessage_Extras_Value");
 export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Data> {
   static $typeId = "tests/map.pmsg#MapMessage_Extras_Value";
-  static $typeHash = "sha256:b16b981eab0a1a0ab80db474b1961e7229e575962b4e46207f5aa29570487478";
+  static $typeHash = "sha256:731a7fc3193016b57d218af78e547b2ac1f35e26decfcc9b35b667e8ee048646";
   static $instanceTag = Symbol.for("propane:message:" + MapMessage_Extras_Value.$typeId);
   static readonly $typeName = "MapMessage_Extras_Value";
   static EMPTY: MapMessage_Extras_Value;
@@ -90,7 +113,8 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
     return [{
       name: "note",
       fieldNumber: null,
-      getValue: () => this.#note as string | null
+      getValue: () => this.#note as string | null,
+      unionHasString: true
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -110,7 +134,30 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
   static deserialize<T extends typeof MapMessage_Extras_Value>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapMessage_Extras_Value.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapMessage_Extras_Value.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -141,7 +188,7 @@ export namespace MapMessage_Extras_Value {
 const TYPE_TAG_MapMessage = Symbol("MapMessage");
 export class MapMessage extends Message<MapMessage.Data> {
   static $typeId = "tests/map.pmsg#MapMessage";
-  static $typeHash = "sha256:5171162999ab24df101efb42b38ce8f0bc59be7b827eef9b6688241531c5e8ed";
+  static $typeHash = "sha256:bcc40ff8803261a2f01c0d565743c537338d9d6720ee845a54e52bbd438772a5";
   static $instanceTag = Symbol.for("propane:message:" + MapMessage.$typeId);
   static readonly $typeName = "MapMessage";
   static EMPTY: MapMessage;
@@ -162,7 +209,8 @@ export class MapMessage extends Message<MapMessage.Data> {
     return [{
       name: "labels",
       fieldNumber: 1,
-      getValue: () => this.#labels as Map<string | number, number> | Iterable<[string | number, number]>
+      getValue: () => this.#labels as Map<string | number, number> | Iterable<[string | number, number]>,
+      mapKeyUnionHasString: true
     }, {
       name: "metadata",
       fieldNumber: 2,
@@ -186,13 +234,13 @@ export class MapMessage extends Message<MapMessage.Data> {
     const metadataValue = entries["2"] === undefined ? entries["metadata"] : entries["2"];
     const metadataNormalized = metadataValue === null ? undefined : metadataValue;
     const metadataMapValue = metadataNormalized === undefined || metadataNormalized === null ? metadataNormalized : new ImmutableMap(Array.from(metadataNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && MapMessage_Metadata_Value.$compact === true ? v : MapMessage_Metadata_Value.from(v as MapMessage_Metadata_Value.Value)]));
-    const metadataMapValueConverted = metadataMapValue === undefined || metadataMapValue === null ? metadataMapValue : new ImmutableMap([...(metadataMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Metadata_Value.$compact === true ? MapMessage_Metadata_Value.fromCompact(v, options) as any : v]));
+    const metadataMapValueConverted = metadataMapValue === undefined || metadataMapValue === null ? metadataMapValue : new ImmutableMap([...(metadataMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Metadata_Value.$compact === true ? MapMessage_Metadata_Value.fromCompact(MapMessage_Metadata_Value.$compactTag && v.startsWith(MapMessage_Metadata_Value.$compactTag) ? v.slice(MapMessage_Metadata_Value.$compactTag.length) : v, options) as any : v]));
     if (metadataMapValueConverted !== undefined && !((metadataMapValueConverted as object instanceof ImmutableMap || metadataMapValueConverted as object instanceof Map) && [...(metadataMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataMapValueConverted as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>;
     const extrasValue = entries["3"] === undefined ? entries["extras"] : entries["3"];
     if (extrasValue === undefined) throw new Error("Missing required property \"extras\".");
     const extrasMapValue = extrasValue === undefined || extrasValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(extrasValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && MapMessage_Extras_Value.$compact === true ? v : MapMessage_Extras_Value.from(v as MapMessage_Extras_Value.Value)]));
-    const extrasMapValueConverted = extrasMapValue === undefined || extrasMapValue === null ? extrasMapValue : new ImmutableMap([...(extrasMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Extras_Value.$compact === true ? MapMessage_Extras_Value.fromCompact(v, options) as any : v]));
+    const extrasMapValueConverted = extrasMapValue === undefined || extrasMapValue === null ? extrasMapValue : new ImmutableMap([...(extrasMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Extras_Value.$compact === true ? MapMessage_Extras_Value.fromCompact(MapMessage_Extras_Value.$compactTag && v.startsWith(MapMessage_Extras_Value.$compactTag) ? v.slice(MapMessage_Extras_Value.$compactTag.length) : v, options) as any : v]));
     if (!((extrasMapValueConverted as object instanceof ImmutableMap || extrasMapValueConverted as object instanceof Map) && [...(extrasMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
     props.extras = extrasMapValueConverted as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>;
     return props as MapMessage.Data;
@@ -232,7 +280,30 @@ export class MapMessage extends Message<MapMessage.Data> {
   static deserialize<T extends typeof MapMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

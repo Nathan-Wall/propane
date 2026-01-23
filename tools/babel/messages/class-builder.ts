@@ -14,21 +14,17 @@ import {
   buildImmutableArrayBufferNormalizationExpression,
   buildImmutableArrayExpression,
   buildImmutableArrayOfMessagesExpression,
-  buildImmutableDateNormalizationExpression,
   buildImmutableMapExpression,
   buildImmutableMapWithConversionsExpression,
   buildImmutableSetExpression,
   buildImmutableSetOfMessagesExpression,
-  buildImmutableUrlNormalizationExpression,
   buildMessageNormalizationExpression,
 } from './normalizers.js';
 import type { MapConversionInfo } from './normalizers.js';
 import {
   getTypeName,
   isArrayTypeNode,
-  isDateReference,
   isMapReference,
-  isUrlReference,
 } from './type-guards.js';
 import type { TypeRegistry } from '@/types/src/registry.js';
 import type { ValidatorImportTracker } from './validator-import-tracker.js';
@@ -137,6 +133,33 @@ function buildFromCompactCall(
   );
 }
 
+function buildCompactPayloadExpression(
+  valueExpr: t.Expression,
+  messageTypeName: string
+): t.Expression {
+  const compactTag = t.memberExpression(
+    t.identifier(messageTypeName),
+    t.identifier('$compactTag')
+  );
+  const startsWith = t.callExpression(
+    t.memberExpression(t.cloneNode(valueExpr), t.identifier('startsWith')),
+    [t.cloneNode(compactTag)]
+  );
+  const shouldStrip = t.logicalExpression(
+    '&&',
+    t.cloneNode(compactTag),
+    startsWith
+  );
+  return t.conditionalExpression(
+    shouldStrip,
+    t.callExpression(
+      t.memberExpression(t.cloneNode(valueExpr), t.identifier('slice')),
+      [t.memberExpression(t.cloneNode(compactTag), t.identifier('length'))]
+    ),
+    t.cloneNode(valueExpr)
+  );
+}
+
 function buildCompactCoercionExpression(
   valueExpr: t.Expression,
   messageTypeName: string,
@@ -153,9 +176,13 @@ function buildCompactCoercionExpression(
     t.memberExpression(t.identifier(messageTypeName), t.identifier('$compact')),
     t.booleanLiteral(true)
   );
+  const payloadExpr = buildCompactPayloadExpression(
+    t.cloneNode(valueExpr),
+    messageTypeName
+  );
   const fromCompact = buildFromCompactCall(
     messageTypeName,
-    valueExpr,
+    payloadExpr,
     typeArgs,
     optionsExpr
   );
@@ -231,6 +258,11 @@ function typesAreEquivalent(a: t.TSType | null, b: t.TSType | null): boolean {
   return false;
 }
 
+function isStringTypeNode(node: t.TSType | null): boolean {
+  const unwrapped = unwrapParenthesizedType(node);
+  return Boolean(unwrapped && t.isTSStringKeyword(unwrapped));
+}
+
 function getMapConversionInfo(
   prop: PropDescriptor,
   declaredMessageTypeNames: Set<string>
@@ -242,11 +274,7 @@ function getMapConversionInfo(
     if (isArrayTypeNode(prop.mapKeyType)) {
       conversions.keyIsArray = true;
     } else if (t.isTSTypeReference(prop.mapKeyType)) {
-      if (isDateReference(prop.mapKeyType)) {
-        conversions.keyIsDate = true;
-      } else if (isUrlReference(prop.mapKeyType)) {
-        conversions.keyIsUrl = true;
-      } else if (isMapReference(prop.mapKeyType)) {
+      if (isMapReference(prop.mapKeyType)) {
         conversions.keyIsMap = true;
       } else {
         const keyTypeName = prop.mapKeyMessageTypeName
@@ -262,18 +290,12 @@ function getMapConversionInfo(
 
   // Check value type
   if (prop.mapValueType && t.isTSTypeReference(prop.mapValueType)) {
-    if (isDateReference(prop.mapValueType)) {
-      conversions.valueIsDate = true;
-    } else if (isUrlReference(prop.mapValueType)) {
-      conversions.valueIsUrl = true;
-    } else {
-      const valueTypeName = prop.mapValueMessageTypeName
-        ?? (getTypeName(prop.mapValueType) && declaredMessageTypeNames.has(getTypeName(prop.mapValueType)!) 
-          ? getTypeName(prop.mapValueType)
-          : null);
-      if (valueTypeName) {
-        conversions.valueIsMessage = valueTypeName;
-      }
+    const valueTypeName = prop.mapValueMessageTypeName
+      ?? (getTypeName(prop.mapValueType) && declaredMessageTypeNames.has(getTypeName(prop.mapValueType)!)
+        ? getTypeName(prop.mapValueType)
+        : null);
+    if (valueTypeName) {
+      conversions.valueIsMessage = valueTypeName;
     }
   }
 
@@ -282,40 +304,22 @@ function getMapConversionInfo(
 
 function needsMapConversions(conversions: MapConversionInfo): boolean {
   return Boolean(
-    conversions.keyIsDate
-    || conversions.keyIsUrl
-    || conversions.keyIsArray
+    conversions.keyIsArray
     || conversions.keyIsMap
     || conversions.keyIsMessage
-    || conversions.valueIsDate
-    || conversions.valueIsUrl
     || conversions.valueIsMessage
   );
 }
 
 /**
  * Build a key conversion expression for map operations.
- * Converts input types (Date, URL, array, Map, Message) to internal types (ImmutableDate, etc.)
+ * Converts input types (array, Map, Message) to internal types.
  * Uses static `from` methods for cleaner generated code.
  */
 function buildKeyConversionExpr(
   keyExpr: t.Expression,
   conversions: MapConversionInfo
 ): t.Expression {
-  if (conversions.keyIsDate) {
-    // ImmutableDate.from(k)
-    return t.callExpression(
-      t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
-      [t.cloneNode(keyExpr)]
-    );
-  }
-  if (conversions.keyIsUrl) {
-    // ImmutableUrl.from(k)
-    return t.callExpression(
-      t.memberExpression(t.identifier('ImmutableUrl'), t.identifier('from')),
-      [t.cloneNode(keyExpr)]
-    );
-  }
   if (conversions.keyIsArray) {
     // ImmutableArray.from(k)
     return t.callExpression(
@@ -342,27 +346,13 @@ function buildKeyConversionExpr(
 
 /**
  * Build a value conversion expression for map operations.
- * Converts input types (Date, URL, Message) to internal types (ImmutableDate, etc.)
+ * Converts input types (Message) to internal types.
  * Uses static `from` methods for cleaner generated code.
  */
 function buildValueConversionExpr(
   valueExpr: t.Expression,
   conversions: MapConversionInfo
 ): t.Expression {
-  if (conversions.valueIsDate) {
-    // ImmutableDate.from(v)
-    return t.callExpression(
-      t.memberExpression(t.identifier('ImmutableDate'), t.identifier('from')),
-      [t.cloneNode(valueExpr)]
-    );
-  }
-  if (conversions.valueIsUrl) {
-    // ImmutableUrl.from(v)
-    return t.callExpression(
-      t.memberExpression(t.identifier('ImmutableUrl'), t.identifier('from')),
-      [t.cloneNode(valueExpr)]
-    );
-  }
   if (conversions.valueIsMessage) {
     // MessageType.from(v)
     return t.callExpression(
@@ -983,6 +973,14 @@ function buildBindMethod(
     )
   );
 
+  const compactTagAssign = t.expressionStatement(
+    t.assignmentExpression(
+      '=',
+      t.memberExpression(t.identifier('boundCtor'), t.identifier('$compactTag')),
+      t.memberExpression(t.identifier(className), t.identifier('$compactTag'))
+    )
+  );
+
   // boundCtor.isInstance = (value) => TypeName.isInstance(value);
   const isInstanceAssign = t.expressionStatement(
     t.assignmentExpression(
@@ -1015,6 +1013,7 @@ function buildBindMethod(
     typeIdAssign,
     typeHashAssign,
     compactAssign,
+    compactTagAssign,
     isInstanceAssign,
     returnStmt
   ]);
@@ -1061,6 +1060,8 @@ function buildGenericDeserializeMethod(
   state.usesParseCerealString = true;
   state.usesEnsure = true;
   state.usesDataObject = true;
+  state.usesTaggedMessageData = true;
+  state.usesTaggedMessageData = true;
 
   // Build type parameters for the method: <T extends Message<any>, U extends Message<any>, ...>
   const methodTypeParams = buildClassTypeParameters(typeParameters);
@@ -1093,14 +1094,133 @@ function buildGenericDeserializeMethod(
     t.tsTypeParameterInstantiation(returnTypeParams)
   );
 
-  // const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+  const parsedId = t.identifier('parsed');
+  const parsedDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      parsedId,
+      t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])
+    ),
+  ]);
+
+  const buildCompactPayload = (inputExpr: t.Expression) => {
+    const compactTag = t.memberExpression(t.identifier(className), t.identifier('$compactTag'));
+    const startsWith = t.callExpression(
+      t.memberExpression(t.cloneNode(inputExpr), t.identifier('startsWith')),
+      [t.cloneNode(compactTag)]
+    );
+    const shouldStrip = t.logicalExpression('&&', t.cloneNode(compactTag), startsWith);
+    return t.conditionalExpression(
+      shouldStrip,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(inputExpr), t.identifier('slice')),
+        [t.memberExpression(t.cloneNode(compactTag), t.identifier('length'))]
+      ),
+      t.cloneNode(inputExpr)
+    );
+  };
+
+  const compactCheck = t.binaryExpression(
+    '===',
+    t.memberExpression(t.identifier(className), t.identifier('$compact')),
+    t.booleanLiteral(true)
+  );
+  const stringCheck = t.binaryExpression(
+    '===',
+    t.unaryExpression('typeof', t.cloneNode(parsedId)),
+    t.stringLiteral('string')
+  );
+  const compactPayload = buildCompactPayload(t.cloneNode(parsedId));
+  const fromCompactCall = t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('fromCompact')),
+    [compactPayload, t.identifier('options')]
+  );
+  const invalidCompactThrow = buildErrorThrow('Invalid compact message payload.');
+
+  const stringBranch = t.ifStatement(
+    stringCheck,
+    t.blockStatement([
+      t.ifStatement(
+        compactCheck,
+        t.blockStatement([t.returnStatement(t.tsAsExpression(fromCompactCall, t.tsAnyKeyword()))]),
+        t.blockStatement([invalidCompactThrow])
+      ),
+    ])
+  );
+
+  const taggedCheck = t.callExpression(
+    t.identifier('isTaggedMessageData'),
+    [t.cloneNode(parsedId)]
+  );
+  const tagMatch = t.binaryExpression(
+    '===',
+    t.memberExpression(t.cloneNode(parsedId), t.identifier('$tag')),
+    t.stringLiteral(typeName)
+  );
+  const dataExpr = t.memberExpression(t.cloneNode(parsedId), t.identifier('$data'));
+  const taggedStringCheck = t.binaryExpression(
+    '===',
+    t.unaryExpression('typeof', t.cloneNode(dataExpr)),
+    t.stringLiteral('string')
+  );
+  const taggedPayload = buildCompactPayload(t.cloneNode(dataExpr));
+  const taggedFromCompact = t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('fromCompact')),
+    [taggedPayload, t.identifier('options')]
+  );
+  const taggedPropsExpr = t.callExpression(
+    t.memberExpression(
+      t.memberExpression(t.identifier(className), t.identifier('prototype')),
+      t.identifier('$fromEntries')
+    ),
+    [t.cloneNode(dataExpr), t.identifier('options')]
+  );
+  const invalidTagThrow = buildErrorThrow(
+    `Tagged message type mismatch: expected ${typeName}.`
+  );
+  const invalidTaggedCompact = buildErrorThrow(
+    `Invalid compact tagged value for ${typeName}.`
+  );
+
+  const taggedBranch = t.ifStatement(
+    taggedCheck,
+    t.blockStatement([
+      t.ifStatement(
+        tagMatch,
+        t.blockStatement([
+          t.ifStatement(
+            taggedStringCheck,
+            t.blockStatement([
+              t.ifStatement(
+                compactCheck,
+                t.blockStatement([
+                  t.returnStatement(t.tsAsExpression(taggedFromCompact, t.tsAnyKeyword())),
+                ]),
+                t.blockStatement([invalidTaggedCompact])
+              ),
+            ]),
+            t.blockStatement([
+              t.returnStatement(
+                t.newExpression(t.identifier(className), [
+                  ...typeClassParams.map((param) => t.cloneNode(param)),
+                  taggedPropsExpr,
+                  t.identifier('options'),
+                ])
+              ),
+            ])
+          ),
+        ]),
+        t.blockStatement([invalidTagThrow])
+      ),
+    ])
+  );
+
   const payloadDecl = t.variableDeclaration('const', [
     t.variableDeclarator(
       t.identifier('payload'),
       t.tsAsExpression(
         t.callExpression(
           t.memberExpression(t.identifier('ensure'), t.identifier('simpleObject')),
-          [t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])]
+          [t.cloneNode(parsedId)]
         ),
         t.tsTypeReference(t.identifier('DataObject'))
       )
@@ -1240,6 +1360,9 @@ function buildGenericDeserializeMethod(
   );
 
   const methodBody = t.blockStatement([
+    parsedDecl,
+    stringBranch,
+    taggedBranch,
     payloadDecl,
     ...reconstructionStatements,
     returnStmt
@@ -1270,11 +1393,13 @@ function buildGenericDeserializeMethod(
 function buildNonGenericDeserializeMethod(
   className: string,
   namespaceName: string,
-  state: PluginStateFlags
+  state: PluginStateFlags,
+  typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   state.usesParseCerealString = true;
   state.usesEnsure = true;
   state.usesDataObject = true;
+  state.usesTaggedMessageData = true;
 
   // Type parameter: T extends typeof ClassName
   const typeParam = t.tsTypeParameter(
@@ -1302,29 +1427,177 @@ function buildNonGenericDeserializeMethod(
   );
   optionsParam.optional = true;
 
+  const typeArgParams: t.Identifier[] = typeParameters.map((param) => {
+    const id = t.identifier(param.name);
+    id.typeAnnotation = t.tsTypeAnnotation(
+      param.constraint ? t.cloneNode(param.constraint) : t.tsUnknownKeyword()
+    );
+    return id;
+  });
+  const typeArgExprs: t.Identifier[] = typeArgParams.map((param) =>
+    t.identifier(param.name)
+  );
+  const params = [thisParam, ...typeArgParams, dataParam, optionsParam];
+
   // Return type: InstanceType<T> - returns instance of the actual class called on
   const returnType = t.tsTypeReference(
     t.identifier('InstanceType'),
     t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier('T'))])
   );
 
-  // Body:
-  // const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+  const parsedId = t.identifier('parsed');
+  const parsedDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      parsedId,
+      t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])
+    ),
+  ]);
+
+  const buildCompactPayload = (inputExpr: t.Expression) => {
+    const compactTag = t.memberExpression(t.thisExpression(), t.identifier('$compactTag'));
+    const startsWith = t.callExpression(
+      t.memberExpression(t.cloneNode(inputExpr), t.identifier('startsWith')),
+      [t.cloneNode(compactTag)]
+    );
+    const shouldStrip = t.logicalExpression('&&', t.cloneNode(compactTag), startsWith);
+    return t.conditionalExpression(
+      shouldStrip,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(inputExpr), t.identifier('slice')),
+        [t.memberExpression(t.cloneNode(compactTag), t.identifier('length'))]
+      ),
+      t.cloneNode(inputExpr)
+    );
+  };
+
+  const compactCheck = t.binaryExpression(
+    '===',
+    t.memberExpression(t.thisExpression(), t.identifier('$compact')),
+    t.booleanLiteral(true)
+  );
+  const stringCheck = t.binaryExpression(
+    '===',
+    t.unaryExpression('typeof', t.cloneNode(parsedId)),
+    t.stringLiteral('string')
+  );
+  const compactPayload = buildCompactPayload(t.cloneNode(parsedId));
+  const fromCompactArgs = [
+    ...typeArgExprs.map((param) => t.cloneNode(param)),
+    compactPayload,
+    t.identifier('options'),
+  ];
+  const fromCompactCall = t.callExpression(
+    t.memberExpression(t.thisExpression(), t.identifier('fromCompact')),
+    fromCompactArgs
+  );
+  const typedFromCompact = t.tsAsExpression(
+    fromCompactCall,
+    t.tsTypeReference(
+      t.identifier('InstanceType'),
+      t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier('T'))])
+    )
+  );
+  const invalidCompactThrow = buildErrorThrow('Invalid compact message payload.');
+
+  const stringBranch = t.ifStatement(
+    stringCheck,
+    t.blockStatement([
+      t.ifStatement(
+        compactCheck,
+        t.blockStatement([t.returnStatement(typedFromCompact)]),
+        t.blockStatement([invalidCompactThrow])
+      ),
+    ])
+  );
+
+  const taggedCheck = t.callExpression(
+    t.identifier('isTaggedMessageData'),
+    [t.cloneNode(parsedId)]
+  );
+  const tagMatch = t.binaryExpression(
+    '===',
+    t.memberExpression(t.cloneNode(parsedId), t.identifier('$tag')),
+    t.memberExpression(t.thisExpression(), t.identifier('$typeName'))
+  );
+  const dataExpr = t.memberExpression(t.cloneNode(parsedId), t.identifier('$data'));
+  const taggedStringCheck = t.binaryExpression(
+    '===',
+    t.unaryExpression('typeof', t.cloneNode(dataExpr)),
+    t.stringLiteral('string')
+  );
+  const taggedPayload = buildCompactPayload(t.cloneNode(dataExpr));
+  const taggedFromCompact = t.callExpression(
+    t.memberExpression(t.thisExpression(), t.identifier('fromCompact')),
+    [
+      ...typeArgExprs.map((param) => t.cloneNode(param)),
+      taggedPayload,
+      t.identifier('options'),
+    ]
+  );
+  const taggedFromEntries = t.callExpression(
+    t.memberExpression(
+      t.memberExpression(t.thisExpression(), t.identifier('prototype')),
+      t.identifier('$fromEntries')
+    ),
+    [t.cloneNode(dataExpr), t.identifier('options')]
+  );
+  const taggedPropsReturn = t.returnStatement(
+    t.tsAsExpression(
+      t.newExpression(t.thisExpression(), [taggedFromEntries, t.identifier('options')]),
+      t.tsTypeReference(
+        t.identifier('InstanceType'),
+        t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier('T'))])
+      )
+    )
+  );
+  const invalidTagThrow = buildErrorThrow(
+    `Tagged message type mismatch: expected ${namespaceName}.`
+  );
+  const invalidTaggedCompact = buildErrorThrow(
+    `Invalid compact tagged value for ${namespaceName}.`
+  );
+
+  const taggedBranch = t.ifStatement(
+    taggedCheck,
+    t.blockStatement([
+      t.ifStatement(
+        tagMatch,
+        t.blockStatement([
+          t.ifStatement(
+            taggedStringCheck,
+            t.blockStatement([
+              t.ifStatement(
+                compactCheck,
+                t.blockStatement([t.returnStatement(t.tsAsExpression(
+                  taggedFromCompact,
+                  t.tsTypeReference(
+                    t.identifier('InstanceType'),
+                    t.tsTypeParameterInstantiation([t.tsTypeReference(t.identifier('T'))])
+                  )
+                ))]),
+                t.blockStatement([invalidTaggedCompact])
+              ),
+            ]),
+            t.blockStatement([taggedPropsReturn])
+          ),
+        ]),
+        t.blockStatement([invalidTagThrow])
+      ),
+    ])
+  );
+
   const payloadDecl = t.variableDeclaration('const', [
     t.variableDeclarator(
       t.identifier('payload'),
       t.tsAsExpression(
         t.callExpression(
           t.memberExpression(t.identifier('ensure'), t.identifier('simpleObject')),
-          [t.callExpression(t.identifier('parseCerealString'), [t.identifier('data')])]
+          [t.cloneNode(parsedId)]
         ),
         t.tsTypeReference(t.identifier('DataObject'))
       )
-    )
+    ),
   ]);
-
-  // const props = this.prototype.$fromEntries(payload, options);
-  // Use `this` so subclasses (via @extend) return the correct type
   const propsDecl = t.variableDeclaration('const', [
     t.variableDeclarator(
       t.identifier('props'),
@@ -1335,10 +1608,8 @@ function buildNonGenericDeserializeMethod(
         ),
         [t.identifier('payload'), t.identifier('options')]
       )
-    )
+    ),
   ]);
-
-  // return new this(props, options) as InstanceType<T>;
   const returnStmt = t.returnStatement(
     t.tsAsExpression(
       t.newExpression(t.thisExpression(), [t.identifier('props'), t.identifier('options')]),
@@ -1350,15 +1621,18 @@ function buildNonGenericDeserializeMethod(
   );
 
   const methodBody = t.blockStatement([
+    parsedDecl,
+    stringBranch,
+    taggedBranch,
     payloadDecl,
     propsDecl,
-    returnStmt
+    returnStmt,
   ]);
 
   const method = t.classMethod(
     'method',
     t.identifier('deserialize'),
-    [thisParam, dataParam, optionsParam],
+    params,
     methodBody,
     false,
     true // static
@@ -1433,6 +1707,142 @@ function buildFromMethod(typeName: string, className: string): t.ClassMethod {
   return method;
 }
 
+function buildAutoCompactMethods(
+  propName: string
+): { toCompact: t.ClassMethod; fromCompact: t.ClassMethod } {
+  const toCompactMethod = t.classMethod(
+    'method',
+    t.identifier('toCompact'),
+    [],
+    t.blockStatement([
+      t.returnStatement(
+        t.memberExpression(t.thisExpression(), t.identifier(propName))
+      ),
+    ])
+  );
+  toCompactMethod.override = true;
+  toCompactMethod.returnType = t.tsTypeAnnotation(t.tsStringKeyword());
+
+  const argsId = t.identifier('args');
+  const restParam = t.restElement(argsId);
+  restParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsArrayType(t.tsUnknownKeyword())
+  );
+  const maybeOptionsId = t.identifier('maybeOptions');
+  const optionsId = t.identifier('options');
+  const valueIndexId = t.identifier('valueIndex');
+  const valueId = t.identifier('value');
+  const optionsType = t.tsTypeLiteral([
+    t.tsPropertySignature(
+      t.identifier('skipValidation'),
+      t.tsTypeAnnotation(t.tsBooleanKeyword())
+    ),
+  ]);
+
+  const maybeOptionsDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      maybeOptionsId,
+      t.memberExpression(
+        argsId,
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(1)
+        ),
+        true
+      )
+    ),
+  ]);
+  const hasOptionsCheck = t.logicalExpression(
+    '&&',
+    t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(maybeOptionsId)),
+      t.stringLiteral('object')
+    ),
+    t.logicalExpression(
+      '&&',
+      t.binaryExpression(
+        '!==',
+        t.cloneNode(maybeOptionsId),
+        t.nullLiteral()
+      ),
+      t.binaryExpression(
+        'in',
+        t.stringLiteral('skipValidation'),
+        t.cloneNode(maybeOptionsId)
+      )
+    )
+  );
+  const optionsDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      optionsId,
+      t.conditionalExpression(
+        hasOptionsCheck,
+        t.tsAsExpression(t.cloneNode(maybeOptionsId), optionsType),
+        t.identifier('undefined')
+      )
+    ),
+  ]);
+  const valueIndexDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      valueIndexId,
+      t.conditionalExpression(
+        hasOptionsCheck,
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(2)
+        ),
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(1)
+        )
+      )
+    ),
+  ]);
+  const valueDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      valueId,
+      t.memberExpression(t.cloneNode(argsId), t.cloneNode(valueIndexId), true)
+    ),
+  ]);
+  const valueTypeCheck = t.ifStatement(
+    t.binaryExpression(
+      '!==',
+      t.unaryExpression('typeof', t.cloneNode(valueId)),
+      t.stringLiteral('string')
+    ),
+    buildErrorThrow('Compact message fromCompact expects a string value.')
+  );
+  const propsObj = t.objectExpression([
+    t.objectProperty(t.identifier(propName), t.cloneNode(valueId)),
+  ]);
+  const ctorExpr = t.newExpression(
+    t.tsAsExpression(t.thisExpression(), t.tsAnyKeyword()),
+    [propsObj, t.cloneNode(optionsId)]
+  );
+  const fromCompactMethod = t.classMethod(
+    'method',
+    t.identifier('fromCompact'),
+    [restParam],
+    t.blockStatement([
+      maybeOptionsDecl,
+      optionsDecl,
+      valueIndexDecl,
+      valueDecl,
+      valueTypeCheck,
+      t.returnStatement(ctorExpr),
+    ]),
+    false,
+    true
+  );
+  fromCompactMethod.override = true;
+
+  return { toCompact: toCompactMethod, fromCompact: fromCompactMethod };
+}
+
 /**
  * Information about an Endpoint wrapper type.
  * Used to generate the __responseType phantom field on endpoint classes.
@@ -1465,7 +1875,8 @@ export function buildClassFromProperties(
   typeTagIdent?: t.Identifier,
   typeId?: string,
   typeHash?: string,
-  compact = false
+  compact = false,
+  compactTag?: string | null
 ): t.ClassDeclaration {
   // Use $Base suffix for extended types
   const className = isExtended ? `${typeName}$Base` : typeName;
@@ -1501,6 +1912,15 @@ export function buildClassFromProperties(
   // Check if any nested message types exist that might need validation propagation
   // This ensures skipValidation can be passed to nested message constructors
   const hasNestedMessageTypes = propDescriptors.some(prop => prop.isMessageType);
+  const autoCompactProp = compact && propDescriptors.length === 1
+    ? propDescriptors[0]!
+    : null;
+  const autoCompactMethods = autoCompactProp
+    && autoCompactProp.fieldNumber === 1
+    && !autoCompactProp.optional
+    && isStringTypeNode(autoCompactProp.typeAnnotation)
+    ? buildAutoCompactMethods(autoCompactProp.name)
+    : null;
 
   for (const prop of propDescriptors) {
     const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
@@ -1638,22 +2058,6 @@ export function buildClassFromProperties(
             propsAccess,
             { allowUndefined: Boolean(prop.optional), castToAny: true }
           );
-    } else if (prop.isDateType) {
-      valueExpr = buildImmutableDateNormalizationExpression(
-        valueExpr,
-        {
-          allowUndefined: Boolean(prop.optional),
-          allowNull: typeAllowsNull(prop.typeAnnotation),
-        }
-      );
-    } else if (prop.isUrlType) {
-      valueExpr = buildImmutableUrlNormalizationExpression(
-        valueExpr,
-        {
-          allowUndefined: Boolean(prop.optional),
-          allowNull: typeAllowsNull(prop.typeAnnotation),
-        }
-      );
     } else if (prop.isArrayBufferType) {
       valueExpr = buildImmutableArrayBufferNormalizationExpression(
         valueExpr,
@@ -1679,6 +2083,17 @@ export function buildClassFromProperties(
           valueTypeArgs: messageTypeArgTypes,
           allowCompact: false,
         }
+      );
+    }
+    if (prop.unionMessageTypes.length > 0) {
+      const unionMessageRefs = getUnionMessageTypeRefs(
+        prop.typeAnnotation,
+        prop.unionMessageTypes
+      );
+      valueExpr = buildMessageUnionValueNormalizationExpression(
+        valueExpr,
+        unionMessageRefs,
+        t.identifier('options')
       );
     }
 
@@ -1722,7 +2137,9 @@ export function buildClassFromProperties(
     // Skip casting for Date/URL/ArrayBuffer types because the stored type
     // is the Immutable version (ImmutableDate, ImmutableUrl, ImmutableArrayBuffer)
     // but typeAnnotation refers to the user-facing type (Date, URL, ArrayBuffer)
-    const skipTypeCast = prop.isDateType || prop.isUrlType || prop.isArrayBufferType
+    const skipTypeCast = prop.isDateType || prop.isUrlType
+      || prop.unionHasDate || prop.unionHasUrl
+      || prop.isArrayBufferType
       || prop.isMessageType || prop.isArray || prop.isSet || prop.isMap;
     const typedAssignedExpr = skipTypeCast
       ? assignedExpr
@@ -1903,6 +2320,20 @@ export function buildClassFromProperties(
     staticFields.push(compactProp);
   }
 
+  if (compactTag) {
+    const compactTagProp = t.classProperty(
+      t.identifier('$compactTag'),
+      t.stringLiteral(compactTag),
+      null,
+      null,
+      false,
+      true
+    );
+    compactTagProp.override = true;
+    compactTagProp.readonly = true;
+    staticFields.push(compactTagProp);
+  }
+
   // Add static $typeName for non-generic messages
   // (generic messages get $typeName set dynamically in constructor)
   if (!hasMessageTypeParameters) {
@@ -2018,6 +2449,10 @@ export function buildClassFromProperties(
     fromEntriesMethod,
   ];
 
+  if (autoCompactMethods) {
+    classBodyMembers.push(autoCompactMethods.toCompact, autoCompactMethods.fromCompact);
+  }
+
   // Add static from() method for non-generic messages
   if (fromMethod) {
     classBodyMembers.push(fromMethod);
@@ -2063,13 +2498,23 @@ export function buildClassFromProperties(
       }
     } else {
       // Generic with non-message type params only - use non-generic deserialize
-      const deserializeMethod = buildNonGenericDeserializeMethod(className, typeName, state);
+      const deserializeMethod = buildNonGenericDeserializeMethod(
+        className,
+        typeName,
+        state,
+        typeParameters
+      );
       classBodyMembers.push(deserializeMethod);
     }
   } else {
     // Add deserialize() method for non-generic messages
     // className is the actual class (e.g., Person$Base), typeName is the namespace (e.g., Person)
-    const deserializeMethod = buildNonGenericDeserializeMethod(className, typeName, state);
+    const deserializeMethod = buildNonGenericDeserializeMethod(
+      className,
+      typeName,
+      state,
+      typeParameters
+    );
     classBodyMembers.push(deserializeMethod);
   }
 
@@ -2220,6 +2665,14 @@ function buildDescriptorMethod(
         )
       );
     }
+    if (prop.unionHasString) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('unionHasString'),
+          t.booleanLiteral(true)
+        )
+      );
+    }
 
     if (prop.arrayElementUnionMessageTypes.length > 0) {
       properties.push(
@@ -2228,6 +2681,14 @@ function buildDescriptorMethod(
           t.arrayExpression(
             prop.arrayElementUnionMessageTypes.map((name) => t.stringLiteral(name))
           )
+        )
+      );
+    }
+    if (prop.arrayElementUnionHasString) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('arrayElementUnionHasString'),
+          t.booleanLiteral(true)
         )
       );
     }
@@ -2242,6 +2703,14 @@ function buildDescriptorMethod(
         )
       );
     }
+    if (prop.setElementUnionHasString) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('setElementUnionHasString'),
+          t.booleanLiteral(true)
+        )
+      );
+    }
 
     if (prop.mapKeyUnionMessageTypes.length > 0) {
       properties.push(
@@ -2253,6 +2722,14 @@ function buildDescriptorMethod(
         )
       );
     }
+    if (prop.mapKeyUnionHasString) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('mapKeyUnionHasString'),
+          t.booleanLiteral(true)
+        )
+      );
+    }
 
     if (prop.mapValueUnionMessageTypes.length > 0) {
       properties.push(
@@ -2261,6 +2738,14 @@ function buildDescriptorMethod(
           t.arrayExpression(
             prop.mapValueUnionMessageTypes.map((name) => t.stringLiteral(name))
           )
+        )
+      );
+    }
+    if (prop.mapValueUnionHasString) {
+      properties.push(
+        t.objectProperty(
+          t.identifier('mapValueUnionHasString'),
+          t.booleanLiteral(true)
         )
       );
     }
@@ -2432,6 +2917,7 @@ function buildFieldValidationStatements(
     );
     checkedValueId = abValueId;
   } else if (prop.isMessageType && prop.messageTypeName) {
+    state.usesTaggedMessageData = true;
     const messageValueId = t.identifier(`${prop.name}MessageValue`);
     const messageTypeArgs = buildTypeArgumentExpressions(prop.typeAnnotation);
     const messageTypeArgTypes = buildTypeArgumentTypes(prop.typeAnnotation);
@@ -2445,6 +2931,7 @@ function buildFieldValidationStatements(
         optionsExpr: options.optionsExpr,
         compactArgs: messageTypeArgs,
         valueTypeArgs: messageTypeArgTypes,
+        allowTagged: true,
       }
     );
 
@@ -2901,7 +3388,14 @@ function buildFieldValidationStatements(
       checkedValueId as t.Expression,
       t.tsTypeReference(t.identifier(prop.genericParamName))
     );
-  } else if (prop.isMap || prop.isSet || prop.isArray || prop.isArrayBufferType) {
+  } else if (
+    prop.isMap
+    || prop.isSet
+    || prop.isArray
+    || prop.isArrayBufferType
+    || prop.isDateType
+    || prop.isUrlType
+  ) {
     finalValue = t.tsAsExpression(
       checkedValueId as t.Expression,
       prop.displayType ? t.cloneNode(prop.displayType) : wrapImmutableType(t.cloneNode(prop.typeAnnotation))
@@ -3137,9 +3631,13 @@ function buildTaggedMessageUnionHandler(
       t.memberExpression(t.identifier(msgType.name), t.identifier('$compact')),
       t.booleanLiteral(true)
     );
+    const payloadExpr = buildCompactPayloadExpression(
+      t.cloneNode(dataExpr),
+      msgType.name
+    );
     const fromCompactCall = buildFromCompactCall(
       msgType.name,
-      dataExpr,
+      payloadExpr,
       msgType.typeArgs,
       optionsExpr
     );
@@ -3214,6 +3712,65 @@ function buildTaggedMessageUnionHandler(
     statements.push(
       t.ifStatement(outerCondition, t.blockStatement([innerIf]))
     );
+
+    const stringCheck = t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(sourceExpr)),
+      t.stringLiteral('string')
+    );
+    let stringIf: t.IfStatement | null = null;
+
+    for (let i = messageTypes.length - 1; i >= 0; i -= 1) {
+      const msgType = messageTypes[i]!;
+      const compactTagExpr = t.memberExpression(
+        t.identifier(msgType.name),
+        t.identifier('$compactTag')
+      );
+      const startsWith = t.callExpression(
+        t.memberExpression(t.cloneNode(sourceExpr), t.identifier('startsWith')),
+        [t.cloneNode(compactTagExpr)]
+      );
+      const tagCheck = t.logicalExpression('&&', t.cloneNode(compactTagExpr), startsWith);
+      const compactCheck = t.binaryExpression(
+        '===',
+        t.memberExpression(t.identifier(msgType.name), t.identifier('$compact')),
+        t.booleanLiteral(true)
+      );
+      const payloadExpr = buildCompactPayloadExpression(
+        t.cloneNode(sourceExpr),
+        msgType.name
+      );
+      const fromCompactCall = buildFromCompactCall(
+        msgType.name,
+        payloadExpr,
+        msgType.typeArgs,
+        optionsExpr
+      );
+      const assignCompact = t.expressionStatement(
+        t.assignmentExpression('=', t.cloneNode(targetId), fromCompactCall)
+      );
+      const compactGuard = t.ifStatement(
+        compactCheck,
+        t.blockStatement([assignCompact]),
+        t.blockStatement([
+          buildErrorThrow(
+            `Invalid compact tagged value for property "${propName}" (${msgType.name}).`
+          )
+        ])
+      );
+      const assignStmt = t.ifStatement(
+        tagCheck,
+        t.blockStatement([compactGuard]),
+        stringIf
+      );
+      stringIf = assignStmt;
+    }
+
+    if (stringIf) {
+      statements.push(
+        t.ifStatement(stringCheck, t.blockStatement([stringIf]))
+      );
+    }
 
     // Attempt to coerce untagged object values into union message types
     const notTaggedCheck = t.unaryExpression(
@@ -3358,6 +3915,121 @@ function buildTaggedMessageUnionCoercionExpression(
     optionsExpr
   );
   statements.push(t.returnStatement(t.cloneNode(targetId)));
+  const func = t.arrowFunctionExpression([valueId], t.blockStatement(statements));
+  return t.callExpression(func, [t.cloneNode(sourceExpr)]);
+}
+
+function buildMessageUnionValueNormalizationExpression(
+  sourceExpr: t.Expression,
+  messageTypes: UnionMessageTypeRef[],
+  optionsExpr?: t.Expression
+): t.Expression {
+  const valueId = t.identifier('value');
+  const resultId = t.identifier('result');
+  const matchedId = t.identifier('matched');
+  const isMessageId = t.identifier('isMessage');
+
+  const statements: t.Statement[] = [
+    t.variableDeclaration('let', [
+      t.variableDeclarator(
+        resultId,
+        t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
+      ),
+    ]),
+    t.variableDeclaration('const', [
+      t.variableDeclarator(
+        isMessageId,
+        t.callExpression(
+          t.memberExpression(t.identifier('Message'), t.identifier('isMessage')),
+          [t.cloneNode(valueId)]
+        )
+      ),
+    ]),
+  ];
+
+  const objectCheck = t.logicalExpression(
+    '&&',
+    t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(valueId)),
+      t.stringLiteral('object')
+    ),
+    t.binaryExpression(
+      '!==',
+      t.cloneNode(valueId),
+      t.nullLiteral()
+    )
+  );
+  const notArrayCheck = t.unaryExpression(
+    '!',
+    t.callExpression(
+      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+      [t.cloneNode(valueId)]
+    )
+  );
+  const condition = t.logicalExpression('&&', objectCheck, notArrayCheck);
+
+  const coercionStatements: t.Statement[] = [
+    t.variableDeclaration('let', [
+      t.variableDeclarator(matchedId, t.booleanLiteral(false)),
+    ]),
+  ];
+
+  for (const msgType of messageTypes) {
+    const isInstanceCall = t.callExpression(
+      t.memberExpression(t.identifier(msgType.name), t.identifier('isInstance')),
+      [t.cloneNode(valueId)]
+    );
+    const assignExisting = t.expressionStatement(
+      t.assignmentExpression(
+        '=',
+        t.cloneNode(resultId),
+        t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
+      )
+    );
+    const markMatched = t.expressionStatement(
+      t.assignmentExpression('=', t.cloneNode(matchedId), t.booleanLiteral(true))
+    );
+    const ctorArgs: t.Expression[] = [
+      t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword()),
+    ];
+    if (optionsExpr) {
+      ctorArgs.push(t.cloneNode(optionsExpr));
+    }
+    const constructorCall = t.newExpression(
+      t.identifier(msgType.name),
+      ctorArgs
+    );
+    const assignConstructed = t.expressionStatement(
+      t.assignmentExpression('=', t.cloneNode(resultId), constructorCall)
+    );
+    const tryAssign = t.tryStatement(
+      t.blockStatement([assignConstructed, markMatched]),
+      t.catchClause(t.identifier('e'), t.blockStatement([]))
+    );
+    const attemptBlock = t.ifStatement(
+      isInstanceCall,
+      t.blockStatement([assignExisting, markMatched]),
+      t.blockStatement([
+        t.ifStatement(
+          t.unaryExpression('!', t.cloneNode(isMessageId)),
+          t.blockStatement([tryAssign])
+        ),
+      ])
+    );
+    coercionStatements.push(
+      t.ifStatement(
+        t.unaryExpression('!', t.cloneNode(matchedId)),
+        t.blockStatement([attemptBlock])
+      )
+    );
+  }
+
+  statements.push(
+    t.ifStatement(condition, t.blockStatement(coercionStatements))
+  );
+  statements.push(t.returnStatement(t.cloneNode(resultId)));
+
   const func = t.arrowFunctionExpression([valueId], t.blockStatement(statements));
   return t.callExpression(func, [t.cloneNode(sourceExpr)]);
 }
@@ -4280,9 +4952,7 @@ function buildMapMutatorMethods(
 
           // Check if key needs conversion
           const needsKeyConversion = Boolean(
-            conversions.keyIsDate
-            || conversions.keyIsUrl
-            || conversions.keyIsArray
+            conversions.keyIsArray
             || conversions.keyIsMap
             || conversions.keyIsMessage
           );
@@ -5020,11 +5690,9 @@ function buildSetEntryOptions(prop: PropDescriptor, conversions: MapConversionIn
   const existingId = t.identifier('existing');
   const valueId = t.identifier('value');
 
-  // Check if key needs conversion (Date, URL, Array, Map, or Message)
+  // Check if key needs conversion (Array, Map, or Message)
   const needsKeyConversion = Boolean(
-    conversions.keyIsDate
-    || conversions.keyIsUrl
-    || conversions.keyIsArray
+    conversions.keyIsArray
     || conversions.keyIsMap
     || conversions.keyIsMessage
   );
@@ -5056,7 +5724,7 @@ function buildSetEntryOptions(prop: PropDescriptor, conversions: MapConversionIn
     ]),
   ];
 
-  // Add key conversion if needed: const k = ImmutableDate.from(key)
+  // Add key conversion if needed.
   if (needsKeyConversion) {
     const keyConversion = buildKeyConversionExpr(t.identifier('key'), conversions);
     prelude.push(
@@ -5084,11 +5752,9 @@ function buildSetEntryOptions(prop: PropDescriptor, conversions: MapConversionIn
 function buildDeleteEntryOptions(prop: PropDescriptor, conversions: MapConversionInfo) {
   const currentId = t.identifier(`${prop.name}Current`);
 
-  // Check if key needs conversion (Date, URL, Array, Map, or Message)
+  // Check if key needs conversion (Array, Map, or Message)
   const needsKeyConversion = Boolean(
-    conversions.keyIsDate
-    || conversions.keyIsUrl
-    || conversions.keyIsArray
+    conversions.keyIsArray
     || conversions.keyIsMap
     || conversions.keyIsMessage
   );
@@ -5112,7 +5778,7 @@ function buildDeleteEntryOptions(prop: PropDescriptor, conversions: MapConversio
     ]),
   ];
 
-  // Add key conversion if needed: const k = ImmutableDate.from(key)
+  // Add key conversion if needed.
   if (needsKeyConversion) {
     const keyConversion = buildKeyConversionExpr(t.identifier('key'), conversions);
     prelude.push(

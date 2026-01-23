@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_Wrapper_Payload_Union1 = Symbol("Wrapper_Payload_Union1");
 export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data> {
   static $typeId = "tests/bigint-regression.pmsg#Wrapper_Payload_Union1";
-  static $typeHash = "sha256:d77490284cd33b0703a62b050c0835af4423d457903e70d04da8bbab2370b335";
+  static $typeHash = "sha256:3eb8f5e7ce52caf562afc86bc6701b457bf3e7082c1835f494cbf38c4f2fb2c2";
   static $instanceTag = Symbol.for("propane:message:" + Wrapper_Payload_Union1.$typeId);
   static readonly $typeName = "Wrapper_Payload_Union1";
   static EMPTY: Wrapper_Payload_Union1;
@@ -42,7 +42,30 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
   static deserialize<T extends typeof Wrapper_Payload_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Wrapper_Payload_Union1.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Wrapper_Payload_Union1.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -73,7 +96,7 @@ export namespace Wrapper_Payload_Union1 {
 const TYPE_TAG_Wrapper = Symbol("Wrapper");
 export class Wrapper extends Message<Wrapper.Data> {
   static $typeId = "tests/bigint-regression.pmsg#Wrapper";
-  static $typeHash = "sha256:0a89227d9a2a51d9826f15fc6509270cdb93366790999ee19dd3dd381f08b3f1";
+  static $typeHash = "sha256:e70dd6302cfd8a756208960030d2bb6e53f46a3fae34a8887e737cff5a360ad8";
   static $instanceTag = Symbol.for("propane:message:" + Wrapper.$typeId);
   static readonly $typeName = "Wrapper";
   static EMPTY: Wrapper;
@@ -86,7 +109,27 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#payload = (props ? props.payload : 0n) as bigint | Wrapper_Payload_Union1;
+    this.#payload = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Wrapper_Payload_Union1.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Wrapper_Payload_Union1(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.payload) : 0n) as bigint | Wrapper_Payload_Union1;
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -109,12 +152,21 @@ export class Wrapper extends Message<Wrapper.Data> {
       if (payloadValue.$tag === "Wrapper_Payload_Union1") {
         if (typeof payloadValue.$data === "string") {
           if (Wrapper_Payload_Union1.$compact === true) {
-            payloadUnionValue = Wrapper_Payload_Union1.fromCompact(payloadValue.$data, options);
+            payloadUnionValue = Wrapper_Payload_Union1.fromCompact(Wrapper_Payload_Union1.$compactTag && payloadValue.$data.startsWith(Wrapper_Payload_Union1.$compactTag) ? payloadValue.$data.slice(Wrapper_Payload_Union1.$compactTag.length) : payloadValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"payload\" (Wrapper_Payload_Union1).");
           }
         } else {
           payloadUnionValue = new Wrapper_Payload_Union1(Wrapper_Payload_Union1.prototype.$fromEntries(payloadValue.$data, options), options);
+        }
+      }
+    }
+    if (typeof payloadValue === "string") {
+      if (Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag)) {
+        if (Wrapper_Payload_Union1.$compact === true) {
+          payloadUnionValue = Wrapper_Payload_Union1.fromCompact(Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag) ? payloadValue.slice(Wrapper_Payload_Union1.$compactTag.length) : payloadValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"payload\" (Wrapper_Payload_Union1).");
         }
       }
     }
@@ -152,7 +204,30 @@ export class Wrapper extends Message<Wrapper.Data> {
   static deserialize<T extends typeof Wrapper>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Wrapper.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Wrapper.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -29,6 +29,7 @@ type CanonicalMessage = [
   CanonicalTypeParam[],
   CanonicalWrapper,
   boolean,
+  string | null,
   CanonicalProperty[]
 ];
 
@@ -97,6 +98,7 @@ export function computeMessageTypeHash(message: PmtMessage): string {
     canonicalizeTypeParameters(message.typeParameters),
     wrapper,
     message.compact,
+    message.compactTag ?? null,
     properties,
   ];
 

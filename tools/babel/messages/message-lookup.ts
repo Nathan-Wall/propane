@@ -15,7 +15,12 @@ export function createMessageReferenceResolver(
   declaredMessageTypeNames: Set<string>
 ): MessageReferenceResolver {
   const messageModuleCache = new Map<string, Set<string>>();
-  const builtinMessageNames = new Set(['Decimal', 'Rational']);
+  const builtinMessageNames = new Set([
+    'Decimal',
+    'Rational',
+    'ImmutableDate',
+    'ImmutableUrl',
+  ]);
 
   return function getMessageReferenceName(
     typePath: NodePath<t.TSType>
@@ -30,6 +35,14 @@ export function createMessageReferenceResolver(
     }
 
     const name = typeName.name;
+
+    if (name === 'Date') {
+      return 'ImmutableDate';
+    }
+
+    if (name === 'URL') {
+      return 'ImmutableUrl';
+    }
 
     if (declaredMessageTypeNames.has(name)) {
       return name;

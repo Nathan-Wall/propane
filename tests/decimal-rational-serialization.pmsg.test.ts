@@ -10,10 +10,15 @@ export default function runDecimalRationalSerializationTests() {
   // Top-level Decimal: compact form (implicit field numbers)
   const decimalSerialized = decimal.serialize();
   assert(
-    decimalSerialized === ':{12345n,10,2}',
+    decimalSerialized === ':#123.45',
     `Decimal compact serialization mismatch: ${decimalSerialized}`
   );
-  const decimalRoundTrip = Decimal.deserialize(decimalSerialized);
+  const decimalTagged = decimal.serialize({ includeTag: true });
+  assert(
+    decimalTagged === ':#123.45',
+    `Decimal tagged serialization mismatch: ${decimalTagged}`
+  );
+  const decimalRoundTrip = Decimal.deserialize(10, 2, decimalSerialized);
   assert(
     decimalRoundTrip.toString() === '123.45',
     'Decimal compact deserialize should preserve value.'
@@ -23,18 +28,18 @@ export default function runDecimalRationalSerializationTests() {
   const decimalExpandedNumeric = ':{1:12345n,2:10,3:2}';
   const decimalExpandedNamed = ':{mantissa:12345n,precision:10,scale:2}';
   assert(
-    Decimal.deserialize(decimalExpandedNumeric).toString() === '123.45',
+    Decimal.deserialize(10, 2, decimalExpandedNumeric).toString() === '123.45',
     'Decimal numeric-key deserialize should preserve value.'
   );
   assert(
-    Decimal.deserialize(decimalExpandedNamed).toString() === '123.45',
+    Decimal.deserialize(10, 2, decimalExpandedNamed).toString() === '123.45',
     'Decimal named-key deserialize should preserve value.'
   );
 
   // Top-level Rational: compact string form
   const rationalSerialized = rational.serialize();
   assert(
-    rationalSerialized === ':"1/3"',
+    rationalSerialized === ':Q1/3',
     `Rational compact serialization mismatch: ${rationalSerialized}`
   );
   const rationalRoundTrip = Rational.deserialize(rationalSerialized);
@@ -59,7 +64,7 @@ export default function runDecimalRationalSerializationTests() {
   const pair = new NumericPair({ amount: decimal, ratio: rational });
   const pairSerialized = pair.serialize();
   assert(
-    pairSerialized === ':{"123.45","1/3"}',
+    pairSerialized === ':{#123.45,Q1/3}',
     `NumericPair compact serialization mismatch: ${pairSerialized}`
   );
   const pairRoundTrip = NumericPair.deserialize(pairSerialized);
@@ -98,7 +103,7 @@ export default function runDecimalRationalSerializationTests() {
   const unionDecimal = new NumericUnion({ value: decimal });
   const unionDecimalSerialized = unionDecimal.serialize();
   assert(
-    unionDecimalSerialized === ':{$Decimal"123.45"}',
+    unionDecimalSerialized === ':{#123.45}',
     `NumericUnion Decimal serialization mismatch: ${unionDecimalSerialized}`
   );
   const unionDecimalRoundTrip = NumericUnion.deserialize(unionDecimalSerialized);
@@ -110,7 +115,7 @@ export default function runDecimalRationalSerializationTests() {
   const unionRational = new NumericUnion({ value: rational });
   const unionRationalSerialized = unionRational.serialize();
   assert(
-    unionRationalSerialized === ':{$Rational"1/3"}',
+    unionRationalSerialized === ':{Q1/3}',
     `NumericUnion Rational serialization mismatch: ${unionRationalSerialized}`
   );
   const unionRationalRoundTrip = NumericUnion.deserialize(unionRationalSerialized);

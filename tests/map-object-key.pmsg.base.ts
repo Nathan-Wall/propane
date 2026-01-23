@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-object-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_MapObjectKey_ObjectKeys_Key = Symbol("MapObjectKey_ObjectKeys_Key");
 export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys_Key.Data> {
   static $typeId = "tests/map-object-key.pmsg#MapObjectKey_ObjectKeys_Key";
-  static $typeHash = "sha256:b3c8ef5eca33f4fdb64af969fa8229b8219602e3525839ec3f639a4b7cafd217";
+  static $typeHash = "sha256:5918071e1eb69b3ceff16d5eeb09d10edb30ef34f5817244527521fcca044036";
   static $instanceTag = Symbol.for("propane:message:" + MapObjectKey_ObjectKeys_Key.$typeId);
   static readonly $typeName = "MapObjectKey_ObjectKeys_Key";
   static EMPTY: MapObjectKey_ObjectKeys_Key;
@@ -52,7 +52,30 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
   static deserialize<T extends typeof MapObjectKey_ObjectKeys_Key>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapObjectKey_ObjectKeys_Key.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapObjectKey_ObjectKeys_Key.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -94,7 +117,7 @@ export namespace MapObjectKey_ObjectKeys_Key {
 const TYPE_TAG_MapObjectKey_OptionalObjectMap_Key = Symbol("MapObjectKey_OptionalObjectMap_Key");
 export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_OptionalObjectMap_Key.Data> {
   static $typeId = "tests/map-object-key.pmsg#MapObjectKey_OptionalObjectMap_Key";
-  static $typeHash = "sha256:60152f77d6e8c51760ee2ff2d0d789906f3be400060719e149e3454998429dbf";
+  static $typeHash = "sha256:4abd212c96c686960d2b04021f66a0f41858333dd386ebda1a4ece0f44c947c6";
   static $instanceTag = Symbol.for("propane:message:" + MapObjectKey_OptionalObjectMap_Key.$typeId);
   static readonly $typeName = "MapObjectKey_OptionalObjectMap_Key";
   static EMPTY: MapObjectKey_OptionalObjectMap_Key;
@@ -131,7 +154,30 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
   static deserialize<T extends typeof MapObjectKey_OptionalObjectMap_Key>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapObjectKey_OptionalObjectMap_Key.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapObjectKey_OptionalObjectMap_Key.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -162,7 +208,7 @@ export namespace MapObjectKey_OptionalObjectMap_Key {
 const TYPE_TAG_MapObjectKey = Symbol("MapObjectKey");
 export class MapObjectKey extends Message<MapObjectKey.Data> {
   static $typeId = "tests/map-object-key.pmsg#MapObjectKey";
-  static $typeHash = "sha256:8792ec98a946680cac3e8c449119b86391a49309235ff862ccedcccf4d2b42a1";
+  static $typeHash = "sha256:c63378735de690033f38b50aaa1ccb9d3faf3563a1441520c53dbc1d018e9610";
   static $instanceTag = Symbol.for("propane:message:" + MapObjectKey.$typeId);
   static readonly $typeName = "MapObjectKey";
   static EMPTY: MapObjectKey;
@@ -174,7 +220,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     if (!props && MapObjectKey.EMPTY) return MapObjectKey.EMPTY;
     super(TYPE_TAG_MapObjectKey, "MapObjectKey");
     this.#objectKeys = props ? (props.objectKeys === undefined || props.objectKeys === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.objectKeys as Iterable<[unknown, unknown]>).map(([k, v]) => [MapObjectKey_ObjectKeys_Key.from(k as MapObjectKey_ObjectKeys_Key.Value), v]))) as ImmutableMap<MapObjectKey_ObjectKeys_Key, string> : new ImmutableMap();
-    this.#optionalObjectMap = props ? (props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap as Iterable<[unknown, unknown]>).map(([k, v]) => [MapObjectKey_OptionalObjectMap_Key.from(k as MapObjectKey_OptionalObjectMap_Key.Value), ImmutableDate.from(v as Date)]))) as ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> : undefined;
+    this.#optionalObjectMap = props ? (props.optionalObjectMap === undefined || props.optionalObjectMap === null ? props.optionalObjectMap : new ImmutableMap(Array.from(props.optionalObjectMap as Iterable<[unknown, unknown]>).map(([k, v]) => [MapObjectKey_OptionalObjectMap_Key.from(k as MapObjectKey_OptionalObjectMap_Key.Value), ImmutableDate.from(v as ImmutableDate.Value)]))) as ImmutableMap<MapObjectKey_OptionalObjectMap_Key, ImmutableDate> : undefined;
     if (!props) MapObjectKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapObjectKey.Data>[] {
@@ -196,13 +242,13 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     const objectKeysValue = entries["objectKeys"];
     if (objectKeysValue === undefined) throw new Error("Missing required property \"objectKeys\".");
     const objectKeysMapValue = objectKeysValue === undefined || objectKeysValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(objectKeysValue as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && MapObjectKey_ObjectKeys_Key.$compact === true ? k : MapObjectKey_ObjectKeys_Key.from(k as MapObjectKey_ObjectKeys_Key.Value), v]));
-    const objectKeysMapValueConverted = objectKeysMapValue === undefined || objectKeysMapValue === null ? objectKeysMapValue : new ImmutableMap([...(objectKeysMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && MapObjectKey_ObjectKeys_Key.$compact === true ? MapObjectKey_ObjectKeys_Key.fromCompact(k, options) as any : k, v]));
+    const objectKeysMapValueConverted = objectKeysMapValue === undefined || objectKeysMapValue === null ? objectKeysMapValue : new ImmutableMap([...(objectKeysMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && MapObjectKey_ObjectKeys_Key.$compact === true ? MapObjectKey_ObjectKeys_Key.fromCompact(MapObjectKey_ObjectKeys_Key.$compactTag && k.startsWith(MapObjectKey_ObjectKeys_Key.$compactTag) ? k.slice(MapObjectKey_ObjectKeys_Key.$compactTag.length) : k, options) as any : k, v]));
     if (!((objectKeysMapValueConverted as object instanceof ImmutableMap || objectKeysMapValueConverted as object instanceof Map) && [...(objectKeysMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapValue === "string"))) throw new Error("Invalid value for property \"objectKeys\".");
     props.objectKeys = objectKeysMapValueConverted as Map<MapObjectKey_ObjectKeys_Key, string> | Iterable<[MapObjectKey_ObjectKeys_Key, string]>;
     const optionalObjectMapValue = entries["optionalObjectMap"];
     const optionalObjectMapNormalized = optionalObjectMapValue === null ? undefined : optionalObjectMapValue;
-    const optionalObjectMapMapValue = optionalObjectMapNormalized === undefined || optionalObjectMapNormalized === null ? optionalObjectMapNormalized : new ImmutableMap(Array.from(optionalObjectMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && MapObjectKey_OptionalObjectMap_Key.$compact === true ? k : MapObjectKey_OptionalObjectMap_Key.from(k as MapObjectKey_OptionalObjectMap_Key.Value), ImmutableDate.from(v as Date)]));
-    const optionalObjectMapMapValueConverted = optionalObjectMapMapValue === undefined || optionalObjectMapMapValue === null ? optionalObjectMapMapValue : new ImmutableMap([...(optionalObjectMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && MapObjectKey_OptionalObjectMap_Key.$compact === true ? MapObjectKey_OptionalObjectMap_Key.fromCompact(k, options) as any : k, v]));
+    const optionalObjectMapMapValue = optionalObjectMapNormalized === undefined || optionalObjectMapNormalized === null ? optionalObjectMapNormalized : new ImmutableMap(Array.from(optionalObjectMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && MapObjectKey_OptionalObjectMap_Key.$compact === true ? k : MapObjectKey_OptionalObjectMap_Key.from(k as MapObjectKey_OptionalObjectMap_Key.Value), typeof v === "string" && ImmutableDate.$compact === true ? v : ImmutableDate.from(v as ImmutableDate.Value)]));
+    const optionalObjectMapMapValueConverted = optionalObjectMapMapValue === undefined || optionalObjectMapMapValue === null ? optionalObjectMapMapValue : new ImmutableMap([...(optionalObjectMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && MapObjectKey_OptionalObjectMap_Key.$compact === true ? MapObjectKey_OptionalObjectMap_Key.fromCompact(MapObjectKey_OptionalObjectMap_Key.$compactTag && k.startsWith(MapObjectKey_OptionalObjectMap_Key.$compactTag) ? k.slice(MapObjectKey_OptionalObjectMap_Key.$compactTag.length) : k, options) as any : k, typeof v === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && v.startsWith(ImmutableDate.$compactTag) ? v.slice(ImmutableDate.$compactTag.length) : v, options) as any : v]));
     if (optionalObjectMapMapValueConverted !== undefined && !((optionalObjectMapMapValueConverted as object instanceof ImmutableMap || optionalObjectMapMapValueConverted as object instanceof Map) && [...(optionalObjectMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate))) throw new Error("Invalid value for property \"optionalObjectMap\".");
     props.optionalObjectMap = optionalObjectMapMapValueConverted as Map<MapObjectKey_OptionalObjectMap_Key, Date> | Iterable<[MapObjectKey_OptionalObjectMap_Key, Date]>;
     return props as MapObjectKey.Data;
@@ -233,7 +279,30 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
   static deserialize<T extends typeof MapObjectKey>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapObjectKey.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapObjectKey.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

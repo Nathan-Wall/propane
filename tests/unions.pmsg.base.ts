@@ -6,7 +6,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_Unions_Metadata_Union1 = Symbol("Unions_Metadata_Union1");
 export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Metadata_Union1";
-  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union1.$typeId);
   static readonly $typeName = "Unions_Metadata_Union1";
   static EMPTY: Unions_Metadata_Union1;
@@ -16,7 +16,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
   }) {
     if (!props && Unions_Metadata_Union1.EMPTY) return Unions_Metadata_Union1.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union1, "Unions_Metadata_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_Metadata_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union1.Data>[] {
@@ -33,17 +33,82 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
     const props = {} as Partial<Unions_Metadata_Union1.Data>;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_Metadata_Union1.Data;
   }
   static from(value: Unions_Metadata_Union1.Value): Unions_Metadata_Union1 {
     return value instanceof Unions_Metadata_Union1 ? value : new Unions_Metadata_Union1(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof Unions_Metadata_Union1)({
+          created: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_Metadata_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_Metadata_Union1.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_Metadata_Union1.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -61,7 +126,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Metadata_Union1)({
-      created: value as ImmutableDate | Date
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -74,7 +139,7 @@ export namespace Unions_Metadata_Union1 {
 const TYPE_TAG_Unions_Metadata_Union2 = Symbol("Unions_Metadata_Union2");
 export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Metadata_Union2";
-  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union2.$typeId);
   static readonly $typeName = "Unions_Metadata_Union2";
   static EMPTY: Unions_Metadata_Union2;
@@ -84,7 +149,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
   }) {
     if (!props && Unions_Metadata_Union2.EMPTY) return Unions_Metadata_Union2.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union2, "Unions_Metadata_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_Metadata_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union2.Data>[] {
@@ -101,17 +166,82 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
     const props = {} as Partial<Unions_Metadata_Union2.Data>;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_Metadata_Union2.Data;
   }
   static from(value: Unions_Metadata_Union2.Value): Unions_Metadata_Union2 {
     return value instanceof Unions_Metadata_Union2 ? value : new Unions_Metadata_Union2(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "updated":
+        return new (this.constructor as typeof Unions_Metadata_Union2)({
+          updated: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_Metadata_Union2>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_Metadata_Union2.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_Metadata_Union2.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -129,7 +259,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Metadata_Union2)({
-      updated: value as ImmutableDate | Date
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -142,7 +272,7 @@ export namespace Unions_Metadata_Union2 {
 const TYPE_TAG_Unions_Items_Item_Union1 = Symbol("Unions_Items_Item_Union1");
 export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union1";
-  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union1.$typeId);
   static readonly $typeName = "Unions_Items_Item_Union1";
   static EMPTY: Unions_Items_Item_Union1;
@@ -152,7 +282,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
   }) {
     if (!props && Unions_Items_Item_Union1.EMPTY) return Unions_Items_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union1, "Unions_Items_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_Items_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union1.Data>[] {
@@ -169,17 +299,82 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
     const props = {} as Partial<Unions_Items_Item_Union1.Data>;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_Items_Item_Union1.Data;
   }
   static from(value: Unions_Items_Item_Union1.Value): Unions_Items_Item_Union1 {
     return value instanceof Unions_Items_Item_Union1 ? value : new Unions_Items_Item_Union1(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof Unions_Items_Item_Union1)({
+          created: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_Items_Item_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_Items_Item_Union1.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_Items_Item_Union1.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -197,7 +392,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Items_Item_Union1)({
-      created: value as ImmutableDate | Date
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -210,7 +405,7 @@ export namespace Unions_Items_Item_Union1 {
 const TYPE_TAG_Unions_Items_Item_Union2 = Symbol("Unions_Items_Item_Union2");
 export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union2";
-  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union2.$typeId);
   static readonly $typeName = "Unions_Items_Item_Union2";
   static EMPTY: Unions_Items_Item_Union2;
@@ -220,7 +415,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
   }) {
     if (!props && Unions_Items_Item_Union2.EMPTY) return Unions_Items_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union2, "Unions_Items_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_Items_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union2.Data>[] {
@@ -237,17 +432,82 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
     const props = {} as Partial<Unions_Items_Item_Union2.Data>;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_Items_Item_Union2.Data;
   }
   static from(value: Unions_Items_Item_Union2.Value): Unions_Items_Item_Union2 {
     return value instanceof Unions_Items_Item_Union2 ? value : new Unions_Items_Item_Union2(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "updated":
+        return new (this.constructor as typeof Unions_Items_Item_Union2)({
+          updated: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_Items_Item_Union2>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_Items_Item_Union2.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_Items_Item_Union2.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -265,7 +525,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Items_Item_Union2)({
-      updated: value as ImmutableDate | Date
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -278,7 +538,7 @@ export namespace Unions_Items_Item_Union2 {
 const TYPE_TAG_Unions_ItemSet_Item_Union1 = Symbol("Unions_ItemSet_Item_Union1");
 export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union1";
-  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union1.$typeId);
   static readonly $typeName = "Unions_ItemSet_Item_Union1";
   static EMPTY: Unions_ItemSet_Item_Union1;
@@ -288,7 +548,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union1.EMPTY) return Unions_ItemSet_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union1, "Unions_ItemSet_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_ItemSet_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union1.Data>[] {
@@ -305,17 +565,82 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
     const props = {} as Partial<Unions_ItemSet_Item_Union1.Data>;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_ItemSet_Item_Union1.Data;
   }
   static from(value: Unions_ItemSet_Item_Union1.Value): Unions_ItemSet_Item_Union1 {
     return value instanceof Unions_ItemSet_Item_Union1 ? value : new Unions_ItemSet_Item_Union1(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof Unions_ItemSet_Item_Union1)({
+          created: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_ItemSet_Item_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_ItemSet_Item_Union1.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_ItemSet_Item_Union1.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -333,7 +658,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union1)({
-      created: value as ImmutableDate | Date
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -346,7 +671,7 @@ export namespace Unions_ItemSet_Item_Union1 {
 const TYPE_TAG_Unions_ItemSet_Item_Union2 = Symbol("Unions_ItemSet_Item_Union2");
 export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union2";
-  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union2.$typeId);
   static readonly $typeName = "Unions_ItemSet_Item_Union2";
   static EMPTY: Unions_ItemSet_Item_Union2;
@@ -356,7 +681,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union2.EMPTY) return Unions_ItemSet_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union2, "Unions_ItemSet_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_ItemSet_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union2.Data>[] {
@@ -373,17 +698,82 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
     const props = {} as Partial<Unions_ItemSet_Item_Union2.Data>;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_ItemSet_Item_Union2.Data;
   }
   static from(value: Unions_ItemSet_Item_Union2.Value): Unions_ItemSet_Item_Union2 {
     return value instanceof Unions_ItemSet_Item_Union2 ? value : new Unions_ItemSet_Item_Union2(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "updated":
+        return new (this.constructor as typeof Unions_ItemSet_Item_Union2)({
+          updated: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_ItemSet_Item_Union2>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_ItemSet_Item_Union2.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_ItemSet_Item_Union2.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -401,7 +791,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union2)({
-      updated: value as ImmutableDate | Date
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -414,7 +804,7 @@ export namespace Unions_ItemSet_Item_Union2 {
 const TYPE_TAG_Unions_ItemMap_Value_Union1 = Symbol("Unions_ItemMap_Value_Union1");
 export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union1";
-  static $typeHash = "sha256:75f350cfe9324486dedb1f3330a52cd173c9c07b227f7f686b6c460db39755c3";
+  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union1.$typeId);
   static readonly $typeName = "Unions_ItemMap_Value_Union1";
   static EMPTY: Unions_ItemMap_Value_Union1;
@@ -424,7 +814,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union1.EMPTY) return Unions_ItemMap_Value_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union1, "Unions_ItemMap_Value_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_ItemMap_Value_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union1.Data>[] {
@@ -441,17 +831,82 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
     const props = {} as Partial<Unions_ItemMap_Value_Union1.Data>;
     const createdValue = entries["created"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_ItemMap_Value_Union1.Data;
   }
   static from(value: Unions_ItemMap_Value_Union1.Value): Unions_ItemMap_Value_Union1 {
     return value instanceof Unions_ItemMap_Value_Union1 ? value : new Unions_ItemMap_Value_Union1(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof Unions_ItemMap_Value_Union1)({
+          created: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_ItemMap_Value_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_ItemMap_Value_Union1.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_ItemMap_Value_Union1.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -469,7 +924,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union1)({
-      created: value as ImmutableDate | Date
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -482,7 +937,7 @@ export namespace Unions_ItemMap_Value_Union1 {
 const TYPE_TAG_Unions_ItemMap_Value_Union2 = Symbol("Unions_ItemMap_Value_Union2");
 export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union2";
-  static $typeHash = "sha256:2a678a057bd2b27626314a1f55f618ddd02c72471ab5cd6da5efdee2624ede08";
+  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union2.$typeId);
   static readonly $typeName = "Unions_ItemMap_Value_Union2";
   static EMPTY: Unions_ItemMap_Value_Union2;
@@ -492,7 +947,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union2.EMPTY) return Unions_ItemMap_Value_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union2, "Unions_ItemMap_Value_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : ImmutableDate.from(props.updated) : new ImmutableDate(0);
+    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_ItemMap_Value_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union2.Data>[] {
@@ -509,17 +964,82 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
     const props = {} as Partial<Unions_ItemMap_Value_Union2.Data>;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
-    if (!(updatedValue as object instanceof Date || updatedValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
-    props.updated = updatedValue as Date;
+    const updatedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(updatedValue);
+    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
+    props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_ItemMap_Value_Union2.Data;
   }
   static from(value: Unions_ItemMap_Value_Union2.Value): Unions_ItemMap_Value_Union2 {
     return value instanceof Unions_ItemMap_Value_Union2 ? value : new Unions_ItemMap_Value_Union2(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "updated":
+        return new (this.constructor as typeof Unions_ItemMap_Value_Union2)({
+          updated: child as ImmutableDate | Date
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["updated", this.#updated] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof Unions_ItemMap_Value_Union2>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions_ItemMap_Value_Union2.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions_ItemMap_Value_Union2.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -537,7 +1057,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union2)({
-      updated: value as ImmutableDate | Date
+      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -550,7 +1070,7 @@ export namespace Unions_ItemMap_Value_Union2 {
 const TYPE_TAG_Unions = Symbol("Unions");
 export class Unions extends Message<Unions.Data> {
   static $typeId = "tests/unions.pmsg#Unions";
-  static $typeHash = "sha256:3b86a011fe08547b4332d4e0df9f6eb7a66fda126292fe81096b4188be412b0e";
+  static $typeHash = "sha256:f0b06dba4af8e1c6a20c6ff9fb1d68b83d0a7d725efb953642162ced36620356";
   static $instanceTag = Symbol.for("propane:message:" + Unions.$typeId);
   static readonly $typeName = "Unions";
   static EMPTY: Unions;
@@ -570,7 +1090,40 @@ export class Unions extends Message<Unions.Data> {
     }
     this.#username = (props ? props.username : "") as string | null;
     this.#email = (props ? props.email : undefined) as Email | null;
-    this.#metadata = (props ? props.metadata : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
+    this.#metadata = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Unions_Metadata_Union1.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Unions_Metadata_Union1(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+        if (!matched) {
+          if (Unions_Metadata_Union2.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Unions_Metadata_Union2(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.metadata) : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
     this.#items = props ? (props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
     this.#itemSet = props ? (props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
     this.#itemMap = props ? (props.itemMap === undefined || props.itemMap === null ? props.itemMap : props.itemMap as object instanceof ImmutableMap ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
@@ -580,7 +1133,8 @@ export class Unions extends Message<Unions.Data> {
     return [{
       name: "username",
       fieldNumber: null,
-      getValue: () => this.#username as string | null
+      getValue: () => this.#username as string | null,
+      unionHasString: true
     }, {
       name: "email",
       fieldNumber: null,
@@ -627,7 +1181,7 @@ export class Unions extends Message<Unions.Data> {
       if (metadataValue.$tag === "Unions_Metadata_Union1") {
         if (typeof metadataValue.$data === "string") {
           if (Unions_Metadata_Union1.$compact === true) {
-            metadataUnionValue = Unions_Metadata_Union1.fromCompact(metadataValue.$data, options);
+            metadataUnionValue = Unions_Metadata_Union1.fromCompact(Unions_Metadata_Union1.$compactTag && metadataValue.$data.startsWith(Unions_Metadata_Union1.$compactTag) ? metadataValue.$data.slice(Unions_Metadata_Union1.$compactTag.length) : metadataValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union1).");
           }
@@ -637,12 +1191,27 @@ export class Unions extends Message<Unions.Data> {
       } else if (metadataValue.$tag === "Unions_Metadata_Union2") {
         if (typeof metadataValue.$data === "string") {
           if (Unions_Metadata_Union2.$compact === true) {
-            metadataUnionValue = Unions_Metadata_Union2.fromCompact(metadataValue.$data, options);
+            metadataUnionValue = Unions_Metadata_Union2.fromCompact(Unions_Metadata_Union2.$compactTag && metadataValue.$data.startsWith(Unions_Metadata_Union2.$compactTag) ? metadataValue.$data.slice(Unions_Metadata_Union2.$compactTag.length) : metadataValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union2).");
           }
         } else {
           metadataUnionValue = new Unions_Metadata_Union2(Unions_Metadata_Union2.prototype.$fromEntries(metadataValue.$data, options), options);
+        }
+      }
+    }
+    if (typeof metadataValue === "string") {
+      if (Unions_Metadata_Union1.$compactTag && metadataValue.startsWith(Unions_Metadata_Union1.$compactTag)) {
+        if (Unions_Metadata_Union1.$compact === true) {
+          metadataUnionValue = Unions_Metadata_Union1.fromCompact(Unions_Metadata_Union1.$compactTag && metadataValue.startsWith(Unions_Metadata_Union1.$compactTag) ? metadataValue.slice(Unions_Metadata_Union1.$compactTag.length) : metadataValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union1).");
+        }
+      } else if (Unions_Metadata_Union2.$compactTag && metadataValue.startsWith(Unions_Metadata_Union2.$compactTag)) {
+        if (Unions_Metadata_Union2.$compact === true) {
+          metadataUnionValue = Unions_Metadata_Union2.fromCompact(Unions_Metadata_Union2.$compactTag && metadataValue.startsWith(Unions_Metadata_Union2.$compactTag) ? metadataValue.slice(Unions_Metadata_Union2.$compactTag.length) : metadataValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"metadata\" (Unions_Metadata_Union2).");
         }
       }
     }
@@ -682,7 +1251,7 @@ export class Unions extends Message<Unions.Data> {
         if (value.$tag === "Unions_Items_Item_Union1") {
           if (typeof value.$data === "string") {
             if (Unions_Items_Item_Union1.$compact === true) {
-              unionValue = Unions_Items_Item_Union1.fromCompact(value.$data, options);
+              unionValue = Unions_Items_Item_Union1.fromCompact(Unions_Items_Item_Union1.$compactTag && value.$data.startsWith(Unions_Items_Item_Union1.$compactTag) ? value.$data.slice(Unions_Items_Item_Union1.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union1).");
             }
@@ -692,12 +1261,27 @@ export class Unions extends Message<Unions.Data> {
         } else if (value.$tag === "Unions_Items_Item_Union2") {
           if (typeof value.$data === "string") {
             if (Unions_Items_Item_Union2.$compact === true) {
-              unionValue = Unions_Items_Item_Union2.fromCompact(value.$data, options);
+              unionValue = Unions_Items_Item_Union2.fromCompact(Unions_Items_Item_Union2.$compactTag && value.$data.startsWith(Unions_Items_Item_Union2.$compactTag) ? value.$data.slice(Unions_Items_Item_Union2.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union2).");
             }
           } else {
             unionValue = new Unions_Items_Item_Union2(Unions_Items_Item_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Unions_Items_Item_Union1.$compactTag && value.startsWith(Unions_Items_Item_Union1.$compactTag)) {
+          if (Unions_Items_Item_Union1.$compact === true) {
+            unionValue = Unions_Items_Item_Union1.fromCompact(Unions_Items_Item_Union1.$compactTag && value.startsWith(Unions_Items_Item_Union1.$compactTag) ? value.slice(Unions_Items_Item_Union1.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union1).");
+          }
+        } else if (Unions_Items_Item_Union2.$compactTag && value.startsWith(Unions_Items_Item_Union2.$compactTag)) {
+          if (Unions_Items_Item_Union2.$compact === true) {
+            unionValue = Unions_Items_Item_Union2.fromCompact(Unions_Items_Item_Union2.$compactTag && value.startsWith(Unions_Items_Item_Union2.$compactTag) ? value.slice(Unions_Items_Item_Union2.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union2).");
           }
         }
       }
@@ -739,7 +1323,7 @@ export class Unions extends Message<Unions.Data> {
         if (value.$tag === "Unions_ItemSet_Item_Union1") {
           if (typeof value.$data === "string") {
             if (Unions_ItemSet_Item_Union1.$compact === true) {
-              unionValue = Unions_ItemSet_Item_Union1.fromCompact(value.$data, options);
+              unionValue = Unions_ItemSet_Item_Union1.fromCompact(Unions_ItemSet_Item_Union1.$compactTag && value.$data.startsWith(Unions_ItemSet_Item_Union1.$compactTag) ? value.$data.slice(Unions_ItemSet_Item_Union1.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union1).");
             }
@@ -749,12 +1333,27 @@ export class Unions extends Message<Unions.Data> {
         } else if (value.$tag === "Unions_ItemSet_Item_Union2") {
           if (typeof value.$data === "string") {
             if (Unions_ItemSet_Item_Union2.$compact === true) {
-              unionValue = Unions_ItemSet_Item_Union2.fromCompact(value.$data, options);
+              unionValue = Unions_ItemSet_Item_Union2.fromCompact(Unions_ItemSet_Item_Union2.$compactTag && value.$data.startsWith(Unions_ItemSet_Item_Union2.$compactTag) ? value.$data.slice(Unions_ItemSet_Item_Union2.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union2).");
             }
           } else {
             unionValue = new Unions_ItemSet_Item_Union2(Unions_ItemSet_Item_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Unions_ItemSet_Item_Union1.$compactTag && value.startsWith(Unions_ItemSet_Item_Union1.$compactTag)) {
+          if (Unions_ItemSet_Item_Union1.$compact === true) {
+            unionValue = Unions_ItemSet_Item_Union1.fromCompact(Unions_ItemSet_Item_Union1.$compactTag && value.startsWith(Unions_ItemSet_Item_Union1.$compactTag) ? value.slice(Unions_ItemSet_Item_Union1.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union1).");
+          }
+        } else if (Unions_ItemSet_Item_Union2.$compactTag && value.startsWith(Unions_ItemSet_Item_Union2.$compactTag)) {
+          if (Unions_ItemSet_Item_Union2.$compact === true) {
+            unionValue = Unions_ItemSet_Item_Union2.fromCompact(Unions_ItemSet_Item_Union2.$compactTag && value.startsWith(Unions_ItemSet_Item_Union2.$compactTag) ? value.slice(Unions_ItemSet_Item_Union2.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemSet element\" (Unions_ItemSet_Item_Union2).");
           }
         }
       }
@@ -796,7 +1395,7 @@ export class Unions extends Message<Unions.Data> {
         if (value.$tag === "Unions_ItemMap_Value_Union1") {
           if (typeof value.$data === "string") {
             if (Unions_ItemMap_Value_Union1.$compact === true) {
-              unionValue = Unions_ItemMap_Value_Union1.fromCompact(value.$data, options);
+              unionValue = Unions_ItemMap_Value_Union1.fromCompact(Unions_ItemMap_Value_Union1.$compactTag && value.$data.startsWith(Unions_ItemMap_Value_Union1.$compactTag) ? value.$data.slice(Unions_ItemMap_Value_Union1.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union1).");
             }
@@ -806,12 +1405,27 @@ export class Unions extends Message<Unions.Data> {
         } else if (value.$tag === "Unions_ItemMap_Value_Union2") {
           if (typeof value.$data === "string") {
             if (Unions_ItemMap_Value_Union2.$compact === true) {
-              unionValue = Unions_ItemMap_Value_Union2.fromCompact(value.$data, options);
+              unionValue = Unions_ItemMap_Value_Union2.fromCompact(Unions_ItemMap_Value_Union2.$compactTag && value.$data.startsWith(Unions_ItemMap_Value_Union2.$compactTag) ? value.$data.slice(Unions_ItemMap_Value_Union2.$compactTag.length) : value.$data, options);
             } else {
               throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union2).");
             }
           } else {
             unionValue = new Unions_ItemMap_Value_Union2(Unions_ItemMap_Value_Union2.prototype.$fromEntries(value.$data, options), options);
+          }
+        }
+      }
+      if (typeof value === "string") {
+        if (Unions_ItemMap_Value_Union1.$compactTag && value.startsWith(Unions_ItemMap_Value_Union1.$compactTag)) {
+          if (Unions_ItemMap_Value_Union1.$compact === true) {
+            unionValue = Unions_ItemMap_Value_Union1.fromCompact(Unions_ItemMap_Value_Union1.$compactTag && value.startsWith(Unions_ItemMap_Value_Union1.$compactTag) ? value.slice(Unions_ItemMap_Value_Union1.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union1).");
+          }
+        } else if (Unions_ItemMap_Value_Union2.$compactTag && value.startsWith(Unions_ItemMap_Value_Union2.$compactTag)) {
+          if (Unions_ItemMap_Value_Union2.$compact === true) {
+            unionValue = Unions_ItemMap_Value_Union2.fromCompact(Unions_ItemMap_Value_Union2.$compactTag && value.startsWith(Unions_ItemMap_Value_Union2.$compactTag) ? value.slice(Unions_ItemMap_Value_Union2.$compactTag.length) : value, options);
+          } else {
+            throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union2).");
           }
         }
       }
@@ -900,7 +1514,30 @@ export class Unions extends Message<Unions.Data> {
   static deserialize<T extends typeof Unions>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Unions.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Unions.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

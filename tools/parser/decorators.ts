@@ -21,6 +21,8 @@ export interface DecoratorInfo {
   typeId: string | null;
   /** True if @compact decorator is present */
   compact: boolean;
+  /** Optional tiny tag from @compact('X') */
+  compactTag: string | null;
 }
 
 /**
@@ -30,6 +32,7 @@ export interface DecoratorInfo {
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 const TYPE_ID_PATTERN = /(?:^|\s)@typeId\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 const COMPACT_PATTERN = /(?:^|\s)@compact(?!\w)/;
+const COMPACT_TAG_PATTERN = /(?:^|\s)@compact\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
  * Pattern to detect any decorator-like syntax at the start of a line.
@@ -59,6 +62,8 @@ export function extractDecorators(
   let typeIdCount = 0;
   let compact = false;
   let compactCount = 0;
+  let compactTag: string | null = null;
+  let compactTagLocation: SourceLocation | null = null;
 
   for (const comment of comments) {
     const lines = comment.type === 'CommentLine'
@@ -116,6 +121,11 @@ export function extractDecorators(
           });
         } else {
           compact = true;
+          const compactTagMatch = COMPACT_TAG_PATTERN.exec(cleanLine);
+          if (compactTagMatch) {
+            compactTag = compactTagMatch[1] ?? null;
+            compactTagLocation = getCommentLocation(comment);
+          }
         }
       }
 
@@ -174,13 +184,14 @@ export function extractDecorators(
       if (
         /@compact(?!\s*$)/.test(cleanLine)
         && /@compact\s*\(/.test(cleanLine)
+        && !COMPACT_TAG_PATTERN.test(cleanLine)
       ) {
         diagnostics.push({
           filePath,
           location: getCommentLocation(comment),
           severity: 'error',
           code: 'PMT040',
-          message: '@compact decorator does not take arguments.',
+          message: '@compact decorator expects a single tag string, e.g. @compact(\'D\').',
         });
       }
 
@@ -217,7 +228,17 @@ export function extractDecorators(
     }
   }
 
-  return { extendPath, typeId, compact };
+  if (compactTag && !isValidCompactTag(compactTag)) {
+    diagnostics.push({
+      filePath,
+      location: compactTagLocation ?? getSourceLocation(node),
+      severity: 'error',
+      code: 'PMT043',
+      message: '@compact tag must be a single ASCII letter or "#".',
+    });
+  }
+
+  return { extendPath, typeId, compact, compactTag };
 }
 
 /**
@@ -250,6 +271,10 @@ function findClosestDecorator(unknown: string): string | null {
   }
 
   return null;
+}
+
+function isValidCompactTag(tag: string): boolean {
+  return (tag.length === 1 && /[A-Za-z]/.test(tag)) || tag === '#';
 }
 
 /**

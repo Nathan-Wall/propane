@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { ImmutableUrl } from '../web/url.js';
 import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.js';
 
 export function normalizeForJson(value: unknown): unknown {
@@ -89,8 +88,16 @@ function isArrayBuffer(
   return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
 }
 
-function isUrl(value: unknown): value is URL | ImmutableUrl {
-  return value instanceof URL || value instanceof ImmutableUrl;
+function isUrl(value: unknown): value is URL | { toString(): string } {
+  if (value instanceof URL) {
+    return true;
+  }
+  return (
+    !!value
+    && typeof value === 'object'
+    && (value as { $typeName?: string }).$typeName === 'ImmutableUrl'
+    && typeof (value as { toString?: unknown }).toString === 'function'
+  );
 }
 
 function isImmutableDate(value: unknown): value is { toJSON: () => string } {

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/to-json.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_ToJson_Nested = Symbol("ToJson_Nested");
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static $typeId = "tests/to-json.pmsg#ToJson_Nested";
-  static $typeHash = "sha256:08742485c113c01578adc738f9d6635c2b2594da95f802ff6eed4a2e11ef3fcb";
+  static $typeHash = "sha256:3de5d1b5b862d1574062ba5f9d5356933e62f37a9825d104ccc1c5006ea32f80";
   static $instanceTag = Symbol.for("propane:message:" + ToJson_Nested.$typeId);
   static readonly $typeName = "ToJson_Nested";
   static EMPTY: ToJson_Nested;
@@ -19,7 +19,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     super(TYPE_TAG_ToJson_Nested, "ToJson_Nested");
     this.#array = props ? (props.array === undefined || props.array === null ? new ImmutableArray() : props.array as object instanceof ImmutableArray ? props.array : new ImmutableArray(props.array as Iterable<unknown>)) as ImmutableArray<(number | undefined)> : new ImmutableArray();
     this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, bigint> : new ImmutableMap();
-    this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.imap as Iterable<[unknown, unknown]>).map(([k, v]) => [k, ImmutableDate.from(v as Date)]))) as ImmutableMap<string, ImmutableDate> : new ImmutableMap();
+    this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.imap as Iterable<[unknown, unknown]>).map(([k, v]) => [k, ImmutableDate.from(v as ImmutableDate.Value)]))) as ImmutableMap<string, ImmutableDate> : new ImmutableMap();
     if (!props) ToJson_Nested.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson_Nested.Data>[] {
@@ -54,9 +54,10 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     props.map = mapMapValue as Map<string, bigint> | Iterable<[string, bigint]>;
     const imapValue = entries["imap"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
-    const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(imapValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, ImmutableDate.from(v as Date)]));
-    if (!((imapMapValue as object instanceof ImmutableMap || imapMapValue as object instanceof Map) && [...(imapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate)))) throw new Error("Invalid value for property \"imap\".");
-    props.imap = imapMapValue as Map<string, Date> | Iterable<[string, Date]>;
+    const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(imapValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? v : ImmutableDate.from(v as ImmutableDate.Value)]));
+    const imapMapValueConverted = imapMapValue === undefined || imapMapValue === null ? imapMapValue : new ImmutableMap([...(imapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && v.startsWith(ImmutableDate.$compactTag) ? v.slice(ImmutableDate.$compactTag.length) : v, options) as any : v]));
+    if (!((imapMapValueConverted as object instanceof ImmutableMap || imapMapValueConverted as object instanceof Map) && [...(imapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate)))) throw new Error("Invalid value for property \"imap\".");
+    props.imap = imapMapValueConverted as Map<string, Date> | Iterable<[string, Date]>;
     return props as ToJson_Nested.Data;
   }
   static from(value: ToJson_Nested.Value): ToJson_Nested {
@@ -94,7 +95,30 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static deserialize<T extends typeof ToJson_Nested>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ToJson_Nested.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ToJson_Nested.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -449,7 +473,7 @@ export namespace ToJson_Nested {
 const TYPE_TAG_ToJson = Symbol("ToJson");
 export class ToJson extends Message<ToJson.Data> {
   static $typeId = "tests/to-json.pmsg#ToJson";
-  static $typeHash = "sha256:3eda63f9eda76ffc43ac330b10e5a9c149dcd2337d71e66d38f5754a927daf83";
+  static $typeHash = "sha256:014fe360b7bbda772dac1718796253e45b0aed47e4400e9ef7db1b34c4b4149d";
   static $instanceTag = Symbol.for("propane:message:" + ToJson.$typeId);
   static readonly $typeName = "ToJson";
   static EMPTY: ToJson;
@@ -468,7 +492,7 @@ export class ToJson extends Message<ToJson.Data> {
     this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : props.imap as object instanceof ImmutableMap ? props.imap : new ImmutableMap(props.imap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#big = (props ? props.big : 0n) as bigint;
-    this.#date = props ? props.date instanceof ImmutableDate ? props.date : ImmutableDate.from(props.date) : new ImmutableDate(0);
+    this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date, options) : new ImmutableDate();
     this.#optional = (props ? props.optional : undefined) as string;
     this.#nonFinite = (props ? props.nonFinite : 0) as number;
     this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested, options) : new ToJson_Nested();
@@ -526,8 +550,37 @@ export class ToJson extends Message<ToJson.Data> {
     props.big = bigValue as bigint;
     const dateValue = entries["4"] === undefined ? entries["date"] : entries["4"];
     if (dateValue === undefined) throw new Error("Missing required property \"date\".");
-    if (!(dateValue as object instanceof Date || dateValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"date\".");
-    props.date = dateValue as Date;
+    const dateMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(dateValue);
+    if (!(dateMessageValue as object instanceof Date || dateMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"date\".");
+    props.date = dateMessageValue as ImmutableDate | Date;
     const optionalValue = entries["5"] === undefined ? entries["optional"] : entries["5"];
     const optionalNormalized = optionalValue === null ? undefined : optionalValue;
     if (optionalNormalized !== undefined && !(typeof optionalNormalized === "string")) throw new Error("Invalid value for property \"optional\".");
@@ -538,7 +591,35 @@ export class ToJson extends Message<ToJson.Data> {
     props.nonFinite = nonFiniteValue as number;
     const nestedValue = entries["7"] === undefined ? entries["nested"] : entries["7"];
     if (nestedValue === undefined) throw new Error("Missing required property \"nested\".");
-    const nestedMessageValue = typeof nestedValue === "string" && ToJson_Nested.$compact === true ? ToJson_Nested.fromCompact(nestedValue, options) as any : nestedValue instanceof ToJson_Nested ? nestedValue : new ToJson_Nested(nestedValue as ToJson_Nested.Value, options);
+    const nestedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ToJson_Nested.$compact === true) {
+        result = ToJson_Nested.fromCompact(ToJson_Nested.$compactTag && value.startsWith(ToJson_Nested.$compactTag) ? value.slice(ToJson_Nested.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ToJson_Nested") {
+            if (typeof value.$data === "string") {
+              if (ToJson_Nested.$compact === true) {
+                result = ToJson_Nested.fromCompact(ToJson_Nested.$compactTag && value.$data.startsWith(ToJson_Nested.$compactTag) ? value.$data.slice(ToJson_Nested.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ToJson_Nested.");
+              }
+            } else {
+              result = new ToJson_Nested(ToJson_Nested.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ToJson_Nested.");
+          }
+        } else {
+          if (value instanceof ToJson_Nested) {
+            result = value;
+          } else {
+            result = new ToJson_Nested(value as ToJson_Nested.Value, options);
+          }
+        }
+      }
+      return result;
+    })(nestedValue);
     props.nested = nestedMessageValue;
     return props as ToJson.Data;
   }
@@ -567,6 +648,16 @@ export class ToJson extends Message<ToJson.Data> {
           nonFinite: this.#nonFinite,
           nested: this.#nested as ToJson_Nested.Value
         }) as this;
+      case "date":
+        return new (this.constructor as typeof ToJson)({
+          map: this.#map as Map<string, number> | Iterable<[string, number]>,
+          imap: this.#imap as Map<string, number> | Iterable<[string, number]>,
+          big: this.#big,
+          date: child as ImmutableDate | Date,
+          optional: this.#optional,
+          nonFinite: this.#nonFinite,
+          nested: this.#nested as ToJson_Nested.Value
+        }) as this;
       case "nested":
         return new (this.constructor as typeof ToJson)({
           map: this.#map as Map<string, number> | Iterable<[string, number]>,
@@ -584,12 +675,36 @@ export class ToJson extends Message<ToJson.Data> {
   override *[GET_MESSAGE_CHILDREN]() {
     yield ["map", this.#map] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
     yield ["imap", this.#imap] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["date", this.#date] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
     yield ["nested", this.#nested] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   static deserialize<T extends typeof ToJson>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ToJson.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ToJson.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -827,7 +942,7 @@ export class ToJson extends Message<ToJson.Data> {
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       imap: this.#imap as Map<string, number> | Iterable<[string, number]>,
       big: this.#big,
-      date: value as ImmutableDate | Date,
+      date: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested as ToJson_Nested.Value

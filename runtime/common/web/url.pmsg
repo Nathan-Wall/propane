@@ -1,0 +1,7 @@
+import { Message } from '@propane/runtime';
+
+// @extend('./url.pmsg.ext.ts')
+// @compact('U')
+export type ImmutableUrl = Message<{
+  '1:href': string;
+}>;

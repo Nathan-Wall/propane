@@ -2,12 +2,12 @@
 // Generated from tests/compound.pmsg
 import { Indexed } from './indexed.pmsg.js';
 import { User } from './user.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Compound_Inline = Symbol("Compound_Inline");
 export class Compound_Inline extends Message<Compound_Inline.Data> {
   static $typeId = "tests/compound.pmsg#Compound_Inline";
-  static $typeHash = "sha256:f25e6457167a766a424c221449f2f858bb2850b41842b96390f76a87880f911e";
+  static $typeHash = "sha256:b77d08b0c47ab3af08091073f5948427a451236c7dbfd711cb0ea7970b4243cb";
   static $instanceTag = Symbol.for("propane:message:" + Compound_Inline.$typeId);
   static readonly $typeName = "Compound_Inline";
   static EMPTY: Compound_Inline;
@@ -44,7 +44,30 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
   static deserialize<T extends typeof Compound_Inline>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Compound_Inline.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Compound_Inline.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -75,7 +98,7 @@ export namespace Compound_Inline {
 const TYPE_TAG_Compound = Symbol("Compound");
 export class Compound extends Message<Compound.Data> {
   static $typeId = "tests/compound.pmsg#Compound";
-  static $typeHash = "sha256:cd5e141c2654d9a3dc705e405d9ee5d7c5075e413575ec1b485eda9fc138a748";
+  static $typeHash = "sha256:660d73d70a860c0d4b53f269267bb10cfb48def9fca4b53f54bf49e0c5113d9e";
   static $instanceTag = Symbol.for("propane:message:" + Compound.$typeId);
   static readonly $typeName = "Compound";
   static EMPTY: Compound;
@@ -114,15 +137,99 @@ export class Compound extends Message<Compound.Data> {
     const props = {} as Partial<Compound.Data>;
     const userValue = entries["1"] === undefined ? entries["user"] : entries["1"];
     if (userValue === undefined) throw new Error("Missing required property \"user\".");
-    const userMessageValue = typeof userValue === "string" && User.$compact === true ? User.fromCompact(userValue, options) as any : userValue instanceof User ? userValue : new User(userValue as User.Value, options);
+    const userMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && User.$compact === true) {
+        result = User.fromCompact(User.$compactTag && value.startsWith(User.$compactTag) ? value.slice(User.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "User") {
+            if (typeof value.$data === "string") {
+              if (User.$compact === true) {
+                result = User.fromCompact(User.$compactTag && value.$data.startsWith(User.$compactTag) ? value.$data.slice(User.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for User.");
+              }
+            } else {
+              result = new User(User.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected User.");
+          }
+        } else {
+          if (value instanceof User) {
+            result = value;
+          } else {
+            result = new User(value as User.Value, options);
+          }
+        }
+      }
+      return result;
+    })(userValue);
     props.user = userMessageValue;
     const indexedValue = entries["2"] === undefined ? entries["indexed"] : entries["2"];
     if (indexedValue === undefined) throw new Error("Missing required property \"indexed\".");
-    const indexedMessageValue = typeof indexedValue === "string" && Indexed.$compact === true ? Indexed.fromCompact(indexedValue, options) as any : indexedValue instanceof Indexed ? indexedValue : new Indexed(indexedValue as Indexed.Value, options);
+    const indexedMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && Indexed.$compact === true) {
+        result = Indexed.fromCompact(Indexed.$compactTag && value.startsWith(Indexed.$compactTag) ? value.slice(Indexed.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "Indexed") {
+            if (typeof value.$data === "string") {
+              if (Indexed.$compact === true) {
+                result = Indexed.fromCompact(Indexed.$compactTag && value.$data.startsWith(Indexed.$compactTag) ? value.$data.slice(Indexed.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for Indexed.");
+              }
+            } else {
+              result = new Indexed(Indexed.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected Indexed.");
+          }
+        } else {
+          if (value instanceof Indexed) {
+            result = value;
+          } else {
+            result = new Indexed(value as Indexed.Value, options);
+          }
+        }
+      }
+      return result;
+    })(indexedValue);
     props.indexed = indexedMessageValue;
     const inlineValue = entries["3"] === undefined ? entries["inline"] : entries["3"];
     if (inlineValue === undefined) throw new Error("Missing required property \"inline\".");
-    const inlineMessageValue = typeof inlineValue === "string" && Compound_Inline.$compact === true ? Compound_Inline.fromCompact(inlineValue, options) as any : inlineValue instanceof Compound_Inline ? inlineValue : new Compound_Inline(inlineValue as Compound_Inline.Value, options);
+    const inlineMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && Compound_Inline.$compact === true) {
+        result = Compound_Inline.fromCompact(Compound_Inline.$compactTag && value.startsWith(Compound_Inline.$compactTag) ? value.slice(Compound_Inline.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "Compound_Inline") {
+            if (typeof value.$data === "string") {
+              if (Compound_Inline.$compact === true) {
+                result = Compound_Inline.fromCompact(Compound_Inline.$compactTag && value.$data.startsWith(Compound_Inline.$compactTag) ? value.$data.slice(Compound_Inline.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for Compound_Inline.");
+              }
+            } else {
+              result = new Compound_Inline(Compound_Inline.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected Compound_Inline.");
+          }
+        } else {
+          if (value instanceof Compound_Inline) {
+            result = value;
+          } else {
+            result = new Compound_Inline(value as Compound_Inline.Value, options);
+          }
+        }
+      }
+      return result;
+    })(inlineValue);
     props.inline = inlineMessageValue;
     return props as Compound.Data;
   }
@@ -161,7 +268,30 @@ export class Compound extends Message<Compound.Data> {
   static deserialize<T extends typeof Compound>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Compound.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Compound.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

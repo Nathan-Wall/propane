@@ -1,0 +1,5 @@
+import { Message } from '@propane/runtime';
+
+export type UrlUnion = Message<{
+  value: URL | { url: URL };
+}>;

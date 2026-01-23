@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-decorator.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // Tests that Message<T> wrapper controls which types get transformed
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_TransformedMessage = Symbol("TransformedMessage");
 export class TransformedMessage extends Message<TransformedMessage.Data> {
   static $typeId = "tests/message-decorator.pmsg#TransformedMessage";
-  static $typeHash = "sha256:31dd5c614a9f645e29b72cb60fea0551de8d58d05c28f49551fa6d87ffe6f2a2";
+  static $typeHash = "sha256:6d609cc9f87ef00493f1438e7b911e67d72038015b432841bee7ed8132ead8b2";
   static $instanceTag = Symbol.for("propane:message:" + TransformedMessage.$typeId);
   static readonly $typeName = "TransformedMessage";
   static EMPTY: TransformedMessage;
@@ -54,7 +54,30 @@ export class TransformedMessage extends Message<TransformedMessage.Data> {
   static deserialize<T extends typeof TransformedMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for TransformedMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected TransformedMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

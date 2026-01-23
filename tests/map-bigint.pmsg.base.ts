@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-bigint.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_MapBigintKey = Symbol("MapBigintKey");
 export class MapBigintKey extends Message<MapBigintKey.Data> {
   static $typeId = "tests/map-bigint.pmsg#MapBigintKey";
-  static $typeHash = "sha256:1956e9f87a6a09997d9a00077202f9dfc50cb88d1e244d3fef053aef40c3aa53";
+  static $typeHash = "sha256:0af4a691d0e1db5314d1a1bb51249dc9f17eb4b7de1f6074397b1e00811e416d";
   static $instanceTag = Symbol.for("propane:message:" + MapBigintKey.$typeId);
   static readonly $typeName = "MapBigintKey";
   static EMPTY: MapBigintKey;
@@ -56,7 +56,30 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   static deserialize<T extends typeof MapBigintKey>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapBigintKey.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapBigintKey.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

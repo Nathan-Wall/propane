@@ -121,42 +121,6 @@ export class ImmutableDate extends ImmutableDate$Base {
     return this.#hash;
   }
 
-  override serialize(options?: { includeTag?: boolean }): string {
-    if (options?.includeTag) {
-      return super.serialize(options);
-    }
-    return `:D${JSON.stringify(this.toString())}`;
-  }
-
-  static override deserialize<T extends typeof ImmutableDate$Base>(
-    this: T,
-    data: string,
-    options?: { skipValidation: boolean }
-  ): InstanceType<T> {
-    if (!data.startsWith(':')) {
-      throw new Error('Invalid Propane message. Expected ":" prefix.');
-    }
-
-    if (data.startsWith(':D')) {
-      let raw: unknown;
-      try {
-        raw = JSON.parse(data.slice(2));
-      } catch {
-        throw new Error('Invalid ImmutableDate cereal string');
-      }
-      if (typeof raw !== 'string') {
-        throw new Error('Invalid ImmutableDate cereal string');
-      }
-      const parsed = new ImmutableDate(raw, options);
-      const ctor = this as unknown as typeof ImmutableDate;
-      if (ctor === ImmutableDate) {
-        return parsed as InstanceType<T>;
-      }
-      return new this({ epochMs: parsed.epochMs }, options) as InstanceType<T>;
-    }
-
-    return super.deserialize(data, options) as InstanceType<T>;
-  }
 }
 
 export function isImmutableDate(value: unknown): value is ImmutableDate {

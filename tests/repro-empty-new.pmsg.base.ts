@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/repro-empty-new.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_UnionFirstNumber = Symbol("UnionFirstNumber");
 export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static $typeId = "tests/repro-empty-new.pmsg#UnionFirstNumber";
-  static $typeHash = "sha256:41ba0c54795538aca652a09d88cd45ea2828eca943f0013f98cfd29d59582e5b";
+  static $typeHash = "sha256:2d9d159eba20e8f4c15918d455756e54f97fa391b8dea523e6b6e0cc3eb0aee7";
   static $instanceTag = Symbol.for("propane:message:" + UnionFirstNumber.$typeId);
   static readonly $typeName = "UnionFirstNumber";
   static EMPTY: UnionFirstNumber;
@@ -25,7 +25,8 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     return [{
       name: "val",
       fieldNumber: null,
-      getValue: () => this.#val as number | string
+      getValue: () => this.#val as number | string,
+      unionHasString: true
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -55,7 +56,30 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   static deserialize<T extends typeof UnionFirstNumber>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for UnionFirstNumber.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected UnionFirstNumber.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -86,7 +110,7 @@ export namespace UnionFirstNumber {
 const TYPE_TAG_UnionFirstString = Symbol("UnionFirstString");
 export class UnionFirstString extends Message<UnionFirstString.Data> {
   static $typeId = "tests/repro-empty-new.pmsg#UnionFirstString";
-  static $typeHash = "sha256:54113ef2786e65c58be162dc5a38f2da5e30b1720dc75b04aca58f456d9538b0";
+  static $typeHash = "sha256:e9fbb8c2aad3113963b2fa03610cb39052ea5550d76cc93b5fd575dbb58c31e5";
   static $instanceTag = Symbol.for("propane:message:" + UnionFirstString.$typeId);
   static readonly $typeName = "UnionFirstString";
   static EMPTY: UnionFirstString;
@@ -106,7 +130,8 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     return [{
       name: "val",
       fieldNumber: null,
-      getValue: () => this.#val as string | number
+      getValue: () => this.#val as string | number,
+      unionHasString: true
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -136,7 +161,30 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   static deserialize<T extends typeof UnionFirstString>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for UnionFirstString.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected UnionFirstString.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -167,7 +215,7 @@ export namespace UnionFirstString {
 const TYPE_TAG_OptionalField = Symbol("OptionalField");
 export class OptionalField extends Message<OptionalField.Data> {
   static $typeId = "tests/repro-empty-new.pmsg#OptionalField";
-  static $typeHash = "sha256:bd88ad07d780b6b487b353b65d87cf21ab187d018fedd8abea34bb60a127af22";
+  static $typeHash = "sha256:2774abcb774c78149f3c871fdba26b34fb89dbb8f6d31b15d512e301e4b2a10b";
   static $instanceTag = Symbol.for("propane:message:" + OptionalField.$typeId);
   static readonly $typeName = "OptionalField";
   static EMPTY: OptionalField;
@@ -204,7 +252,30 @@ export class OptionalField extends Message<OptionalField.Data> {
   static deserialize<T extends typeof OptionalField>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for OptionalField.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected OptionalField.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -238,7 +309,7 @@ export namespace OptionalField {
 const TYPE_TAG_RequiredMessage = Symbol("RequiredMessage");
 export class RequiredMessage extends Message<RequiredMessage.Data> {
   static $typeId = "tests/repro-empty-new.pmsg#RequiredMessage";
-  static $typeHash = "sha256:49c15eaf21e81630a7c04aae6a94e5025103664e5845fb6b9c7467343d706c37";
+  static $typeHash = "sha256:374c4df4f53dc9efe2754a1136c83ea98e48fd87233b8471d96387e57d0fefde";
   static $instanceTag = Symbol.for("propane:message:" + RequiredMessage.$typeId);
   static readonly $typeName = "RequiredMessage";
   static EMPTY: RequiredMessage;
@@ -265,7 +336,35 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     const props = {} as Partial<RequiredMessage.Data>;
     const subValue = entries["sub"];
     if (subValue === undefined) throw new Error("Missing required property \"sub\".");
-    const subMessageValue = typeof subValue === "string" && UnionFirstNumber.$compact === true ? UnionFirstNumber.fromCompact(subValue, options) as any : subValue instanceof UnionFirstNumber ? subValue : new UnionFirstNumber(subValue as UnionFirstNumber.Value, options);
+    const subMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && UnionFirstNumber.$compact === true) {
+        result = UnionFirstNumber.fromCompact(UnionFirstNumber.$compactTag && value.startsWith(UnionFirstNumber.$compactTag) ? value.slice(UnionFirstNumber.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "UnionFirstNumber") {
+            if (typeof value.$data === "string") {
+              if (UnionFirstNumber.$compact === true) {
+                result = UnionFirstNumber.fromCompact(UnionFirstNumber.$compactTag && value.$data.startsWith(UnionFirstNumber.$compactTag) ? value.$data.slice(UnionFirstNumber.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for UnionFirstNumber.");
+              }
+            } else {
+              result = new UnionFirstNumber(UnionFirstNumber.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected UnionFirstNumber.");
+          }
+        } else {
+          if (value instanceof UnionFirstNumber) {
+            result = value;
+          } else {
+            result = new UnionFirstNumber(value as UnionFirstNumber.Value, options);
+          }
+        }
+      }
+      return result;
+    })(subValue);
     props.sub = subMessageValue;
     return props as RequiredMessage.Data;
   }
@@ -288,7 +387,30 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   static deserialize<T extends typeof RequiredMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for RequiredMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected RequiredMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -1,7 +1,7 @@
 import { Message } from '@propane/runtime';
 
 // @extend('./date.pmsg.ext.ts')
-// @compact
+// @compact('D')
 export type ImmutableDate = Message<{
   '1:epochMs': number;
 }>;

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/indexed-array.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_ArrayMessage_Labels_Item = Symbol("ArrayMessage_Labels_Item");
 export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.Data> {
   static $typeId = "tests/indexed-array.pmsg#ArrayMessage_Labels_Item";
-  static $typeHash = "sha256:60152f77d6e8c51760ee2ff2d0d789906f3be400060719e149e3454998429dbf";
+  static $typeHash = "sha256:4abd212c96c686960d2b04021f66a0f41858333dd386ebda1a4ece0f44c947c6";
   static $instanceTag = Symbol.for("propane:message:" + ArrayMessage_Labels_Item.$typeId);
   static readonly $typeName = "ArrayMessage_Labels_Item";
   static EMPTY: ArrayMessage_Labels_Item;
@@ -42,7 +42,30 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
   static deserialize<T extends typeof ArrayMessage_Labels_Item>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ArrayMessage_Labels_Item.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ArrayMessage_Labels_Item.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -73,7 +96,7 @@ export namespace ArrayMessage_Labels_Item {
 const TYPE_TAG_ArrayMessage = Symbol("ArrayMessage");
 export class ArrayMessage extends Message<ArrayMessage.Data> {
   static $typeId = "tests/indexed-array.pmsg#ArrayMessage";
-  static $typeHash = "sha256:81b407408bf5f055b32cc61933ba16a5a5c76025c48e97d89a3d295d17ccddfa";
+  static $typeHash = "sha256:7c168ef310c92c2497af863a90ca64f10f49b8c21312335c506afa887f2f21ff";
   static $instanceTag = Symbol.for("propane:message:" + ArrayMessage.$typeId);
   static readonly $typeName = "ArrayMessage";
   static EMPTY: ArrayMessage;
@@ -134,7 +157,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     const labelsValue = entries["4"] === undefined ? entries["labels"] : entries["4"];
     if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
     const labelsArrayValue = labelsValue === undefined || labelsValue === null ? new ImmutableArray() : labelsValue as object instanceof ImmutableArray ? labelsValue : new ImmutableArray(labelsValue as Iterable<unknown>);
-    const labelsArrayValueConverted = labelsArrayValue === undefined || labelsArrayValue === null ? labelsArrayValue : (labelsArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ArrayMessage_Labels_Item.$compact === true ? ArrayMessage_Labels_Item.fromCompact(element, options) as any : element);
+    const labelsArrayValueConverted = labelsArrayValue === undefined || labelsArrayValue === null ? labelsArrayValue : (labelsArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ArrayMessage_Labels_Item.$compact === true ? ArrayMessage_Labels_Item.fromCompact(ArrayMessage_Labels_Item.$compactTag && element.startsWith(ArrayMessage_Labels_Item.$compactTag) ? element.slice(ArrayMessage_Labels_Item.$compactTag.length) : element, options) as any : element);
     if (!(labelsArrayValueConverted as object instanceof ImmutableArray || Array.isArray(labelsArrayValueConverted))) throw new Error("Invalid value for property \"labels\".");
     props.labels = labelsArrayValueConverted as ArrayMessage_Labels_Item[] | Iterable<ArrayMessage_Labels_Item>;
     return props as ArrayMessage.Data;
@@ -185,7 +208,30 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
   static deserialize<T extends typeof ArrayMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for ArrayMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected ArrayMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

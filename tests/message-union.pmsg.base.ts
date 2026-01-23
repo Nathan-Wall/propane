@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_Cat = Symbol("Cat");
 export class Cat extends Message<Cat.Data> {
   static $typeId = "tests/message-union.pmsg#Cat";
-  static $typeHash = "sha256:bb157b96566206a61ffafda9b98e1d85e20cd9e2216263bcdcd432d74fca4d3a";
+  static $typeHash = "sha256:8f95e026c070ff2d951bfcc2385a188c119931c101041a7bc2f7cedabcfb015a";
   static $instanceTag = Symbol.for("propane:message:" + Cat.$typeId);
   static readonly $typeName = "Cat";
   static EMPTY: Cat;
@@ -52,7 +52,30 @@ export class Cat extends Message<Cat.Data> {
   static deserialize<T extends typeof Cat>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Cat.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Cat.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -94,7 +117,7 @@ export namespace Cat {
 const TYPE_TAG_Dog = Symbol("Dog");
 export class Dog extends Message<Dog.Data> {
   static $typeId = "tests/message-union.pmsg#Dog";
-  static $typeHash = "sha256:44843cdd5016be5b624ed0faba5a1c1e7ab9c91169eba2c9eb2539d0292540e0";
+  static $typeHash = "sha256:76519add00a61acf5a5ba3c3afc915405ba53c5fda0f78d9769a4fc7999f07c9";
   static $instanceTag = Symbol.for("propane:message:" + Dog.$typeId);
   static readonly $typeName = "Dog";
   static EMPTY: Dog;
@@ -141,7 +164,30 @@ export class Dog extends Message<Dog.Data> {
   static deserialize<T extends typeof Dog>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Dog.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Dog.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -183,7 +229,7 @@ export namespace Dog {
 const TYPE_TAG_PetOwner = Symbol("PetOwner");
 export class PetOwner extends Message<PetOwner.Data> {
   static $typeId = "tests/message-union.pmsg#PetOwner";
-  static $typeHash = "sha256:735483ef40c30b8f9aa670aaa7465c22882ac54bb912356c910456edcfa1c6c2";
+  static $typeHash = "sha256:3af9f833c3572190c069ff26fe59cc128f6ddbe537971b42809962932ea72514";
   static $instanceTag = Symbol.for("propane:message:" + PetOwner.$typeId);
   static readonly $typeName = "PetOwner";
   static EMPTY: PetOwner;
@@ -199,8 +245,74 @@ export class PetOwner extends Message<PetOwner.Data> {
       this.#validate(props);
     }
     this.#ownerName = (props ? props.ownerName : "") as string;
-    this.#pet = (props ? props.pet : new Cat()) as Cat | Dog;
-    this.#optionalPet = (props ? props.optionalPet : undefined) as Cat | Dog;
+    this.#pet = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Cat.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Cat(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+        if (!matched) {
+          if (Dog.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Dog(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.pet) : new Cat()) as Cat | Dog;
+    this.#optionalPet = (props ? (value => {
+      let result = value as any;
+      const isMessage = Message.isMessage(value);
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        let matched = false;
+        if (!matched) {
+          if (Cat.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Cat(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+        if (!matched) {
+          if (Dog.isInstance(value)) {
+            result = value as any;
+            matched = true;
+          } else {
+            if (!isMessage) {
+              try {
+                result = new Dog(value as any, options);
+                matched = true;
+              } catch (e) {}
+            }
+          }
+        }
+      }
+      return result;
+    })(props.optionalPet) : undefined) as Cat | Dog;
     if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {
@@ -236,7 +348,7 @@ export class PetOwner extends Message<PetOwner.Data> {
       if (petValue.$tag === "Cat") {
         if (typeof petValue.$data === "string") {
           if (Cat.$compact === true) {
-            petUnionValue = Cat.fromCompact(petValue.$data, options);
+            petUnionValue = Cat.fromCompact(Cat.$compactTag && petValue.$data.startsWith(Cat.$compactTag) ? petValue.$data.slice(Cat.$compactTag.length) : petValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"pet\" (Cat).");
           }
@@ -246,12 +358,27 @@ export class PetOwner extends Message<PetOwner.Data> {
       } else if (petValue.$tag === "Dog") {
         if (typeof petValue.$data === "string") {
           if (Dog.$compact === true) {
-            petUnionValue = Dog.fromCompact(petValue.$data, options);
+            petUnionValue = Dog.fromCompact(Dog.$compactTag && petValue.$data.startsWith(Dog.$compactTag) ? petValue.$data.slice(Dog.$compactTag.length) : petValue.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"pet\" (Dog).");
           }
         } else {
           petUnionValue = new Dog(Dog.prototype.$fromEntries(petValue.$data, options), options);
+        }
+      }
+    }
+    if (typeof petValue === "string") {
+      if (Cat.$compactTag && petValue.startsWith(Cat.$compactTag)) {
+        if (Cat.$compact === true) {
+          petUnionValue = Cat.fromCompact(Cat.$compactTag && petValue.startsWith(Cat.$compactTag) ? petValue.slice(Cat.$compactTag.length) : petValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"pet\" (Cat).");
+        }
+      } else if (Dog.$compactTag && petValue.startsWith(Dog.$compactTag)) {
+        if (Dog.$compact === true) {
+          petUnionValue = Dog.fromCompact(Dog.$compactTag && petValue.startsWith(Dog.$compactTag) ? petValue.slice(Dog.$compactTag.length) : petValue, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"pet\" (Dog).");
         }
       }
     }
@@ -289,7 +416,7 @@ export class PetOwner extends Message<PetOwner.Data> {
       if (optionalPetNormalized.$tag === "Cat") {
         if (typeof optionalPetNormalized.$data === "string") {
           if (Cat.$compact === true) {
-            optionalPetUnionValue = Cat.fromCompact(optionalPetNormalized.$data, options);
+            optionalPetUnionValue = Cat.fromCompact(Cat.$compactTag && optionalPetNormalized.$data.startsWith(Cat.$compactTag) ? optionalPetNormalized.$data.slice(Cat.$compactTag.length) : optionalPetNormalized.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"optionalPet\" (Cat).");
           }
@@ -299,12 +426,27 @@ export class PetOwner extends Message<PetOwner.Data> {
       } else if (optionalPetNormalized.$tag === "Dog") {
         if (typeof optionalPetNormalized.$data === "string") {
           if (Dog.$compact === true) {
-            optionalPetUnionValue = Dog.fromCompact(optionalPetNormalized.$data, options);
+            optionalPetUnionValue = Dog.fromCompact(Dog.$compactTag && optionalPetNormalized.$data.startsWith(Dog.$compactTag) ? optionalPetNormalized.$data.slice(Dog.$compactTag.length) : optionalPetNormalized.$data, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"optionalPet\" (Dog).");
           }
         } else {
           optionalPetUnionValue = new Dog(Dog.prototype.$fromEntries(optionalPetNormalized.$data, options), options);
+        }
+      }
+    }
+    if (typeof optionalPetNormalized === "string") {
+      if (Cat.$compactTag && optionalPetNormalized.startsWith(Cat.$compactTag)) {
+        if (Cat.$compact === true) {
+          optionalPetUnionValue = Cat.fromCompact(Cat.$compactTag && optionalPetNormalized.startsWith(Cat.$compactTag) ? optionalPetNormalized.slice(Cat.$compactTag.length) : optionalPetNormalized, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"optionalPet\" (Cat).");
+        }
+      } else if (Dog.$compactTag && optionalPetNormalized.startsWith(Dog.$compactTag)) {
+        if (Dog.$compact === true) {
+          optionalPetUnionValue = Dog.fromCompact(Dog.$compactTag && optionalPetNormalized.startsWith(Dog.$compactTag) ? optionalPetNormalized.slice(Dog.$compactTag.length) : optionalPetNormalized, options);
+        } else {
+          throw new Error("Invalid compact tagged value for property \"optionalPet\" (Dog).");
         }
       }
     }
@@ -356,7 +498,30 @@ export class PetOwner extends Message<PetOwner.Data> {
   static deserialize<T extends typeof PetOwner>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for PetOwner.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected PetOwner.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

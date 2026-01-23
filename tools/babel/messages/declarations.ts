@@ -155,6 +155,8 @@ interface BuildDeclarationsOptions {
   typeId?: string | null;
   /** True if @compact decorator is present */
   compact?: boolean;
+  /** Optional @compact tag */
+  compactTag?: string | null;
 }
 
 function normalizePath(value: string): string {
@@ -194,7 +196,8 @@ function computeImplicitTypeHash(
   actualTypeLiteralPath: NodePath<t.TSType>,
   typeLiteralPath: NodePath<t.TSType>,
   wrapperInfo: WrapperInfo | undefined,
-  compact: boolean
+  compact: boolean,
+  compactTag?: string | null
 ): string | undefined {
   if (!actualTypeLiteralPath.isTSTypeLiteral()) {
     return undefined;
@@ -229,6 +232,7 @@ function computeImplicitTypeHash(
     extendPath: null,
     typeId: null,
     compact,
+    compactTag: compactTag ?? null,
     properties,
     typeParameters,
     wrapper,
@@ -255,6 +259,7 @@ export function buildDeclarations(
     pmtMessage,
     typeId,
     compact = false,
+    compactTag,
   }: BuildDeclarationsOptions
 ): t.Statement[] | null {
   const typeAlias = typeAliasPath.node;
@@ -436,7 +441,8 @@ export function buildDeclarations(
       actualTypeLiteralPath,
       typeLiteralPath,
       wrapperInfo,
-      compact
+      compact,
+      compactTag
     );
   const typeNamespace = buildTypeNamespace(
     typeAlias,
@@ -461,7 +467,8 @@ export function buildDeclarations(
     t.identifier(`TYPE_TAG_${className}`),
     computedTypeId,
     computedTypeHash,
-    compact
+    compact,
+    compactTag ?? pmtMessage?.compactTag ?? null
   );
 
   const typeTagDeclaration = t.variableDeclaration(

@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-array-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableArray, ImmutableDate, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_MapArrayKey = Symbol("MapArrayKey");
 export class MapArrayKey extends Message<MapArrayKey.Data> {
   static $typeId = "tests/map-array-key.pmsg#MapArrayKey";
-  static $typeHash = "sha256:ed2d1d36134a1062cd920d7485db095474cc374505f32a7f8d8d24556a618d8f";
+  static $typeHash = "sha256:6d46dd0dfd227e0de7d04f2cd5a973361f85369145b4f8a729ef1e73620825fa";
   static $instanceTag = Symbol.for("propane:message:" + MapArrayKey.$typeId);
   static readonly $typeName = "MapArrayKey";
   static EMPTY: MapArrayKey;
@@ -19,7 +19,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     super(TYPE_TAG_MapArrayKey, "MapArrayKey");
     this.#arrayValues = props ? (props.arrayValues === undefined || props.arrayValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.arrayValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), v]))) as ImmutableMap<ImmutableArray<string>, number> : new ImmutableMap();
     this.#numberArrayMap = props ? (props.numberArrayMap === undefined || props.numberArrayMap === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.numberArrayMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), v]))) as ImmutableMap<ImmutableArray<number>, string> : new ImmutableMap();
-    this.#optionalArrayMap = props ? (props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), ImmutableDate.from(v as Date)]))) as ImmutableMap<ImmutableArray<boolean>, ImmutableDate> : undefined;
+    this.#optionalArrayMap = props ? (props.optionalArrayMap === undefined || props.optionalArrayMap === null ? props.optionalArrayMap : new ImmutableMap(Array.from(props.optionalArrayMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), ImmutableDate.from(v as ImmutableDate.Value)]))) as ImmutableMap<ImmutableArray<boolean>, ImmutableDate> : undefined;
     if (!props) MapArrayKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapArrayKey.Data>[] {
@@ -54,9 +54,10 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     props.numberArrayMap = numberArrayMapMapValue as Map<number[], string> | Iterable<[number[], string]>;
     const optionalArrayMapValue = entries["optionalArrayMap"];
     const optionalArrayMapNormalized = optionalArrayMapValue === null ? undefined : optionalArrayMapValue;
-    const optionalArrayMapMapValue = optionalArrayMapNormalized === undefined || optionalArrayMapNormalized === null ? optionalArrayMapNormalized : new ImmutableMap(Array.from(optionalArrayMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), ImmutableDate.from(v as Date)]));
-    if (optionalArrayMapMapValue !== undefined && !((optionalArrayMapMapValue as object instanceof ImmutableMap || optionalArrayMapMapValue as object instanceof Map) && [...(optionalArrayMapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof ImmutableArray || Array.isArray(mapKey)) && [...(mapKey as Iterable<unknown>)].every(element => typeof element === "boolean") && (mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate)))) throw new Error("Invalid value for property \"optionalArrayMap\".");
-    props.optionalArrayMap = optionalArrayMapMapValue as Map<boolean[], Date> | Iterable<[boolean[], Date]>;
+    const optionalArrayMapMapValue = optionalArrayMapNormalized === undefined || optionalArrayMapNormalized === null ? optionalArrayMapNormalized : new ImmutableMap(Array.from(optionalArrayMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableArray.from(k as Iterable<unknown>), typeof v === "string" && ImmutableDate.$compact === true ? v : ImmutableDate.from(v as ImmutableDate.Value)]));
+    const optionalArrayMapMapValueConverted = optionalArrayMapMapValue === undefined || optionalArrayMapMapValue === null ? optionalArrayMapMapValue : new ImmutableMap([...(optionalArrayMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && v.startsWith(ImmutableDate.$compactTag) ? v.slice(ImmutableDate.$compactTag.length) : v, options) as any : v]));
+    if (optionalArrayMapMapValueConverted !== undefined && !((optionalArrayMapMapValueConverted as object instanceof ImmutableMap || optionalArrayMapMapValueConverted as object instanceof Map) && [...(optionalArrayMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof ImmutableArray || Array.isArray(mapKey)) && [...(mapKey as Iterable<unknown>)].every(element => typeof element === "boolean") && (mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate)))) throw new Error("Invalid value for property \"optionalArrayMap\".");
+    props.optionalArrayMap = optionalArrayMapMapValueConverted as Map<boolean[], Date> | Iterable<[boolean[], Date]>;
     return props as MapArrayKey.Data;
   }
   static from(value: MapArrayKey.Value): MapArrayKey {
@@ -94,7 +95,30 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
   static deserialize<T extends typeof MapArrayKey>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapArrayKey.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapArrayKey.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -147,16 +147,6 @@ function processTypeAlias(
     });
   }
 
-  if (decoratorInfo.compact && !decoratorInfo.extendPath) {
-    ctx.diagnostics.push({
-      filePath: ctx.filePath,
-      location,
-      severity: 'error',
-      code: 'PMT042',
-      message: '@compact decorator requires @extend to define toCompact/fromCompact.',
-    });
-  }
-
   // Validate that object literals must use Message<{...}> wrapper
   validateObjectLiteralRequiresWrapper(
     typeAnnotation,
@@ -191,6 +181,18 @@ function processTypeAlias(
       };
     }
 
+    const autoCompact = decoratorInfo.compact
+      && isAutoCompactMessage(properties);
+    if (decoratorInfo.compact && !decoratorInfo.extendPath && !autoCompact) {
+      ctx.diagnostics.push({
+        filePath: ctx.filePath,
+        location,
+        severity: 'error',
+        code: 'PMT042',
+        message: '@compact decorator requires @extend to define toCompact/fromCompact.',
+      });
+    }
+
     const message: PmtMessage = {
       name: typeName,
       isMessageType: true,
@@ -198,6 +200,7 @@ function processTypeAlias(
       extendPath: decoratorInfo.extendPath,
       typeId: decoratorInfo.typeId,
       compact: decoratorInfo.compact,
+      compactTag: decoratorInfo.compactTag,
       properties,
       typeParameters,
       wrapper,
@@ -218,6 +221,14 @@ function processTypeAlias(
 
     typeAliases.push(alias);
   }
+}
+
+function isAutoCompactMessage(properties: PmtProperty[]): boolean {
+  if (properties.length !== 1) return false;
+  const prop = properties[0]!;
+  if (prop.optional) return false;
+  if (prop.fieldNumber !== 1) return false;
+  return prop.type.kind === 'primitive' && prop.type.primitive === 'string';
 }
 
 /**

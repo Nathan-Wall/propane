@@ -6,7 +6,7 @@ import { ImmutableSet } from './common/set/immutable.js';
 import { ImmutableArray } from './common/array/immutable.js';
 import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import type { ImmutableDate } from './common/time/date.js';
-import { ImmutableUrl } from './common/web/url.js';
+import type { ImmutableUrl } from './common/web/url.js';
 import type { Decimal, Rational } from '@/common/numbers/decimal.js';
 import {
   SET_UPDATE_LISTENER,
@@ -20,12 +20,11 @@ import {
 } from './symbols.js';
 import { needsDetach, detachValue } from './common/detach.js';
 
-const SIMPLE_STRING_RE = /^[A-Za-z0-9 _-]+$/;
+const SAFE_TOKEN_RE = /^[A-Za-z0-9!%&*+\-./=?@^_~]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
 const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
-const DATE_PREFIX = 'D';
-const URL_PREFIX = 'U';
 const ARRAY_BUFFER_PREFIX = 'B';
+const TINY_TAG_RE = /^[A-Za-z#]$/;
 const MESSAGE_TAG = Symbol.for('propane:message');
 const ENFORCED_TYPE_TAGS = new WeakSet<Function>();
 
@@ -105,6 +104,12 @@ export interface MessagePropDescriptor<T extends object> {
   setElementUnionMessageTypes?: string[];
   mapKeyUnionMessageTypes?: string[];
   mapValueUnionMessageTypes?: string[];
+  /** When true, string values in the union should be quoted */
+  unionHasString?: boolean;
+  arrayElementUnionHasString?: boolean;
+  setElementUnionHasString?: boolean;
+  mapKeyUnionHasString?: boolean;
+  mapValueUnionHasString?: boolean;
 }
 
 /**
@@ -140,6 +145,7 @@ export interface MessageConstructor<T extends AnyMessage> {
   readonly $typeId?: string;
   readonly $typeHash?: string;
   readonly $compact?: boolean;
+  readonly $compactTag?: string;
   isInstance(value: unknown): value is AnyMessage;
 }
 
@@ -199,6 +205,7 @@ export interface AnyMessage {
 export abstract class Message<T extends object> {
   private [MESSAGE_TAG] = true;
   static readonly $compact?: boolean;
+  static readonly $compactTag?: string;
   readonly #typeTag: symbol;
   readonly #typeName: string;
   static readonly MAX_CACHED_SERIALIZE = 64 * 1024; // 64KB
@@ -630,11 +637,23 @@ export abstract class Message<T extends object> {
   serialize(options?: SerializeOptions): string {
     const includeTag = options?.includeTag ?? false;
 
-    if (includeTag) {
-      const ctor = this.constructor as { $compact?: boolean };
-      if (ctor.$compact === true) {
+    const ctor = this.constructor as { $compact?: boolean; $compactTag?: string };
+    if (ctor.$compact === true) {
+      if (typeof (this as { toCompact?: () => string }).toCompact !== 'function') {
+        throw new Error(`${this.#typeName}.toCompact() is not implemented.`);
+      }
+      const compactValue = (this as { toCompact: () => string }).toCompact();
+      if (typeof compactValue !== 'string') {
+        throw new Error(`${this.#typeName}.toCompact() must return a string.`);
+      }
+      const compactTag = ctor.$compactTag;
+      if (compactTag) {
+        return `:${serializeCompactTaggedValue(compactTag, compactValue)}`;
+      }
+      if (includeTag) {
         return `:${serializeTaggedMessage(this as Message<any>)}`;
       }
+      return `:${JSON.stringify(compactValue)}`;
     }
 
     // Only use cache for non-tagged serialization (the common case)
@@ -653,6 +672,11 @@ export abstract class Message<T extends object> {
       const tagSetElements = (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
       const tagMapKeys = (descriptor.mapKeyUnionMessageTypes?.length ?? 0) > 0;
       const tagMapValues = (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
+      const forceQuotedStrings = descriptor.unionHasString === true;
+      const forceQuotedArrayElements = descriptor.arrayElementUnionHasString === true;
+      const forceQuotedSetElements = descriptor.setElementUnionHasString === true;
+      const forceQuotedMapKeys = descriptor.mapKeyUnionHasString === true;
+      const forceQuotedMapValues = descriptor.mapValueUnionHasString === true;
 
       if (descriptor.fieldNumber == null) {
         entries.push({
@@ -663,6 +687,11 @@ export abstract class Message<T extends object> {
           tagSetElements,
           tagMapKeys,
           tagMapValues,
+          forceQuotedStrings,
+          forceQuotedArrayElements,
+          forceQuotedSetElements,
+          forceQuotedMapKeys,
+          forceQuotedMapValues,
         });
         continue;
       }
@@ -682,6 +711,11 @@ export abstract class Message<T extends object> {
         tagSetElements,
         tagMapKeys,
         tagMapValues,
+        forceQuotedStrings,
+        forceQuotedArrayElements,
+        forceQuotedSetElements,
+        forceQuotedMapKeys,
+        forceQuotedMapValues,
       });
 
       expectedIndex = fieldNumber + 1;
@@ -772,7 +806,15 @@ class CerealParser {
       throw new Error('Unexpected end of input.');
     }
 
-    const char = this.source[this.cursor];
+    const char = this.source[this.cursor] ?? '';
+
+    if (char === 'B' && this.peek(1) === '"') {
+      return this.parseArrayBuffer();
+    }
+
+    if (isTinyTagChar(char) && this.peek(1) === '"') {
+      return this.parseTaggedCompactString();
+    }
 
     switch (char) {
       case '{':
@@ -793,16 +835,6 @@ class CerealParser {
         return this.parseBareString();
       case '$':
         return this.parseTaggedMessage();
-      case 'D':
-        if (this.peek(1) === '"') {
-          return this.parseDate();
-        }
-        return this.parseBareString();
-      case 'U':
-        if (this.peek(1) === '"') {
-          return this.parseUrl();
-        }
-        return this.parseBareString();
       case 'B':
         if (this.peek(1) === '"') {
           return this.parseArrayBuffer();
@@ -961,24 +993,11 @@ class CerealParser {
     throw new Error('Invalid tagged message: expected "{" or string literal.');
   }
 
-  private parseDate(): Date {
-    this.expect('D');
-    const iso = this.parseString();
-    const date = new Date(iso);
-    if (Number.isNaN(date.getTime())) {
-      throw new TypeError(`Invalid date value: ${iso}`);
-    }
-    return date;
-  }
-
-  private parseUrl(): URL {
-    this.expect('U');
-    const href = this.parseString();
-    try {
-      return new URL(href);
-    } catch {
-      throw new TypeError(`Invalid URL value: ${href}`);
-    }
+  private parseTaggedCompactString(): string {
+    const tag = this.source[this.cursor] ?? '';
+    this.cursor += 1;
+    const value = this.parseString();
+    return `${tag}${value}`;
   }
 
   private parseArrayBuffer(): ArrayBuffer {
@@ -1057,6 +1076,10 @@ class CerealParser {
       return num;
     }
 
+    if (isTaggedCompactToken(token)) {
+      return token;
+    }
+
     // Bare string
     if (!canUseBareString(token)) {
       throw new Error(`Invalid literal token: ${token}`);
@@ -1093,10 +1116,31 @@ class CerealParser {
 
 function canUseBareString(value: string) {
   return (
-    SIMPLE_STRING_RE.test(value)
+    SAFE_TOKEN_RE.test(value)
     && !RESERVED_STRINGS.has(value)
     && !NUMERIC_STRING_RE.test(value)
   );
+}
+
+function isTinyTagChar(value: string): boolean {
+  return TINY_TAG_RE.test(value);
+}
+
+function canUseCompactToken(value: string): boolean {
+  return value.length > 0 && SAFE_TOKEN_RE.test(value);
+}
+
+function isTaggedCompactToken(token: string): boolean {
+  if (token.length < 2) return false;
+  const tag = token[0] ?? '';
+  if (!isTinyTagChar(tag)) return false;
+  return canUseCompactToken(token.slice(1));
+}
+
+function serializeCompactTaggedValue(tag: string, value: string): string {
+  return canUseCompactToken(value)
+    ? `${tag}${value}`
+    : `${tag}${JSON.stringify(value)}`;
 }
 
 // Simple deterministic string hash (Java-style)
@@ -1107,17 +1151,6 @@ function hashString(value: string): number {
     hash = hash * 31 + value.charCodeAt(i) | 0;
   }
   return hash;
-}
-
-function jsonStringifyDate(value: Date | { toString(): string }): string {
-  if (value instanceof Date) {
-    return JSON.stringify(value.toISOString());
-  }
-  return JSON.stringify(value.toString());
-}
-
-function jsonStringifyUrl(value: URL): string {
-  return JSON.stringify(value.toString());
 }
 
 function serializePrimitive(
@@ -1135,28 +1168,47 @@ function serializePrimitive(
     tagSetElements = false,
     tagMapKeys = false,
     tagMapValues = false,
+    forceQuotedStrings = false,
+    forceQuotedArrayElements = false,
+    forceQuotedSetElements = false,
+    forceQuotedMapKeys = false,
+    forceQuotedMapValues = false,
   } = tags;
 
-  if (tagMessage && Message.isMessage(value) && !isDateValue(value)) {
+  if (tagMessage && Message.isMessage(value)) {
     return serializeTaggedMessage(value as Message<DataObject>, ancestors);
   }
 
-  if (tagArrayElements && (Array.isArray(value) || value instanceof ImmutableArray)) {
+  if ((tagArrayElements || forceQuotedArrayElements)
+    && (Array.isArray(value) || value instanceof ImmutableArray)) {
     return serializeArrayLiteral(
       Array.isArray(value) ? value : [...value],
       ancestors,
-      { tagMessageElements: true }
+      {
+        tagMessageElements: tagArrayElements,
+        forceQuotedStrings: forceQuotedArrayElements,
+      }
     );
   }
 
-  if (tagSetElements && isSetValue(value)) {
-    return serializeSetLiteral(value, ancestors, { tagMessageElements: true });
+  if ((tagSetElements || forceQuotedSetElements) && isSetValue(value)) {
+    return serializeSetLiteral(
+      value,
+      ancestors,
+      {
+        tagMessageElements: tagSetElements,
+        forceQuotedStrings: forceQuotedSetElements,
+      }
+    );
   }
 
-  if ((tagMapKeys || tagMapValues) && isMapValue(value)) {
+  if ((tagMapKeys || tagMapValues || forceQuotedMapKeys || forceQuotedMapValues)
+    && isMapValue(value)) {
     return serializeMapLiteral(value, ancestors, {
       tagMessageKeys: tagMapKeys,
       tagMessageValues: tagMapValues,
+      forceQuotedKeys: forceQuotedMapKeys,
+      forceQuotedValues: forceQuotedMapValues,
     });
   }
 
@@ -1171,12 +1223,11 @@ function serializePrimitive(
     return serializeArrayBufferLiteral(unwrapArrayBuffer(value));
   }
 
-  if (isUrlValue(value)) {
-    return serializeUrlLiteral(value);
-  }
-
   if (isMapValue(value)) {
-    return serializeMapLiteral(value, ancestors);
+    return serializeMapLiteral(value, ancestors, {
+      forceQuotedKeys: forceQuotedMapKeys,
+      forceQuotedValues: forceQuotedMapValues,
+    });
   }
 
   if (isSetValue(value)) {
@@ -1187,17 +1238,20 @@ function serializePrimitive(
     return `${value.toString()}n`;
   }
 
-  if (isDateValue(value)) {
-    return `${DATE_PREFIX}${jsonStringifyDate(value)}`;
-  }
-
   if (Message.isMessage(value)) {
-    const ctor = value.constructor as { $compact?: boolean };
+    const ctor = value.constructor as { $compact?: boolean; $compactTag?: string };
     if (ctor.$compact === true) {
       if (typeof (value as { toCompact?: () => string }).toCompact !== 'function') {
         throw new Error('Compact message is missing toCompact().');
       }
       const compactValue = (value as { toCompact: () => string }).toCompact();
+      if (typeof compactValue !== 'string') {
+        throw new Error('Compact message toCompact() must return a string.');
+      }
+      const compactTag = ctor.$compactTag;
+      if (compactTag) {
+        return serializeCompactTaggedValue(compactTag, compactValue);
+      }
       return JSON.stringify(compactValue);
     }
     interface DescriptorGetter {
@@ -1213,6 +1267,11 @@ function serializePrimitive(
       tagSetElements: (d.setElementUnionMessageTypes?.length ?? 0) > 0,
       tagMapKeys: (d.mapKeyUnionMessageTypes?.length ?? 0) > 0,
       tagMapValues: (d.mapValueUnionMessageTypes?.length ?? 0) > 0,
+      forceQuotedStrings: d.unionHasString === true,
+      forceQuotedArrayElements: d.arrayElementUnionHasString === true,
+      forceQuotedSetElements: d.setElementUnionHasString === true,
+      forceQuotedMapKeys: d.mapKeyUnionHasString === true,
+      forceQuotedMapValues: d.mapValueUnionHasString === true,
     }));
     return serializeObjectLiteral(entries, ancestors);
   }
@@ -1222,7 +1281,7 @@ function serializePrimitive(
   }
 
   if (typeof value === 'string') {
-    if (canUseBareString(value)) {
+    if (!forceQuotedStrings && canUseBareString(value)) {
       return value;
     }
     return JSON.stringify(value);
@@ -1234,7 +1293,10 @@ function serializePrimitive(
 function serializeArrayLiteral(
   values: unknown[],
   ancestors = new Set<object>(),
-  { tagMessageElements = false }: { tagMessageElements?: boolean } = {}
+  {
+    tagMessageElements = false,
+    forceQuotedStrings = false,
+  }: { tagMessageElements?: boolean; forceQuotedStrings?: boolean } = {}
 ): string {
   // Track the array itself as an ancestor during serialization
   if (ancestors.has(values)) {
@@ -1242,7 +1304,10 @@ function serializeArrayLiteral(
   }
   ancestors.add(values);
   const result = `[${values
-    .map((value) => serializePrimitive(value, ancestors, { tagMessage: tagMessageElements }))
+    .map((value) => serializePrimitive(value, ancestors, {
+      tagMessage: tagMessageElements,
+      forceQuotedStrings,
+    }))
     .join(',')}]`;
   ancestors.delete(values);
   return result;
@@ -1254,11 +1319,24 @@ function serializeMapLiteral(
   {
     tagMessageKeys = false,
     tagMessageValues = false,
-  }: { tagMessageKeys?: boolean; tagMessageValues?: boolean } = {}
+    forceQuotedKeys = false,
+    forceQuotedValues = false,
+  }: {
+    tagMessageKeys?: boolean;
+    tagMessageValues?: boolean;
+    forceQuotedKeys?: boolean;
+    forceQuotedValues?: boolean;
+  } = {}
 ): string {
   const serialized = [...entries.entries()].map(([key, value]) => {
-    const serializedKey = serializePrimitive(key, ancestors, { tagMessage: tagMessageKeys });
-    const serializedValue = serializePrimitive(value, ancestors, { tagMessage: tagMessageValues });
+    const serializedKey = serializePrimitive(key, ancestors, {
+      tagMessage: tagMessageKeys,
+      forceQuotedStrings: forceQuotedKeys,
+    });
+    const serializedValue = serializePrimitive(value, ancestors, {
+      tagMessage: tagMessageValues,
+      forceQuotedStrings: forceQuotedValues,
+    });
     return `[${serializedKey},${serializedValue}]`;
   });
   return `M[${serialized.join(',')}]`;
@@ -1267,9 +1345,15 @@ function serializeMapLiteral(
 function serializeSetLiteral(
   values: ReadonlySet<unknown>,
   ancestors = new Set<object>(),
-  { tagMessageElements = false }: { tagMessageElements?: boolean } = {}
+  {
+    tagMessageElements = false,
+    forceQuotedStrings = false,
+  }: { tagMessageElements?: boolean; forceQuotedStrings?: boolean } = {}
 ): string {
-  return `S${serializeArrayLiteral([...values.values()], ancestors, { tagMessageElements })}`;
+  return `S${serializeArrayLiteral([...values.values()], ancestors, {
+    tagMessageElements,
+    forceQuotedStrings,
+  })}`;
 }
 
 function serializeTaggedMessage(
@@ -1277,12 +1361,19 @@ function serializeTaggedMessage(
   ancestors = new Set<object>()
 ): string {
   const typeName = message.$typeName;
-  const ctor = message.constructor as { $compact?: boolean };
+  const ctor = message.constructor as { $compact?: boolean; $compactTag?: string };
   if (ctor.$compact === true) {
     if (typeof (message as { toCompact?: () => string }).toCompact !== 'function') {
       throw new Error(`Compact message ${typeName} is missing toCompact().`);
     }
     const compactValue = (message as { toCompact: () => string }).toCompact();
+    if (typeof compactValue !== 'string') {
+      throw new Error(`Compact message ${typeName} toCompact() must return a string.`);
+    }
+    const compactTag = ctor.$compactTag;
+    if (compactTag) {
+      return serializeCompactTaggedValue(compactTag, compactValue);
+    }
     return `$${typeName}${JSON.stringify(compactValue)}`;
   }
   interface DescriptorGetter {
@@ -1301,6 +1392,11 @@ function serializeTaggedMessage(
     const tagSetElements = (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
     const tagMapKeys = (descriptor.mapKeyUnionMessageTypes?.length ?? 0) > 0;
     const tagMapValues = (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
+    const forceQuotedStrings = descriptor.unionHasString === true;
+    const forceQuotedArrayElements = descriptor.arrayElementUnionHasString === true;
+    const forceQuotedSetElements = descriptor.setElementUnionHasString === true;
+    const forceQuotedMapKeys = descriptor.mapKeyUnionHasString === true;
+    const forceQuotedMapValues = descriptor.mapValueUnionHasString === true;
 
     if (descriptor.fieldNumber == null) {
       entries.push({
@@ -1311,6 +1407,11 @@ function serializeTaggedMessage(
         tagSetElements,
         tagMapKeys,
         tagMapValues,
+        forceQuotedStrings,
+        forceQuotedArrayElements,
+        forceQuotedSetElements,
+        forceQuotedMapKeys,
+        forceQuotedMapValues,
       });
       continue;
     }
@@ -1330,6 +1431,11 @@ function serializeTaggedMessage(
       tagSetElements,
       tagMapKeys,
       tagMapValues,
+      forceQuotedStrings,
+      forceQuotedArrayElements,
+      forceQuotedSetElements,
+      forceQuotedMapKeys,
+      forceQuotedMapValues,
     });
 
     expectedIndex = fieldNumber + 1;
@@ -1344,18 +1450,6 @@ function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
 
 function isSetValue(value: unknown): value is ReadonlySet<unknown> {
   return value instanceof Set || value instanceof ImmutableSet;
-}
-
-function isDateValue(value: unknown): value is Date | ImmutableDate {
-  if (value instanceof Date) {
-    return true;
-  }
-  return Message.isMessage(value)
-    && (value as { $typeName?: string }).$typeName === 'ImmutableDate';
-}
-
-function isUrlValue(value: unknown): value is URL {
-  return value instanceof URL || value instanceof ImmutableUrl;
 }
 
 function isArrayBufferValue(
@@ -1376,10 +1470,6 @@ function unwrapArrayBuffer(
     : value;
 }
 
-function serializeUrlLiteral(url: URL): string {
-  return `${URL_PREFIX}${jsonStringifyUrl(url)}`;
-}
-
 interface ObjectEntry {
   key: string | null;
   value: unknown;
@@ -1393,6 +1483,16 @@ interface ObjectEntry {
   tagMapKeys?: boolean;
   /** When true, map values that are Messages should be tagged */
   tagMapValues?: boolean;
+  /** When true, string values should be quoted */
+  forceQuotedStrings?: boolean;
+  /** When true, array elements that are strings should be quoted */
+  forceQuotedArrayElements?: boolean;
+  /** When true, set elements that are strings should be quoted */
+  forceQuotedSetElements?: boolean;
+  /** When true, map keys that are strings should be quoted */
+  forceQuotedMapKeys?: boolean;
+  /** When true, map values that are strings should be quoted */
+  forceQuotedMapValues?: boolean;
 }
 
 interface SerializeTagOptions {
@@ -1401,6 +1501,11 @@ interface SerializeTagOptions {
   tagSetElements?: boolean;
   tagMapKeys?: boolean;
   tagMapValues?: boolean;
+  forceQuotedStrings?: boolean;
+  forceQuotedArrayElements?: boolean;
+  forceQuotedSetElements?: boolean;
+  forceQuotedMapKeys?: boolean;
+  forceQuotedMapValues?: boolean;
 }
 
 function serializeObjectLiteral(
@@ -1415,7 +1520,7 @@ function serializeObjectLiteral(
     ancestors.add(recordOrEntries);
   }
 
-  const entries = Array.isArray(recordOrEntries)
+  const entries: ObjectEntry[] = Array.isArray(recordOrEntries)
     ? recordOrEntries
     : Object.entries(recordOrEntries).map(([key, value]) => ({
       key,
@@ -1435,6 +1540,11 @@ function serializeObjectLiteral(
     tagSetElements,
     tagMapKeys,
     tagMapValues,
+    forceQuotedStrings,
+    forceQuotedArrayElements,
+    forceQuotedSetElements,
+    forceQuotedMapKeys,
+    forceQuotedMapValues,
   }) => {
     const serializedValue = serializePrimitive(value, ancestors, {
       tagMessage: tagMessages,
@@ -1442,6 +1552,11 @@ function serializeObjectLiteral(
       tagSetElements,
       tagMapKeys,
       tagMapValues,
+      forceQuotedStrings,
+      forceQuotedArrayElements,
+      forceQuotedSetElements,
+      forceQuotedMapKeys,
+      forceQuotedMapValues,
     });
     return key == null
       ? serializedValue

@@ -138,12 +138,12 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
       };
     }
 
-    // Handle built-in special types
+    // Handle built-in special types (Date/URL map to immutable message types)
     if (name === 'Date' || name === 'ImmutableDate') {
-      return { kind: 'date' };
+      return { kind: 'reference', name: 'ImmutableDate', typeArguments: [] };
     }
     if (name === 'URL' || name === 'ImmutableUrl') {
-      return { kind: 'url' };
+      return { kind: 'reference', name: 'ImmutableUrl', typeArguments: [] };
     }
     if (name === 'ArrayBuffer' || name === 'ImmutableArrayBuffer') {
       return { kind: 'arraybuffer' };

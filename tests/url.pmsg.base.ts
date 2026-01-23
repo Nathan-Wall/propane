@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, ImmutableUrl, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_UrlMessage = Symbol("UrlMessage");
 export class UrlMessage extends Message<UrlMessage.Data> {
   static $typeId = "tests/url.pmsg#UrlMessage";
-  static $typeHash = "sha256:5a3b71a5e27f1b7ac50cea727d74fc6d87f8d652838620c929535da096c8c43a";
+  static $typeHash = "sha256:0bb0f99be123b9562973cc4470a88ac6e8fdcd15f40de40c5667fc83e356f13f";
   static $instanceTag = Symbol.for("propane:message:" + UrlMessage.$typeId);
   static readonly $typeName = "UrlMessage";
   static EMPTY: UrlMessage;
@@ -19,9 +19,9 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
     super(TYPE_TAG_UrlMessage, "UrlMessage");
     this.#id = (props ? props.id : 0) as number;
-    this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary) : new ImmutableUrl("about:blank");
-    this.#secondary = props ? props.secondary === undefined ? undefined : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary) : undefined;
-    this.#links = props ? (props.links === undefined || props.links === null ? new ImmutableArray() : props.links as object instanceof ImmutableArray ? props.links : new ImmutableArray(props.links as Iterable<unknown>)) as ImmutableArray<ImmutableUrl> : new ImmutableArray();
+    this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary, options) : new ImmutableUrl();
+    this.#secondary = props ? props.secondary === undefined ? props.secondary : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary, options) : undefined;
+    this.#links = props ? (props.links === undefined || props.links === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.links as Iterable<unknown>).map(v => v instanceof ImmutableUrl ? v : new ImmutableUrl(v as ImmutableUrl.Value)))) as ImmutableArray<ImmutableUrl> : new ImmutableArray();
     if (!props) UrlMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
@@ -54,17 +54,79 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     props.id = idValue as number;
     const primaryValue = entries["2"] === undefined ? entries["primary"] : entries["2"];
     if (primaryValue === undefined) throw new Error("Missing required property \"primary\".");
-    if (!(primaryValue as object instanceof URL || primaryValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
-    props.primary = primaryValue as URL;
+    const primaryMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableUrl.$compact === true) {
+        result = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && value.startsWith(ImmutableUrl.$compactTag) ? value.slice(ImmutableUrl.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableUrl") {
+            if (typeof value.$data === "string") {
+              if (ImmutableUrl.$compact === true) {
+                result = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && value.$data.startsWith(ImmutableUrl.$compactTag) ? value.$data.slice(ImmutableUrl.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableUrl.");
+              }
+            } else {
+              result = new ImmutableUrl(ImmutableUrl.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
+          }
+        } else {
+          if (value instanceof ImmutableUrl) {
+            result = value;
+          } else {
+            result = new ImmutableUrl(value as ImmutableUrl.Value, options);
+          }
+        }
+      }
+      return result;
+    })(primaryValue);
+    if (!(primaryMessageValue as object instanceof URL || primaryMessageValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
+    props.primary = primaryMessageValue as ImmutableUrl | URL;
     const secondaryValue = entries["3"] === undefined ? entries["secondary"] : entries["3"];
     const secondaryNormalized = secondaryValue === null ? undefined : secondaryValue;
-    if (secondaryNormalized !== undefined && !(secondaryNormalized as object instanceof URL || secondaryNormalized as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
-    props.secondary = secondaryNormalized as URL;
+    const secondaryMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableUrl.$compact === true) {
+        result = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && value.startsWith(ImmutableUrl.$compactTag) ? value.slice(ImmutableUrl.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableUrl") {
+            if (typeof value.$data === "string") {
+              if (ImmutableUrl.$compact === true) {
+                result = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && value.$data.startsWith(ImmutableUrl.$compactTag) ? value.$data.slice(ImmutableUrl.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableUrl.");
+              }
+            } else {
+              result = new ImmutableUrl(ImmutableUrl.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
+          }
+        } else {
+          if (value instanceof ImmutableUrl) {
+            result = value;
+          } else {
+            result = new ImmutableUrl(value as ImmutableUrl.Value, options);
+          }
+        }
+      }
+      if (value === undefined) {
+        result = value;
+      }
+      return result;
+    })(secondaryNormalized);
+    if (secondaryMessageValue !== undefined && !(secondaryMessageValue as object instanceof URL || secondaryMessageValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
+    props.secondary = secondaryMessageValue as ImmutableUrl | URL;
     const linksValue = entries["4"] === undefined ? entries["links"] : entries["4"];
     if (linksValue === undefined) throw new Error("Missing required property \"links\".");
     const linksArrayValue = linksValue === undefined || linksValue === null ? new ImmutableArray() : linksValue as object instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue as Iterable<unknown>);
-    if (!((linksArrayValue as object instanceof ImmutableArray || Array.isArray(linksArrayValue)) && [...(linksArrayValue as Iterable<unknown>)].every(element => element as object instanceof URL || element as object instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
-    props.links = linksArrayValue as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>;
+    const linksArrayValueConverted = linksArrayValue === undefined || linksArrayValue === null ? linksArrayValue : (linksArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ImmutableUrl.$compact === true ? ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && element.startsWith(ImmutableUrl.$compactTag) ? element.slice(ImmutableUrl.$compactTag.length) : element, options) as any : element);
+    if (!((linksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(linksArrayValueConverted)) && [...(linksArrayValueConverted as Iterable<unknown>)].every(element => element as object instanceof URL || element as object instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
+    props.links = linksArrayValueConverted as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>;
     return props as UrlMessage.Data;
   }
   static from(value: UrlMessage.Value): UrlMessage {
@@ -72,6 +134,20 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
+      case "primary":
+        return new (this.constructor as typeof UrlMessage)({
+          id: this.#id,
+          primary: child as ImmutableUrl | URL,
+          secondary: this.#secondary as ImmutableUrl | URL,
+          links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+        }) as this;
+      case "secondary":
+        return new (this.constructor as typeof UrlMessage)({
+          id: this.#id,
+          primary: this.#primary as ImmutableUrl | URL,
+          secondary: child as ImmutableUrl | URL,
+          links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
+        }) as this;
       case "links":
         return new (this.constructor as typeof UrlMessage)({
           id: this.#id,
@@ -84,12 +160,37 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
+    yield ["primary", this.#primary] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["secondary", this.#secondary] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
     yield ["links", this.#links] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
   }
   static deserialize<T extends typeof UrlMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for UrlMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected UrlMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -189,7 +290,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   setPrimary(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: value as ImmutableUrl | URL,
+      primary: (value instanceof ImmutableUrl ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
@@ -198,7 +299,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary as ImmutableUrl | URL,
-      secondary: value as ImmutableUrl | URL,
+      secondary: (value === undefined ? value : value instanceof ImmutableUrl ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
       links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }

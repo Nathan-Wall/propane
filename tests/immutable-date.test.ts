@@ -10,6 +10,11 @@ export default function runImmutableDateTests() {
   // toString / toJSON
   assert(imm.toString() === iso, 'ImmutableDate should stringify to ISO.');
   assert(JSON.stringify({ d: imm }) === `{"d":"${iso}"}`, 'JSON.stringify should use ISO string.');
+  const serialized = imm.serialize();
+  assert(
+    serialized === `:D"${iso}"`,
+    `ImmutableDate serialize should use compact tag. Got: ${serialized}`
+  );
 
   // equality against Date, string, and ImmutableDate
   assert(imm.equals(new Date(iso)), 'Should equal native Date with same time.');

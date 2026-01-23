@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/index-optional-hole.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, parseCerealString, ensure, SKIP } from "../runtime/index.js";
-import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_OptionalHole = Symbol("OptionalHole");
 export class OptionalHole extends Message<OptionalHole.Data> {
   static $typeId = "tests/index-optional-hole.pmsg#OptionalHole";
-  static $typeHash = "sha256:043b70cb79d6745e92d3aa477808d677787d7d03cd225dca3e7a9a20cd42e7f9";
+  static $typeHash = "sha256:a2ad318a598dba51813ba73dd36eb81436083147637f1a37a934afc7df06309b";
   static $instanceTag = Symbol.for("propane:message:" + OptionalHole.$typeId);
   static readonly $typeName = "OptionalHole";
   static EMPTY: OptionalHole;
@@ -19,7 +19,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(TYPE_TAG_OptionalHole, "OptionalHole");
     this.#id = (props ? props.id : 0) as number;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : ImmutableDate.from(props.created) : new ImmutableDate(0);
+    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     this.#note = (props ? props.note : undefined) as string;
     this.#name = (props ? props.name : "") as string;
     if (!props) OptionalHole.EMPTY = this;
@@ -54,8 +54,37 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     props.id = idValue as number;
     const createdValue = entries["2"] === undefined ? entries["created"] : entries["2"];
     if (createdValue === undefined) throw new Error("Missing required property \"created\".");
-    if (!(createdValue as object instanceof Date || createdValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
-    props.created = createdValue as Date;
+    const createdMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && ImmutableDate.$compact === true) {
+        result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.startsWith(ImmutableDate.$compactTag) ? value.slice(ImmutableDate.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "ImmutableDate") {
+            if (typeof value.$data === "string") {
+              if (ImmutableDate.$compact === true) {
+                result = ImmutableDate.fromCompact(ImmutableDate.$compactTag && value.$data.startsWith(ImmutableDate.$compactTag) ? value.$data.slice(ImmutableDate.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for ImmutableDate.");
+              }
+            } else {
+              result = new ImmutableDate(ImmutableDate.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected ImmutableDate.");
+          }
+        } else {
+          if (value instanceof ImmutableDate) {
+            result = value;
+          } else {
+            result = new ImmutableDate(value as ImmutableDate.Value, options);
+          }
+        }
+      }
+      return result;
+    })(createdValue);
+    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
+    props.created = createdMessageValue as ImmutableDate | Date;
     const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
     const noteNormalized = noteValue === null ? undefined : noteValue;
     if (noteNormalized !== undefined && !(typeof noteNormalized === "string")) throw new Error("Invalid value for property \"note\".");
@@ -69,10 +98,49 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   static from(value: OptionalHole.Value): OptionalHole {
     return value instanceof OptionalHole ? value : new OptionalHole(value);
   }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case "created":
+        return new (this.constructor as typeof OptionalHole)({
+          id: this.#id,
+          created: child as ImmutableDate | Date,
+          note: this.#note,
+          name: this.#name
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${key}`);
+    }
+  }
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ["created", this.#created] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
   static deserialize<T extends typeof OptionalHole>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for OptionalHole.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected OptionalHole.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -100,7 +168,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
-      created: value as ImmutableDate | Date,
+      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       note: this.#note,
       name: this.#name
     }) as this);

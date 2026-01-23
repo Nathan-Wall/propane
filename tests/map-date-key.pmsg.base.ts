@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/map-date-key.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableDate, ImmutableUrl, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_MapDateKey = Symbol("MapDateKey");
 export class MapDateKey extends Message<MapDateKey.Data> {
   static $typeId = "tests/map-date-key.pmsg#MapDateKey";
-  static $typeHash = "sha256:7d9be7cdf9cbec5f7f73db4f27aeceff387905915f31b6039ceda22ff4f6cb84";
+  static $typeHash = "sha256:f0221e783b9ac139bf205b7f76e3ba32581bd6f8d14d483cead0b9b8e0c534e2";
   static $instanceTag = Symbol.for("propane:message:" + MapDateKey.$typeId);
   static readonly $typeName = "MapDateKey";
   static EMPTY: MapDateKey;
@@ -17,9 +17,9 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   }) {
     if (!props && MapDateKey.EMPTY) return MapDateKey.EMPTY;
     super(TYPE_TAG_MapDateKey, "MapDateKey");
-    this.#dateValues = props ? (props.dateValues === undefined || props.dateValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.dateValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]))) as ImmutableMap<ImmutableDate, number> : new ImmutableMap();
-    this.#urlValues = props ? (props.urlValues === undefined || props.urlValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.urlValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableUrl.from(k as URL), v]))) as ImmutableMap<ImmutableUrl, string> : new ImmutableMap();
-    this.#optionalDateMap = props ? (props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]))) as ImmutableMap<ImmutableDate, boolean> : undefined;
+    this.#dateValues = props ? (props.dateValues === undefined || props.dateValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.dateValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as ImmutableDate.Value), v]))) as ImmutableMap<ImmutableDate, number> : new ImmutableMap();
+    this.#urlValues = props ? (props.urlValues === undefined || props.urlValues === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.urlValues as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableUrl.from(k as ImmutableUrl.Value), v]))) as ImmutableMap<ImmutableUrl, string> : new ImmutableMap();
+    this.#optionalDateMap = props ? (props.optionalDateMap === undefined || props.optionalDateMap === null ? props.optionalDateMap : new ImmutableMap(Array.from(props.optionalDateMap as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as ImmutableDate.Value), v]))) as ImmutableMap<ImmutableDate, boolean> : undefined;
     if (!props) MapDateKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapDateKey.Data>[] {
@@ -44,19 +44,22 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     const props = {} as Partial<MapDateKey.Data>;
     const dateValuesValue = entries["dateValues"];
     if (dateValuesValue === undefined) throw new Error("Missing required property \"dateValues\".");
-    const dateValuesMapValue = dateValuesValue === undefined || dateValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(dateValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]));
-    if (!((dateValuesMapValue as object instanceof ImmutableMap || dateValuesMapValue as object instanceof Map) && [...(dateValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "number"))) throw new Error("Invalid value for property \"dateValues\".");
-    props.dateValues = dateValuesMapValue as Map<Date, number> | Iterable<[Date, number]>;
+    const dateValuesMapValue = dateValuesValue === undefined || dateValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(dateValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && ImmutableDate.$compact === true ? k : ImmutableDate.from(k as ImmutableDate.Value), v]));
+    const dateValuesMapValueConverted = dateValuesMapValue === undefined || dateValuesMapValue === null ? dateValuesMapValue : new ImmutableMap([...(dateValuesMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && k.startsWith(ImmutableDate.$compactTag) ? k.slice(ImmutableDate.$compactTag.length) : k, options) as any : k, v]));
+    if (!((dateValuesMapValueConverted as object instanceof ImmutableMap || dateValuesMapValueConverted as object instanceof Map) && [...(dateValuesMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "number"))) throw new Error("Invalid value for property \"dateValues\".");
+    props.dateValues = dateValuesMapValueConverted as Map<Date, number> | Iterable<[Date, number]>;
     const urlValuesValue = entries["urlValues"];
     if (urlValuesValue === undefined) throw new Error("Missing required property \"urlValues\".");
-    const urlValuesMapValue = urlValuesValue === undefined || urlValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(urlValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableUrl.from(k as URL), v]));
-    if (!((urlValuesMapValue as object instanceof ImmutableMap || urlValuesMapValue as object instanceof Map) && [...(urlValuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof URL || mapKey as object instanceof ImmutableUrl) && typeof mapValue === "string"))) throw new Error("Invalid value for property \"urlValues\".");
-    props.urlValues = urlValuesMapValue as Map<URL, string> | Iterable<[URL, string]>;
+    const urlValuesMapValue = urlValuesValue === undefined || urlValuesValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(urlValuesValue as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && ImmutableUrl.$compact === true ? k : ImmutableUrl.from(k as ImmutableUrl.Value), v]));
+    const urlValuesMapValueConverted = urlValuesMapValue === undefined || urlValuesMapValue === null ? urlValuesMapValue : new ImmutableMap([...(urlValuesMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && ImmutableUrl.$compact === true ? ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && k.startsWith(ImmutableUrl.$compactTag) ? k.slice(ImmutableUrl.$compactTag.length) : k, options) as any : k, v]));
+    if (!((urlValuesMapValueConverted as object instanceof ImmutableMap || urlValuesMapValueConverted as object instanceof Map) && [...(urlValuesMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof URL || mapKey as object instanceof ImmutableUrl) && typeof mapValue === "string"))) throw new Error("Invalid value for property \"urlValues\".");
+    props.urlValues = urlValuesMapValueConverted as Map<URL, string> | Iterable<[URL, string]>;
     const optionalDateMapValue = entries["optionalDateMap"];
     const optionalDateMapNormalized = optionalDateMapValue === null ? undefined : optionalDateMapValue;
-    const optionalDateMapMapValue = optionalDateMapNormalized === undefined || optionalDateMapNormalized === null ? optionalDateMapNormalized : new ImmutableMap(Array.from(optionalDateMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [ImmutableDate.from(k as Date), v]));
-    if (optionalDateMapMapValue !== undefined && !((optionalDateMapMapValue as object instanceof ImmutableMap || optionalDateMapMapValue as object instanceof Map) && [...(optionalDateMapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "boolean"))) throw new Error("Invalid value for property \"optionalDateMap\".");
-    props.optionalDateMap = optionalDateMapMapValue as Map<Date, boolean> | Iterable<[Date, boolean]>;
+    const optionalDateMapMapValue = optionalDateMapNormalized === undefined || optionalDateMapNormalized === null ? optionalDateMapNormalized : new ImmutableMap(Array.from(optionalDateMapNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [typeof k === "string" && ImmutableDate.$compact === true ? k : ImmutableDate.from(k as ImmutableDate.Value), v]));
+    const optionalDateMapMapValueConverted = optionalDateMapMapValue === undefined || optionalDateMapMapValue === null ? optionalDateMapMapValue : new ImmutableMap([...(optionalDateMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [typeof k === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && k.startsWith(ImmutableDate.$compactTag) ? k.slice(ImmutableDate.$compactTag.length) : k, options) as any : k, v]));
+    if (optionalDateMapMapValueConverted !== undefined && !((optionalDateMapMapValueConverted as object instanceof ImmutableMap || optionalDateMapMapValueConverted as object instanceof Map) && [...(optionalDateMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (mapKey as object instanceof Date || mapKey as object instanceof ImmutableDate) && typeof mapValue === "boolean"))) throw new Error("Invalid value for property \"optionalDateMap\".");
+    props.optionalDateMap = optionalDateMapMapValueConverted as Map<Date, boolean> | Iterable<[Date, boolean]>;
     return props as MapDateKey.Data;
   }
   static from(value: MapDateKey.Value): MapDateKey {
@@ -94,7 +97,30 @@ export class MapDateKey extends Message<MapDateKey.Data> {
   static deserialize<T extends typeof MapDateKey>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for MapDateKey.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected MapDateKey.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

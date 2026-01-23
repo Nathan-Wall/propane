@@ -1,7 +1,7 @@
 import { Message } from '@propane/runtime';
 
 // @extend('./rational.pmsg.ext.ts')
-// @compact
+// @compact('Q')
 export type Rational = Message<{
   '1:numerator': bigint;
   '2:denominator': bigint;

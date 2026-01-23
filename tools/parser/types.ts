@@ -125,6 +125,8 @@ export interface PmtMessage {
 
   /** True if the message has a @compact decorator */
   compact: boolean;
+  /** Optional tiny tag for @compact messages */
+  compactTag?: string | null;
 
   /** Message properties (from the underlying object literal payload) */
   properties: PmtProperty[];

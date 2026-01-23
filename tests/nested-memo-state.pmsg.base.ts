@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/nested-memo-state.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // Nested message types for testing memo behavior with state persistence
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_InnerMessage = Symbol("InnerMessage");
 export class InnerMessage extends Message<InnerMessage.Data> {
   static $typeId = "tests/nested-memo-state.pmsg#InnerMessage";
-  static $typeHash = "sha256:3d6ef0aaadbac2252d4b88fe0dd6c2c0059895ab6b02e9e90058f0eebdbef1e9";
+  static $typeHash = "sha256:04ebbc6be4d0b2b7cf6a20f106eacd8b23798fe077f75dedf8ef3ec2ceb83ead";
   static $instanceTag = Symbol.for("propane:message:" + InnerMessage.$typeId);
   static readonly $typeName = "InnerMessage";
   static EMPTY: InnerMessage;
@@ -44,7 +44,30 @@ export class InnerMessage extends Message<InnerMessage.Data> {
   static deserialize<T extends typeof InnerMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for InnerMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected InnerMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
@@ -75,7 +98,7 @@ export namespace InnerMessage {
 const TYPE_TAG_OuterMessage = Symbol("OuterMessage");
 export class OuterMessage extends Message<OuterMessage.Data> {
   static $typeId = "tests/nested-memo-state.pmsg#OuterMessage";
-  static $typeHash = "sha256:36f7592dd1661e323806ada5f952f615d814fa2dac009768dabd2bc19f6b9c2c";
+  static $typeHash = "sha256:f57d712128ec5e9545f95c1eb376f143033391bcea90dfd4cc54237c2c3b6496";
   static $instanceTag = Symbol.for("propane:message:" + OuterMessage.$typeId);
   static readonly $typeName = "OuterMessage";
   static EMPTY: OuterMessage;
@@ -112,7 +135,35 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     props.counter = counterValue as number;
     const innerValue = entries["2"] === undefined ? entries["inner"] : entries["2"];
     if (innerValue === undefined) throw new Error("Missing required property \"inner\".");
-    const innerMessageValue = typeof innerValue === "string" && InnerMessage.$compact === true ? InnerMessage.fromCompact(innerValue, options) as any : innerValue instanceof InnerMessage ? innerValue : new InnerMessage(innerValue as InnerMessage.Value, options);
+    const innerMessageValue = (value => {
+      let result = value as any;
+      if (typeof value === "string" && InnerMessage.$compact === true) {
+        result = InnerMessage.fromCompact(InnerMessage.$compactTag && value.startsWith(InnerMessage.$compactTag) ? value.slice(InnerMessage.$compactTag.length) : value, options) as any;
+      } else {
+        if (isTaggedMessageData(value)) {
+          if (value.$tag === "InnerMessage") {
+            if (typeof value.$data === "string") {
+              if (InnerMessage.$compact === true) {
+                result = InnerMessage.fromCompact(InnerMessage.$compactTag && value.$data.startsWith(InnerMessage.$compactTag) ? value.$data.slice(InnerMessage.$compactTag.length) : value.$data, options) as any;
+              } else {
+                throw new Error("Invalid compact tagged value for InnerMessage.");
+              }
+            } else {
+              result = new InnerMessage(InnerMessage.prototype.$fromEntries(value.$data, options), options);
+            }
+          } else {
+            throw new Error("Tagged message type mismatch: expected InnerMessage.");
+          }
+        } else {
+          if (value instanceof InnerMessage) {
+            result = value;
+          } else {
+            result = new InnerMessage(value as InnerMessage.Value, options);
+          }
+        }
+      }
+      return result;
+    })(innerValue);
     props.inner = innerMessageValue;
     return props as OuterMessage.Data;
   }
@@ -136,7 +187,30 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   static deserialize<T extends typeof OuterMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for OuterMessage.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected OuterMessage.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

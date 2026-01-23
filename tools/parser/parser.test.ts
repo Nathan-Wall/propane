@@ -232,8 +232,18 @@ describe('parseSource - type parsing', () => {
     const { file } = parseSource(source, 'test.pmsg');
 
     const props = file.messages[0]!.properties;
-    assert.strictEqual(props.find(p => p.name === 'created')?.type.kind, 'date');
-    assert.strictEqual(props.find(p => p.name === 'link')?.type.kind, 'url');
+    const createdType = props.find(p => p.name === 'created')?.type;
+    assert.ok(createdType);
+    assert.strictEqual(createdType.kind, 'reference');
+    if (createdType.kind === 'reference') {
+      assert.strictEqual(createdType.name, 'ImmutableDate');
+    }
+    const linkType = props.find(p => p.name === 'link')?.type;
+    assert.ok(linkType);
+    assert.strictEqual(linkType.kind, 'reference');
+    if (linkType.kind === 'reference') {
+      assert.strictEqual(linkType.name, 'ImmutableUrl');
+    }
     assert.strictEqual(props.find(p => p.name === 'data')?.type.kind, 'arraybuffer');
   });
 
@@ -317,9 +327,26 @@ describe('parseSource - decorators', () => {
 
     const { file } = parseSource(source, 'test.pmsg');
     assert.strictEqual(file.messages[0]!.compact, true);
+    assert.strictEqual(file.messages[0]!.compactTag, null);
   });
 
-  it('should error on @compact with arguments', () => {
+  it('should detect @compact tag argument', () => {
+    const source = `
+      import { Message } from '@propane/runtime';
+
+      // @extend('./user.ext.ts')
+      // @compact('D')
+      export type User = Message<{
+        '1:id': number;
+      }>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg');
+    assert.strictEqual(file.messages[0]!.compact, true);
+    assert.strictEqual(file.messages[0]!.compactTag, 'D');
+  });
+
+  it('should error on @compact with invalid arguments', () => {
     const source = `
       import { Message } from '@propane/runtime';
 
@@ -332,7 +359,7 @@ describe('parseSource - decorators', () => {
 
     const { diagnostics } = parseSource(source, 'test.pmsg');
     const error = diagnostics.find(d => d.code === 'PMT040');
-    assert.ok(error, 'Should have PMT040 error for @compact with arguments');
+    assert.ok(error, 'Should have PMT040 error for @compact with invalid arguments');
   });
 
   it('should error on deprecated @message decorator', () => {

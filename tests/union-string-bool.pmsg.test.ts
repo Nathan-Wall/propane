@@ -24,6 +24,16 @@ export default function runUnionStringBoolTests() {
     `Boolean union serialization failed. Got: ${unionBoolSerialized}`
   );
 
+  const unionSafeInstance: UnionStringBool = new UnionStringBool({
+    value: 'Alpha',
+    optional: 'Beta',
+  });
+  const unionSafeSerialized = unionSafeInstance.serialize();
+  assert(
+    unionSafeSerialized === ':{"Alpha","Beta"}',
+    `Safe union string serialization failed. Got: ${unionSafeSerialized}`
+  );
+
   const unionStringRaw = UnionStringBool.deserialize(':{"true",false}');
   assert(unionStringRaw.value === 'true', 'Union string raw lost string value.');
   assert(unionStringRaw.optional === false, 'Union string raw lost optional boolean.');

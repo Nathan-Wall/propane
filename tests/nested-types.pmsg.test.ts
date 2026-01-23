@@ -8,6 +8,11 @@ export default function runNestedTypesTest() {
 
   // Case 1: Top-level Date (Should work fine)
   const w1 = new Wrapper({ payload: date });
+  const w1Serialized = w1.serialize();
+  assert(
+    w1Serialized === `:{payload:D\"${date.toISOString()}\"}`,
+    `Union Date branch should serialize with D\"...\". Got: ${w1Serialized}`
+  );
   assert(
     w1.payload instanceof Date || w1.payload instanceof ImmutableDate,
     'Top-level Date should be preserved as Date/ImmutableDate object'

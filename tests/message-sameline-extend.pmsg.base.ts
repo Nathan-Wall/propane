@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/message-sameline-extend.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // Test type with extend decorator
 // @extend('./message-sameline-extend.pmsg.ext.ts')
@@ -8,7 +8,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_SameLineExtend$Base = Symbol("SameLineExtend");
 export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   static $typeId = "tests/message-sameline-extend.pmsg#SameLineExtend";
-  static $typeHash = "sha256:a0b8e0958bb1c3c58c26be3734fb091763c1c657534f05872b407aed958ab1be";
+  static $typeHash = "sha256:340341386268b6fd2af6032fcfb2397bf64d59b223dda36fdd7d9aa63323c55d";
   static $instanceTag = Symbol.for("propane:message:" + SameLineExtend$Base.$typeId);
   static readonly $typeName = "SameLineExtend";
   static EMPTY: SameLineExtend$Base;
@@ -55,7 +55,30 @@ export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
   static deserialize<T extends typeof SameLineExtend$Base>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for SameLineExtend.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected SameLineExtend.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

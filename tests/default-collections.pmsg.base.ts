@@ -3,14 +3,14 @@
 import { ImmutableArray } from '../runtime/common/array/immutable';
 import { ImmutableMap } from '../runtime/common/map/immutable';
 import { ImmutableSet } from '../runtime/common/set/immutable';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, equals, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
 
 // Test message with non-optional collection fields to verify defaults
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_DefaultCollections = Symbol("DefaultCollections");
 export class DefaultCollections extends Message<DefaultCollections.Data> {
   static $typeId = "tests/default-collections.pmsg#DefaultCollections";
-  static $typeHash = "sha256:e693543e74469b636d181a87e2bf9bebbb40d91b09756a13691e0672b0a8d8a5";
+  static $typeHash = "sha256:8f0af43f4209e65b1ff01901266932a0ca7bbd2f969f9a78cb2a8829733d65e7";
   static $instanceTag = Symbol.for("propane:message:" + DefaultCollections.$typeId);
   static readonly $typeName = "DefaultCollections";
   static EMPTY: DefaultCollections;
@@ -99,7 +99,30 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
   static deserialize<T extends typeof DefaultCollections>(this: T, data: string, options?: {
     skipValidation: boolean;
   }): InstanceType<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for DefaultCollections.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected DefaultCollections.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
