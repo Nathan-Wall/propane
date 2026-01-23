@@ -43,6 +43,7 @@ function tableMessage(name: string, properties: PmtProperty[]): PmtMessage {
     name,
     isMessageType: true,
     isTableType: true,
+    isWrapperValue: false,
     extendPath: null,
     typeId: null,
     compact: false,
@@ -261,6 +262,7 @@ describe('generateSchema', () => {
       name: 'NotATable',
       isMessageType: true,
       isTableType: false,  // Not a table!
+      isWrapperValue: false,
       extendPath: null,
       typeId: null,
       compact: false,
@@ -303,6 +305,7 @@ describe('findTableTypes', () => {
       name: 'NotATable',
       isMessageType: true,
       isTableType: false,
+      isWrapperValue: false,
       extendPath: null,
       typeId: null,
       compact: false,

@@ -57,6 +57,16 @@ function isMessageTypeAnnotation(typeAnnotation: t.TSType): boolean {
     return true;
   }
 
+  // MessageWrapper<T> wrapper
+  if (
+    typeAnnotation.type === 'TSTypeReference'
+    && typeAnnotation.typeName.type === 'Identifier'
+    && typeAnnotation.typeName.name === 'MessageWrapper'
+    && typeAnnotation.typeParameters?.params?.length === 1
+  ) {
+    return true;
+  }
+
   return false;
 }
 

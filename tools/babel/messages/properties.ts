@@ -88,6 +88,8 @@ export interface PropDescriptor {
   fieldNumber: number | null;
   optional: boolean;
   readonly: boolean;
+  /** True when this property is the MessageWrapper value field */
+  isWrapperValue?: boolean;
   isArray: boolean;
   isSet: boolean;
   isMap: boolean;

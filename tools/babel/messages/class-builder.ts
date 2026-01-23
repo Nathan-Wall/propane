@@ -1843,6 +1843,257 @@ function buildAutoCompactMethods(
   return { toCompact: toCompactMethod, fromCompact: fromCompactMethod };
 }
 
+function buildWrapperCompactMethods(
+  propName: string,
+  typeName: string
+): { toCompact: t.ClassMethod; fromCompact: t.ClassMethod } {
+  const ctorId = t.identifier('ctor');
+  const serializerId = t.identifier('serializer');
+  const compactValueId = t.identifier('compactValue');
+
+  const ctorDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      ctorId,
+      t.tsAsExpression(
+        t.memberExpression(t.thisExpression(), t.identifier('constructor')),
+        t.tsAnyKeyword()
+      )
+    ),
+  ]);
+  const serializerDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      serializerId,
+      t.memberExpression(t.cloneNode(ctorId), t.identifier('$serialize'))
+    ),
+  ]);
+  const serializerCheck = t.ifStatement(
+    t.binaryExpression(
+      '!==',
+      t.unaryExpression('typeof', t.cloneNode(serializerId)),
+      t.stringLiteral('function')
+    ),
+    buildErrorThrow(`${typeName}.$serialize() is not implemented.`)
+  );
+  const compactDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      compactValueId,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(serializerId), t.identifier('call')),
+        [
+          t.cloneNode(ctorId),
+          t.memberExpression(t.thisExpression(), t.identifier(propName)),
+        ]
+      )
+    ),
+  ]);
+  const compactCheck = t.ifStatement(
+    t.binaryExpression(
+      '!==',
+      t.unaryExpression('typeof', t.cloneNode(compactValueId)),
+      t.stringLiteral('string')
+    ),
+    buildErrorThrow(`${typeName}.$serialize() must return a string.`)
+  );
+
+  const toCompactMethod = t.classMethod(
+    'method',
+    t.identifier('toCompact'),
+    [],
+    t.blockStatement([
+      ctorDecl,
+      serializerDecl,
+      serializerCheck,
+      compactDecl,
+      compactCheck,
+      t.returnStatement(t.cloneNode(compactValueId)),
+    ])
+  );
+  toCompactMethod.override = true;
+  toCompactMethod.returnType = t.tsTypeAnnotation(t.tsStringKeyword());
+
+  const argsId = t.identifier('args');
+  const restParam = t.restElement(argsId);
+  restParam.typeAnnotation = t.tsTypeAnnotation(
+    t.tsArrayType(t.tsUnknownKeyword())
+  );
+  const maybeOptionsId = t.identifier('maybeOptions');
+  const optionsId = t.identifier('options');
+  const valueIndexId = t.identifier('valueIndex');
+  const valueId = t.identifier('value');
+  const decodedId = t.identifier('decoded');
+  const deserializerId = t.identifier('deserializer');
+  const optionsType = t.tsTypeLiteral([
+    t.tsPropertySignature(
+      t.identifier('skipValidation'),
+      t.tsTypeAnnotation(t.tsBooleanKeyword())
+    ),
+  ]);
+
+  const maybeOptionsDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      maybeOptionsId,
+      t.memberExpression(
+        argsId,
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(1)
+        ),
+        true
+      )
+    ),
+  ]);
+  const hasOptionsCheck = t.logicalExpression(
+    '&&',
+    t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(maybeOptionsId)),
+      t.stringLiteral('object')
+    ),
+    t.logicalExpression(
+      '&&',
+      t.binaryExpression(
+        '!==',
+        t.cloneNode(maybeOptionsId),
+        t.nullLiteral()
+      ),
+      t.binaryExpression(
+        'in',
+        t.stringLiteral('skipValidation'),
+        t.cloneNode(maybeOptionsId)
+      )
+    )
+  );
+  const optionsDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      optionsId,
+      t.conditionalExpression(
+        hasOptionsCheck,
+        t.tsAsExpression(t.cloneNode(maybeOptionsId), optionsType),
+        t.identifier('undefined')
+      )
+    ),
+  ]);
+  const valueIndexDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      valueIndexId,
+      t.conditionalExpression(
+        hasOptionsCheck,
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(2)
+        ),
+        t.binaryExpression(
+          '-',
+          t.memberExpression(argsId, t.identifier('length')),
+          t.numericLiteral(1)
+        )
+      )
+    ),
+  ]);
+  const valueDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      valueId,
+      t.memberExpression(t.cloneNode(argsId), t.cloneNode(valueIndexId), true)
+    ),
+  ]);
+  const valueTypeCheck = t.ifStatement(
+    t.binaryExpression(
+      '!==',
+      t.unaryExpression('typeof', t.cloneNode(valueId)),
+      t.stringLiteral('string')
+    ),
+    buildErrorThrow('Compact message fromCompact expects a string value.')
+  );
+  const deserializerDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      deserializerId,
+      t.memberExpression(t.thisExpression(), t.identifier('$deserialize'))
+    ),
+  ]);
+  const deserializerCheck = t.ifStatement(
+    t.binaryExpression(
+      '!==',
+      t.unaryExpression('typeof', t.cloneNode(deserializerId)),
+      t.stringLiteral('function')
+    ),
+    buildErrorThrow(`${typeName}.$deserialize() is not implemented.`)
+  );
+  const decodedDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      decodedId,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(deserializerId), t.identifier('call')),
+        [t.thisExpression(), t.cloneNode(valueId)]
+      )
+    ),
+  ]);
+  const propsObj = t.objectExpression([
+    t.objectProperty(t.identifier(propName), t.cloneNode(decodedId)),
+  ]);
+  const ctorExpr = t.newExpression(
+    t.tsAsExpression(t.thisExpression(), t.tsAnyKeyword()),
+    [propsObj, t.cloneNode(optionsId)]
+  );
+  const fromCompactMethod = t.classMethod(
+    'method',
+    t.identifier('fromCompact'),
+    [restParam],
+    t.blockStatement([
+      maybeOptionsDecl,
+      optionsDecl,
+      valueIndexDecl,
+      valueDecl,
+      valueTypeCheck,
+      deserializerDecl,
+      deserializerCheck,
+      decodedDecl,
+      t.returnStatement(ctorExpr),
+    ]),
+    false,
+    true
+  );
+  fromCompactMethod.override = true;
+
+  return { toCompact: toCompactMethod, fromCompact: fromCompactMethod };
+}
+
+function buildWrapperSerializerMethods(
+  typeName: string,
+  valueType: t.TSType
+): { serializeMethod: t.ClassMethod; deserializeMethod: t.ClassMethod } {
+  const serializeParam = t.identifier('value');
+  serializeParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(valueType));
+  const serializeMethod = t.classMethod(
+    'method',
+    t.identifier('$serialize'),
+    [serializeParam],
+    t.blockStatement([
+      buildErrorThrow(`${typeName}.$serialize() is not implemented.`),
+    ]),
+    false,
+    true
+  );
+  serializeMethod.returnType = t.tsTypeAnnotation(t.tsStringKeyword());
+
+  const deserializeParam = t.identifier('value');
+  deserializeParam.typeAnnotation = t.tsTypeAnnotation(t.tsStringKeyword());
+  const deserializeMethod = t.classMethod(
+    'method',
+    t.identifier('$deserialize'),
+    [deserializeParam],
+    t.blockStatement([
+      buildErrorThrow(`${typeName}.$deserialize() is not implemented.`),
+    ]),
+    false,
+    true
+  );
+  deserializeMethod.returnType = t.tsTypeAnnotation(t.cloneNode(valueType));
+
+  return { serializeMethod, deserializeMethod };
+}
+
 /**
  * Information about an Endpoint wrapper type.
  * Used to generate the __responseType phantom field on endpoint classes.
@@ -1852,6 +2103,8 @@ export interface WrapperInfo {
   wrapperName: string;
   /** The response type reference (e.g., 'GetUserResponse'), only for Endpoint */
   responseTypeName?: string;
+  /** True if this is a MessageWrapper<T> */
+  isValueWrapper?: boolean;
 }
 
 /** Validation context for code generation */
@@ -1892,6 +2145,7 @@ export function buildClassFromProperties(
     state.hasGenericTypes = true;
   }
   const backingFields: t.ClassPrivateProperty[] = [];
+  const protectedFields: t.ClassProperty[] = [];
   const getters: t.ClassMethod[] = [];
   const propDescriptors = properties.map((prop) => ({
     ...prop,
@@ -1912,7 +2166,14 @@ export function buildClassFromProperties(
   // Check if any nested message types exist that might need validation propagation
   // This ensures skipValidation can be passed to nested message constructors
   const hasNestedMessageTypes = propDescriptors.some(prop => prop.isMessageType);
-  const autoCompactProp = compact && propDescriptors.length === 1
+  const wrapperValueProp = propDescriptors.find((prop) => prop.isWrapperValue);
+  const wrapperSerializeMethods = wrapperValueProp
+    ? buildWrapperSerializerMethods(typeName, wrapperValueProp.typeAnnotation)
+    : null;
+  const wrapperCompactMethods = wrapperValueProp
+    ? buildWrapperCompactMethods(wrapperValueProp.name, typeName)
+    : null;
+  const autoCompactProp = !wrapperValueProp && compact && propDescriptors.length === 1
     ? propDescriptors[0]!
     : null;
   const autoCompactMethods = autoCompactProp
@@ -1923,7 +2184,9 @@ export function buildClassFromProperties(
     : null;
 
   for (const prop of propDescriptors) {
-    const baseType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
+    const baseType = prop.isWrapperValue
+      ? t.cloneNode(prop.typeAnnotation)
+      : wrapImmutableType(t.cloneNode(prop.typeAnnotation));
 
     // For optional properties, the field type should include undefined
     // to match the actual stored value (which can be undefined)
@@ -1937,24 +2200,35 @@ export function buildClassFromProperties(
     field.definite = true;
     backingFields.push(field);
 
-    const getter = t.classMethod(
-      'get',
-      t.identifier(prop.name),
-      [],
-      t.blockStatement([
-        t.returnStatement(
-          t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
-        ),
-      ])
-    );
+    if (prop.isWrapperValue) {
+      const wrapperField = t.classProperty(
+        t.identifier(prop.name),
+        undefined,
+        t.tsTypeAnnotation(fieldTypeAnnotation)
+      );
+      wrapperField.accessibility = 'protected';
+      wrapperField.definite = true;
+      protectedFields.push(wrapperField);
+    } else {
+      const getter = t.classMethod(
+        'get',
+        t.identifier(prop.name),
+        [],
+        t.blockStatement([
+          t.returnStatement(
+            t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
+          ),
+        ])
+      );
 
-    // Getter return type matches the field type
-    const getterReturnType = prop.optional
-      ? t.tsUnionType([t.cloneNode(baseType), t.tsUndefinedKeyword()])
-      : t.cloneNode(baseType);
+      // Getter return type matches the field type
+      const getterReturnType = prop.optional
+        ? t.tsUnionType([t.cloneNode(baseType), t.tsUndefinedKeyword()])
+        : t.cloneNode(baseType);
 
-    getter.returnType = t.tsTypeAnnotation(getterReturnType);
-    getters.push(getter);
+      getter.returnType = t.tsTypeAnnotation(getterReturnType);
+      getters.push(getter);
+    }
   }
 
   // Add private fields for constructor references (for generic types)
@@ -2012,7 +2286,7 @@ export function buildClassFromProperties(
 
     let valueExpr: t.Expression = t.cloneNode(propsAccess);
 
-    if (prop.isArray) {
+    if (!prop.isWrapperValue && prop.isArray) {
       const elementTypeName = prop.arrayElementMessageTypeName;
       // Use castToAny to handle the Value union type (Message | Data) where
       // property access returns a union that doesn't satisfy Array.from overloads
@@ -2027,7 +2301,7 @@ export function buildClassFromProperties(
             propsAccess,
             { allowUndefined: Boolean(prop.optional), castToAny: true }
           );
-    } else if (prop.isMap) {
+    } else if (!prop.isWrapperValue && prop.isMap) {
       const conversions = getMapConversionInfo(
         prop,
         declaredMessageTypeNames
@@ -2044,7 +2318,7 @@ export function buildClassFromProperties(
           propsAccess,
           { allowUndefined: Boolean(prop.optional), castToAny: true }
         );
-    } else if (prop.isSet) {
+    } else if (!prop.isWrapperValue && prop.isSet) {
       const elementTypeName = prop.setElementMessageTypeName;
       // Use castToAny to handle the Value union type (Message | Data)
       valueExpr =
@@ -2058,7 +2332,7 @@ export function buildClassFromProperties(
             propsAccess,
             { allowUndefined: Boolean(prop.optional), castToAny: true }
           );
-    } else if (prop.isArrayBufferType) {
+    } else if (!prop.isWrapperValue && prop.isArrayBufferType) {
       valueExpr = buildImmutableArrayBufferNormalizationExpression(
         valueExpr,
         {
@@ -2068,7 +2342,7 @@ export function buildClassFromProperties(
       );
     }
 
-    if (prop.isMessageType && prop.messageTypeName) {
+    if (!prop.isWrapperValue && prop.isMessageType && prop.messageTypeName) {
       const messageTypeArgs = buildTypeArgumentExpressions(prop.typeAnnotation);
       const messageTypeArgTypes = buildTypeArgumentTypes(prop.typeAnnotation);
       valueExpr = buildMessageNormalizationExpression(
@@ -2085,7 +2359,7 @@ export function buildClassFromProperties(
         }
       );
     }
-    if (prop.unionMessageTypes.length > 0) {
+    if (!prop.isWrapperValue && prop.unionMessageTypes.length > 0) {
       const unionMessageRefs = getUnionMessageTypeRefs(
         prop.typeAnnotation,
         prop.unionMessageTypes
@@ -2099,14 +2373,16 @@ export function buildClassFromProperties(
 
     // Add type cast for immutable collection types to match field type
     // This is needed because TypeScript can't infer the element type through instanceof checks
-    if (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType) {
+    if (!prop.isWrapperValue && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType)) {
       const fieldType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
       valueExpr = t.tsAsExpression(valueExpr, fieldType);
     }
 
     // For generic type parameters, use the stored constructor ref for default value
     let defaultValue: t.Expression;
-    if (
+    if (prop.isWrapperValue) {
+      defaultValue = t.identifier('undefined');
+    } else if (
       prop.isGenericParam
       && prop.genericParamName
       && prop.genericParamRequiresConstructor
@@ -2246,6 +2522,19 @@ export function buildClassFromProperties(
 
   // Add property assignments AFTER validation
   constructorBody.push(...constructorAssignments);
+
+  const wrapperValueAssignments = propDescriptors
+    .filter((prop) => prop.isWrapperValue)
+    .map((prop) => t.expressionStatement(
+      t.assignmentExpression(
+        '=',
+        t.memberExpression(t.thisExpression(), t.identifier(prop.name)),
+        t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
+      )
+    ));
+  if (wrapperValueAssignments.length > 0) {
+    constructorBody.push(...wrapperValueAssignments);
+  }
 
   // Add memoization set (only for non-generic)
   if (memoizationSet) {
@@ -2444,12 +2733,22 @@ export function buildClassFromProperties(
   )[] = [
     ...staticFields,
     ...backingFields,
+    ...protectedFields,
     constructor,
     descriptorMethod,
     fromEntriesMethod,
   ];
 
-  if (autoCompactMethods) {
+  if (wrapperSerializeMethods) {
+    classBodyMembers.push(
+      wrapperSerializeMethods.serializeMethod,
+      wrapperSerializeMethods.deserializeMethod
+    );
+  }
+
+  if (wrapperCompactMethods) {
+    classBodyMembers.push(wrapperCompactMethods.toCompact, wrapperCompactMethods.fromCompact);
+  } else if (autoCompactMethods) {
     classBodyMembers.push(autoCompactMethods.toCompact, autoCompactMethods.fromCompact);
   }
 

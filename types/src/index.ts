@@ -31,7 +31,7 @@
  */
 
 // Message and Table wrappers
-export type { Message } from './message.js';
+export type { Message, MessageWrapper } from './message.js';
 export type { Table } from './table.js';
 
 // DB wrappers

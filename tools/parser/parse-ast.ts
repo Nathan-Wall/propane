@@ -9,6 +9,7 @@ import type {
   PmtFile,
   PmtMessage,
   PmtProperty,
+  PmtType,
   PmtTypeAlias,
   PmtImport,
   PmtDiagnostic,
@@ -136,6 +137,7 @@ function processTypeAlias(
 
   // Detect Message/Table/Endpoint wrapper
   const wrapperResult = detectWrapper(typeAnnotation, ctx.imports);
+  const isValueWrapper = wrapperResult.isValueWrapper;
 
   if (decoratorInfo.compact && !wrapperResult.isMessageWrapper) {
     ctx.diagnostics.push({
@@ -155,6 +157,16 @@ function processTypeAlias(
     { filePath: ctx.filePath, diagnostics: ctx.diagnostics }
   );
 
+  if (isValueWrapper && typeAlias.typeParameters?.params?.length) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location,
+      severity: 'error',
+      code: 'PMT060',
+      message: 'MessageWrapper types cannot declare generic type parameters.',
+    });
+  }
+
   // Parse type parameters
   const typeParameters = parseTypeParameters(typeAlias.typeParameters, ctx);
 
@@ -163,9 +175,34 @@ function processTypeAlias(
     let properties: PmtProperty[] = [];
     let wrapper: PmtMessageWrapper | null = null;
 
-    // Extract properties from the inner object literal
-    if (wrapperResult.innerType) {
-      properties = parseProperties(wrapperResult.innerType, ctx);
+    if (isValueWrapper) {
+      const valueTypeNode = wrapperResult.valueType;
+      const valueType = valueTypeNode
+        ? parseWrapperValueType(valueTypeNode, ctx)
+        : null;
+      if (!valueType) {
+        ctx.diagnostics.push({
+          filePath: ctx.filePath,
+          location,
+          severity: 'error',
+          code: 'PMT061',
+          message: 'MessageWrapper requires a single type argument.',
+        });
+      } else {
+        properties = [{
+          name: 'value',
+          fieldNumber: null,
+          optional: false,
+          readonly: false,
+          type: valueType,
+          location,
+        }];
+      }
+    } else {
+      // Extract properties from the inner object literal
+      if (wrapperResult.innerType) {
+        properties = parseProperties(wrapperResult.innerType, ctx);
+      }
     }
 
     // For Endpoint wrapper, capture the response type
@@ -183,7 +220,7 @@ function processTypeAlias(
 
     const autoCompact = decoratorInfo.compact
       && isAutoCompactMessage(properties);
-    if (decoratorInfo.compact && !decoratorInfo.extendPath && !autoCompact) {
+    if (decoratorInfo.compact && !decoratorInfo.extendPath && !autoCompact && !isValueWrapper) {
       ctx.diagnostics.push({
         filePath: ctx.filePath,
         location,
@@ -193,13 +230,24 @@ function processTypeAlias(
       });
     }
 
+    if (isValueWrapper && !decoratorInfo.extendPath) {
+      ctx.diagnostics.push({
+        filePath: ctx.filePath,
+        location,
+        severity: 'error',
+        code: 'PMT062',
+        message: 'MessageWrapper requires @extend to define $serialize/$deserialize.',
+      });
+    }
+
     const message: PmtMessage = {
       name: typeName,
       isMessageType: true,
       isTableType: wrapperResult.isTableWrapper,
+      isWrapperValue: isValueWrapper,
       extendPath: decoratorInfo.extendPath,
       typeId: decoratorInfo.typeId,
-      compact: decoratorInfo.compact,
+      compact: decoratorInfo.compact || isValueWrapper,
       compactTag: decoratorInfo.compactTag,
       properties,
       typeParameters,
@@ -229,6 +277,56 @@ function isAutoCompactMessage(properties: PmtProperty[]): boolean {
   if (prop.optional) return false;
   if (prop.fieldNumber !== 1) return false;
   return prop.type.kind === 'primitive' && prop.type.primitive === 'string';
+}
+
+function parseWrapperValueType(
+  node: t.TSType,
+  ctx: TypeParserContext
+): PmtType | null {
+  if (!t.isTSTypeReference(node)) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location: getSourceLocation(node),
+      severity: 'error',
+      code: 'PMT063',
+      message: 'MessageWrapper requires a single non-generic type reference.',
+    });
+    return null;
+  }
+
+  if (node.typeParameters && node.typeParameters.params.length > 0) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location: getSourceLocation(node),
+      severity: 'error',
+      code: 'PMT064',
+      message: 'MessageWrapper does not allow generic type arguments.',
+    });
+    return null;
+  }
+
+  if (t.isTSQualifiedName(node.typeName) || t.isIdentifier(node.typeName)) {
+    const name = t.isIdentifier(node.typeName)
+      ? node.typeName.name
+      : `${getQualifiedTypeName(node.typeName)}`;
+    return { kind: 'reference', name, typeArguments: [] };
+  }
+
+  ctx.diagnostics.push({
+    filePath: ctx.filePath,
+    location: getSourceLocation(node),
+    severity: 'error',
+    code: 'PMT063',
+    message: 'MessageWrapper requires a single non-generic type reference.',
+  });
+  return null;
+}
+
+function getQualifiedTypeName(typeName: t.TSQualifiedName): string {
+  if (t.isIdentifier(typeName.left)) {
+    return `${typeName.left.name}.${typeName.right.name}`;
+  }
+  return `${getQualifiedTypeName(typeName.left)}.${typeName.right.name}`;
 }
 
 /**

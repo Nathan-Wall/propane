@@ -17,3 +17,10 @@
  * ```
  */
 export type Message<T extends object> = T & { readonly __message: unique symbol };
+
+/**
+ * Wrapper type for MessageWrapper definitions in .pmsg files.
+ *
+ * This is a marker type only; the compiler generates the runtime class.
+ */
+export type MessageWrapper<T> = Message<{ value: T }>;

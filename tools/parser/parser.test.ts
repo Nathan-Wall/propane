@@ -286,6 +286,27 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(file.messages[0]!.isMessageType, true);
   });
 
+  it('should detect MessageWrapper and parse value type', () => {
+    const source = `
+      import { MessageWrapper } from '@propane/runtime';
+
+      // @extend('./wrapper.ext.ts')
+      export type Wrapped = MessageWrapper<ArrayBuffer>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg');
+    const message = file.messages[0]!;
+    assert.strictEqual(message.isMessageType, true);
+    assert.strictEqual(message.isWrapperValue, true);
+    assert.strictEqual(message.properties.length, 1);
+    const prop = message.properties[0]!;
+    assert.strictEqual(prop.name, 'value');
+    assert.strictEqual(prop.type.kind, 'reference');
+    if (prop.type.kind === 'reference') {
+      assert.strictEqual(prop.type.name, 'ArrayBuffer');
+    }
+  });
+
   it('should detect @extend decorator', () => {
     const source = `
       import { Message } from '@propane/runtime';
@@ -503,6 +524,47 @@ describe('parseSource - validation errors', () => {
 
     const error = diagnostics.find(d => d.code === 'PMT012');
     assert.ok(error, 'Should have PMT012 error for non-Message object literal');
+  });
+
+  it('should error on MessageWrapper without @extend', () => {
+    const source = `
+      import { MessageWrapper } from '@propane/runtime';
+
+      export type Wrapped = MessageWrapper<ArrayBuffer>;
+    `;
+
+    const { diagnostics } = parseSource(source, 'test.pmsg');
+
+    const error = diagnostics.find(d => d.code === 'PMT062');
+    assert.ok(error, 'Should have PMT062 error for MessageWrapper without @extend');
+  });
+
+  it('should error on generic MessageWrapper declarations', () => {
+    const source = `
+      import { MessageWrapper } from '@propane/runtime';
+
+      // @extend('./wrapper.ext.ts')
+      export type Wrapped<T extends number> = MessageWrapper<ArrayBuffer>;
+    `;
+
+    const { diagnostics } = parseSource(source, 'test.pmsg');
+
+    const error = diagnostics.find(d => d.code === 'PMT060');
+    assert.ok(error, 'Should have PMT060 error for generic MessageWrapper');
+  });
+
+  it('should error on generic type arguments in MessageWrapper', () => {
+    const source = `
+      import { MessageWrapper } from '@propane/runtime';
+
+      // @extend('./wrapper.ext.ts')
+      export type Wrapped = MessageWrapper<Thing<string>>;
+    `;
+
+    const { diagnostics } = parseSource(source, 'test.pmsg');
+
+    const error = diagnostics.find(d => d.code === 'PMT064');
+    assert.ok(error, 'Should have PMT064 error for generic MessageWrapper type argument');
   });
 
   it('should error on duplicate field numbers', () => {

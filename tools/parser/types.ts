@@ -117,6 +117,9 @@ export interface PmtMessage {
   /** True if wrapped with Table<{...}> from @propane/postgres */
   isTableType: boolean;
 
+  /** True if this is a MessageWrapper<T> value wrapper */
+  isWrapperValue: boolean;
+
   /** Path from // @extend('<path>') decorator, if present */
   extendPath: string | null;
 

@@ -17,8 +17,17 @@ import type { PmtImport } from './types.js';
  */
 const MESSAGE_WRAPPERS: Record<string, Set<string>> = {
   '@propane/runtime': new Set(['Message']),
+  '@propane/types': new Set(['Message']),
   '@propane/postgres': new Set(['Table']),
   '@propane/pms-core': new Set(['Endpoint']),
+};
+
+/**
+ * Value wrapper types (single type arg, not object literal).
+ */
+const VALUE_WRAPPERS: Record<string, Set<string>> = {
+  '@propane/runtime': new Set(['MessageWrapper']),
+  '@propane/types': new Set(['MessageWrapper']),
 };
 
 /**
@@ -45,12 +54,16 @@ export interface WrapperDetectionResult {
   isTableWrapper: boolean;
   /** True if wrapped with Endpoint<P, R> */
   isEndpointWrapper: boolean;
+  /** True if wrapped with MessageWrapper<T> */
+  isValueWrapper: boolean;
   /** The local name of the wrapper (e.g., 'Message', 'Table', 'Endpoint') */
   wrapperLocalName: string | null;
   /** The inner object literal type, if present */
   innerType: t.TSTypeLiteral | null;
   /** Second type argument (response type for Endpoint) */
   secondTypeArg: t.TSType | null;
+  /** The wrapped value type (for MessageWrapper<T>) */
+  valueType: t.TSType | null;
 }
 
 /**
@@ -87,6 +100,7 @@ function isWrapperImportInternal(
   // Note: relative paths are normalized to @propane/* in parse-ast.ts
   const internalPathPatterns: Record<string, string> = {
     '@/runtime': '@propane/runtime',
+    '@/types': '@propane/types',
     '@/postgres': '@propane/postgres',
     '@/pms-core': '@propane/pms-core',
   };
@@ -136,9 +150,11 @@ export function detectWrapper(
     isMessageWrapper: false,
     isTableWrapper: false,
     isEndpointWrapper: false,
+    isValueWrapper: false,
     wrapperLocalName: null,
     innerType: null,
     secondTypeArg: null,
+    valueType: null,
   };
 
   // Must be a type reference
@@ -153,6 +169,19 @@ export function detectWrapper(
   }
 
   const localName = getTypeName(typeAnnotation.typeName);
+
+  // Check for MessageWrapper<T> (value wrapper)
+  const isValueWrapper = typeParams.params.length === 1
+    && (isWrapperImport(localName, imports, VALUE_WRAPPERS)
+      || isWrapperImportInternal(localName, imports, VALUE_WRAPPERS));
+  if (isValueWrapper) {
+    result.isMessageWrapper = true;
+    result.isValueWrapper = true;
+    result.wrapperLocalName = localName;
+    result.valueType = typeParams.params[0] ?? null;
+    return result;
+  }
+
   const firstArg = typeParams.params[0];
 
   // Check if first argument is an object literal

@@ -71,6 +71,9 @@ export interface TaggedMessageData {
   $data: DataObject | string;
 }
 
+// Wrapper type alias for .pmsg usage
+export type MessageWrapper<T> = Message<{ value: T }>;
+
 
 export function isTaggedMessageData(
   value: unknown
