@@ -39,12 +39,14 @@ const propaneConfig = loadPropaneConfig();
 // pms-server/src is excluded because response.pmsg.ts is checked in
 const scanDirs = [
   'common/numbers',
+  'runtime/common/data',
   'runtime/common/time',
   'runtime/common/web',
   'tests',
   'pms-server/tests',
 ];
 const runtimeOverrides = new Set([
+  'runtime/common/data/immutable-array-buffer.pmsg',
   'runtime/common/time/date.pmsg',
   'runtime/common/web/url.pmsg',
 ]);

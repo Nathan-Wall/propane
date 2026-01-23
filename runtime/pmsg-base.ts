@@ -1,5 +1,5 @@
 export { Message, parseCerealString, isTaggedMessageData } from './message.js';
-export type { MessagePropDescriptor, DataObject } from './message.js';
+export type { MessagePropDescriptor, DataObject, MessageWrapper } from './message.js';
 export { REACT_LISTENER_KEY, SET_UPDATE_LISTENER, FROM_ROOT, REGISTER_PATH, PROPAGATE_UPDATE, WITH_CHILD, GET_MESSAGE_CHILDREN, EQUALS_FROM_ROOT } from './symbols.js';
 export { ensure } from '@/common/assert/index.js';
 export { SKIP } from './skip.js';

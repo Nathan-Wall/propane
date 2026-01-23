@@ -26,8 +26,14 @@ function loadPropaneConfig() {
 
 const propaneConfig = loadPropaneConfig();
 
-const scanDirs = ['common/numbers', 'runtime/common/time', 'runtime/common/web'];
+const scanDirs = [
+  'common/numbers',
+  'runtime/common/data',
+  'runtime/common/time',
+  'runtime/common/web',
+];
 const runtimeOverrides = new Set([
+  'runtime/common/data/immutable-array-buffer.pmsg',
   'runtime/common/time/date.pmsg',
   'runtime/common/web/url.pmsg',
 ]);

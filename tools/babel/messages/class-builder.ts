@@ -24,6 +24,8 @@ import type { MapConversionInfo } from './normalizers.js';
 import {
   getTypeName,
   isArrayTypeNode,
+  isArrayBufferReference,
+  isImmutableArrayBufferReference,
   isMapReference,
 } from './type-guards.js';
 import type { TypeRegistry } from '@/types/src/registry.js';
@@ -55,6 +57,38 @@ function unwrapParenthesizedType(node: t.TSType | null): t.TSType | null {
     return unwrapParenthesizedType(node.typeAnnotation);
   }
   return node;
+}
+
+function buildInstanceofCheck(
+  valueId: t.Expression,
+  className: string
+): t.BinaryExpression {
+  const castValueId = t.tsAsExpression(
+    t.cloneNode(valueId),
+    t.tsTypeReference(t.identifier('object'))
+  );
+  return t.binaryExpression('instanceof', castValueId, t.identifier(className));
+}
+
+function buildWrapperRuntimeTypeCheckExpression(
+  typeNode: t.TSType | null,
+  valueId: t.Expression
+): t.Expression | null {
+  if (!typeNode) {
+    return null;
+  }
+  if (t.isTSParenthesizedType(typeNode)) {
+    return buildWrapperRuntimeTypeCheckExpression(typeNode.typeAnnotation, valueId);
+  }
+  if (t.isTSTypeReference(typeNode)) {
+    if (
+      isArrayBufferReference(typeNode)
+      || isImmutableArrayBufferReference(typeNode)
+    ) {
+      return buildInstanceofCheck(valueId, 'ArrayBuffer');
+    }
+  }
+  return buildRuntimeTypeCheckExpression(typeNode, valueId);
 }
 
 function buildTypeArgExpression(typeNode: t.TSType): t.Expression | null {
@@ -3634,10 +3668,15 @@ function buildFieldValidationStatements(
   }
 
   // Step 5: Runtime type check
-  let typeCheckExpr = buildRuntimeTypeCheckExpression(
-    prop.typeAnnotation,
-    checkedValueId as t.Expression
-  );
+  let typeCheckExpr = prop.isWrapperValue
+    ? buildWrapperRuntimeTypeCheckExpression(
+      prop.typeAnnotation,
+      checkedValueId as t.Expression
+    )
+    : buildRuntimeTypeCheckExpression(
+      prop.typeAnnotation,
+      checkedValueId as t.Expression
+    );
 
   if (prop.unionMessageTypes.length > 0) {
     const messageChecks = prop.unionMessageTypes.map((messageType) =>
