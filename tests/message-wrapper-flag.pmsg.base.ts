@@ -15,7 +15,6 @@ export class Flag$Base extends Message<Flag.Data> {
   static readonly $typeName = "Flag";
   static EMPTY: Flag$Base;
   #value!: boolean;
-  protected value!: boolean;
   constructor(props?: Flag.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -24,7 +23,6 @@ export class Flag$Base extends Message<Flag.Data> {
     this.#value = (props ? (typeof props === "object" && props !== null && "value" in props ? props as Flag.Data : {
       value: props
     }).value : undefined) as boolean;
-    this.value = this.#value;
     if (!props) Flag$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Flag.Data>[] {
@@ -107,6 +105,9 @@ export class Flag$Base extends Message<Flag.Data> {
     const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
+  }
+  protected get value(): boolean {
+    return this.#value;
   }
   set(updates: Partial<SetUpdates<Flag.Data>>) {
     const data = this.toData();

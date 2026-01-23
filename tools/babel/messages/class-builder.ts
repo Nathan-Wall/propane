@@ -2251,7 +2251,6 @@ export function buildClassFromProperties(
     state.hasGenericTypes = true;
   }
   const backingFields: t.ClassPrivateProperty[] = [];
-  const protectedFields: t.ClassProperty[] = [];
   const getters: t.ClassMethod[] = [];
   const propDescriptors = properties.map((prop) => ({
     ...prop,
@@ -2306,35 +2305,27 @@ export function buildClassFromProperties(
     field.definite = true;
     backingFields.push(field);
 
+    const getter = t.classMethod(
+      'get',
+      t.identifier(prop.name),
+      [],
+      t.blockStatement([
+        t.returnStatement(
+          t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
+        ),
+      ])
+    );
+
+    // Getter return type matches the field type
+    const getterReturnType = prop.optional
+      ? t.tsUnionType([t.cloneNode(baseType), t.tsUndefinedKeyword()])
+      : t.cloneNode(baseType);
+
+    getter.returnType = t.tsTypeAnnotation(getterReturnType);
     if (prop.isWrapperValue) {
-      const wrapperField = t.classProperty(
-        t.identifier(prop.name),
-        undefined,
-        t.tsTypeAnnotation(fieldTypeAnnotation)
-      );
-      wrapperField.accessibility = 'protected';
-      wrapperField.definite = true;
-      protectedFields.push(wrapperField);
-    } else {
-      const getter = t.classMethod(
-        'get',
-        t.identifier(prop.name),
-        [],
-        t.blockStatement([
-          t.returnStatement(
-            t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
-          ),
-        ])
-      );
-
-      // Getter return type matches the field type
-      const getterReturnType = prop.optional
-        ? t.tsUnionType([t.cloneNode(baseType), t.tsUndefinedKeyword()])
-        : t.cloneNode(baseType);
-
-      getter.returnType = t.tsTypeAnnotation(getterReturnType);
-      getters.push(getter);
+      getter.accessibility = 'protected';
     }
+    getters.push(getter);
   }
 
   // Add private fields for constructor references (for generic types)
@@ -2659,19 +2650,6 @@ export function buildClassFromProperties(
   // Add property assignments AFTER validation
   constructorBody.push(...constructorAssignments);
 
-  const wrapperValueAssignments = propDescriptors
-    .filter((prop) => prop.isWrapperValue)
-    .map((prop) => t.expressionStatement(
-      t.assignmentExpression(
-        '=',
-        t.memberExpression(t.thisExpression(), t.identifier(prop.name)),
-        t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName))
-      )
-    ));
-  if (wrapperValueAssignments.length > 0) {
-    constructorBody.push(...wrapperValueAssignments);
-  }
-
   // Add memoization set (only for non-generic)
   if (memoizationSet) {
     constructorBody.push(memoizationSet);
@@ -2869,7 +2847,6 @@ export function buildClassFromProperties(
   )[] = [
     ...staticFields,
     ...backingFields,
-    ...protectedFields,
     constructor,
     descriptorMethod,
     fromEntriesMethod,

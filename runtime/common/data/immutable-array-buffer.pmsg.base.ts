@@ -15,7 +15,6 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
   static readonly $typeName = "ImmutableArrayBuffer";
   static EMPTY: ImmutableArrayBuffer$Base;
   #value!: ArrayBuffer;
-  protected value!: ArrayBuffer;
   constructor(props?: ImmutableArrayBuffer.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -24,7 +23,6 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     this.#value = (props ? (typeof props === "object" && props !== null && "value" in props ? props as ImmutableArrayBuffer.Data : {
       value: props
     }).value : undefined) as ArrayBuffer;
-    this.value = this.#value;
     if (!props) ImmutableArrayBuffer$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArrayBuffer.Data>[] {
@@ -107,6 +105,9 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     const payload = ensure.simpleObject(parsed) as DataObject;
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
+  }
+  protected get value(): ArrayBuffer {
+    return this.#value;
   }
   set(updates: Partial<SetUpdates<ImmutableArrayBuffer.Data>>) {
     const data = this.toData();

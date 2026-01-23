@@ -7,15 +7,16 @@ function hasOwn(obj: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-test('MessageWrapper shape uses protected value with no getter', () => {
+test('MessageWrapper shape exposes a protected getter for value', () => {
   const flag = new Flag({ value: true });
   const proto = Object.getPrototypeOf(flag);
   const protoDesc = Object.getOwnPropertyDescriptor(proto, 'value');
-  assert(protoDesc === undefined, 'MessageWrapper should not define a value getter on the prototype.');
+  assert(protoDesc !== undefined, 'MessageWrapper should define a value getter on the prototype.');
+  assert(typeof protoDesc?.get === 'function', 'MessageWrapper value should be an accessor getter.');
+  assert(!protoDesc?.set, 'MessageWrapper value should not define a setter.');
   const ownDesc = Object.getOwnPropertyDescriptor(flag, 'value');
-  assert(ownDesc !== undefined, 'MessageWrapper should store value on the instance.');
-  assert(hasOwn(flag, 'value'), 'MessageWrapper should use an own data property for value.');
-  assert(!ownDesc?.get && !ownDesc?.set, 'MessageWrapper value should not be an accessor property.');
+  assert(ownDesc === undefined, 'MessageWrapper should not define value as an own property.');
+  assert(!hasOwn(flag, 'value'), 'MessageWrapper should not use an own data property for value.');
 });
 
 test('MessageWrapper union tagging and round-trip', () => {
