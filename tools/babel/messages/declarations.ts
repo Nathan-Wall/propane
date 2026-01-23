@@ -90,7 +90,8 @@ function extractWrapperInfo(
 }
 
 function extractWrapperValueType(
-  typeNode: t.TSType
+  typeNode: t.TSType,
+  ctx: TypeParserContext = { filePath: 'unknown', diagnostics: [] }
 ): PmtType | null {
   if (!t.isTSTypeReference(typeNode)) {
     return null;
@@ -100,29 +101,72 @@ function extractWrapperValueType(
     return null;
   }
   const valueNode = typeArgs[0];
-  if (!valueNode || !t.isTSTypeReference(valueNode)) {
+  if (!valueNode) {
     return null;
   }
-  if (valueNode.typeParameters && valueNode.typeParameters.params.length > 0) {
+  if (containsWrapperGenericArgs(valueNode)) {
     return null;
   }
-  const name = getTypeNameFromReference(valueNode.typeName);
-  if (!name) {
+  if (!isAllowedWrapperValueType(valueNode)) {
     return null;
   }
-  return { kind: 'reference', name, typeArguments: [] };
+  return parseType(valueNode, ctx);
 }
 
-function getTypeNameFromReference(
-  typeName: t.TSEntityName
-): string | null {
-  if (t.isIdentifier(typeName)) {
-    return typeName.name;
+function containsWrapperGenericArgs(node: t.TSType): boolean {
+  if (t.isTSParenthesizedType(node)) {
+    return containsWrapperGenericArgs(node.typeAnnotation);
   }
-  if (t.isTSQualifiedName(typeName)) {
-    return getQualifiedName(typeName);
+  if (t.isTSUnionType(node)) {
+    return node.types.some(containsWrapperGenericArgs);
   }
-  return null;
+  if (t.isTSTypeReference(node)) {
+    return Boolean(node.typeParameters?.params?.length);
+  }
+  return false;
+}
+
+function isAllowedWrapperValueType(node: t.TSType): boolean {
+  if (t.isTSParenthesizedType(node)) {
+    return isAllowedWrapperValueType(node.typeAnnotation);
+  }
+
+  if (t.isTSUnionType(node)) {
+    return node.types.every(isAllowedWrapperValueType);
+  }
+
+  if (
+    t.isTSStringKeyword(node)
+    || t.isTSNumberKeyword(node)
+    || t.isTSBooleanKeyword(node)
+    || t.isTSBigIntKeyword(node)
+    || t.isTSNullKeyword(node)
+    || t.isTSUndefinedKeyword(node)
+    || t.isTSVoidKeyword(node)
+  ) {
+    return true;
+  }
+
+  if (t.isTSLiteralType(node)) {
+    const literal = node.literal;
+    return (
+      t.isStringLiteral(literal)
+      || t.isNumericLiteral(literal)
+      || t.isBooleanLiteral(literal)
+      || t.isBigIntLiteral(literal)
+      || (
+        t.isUnaryExpression(literal)
+        && literal.operator === '-'
+        && t.isNumericLiteral(literal.argument)
+      )
+    );
+  }
+
+  if (t.isTSTypeReference(node)) {
+    return !node.typeParameters || node.typeParameters.params.length === 0;
+  }
+
+  return false;
 }
 
 /**
@@ -257,7 +301,7 @@ function computeImplicitTypeHash(
 
   let properties: PmtProperty[] = [];
   if (wrapperInfo?.isValueWrapper) {
-    const wrapperValue = extractWrapperValueType(typeLiteralPath.node);
+    const wrapperValue = extractWrapperValueType(typeLiteralPath.node, ctx);
     if (!wrapperValue) {
       return undefined;
     }

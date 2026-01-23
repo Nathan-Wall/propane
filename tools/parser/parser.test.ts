@@ -307,6 +307,132 @@ describe('parseSource - decorators', () => {
     }
   });
 
+  it('should allow primitives, literals, and unions in MessageWrapper', () => {
+    const source = `
+      import { MessageWrapper } from '@propane/runtime';
+
+      // @extend('./wrapper.ext.ts')
+      export type BoolWrap = MessageWrapper<boolean>;
+
+      // @extend('./wrapper.ext.ts')
+      export type LiteralWrap = MessageWrapper<'ok'>;
+
+      // @extend('./wrapper.ext.ts')
+      export type UnionWrap = MessageWrapper<boolean | 'ok' | 1>;
+
+      // @extend('./wrapper.ext.ts')
+      export type NullWrap = MessageWrapper<null>;
+
+      // @extend('./wrapper.ext.ts')
+      export type UndefinedWrap = MessageWrapper<undefined>;
+
+      // @extend('./wrapper.ext.ts')
+      export type VoidWrap = MessageWrapper<void>;
+
+      // @extend('./wrapper.ext.ts')
+      export type BigIntLiteralWrap = MessageWrapper<123n>;
+
+      // @extend('./wrapper.ext.ts')
+      export type NegativeLiteralWrap = MessageWrapper<-1>;
+
+      // @extend('./wrapper.ext.ts')
+      export type MixedUnionWrap = MessageWrapper<ArrayBuffer | string | 2>;
+
+      // @extend('./wrapper.ext.ts')
+      export type ParenWrap = MessageWrapper<(string | number)>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg');
+
+    const boolMessage = file.messages.find(m => m.name === 'BoolWrap');
+    assert.ok(boolMessage);
+    const boolProp = boolMessage!.properties[0]!;
+    assert.strictEqual(boolProp.type.kind, 'primitive');
+    if (boolProp.type.kind === 'primitive') {
+      assert.strictEqual(boolProp.type.primitive, 'boolean');
+    }
+
+    const literalMessage = file.messages.find(m => m.name === 'LiteralWrap');
+    assert.ok(literalMessage);
+    const literalProp = literalMessage!.properties[0]!;
+    assert.strictEqual(literalProp.type.kind, 'literal');
+    if (literalProp.type.kind === 'literal') {
+      assert.strictEqual(literalProp.type.value, 'ok');
+    }
+
+    const unionMessage = file.messages.find(m => m.name === 'UnionWrap');
+    assert.ok(unionMessage);
+    const unionProp = unionMessage!.properties[0]!;
+    assert.strictEqual(unionProp.type.kind, 'union');
+    if (unionProp.type.kind === 'union') {
+      assert.strictEqual(unionProp.type.types.length, 3);
+      assert.ok(unionProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'boolean'));
+      assert.ok(unionProp.type.types.some((t) => t.kind === 'literal' && t.value === 'ok'));
+      assert.ok(unionProp.type.types.some((t) => t.kind === 'literal' && t.value === 1));
+    }
+
+    const nullMessage = file.messages.find(m => m.name === 'NullWrap');
+    assert.ok(nullMessage);
+    const nullProp = nullMessage!.properties[0]!;
+    assert.strictEqual(nullProp.type.kind, 'primitive');
+    if (nullProp.type.kind === 'primitive') {
+      assert.strictEqual(nullProp.type.primitive, 'null');
+    }
+
+    const undefinedMessage = file.messages.find(m => m.name === 'UndefinedWrap');
+    assert.ok(undefinedMessage);
+    const undefinedProp = undefinedMessage!.properties[0]!;
+    assert.strictEqual(undefinedProp.type.kind, 'primitive');
+    if (undefinedProp.type.kind === 'primitive') {
+      assert.strictEqual(undefinedProp.type.primitive, 'undefined');
+    }
+
+    const voidMessage = file.messages.find(m => m.name === 'VoidWrap');
+    assert.ok(voidMessage);
+    const voidProp = voidMessage!.properties[0]!;
+    assert.strictEqual(voidProp.type.kind, 'primitive');
+    if (voidProp.type.kind === 'primitive') {
+      assert.strictEqual(voidProp.type.primitive, 'undefined');
+    }
+
+    const bigintMessage = file.messages.find(m => m.name === 'BigIntLiteralWrap');
+    assert.ok(bigintMessage);
+    const bigintProp = bigintMessage!.properties[0]!;
+    assert.strictEqual(bigintProp.type.kind, 'literal');
+    if (bigintProp.type.kind === 'literal') {
+      assert.strictEqual(bigintProp.type.value, 123n);
+    }
+
+    const negativeMessage = file.messages.find(m => m.name === 'NegativeLiteralWrap');
+    assert.ok(negativeMessage);
+    const negativeProp = negativeMessage!.properties[0]!;
+    assert.strictEqual(negativeProp.type.kind, 'literal');
+    if (negativeProp.type.kind === 'literal') {
+      assert.strictEqual(negativeProp.type.value, -1);
+    }
+
+    const mixedUnionMessage = file.messages.find(m => m.name === 'MixedUnionWrap');
+    assert.ok(mixedUnionMessage);
+    const mixedProp = mixedUnionMessage!.properties[0]!;
+    assert.strictEqual(mixedProp.type.kind, 'union');
+    if (mixedProp.type.kind === 'union') {
+      assert.strictEqual(mixedProp.type.types.length, 3);
+      assert.ok(mixedProp.type.types.some((t) => t.kind === 'reference' && t.name === 'ArrayBuffer'));
+      assert.ok(mixedProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'string'));
+      assert.ok(mixedProp.type.types.some((t) => t.kind === 'literal' && t.value === 2));
+    }
+
+    const parenMessage = file.messages.find(m => m.name === 'ParenWrap');
+    assert.ok(parenMessage);
+    const parenProp = parenMessage!.properties[0]!;
+    assert.strictEqual(parenProp.type.kind, 'union');
+    if (parenProp.type.kind === 'union') {
+      assert.strictEqual(parenProp.type.types.length, 2);
+      assert.ok(parenProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'string'));
+      assert.ok(parenProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'number'));
+    }
+  });
+
   it('should detect @extend decorator', () => {
     const source = `
       import { Message } from '@propane/runtime';

@@ -283,18 +283,7 @@ function parseWrapperValueType(
   node: t.TSType,
   ctx: TypeParserContext
 ): PmtType | null {
-  if (!t.isTSTypeReference(node)) {
-    ctx.diagnostics.push({
-      filePath: ctx.filePath,
-      location: getSourceLocation(node),
-      severity: 'error',
-      code: 'PMT063',
-      message: 'MessageWrapper requires a single non-generic type reference.',
-    });
-    return null;
-  }
-
-  if (node.typeParameters && node.typeParameters.params.length > 0) {
+  if (containsWrapperGenericArgs(node)) {
     ctx.diagnostics.push({
       filePath: ctx.filePath,
       location: getSourceLocation(node),
@@ -305,21 +294,18 @@ function parseWrapperValueType(
     return null;
   }
 
-  if (t.isTSQualifiedName(node.typeName) || t.isIdentifier(node.typeName)) {
-    const name = t.isIdentifier(node.typeName)
-      ? node.typeName.name
-      : `${getQualifiedTypeName(node.typeName)}`;
-    return { kind: 'reference', name, typeArguments: [] };
+  if (!isAllowedWrapperValueType(node)) {
+    ctx.diagnostics.push({
+      filePath: ctx.filePath,
+      location: getSourceLocation(node),
+      severity: 'error',
+      code: 'PMT063',
+      message: 'MessageWrapper requires a single non-generic type argument.',
+    });
+    return null;
   }
 
-  ctx.diagnostics.push({
-    filePath: ctx.filePath,
-    location: getSourceLocation(node),
-    severity: 'error',
-    code: 'PMT063',
-    message: 'MessageWrapper requires a single non-generic type reference.',
-  });
-  return null;
+  return parseType(node, ctx);
 }
 
 function getQualifiedTypeName(typeName: t.TSQualifiedName): string {
@@ -327,6 +313,62 @@ function getQualifiedTypeName(typeName: t.TSQualifiedName): string {
     return `${typeName.left.name}.${typeName.right.name}`;
   }
   return `${getQualifiedTypeName(typeName.left)}.${typeName.right.name}`;
+}
+
+function containsWrapperGenericArgs(node: t.TSType): boolean {
+  if (t.isTSParenthesizedType(node)) {
+    return containsWrapperGenericArgs(node.typeAnnotation);
+  }
+  if (t.isTSUnionType(node)) {
+    return node.types.some(containsWrapperGenericArgs);
+  }
+  if (t.isTSTypeReference(node)) {
+    return Boolean(node.typeParameters?.params?.length);
+  }
+  return false;
+}
+
+function isAllowedWrapperValueType(node: t.TSType): boolean {
+  if (t.isTSParenthesizedType(node)) {
+    return isAllowedWrapperValueType(node.typeAnnotation);
+  }
+
+  if (t.isTSUnionType(node)) {
+    return node.types.every(isAllowedWrapperValueType);
+  }
+
+  if (
+    t.isTSStringKeyword(node)
+    || t.isTSNumberKeyword(node)
+    || t.isTSBooleanKeyword(node)
+    || t.isTSBigIntKeyword(node)
+    || t.isTSNullKeyword(node)
+    || t.isTSUndefinedKeyword(node)
+    || t.isTSVoidKeyword(node)
+  ) {
+    return true;
+  }
+
+  if (t.isTSLiteralType(node)) {
+    const literal = node.literal;
+    return (
+      t.isStringLiteral(literal)
+      || t.isNumericLiteral(literal)
+      || t.isBooleanLiteral(literal)
+      || t.isBigIntLiteral(literal)
+      || (
+        t.isUnaryExpression(literal)
+        && literal.operator === '-'
+        && t.isNumericLiteral(literal.argument)
+      )
+    );
+  }
+
+  if (t.isTSTypeReference(node)) {
+    return !node.typeParameters || node.typeParameters.params.length === 0;
+  }
+
+  return false;
 }
 
 /**
