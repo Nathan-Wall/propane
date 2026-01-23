@@ -20,6 +20,7 @@ export function createMessageReferenceResolver(
     'Rational',
     'ImmutableDate',
     'ImmutableUrl',
+    'ImmutableArrayBuffer',
   ]);
 
   return function getMessageReferenceName(
@@ -42,6 +43,10 @@ export function createMessageReferenceResolver(
 
     if (name === 'URL') {
       return 'ImmutableUrl';
+    }
+
+    if (name === 'ArrayBuffer') {
+      return 'ImmutableArrayBuffer';
     }
 
     if (declaredMessageTypeNames.has(name)) {

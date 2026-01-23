@@ -13,7 +13,7 @@ type CanonicalType =
   | ['date']
   | ['url']
   | ['arraybuffer']
-  | ['literal', string | number | boolean];
+  | ['literal', string | number | boolean | ['bigint', string]];
 
 type CanonicalTypeParam = [string, CanonicalType | null];
 type CanonicalProperty = [
@@ -58,6 +58,9 @@ function canonicalizeType(type: PmtType): CanonicalType {
     case 'arraybuffer':
       return ['arraybuffer'];
     case 'literal':
+      if (typeof type.value === 'bigint') {
+        return ['literal', ['bigint', type.value.toString()]];
+      }
       return ['literal', type.value];
     default: {
       const _exhaustive: never = type;

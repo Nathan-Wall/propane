@@ -131,6 +131,9 @@ export function buildTypeNamespace(
         t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data')),
         typeArgs ? t.cloneNode(typeArgs) : null
       ),
+      ...(properties.some((prop) => prop.isWrapperValue)
+        ? [t.cloneNode(properties.find((prop) => prop.isWrapperValue)!.typeAnnotation)]
+        : []),
     ])
   );
   const exportedUnionDecl = t.exportNamedDeclaration(typeUnionDecl, []);

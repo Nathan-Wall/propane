@@ -301,10 +301,7 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(message.properties.length, 1);
     const prop = message.properties[0]!;
     assert.strictEqual(prop.name, 'value');
-    assert.strictEqual(prop.type.kind, 'reference');
-    if (prop.type.kind === 'reference') {
-      assert.strictEqual(prop.type.name, 'ArrayBuffer');
-    }
+    assert.strictEqual(prop.type.kind, 'arraybuffer');
   });
 
   it('should allow primitives, literals, and unions in MessageWrapper', () => {
@@ -417,7 +414,7 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(mixedProp.type.kind, 'union');
     if (mixedProp.type.kind === 'union') {
       assert.strictEqual(mixedProp.type.types.length, 3);
-      assert.ok(mixedProp.type.types.some((t) => t.kind === 'reference' && t.name === 'ArrayBuffer'));
+      assert.ok(mixedProp.type.types.some((t) => t.kind === 'arraybuffer'));
       assert.ok(mixedProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'string'));
       assert.ok(mixedProp.type.types.some((t) => t.kind === 'literal' && t.value === 2));
     }

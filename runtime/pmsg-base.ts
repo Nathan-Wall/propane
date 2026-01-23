@@ -8,4 +8,3 @@ export type { SetUpdates } from './set-updates.js';
 export { ImmutableMap, equalValues as equals } from './common/map/immutable.js';
 export * from './common/set/immutable.js';
 export * from './common/array/immutable.js';
-export * from './common/data/immutable-array-buffer.js';

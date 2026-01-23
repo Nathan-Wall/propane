@@ -1,4 +1,5 @@
 import type { MessageWrapper } from '@propane/runtime';
 
 // @extend('./immutable-array-buffer.pmsg.ext.ts')
+// @compact('B')
 export type ImmutableArrayBuffer = MessageWrapper<ArrayBuffer>;

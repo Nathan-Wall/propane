@@ -561,7 +561,8 @@ export function extractProperties(
       && isUrlReference(propTypePath.node);
     const isArrayBufferType = propTypePath.isTSTypeReference()
       && (isArrayBufferReference(propTypePath.node)
-        || isImmutableArrayBufferReference(propTypePath.node));
+        || isImmutableArrayBufferReference(propTypePath.node))
+      && !messageTypeName;
 
     // Recursively scan for type usage to ensure imports are generated
     scanTypeForUsage(propTypePath, state);

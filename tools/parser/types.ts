@@ -52,7 +52,7 @@ export type PmtType =
   | { kind: 'date' }
   | { kind: 'url' }
   | { kind: 'arraybuffer' }
-  | { kind: 'literal'; value: string | number | boolean };
+  | { kind: 'literal'; value: string | number | boolean | bigint };
 
 // ============================================================================
 // Type Parameters

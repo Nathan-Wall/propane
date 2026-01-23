@@ -51,9 +51,10 @@ export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    if (typeof value !== "string") throw new Error("Compact message fromCompact expects a string value.");
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     return new (this as any)({
-      href: value
+      href: resolvedValue
     }, options);
   }
   static from(value: ImmutableUrl.Value): ImmutableUrl$Base {

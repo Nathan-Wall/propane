@@ -1842,16 +1842,51 @@ function buildAutoCompactMethods(
       t.memberExpression(t.cloneNode(argsId), t.cloneNode(valueIndexId), true)
     ),
   ]);
+  const resolvedValueId = t.identifier('resolvedValue');
+  const resolvedValueDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      resolvedValueId,
+      t.conditionalExpression(
+        t.logicalExpression(
+          '&&',
+          t.binaryExpression(
+            '===',
+            t.cloneNode(valueId),
+            t.identifier('undefined')
+          ),
+          t.logicalExpression(
+            '&&',
+            t.unaryExpression('!', t.cloneNode(hasOptionsCheck)),
+            t.binaryExpression(
+              '>',
+              t.memberExpression(t.cloneNode(argsId), t.identifier('length')),
+              t.numericLiteral(1)
+            )
+          )
+        ),
+        t.memberExpression(
+          t.cloneNode(argsId),
+          t.binaryExpression(
+            '-',
+            t.memberExpression(t.cloneNode(argsId), t.identifier('length')),
+            t.numericLiteral(2)
+          ),
+          true
+        ),
+        t.cloneNode(valueId)
+      )
+    ),
+  ]);
   const valueTypeCheck = t.ifStatement(
     t.binaryExpression(
       '!==',
-      t.unaryExpression('typeof', t.cloneNode(valueId)),
+      t.unaryExpression('typeof', t.cloneNode(resolvedValueId)),
       t.stringLiteral('string')
     ),
     buildErrorThrow('Compact message fromCompact expects a string value.')
   );
   const propsObj = t.objectExpression([
-    t.objectProperty(t.identifier(propName), t.cloneNode(valueId)),
+    t.objectProperty(t.identifier(propName), t.cloneNode(resolvedValueId)),
   ]);
   const ctorExpr = t.newExpression(
     t.tsAsExpression(t.thisExpression(), t.tsAnyKeyword()),
@@ -1866,6 +1901,7 @@ function buildAutoCompactMethods(
       optionsDecl,
       valueIndexDecl,
       valueDecl,
+      resolvedValueDecl,
       valueTypeCheck,
       t.returnStatement(ctorExpr),
     ]),
@@ -2032,10 +2068,45 @@ function buildWrapperCompactMethods(
       t.memberExpression(t.cloneNode(argsId), t.cloneNode(valueIndexId), true)
     ),
   ]);
+  const resolvedValueId = t.identifier('resolvedValue');
+  const resolvedValueDecl = t.variableDeclaration('const', [
+    t.variableDeclarator(
+      resolvedValueId,
+      t.conditionalExpression(
+        t.logicalExpression(
+          '&&',
+          t.binaryExpression(
+            '===',
+            t.cloneNode(valueId),
+            t.identifier('undefined')
+          ),
+          t.logicalExpression(
+            '&&',
+            t.unaryExpression('!', t.cloneNode(hasOptionsCheck)),
+            t.binaryExpression(
+              '>',
+              t.memberExpression(t.cloneNode(argsId), t.identifier('length')),
+              t.numericLiteral(1)
+            )
+          )
+        ),
+        t.memberExpression(
+          t.cloneNode(argsId),
+          t.binaryExpression(
+            '-',
+            t.memberExpression(t.cloneNode(argsId), t.identifier('length')),
+            t.numericLiteral(2)
+          ),
+          true
+        ),
+        t.cloneNode(valueId)
+      )
+    ),
+  ]);
   const valueTypeCheck = t.ifStatement(
     t.binaryExpression(
       '!==',
-      t.unaryExpression('typeof', t.cloneNode(valueId)),
+      t.unaryExpression('typeof', t.cloneNode(resolvedValueId)),
       t.stringLiteral('string')
     ),
     buildErrorThrow('Compact message fromCompact expects a string value.')
@@ -2059,7 +2130,7 @@ function buildWrapperCompactMethods(
       decodedId,
       t.callExpression(
         t.memberExpression(t.cloneNode(deserializerId), t.identifier('call')),
-        [t.thisExpression(), t.cloneNode(valueId)]
+        [t.thisExpression(), t.cloneNode(resolvedValueId)]
       )
     ),
   ]);
@@ -2079,6 +2150,7 @@ function buildWrapperCompactMethods(
       optionsDecl,
       valueIndexDecl,
       valueDecl,
+      resolvedValueDecl,
       valueTypeCheck,
       deserializerDecl,
       deserializerCheck,
@@ -2313,10 +2385,40 @@ export function buildClassFromProperties(
   optionsParam.optional = true;
 
   const constructorAssignments = propDescriptors.map((prop) => {
-    const propsAccess = t.memberExpression(
-      t.identifier('props'),
-      t.identifier(prop.name)
-    );
+    const propsId = t.identifier('props');
+    const propsBase = prop.isWrapperValue
+      ? t.conditionalExpression(
+        t.logicalExpression(
+          '&&',
+          t.logicalExpression(
+            '&&',
+            t.binaryExpression(
+              '===',
+              t.unaryExpression('typeof', t.cloneNode(propsId)),
+              t.stringLiteral('object')
+            ),
+            t.binaryExpression(
+              '!==',
+              t.cloneNode(propsId),
+              t.nullLiteral()
+            )
+          ),
+          t.binaryExpression(
+            'in',
+            t.stringLiteral(prop.name),
+            t.cloneNode(propsId)
+          )
+        ),
+        t.tsAsExpression(t.cloneNode(propsId), t.cloneNode(propsTypeRef)),
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier(prop.name),
+            t.cloneNode(propsId)
+          ),
+        ])
+      )
+      : t.cloneNode(propsId);
+    const propsAccess = t.memberExpression(propsBase, t.identifier(prop.name));
 
     let valueExpr: t.Expression = t.cloneNode(propsAccess);
 

@@ -67,10 +67,10 @@ export default function runArrayBufferTests() {
   });
 
   const serialized = message.serialize();
-  const expectedChunks = [chunkA, chunkB].map((chunk) => `B"${toBase64(chunk)}"`).join(',');
-  const expected = `:{42,B"${toBase64(data)}",B"${toBase64(extra)}",[${expectedChunks}]}`;
+  const expectedChunks = [chunkA, chunkB].map((chunk) => `B${toBase64(chunk)}`).join(',');
+  const expected = `:{42,B${toBase64(data)},B${toBase64(extra)},[${expectedChunks}]}`;
 
-  assert(serialized === expected, 'ArrayBuffer should serialize using B"<base64>" tokens.');
+  assert(serialized === expected, 'ArrayBuffer should serialize using B<base64> tokens.');
 
   const roundTrip = ArrayBufferMessage.deserialize(serialized);
 

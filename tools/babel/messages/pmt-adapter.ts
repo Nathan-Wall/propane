@@ -119,12 +119,16 @@ function primitiveToTsType(primitive: PmtPrimitive): t.TSType {
 /**
  * Build a literal type from a value.
  */
-function buildLiteralType(value: string | number | boolean): t.TSType {
+function buildLiteralType(value: string | number | boolean | bigint): t.TSType {
   if (typeof value === 'string') {
     return t.tsLiteralType(t.stringLiteral(value));
   }
   if (typeof value === 'boolean') {
     return t.tsLiteralType(t.booleanLiteral(value));
+  }
+  if (typeof value === 'bigint') {
+    const literal = t.bigIntLiteral(value.toString());
+    return t.tsLiteralType(literal);
   }
   if (value < 0) {
     return t.tsLiteralType(

@@ -4,7 +4,7 @@ import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
 import { ImmutableArray } from './common/array/immutable.js';
-import { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
+import type { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
 import type { ImmutableDate } from './common/time/date.js';
 import type { ImmutableUrl } from './common/web/url.js';
 import type { Decimal, Rational } from '@/common/numbers/decimal.js';
@@ -23,7 +23,6 @@ import { needsDetach, detachValue } from './common/detach.js';
 const SAFE_TOKEN_RE = /^[A-Za-z0-9!%&*+\-./=?@^_~]+$/;
 const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
 const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
-const ARRAY_BUFFER_PREFIX = 'B';
 const TINY_TAG_RE = /^[A-Za-z#]$/;
 const MESSAGE_TAG = Symbol.for('propane:message');
 const ENFORCED_TYPE_TAGS = new WeakSet<Function>();
@@ -811,10 +810,6 @@ class CerealParser {
 
     const char = this.source[this.cursor] ?? '';
 
-    if (char === 'B' && this.peek(1) === '"') {
-      return this.parseArrayBuffer();
-    }
-
     if (isTinyTagChar(char) && this.peek(1) === '"') {
       return this.parseTaggedCompactString();
     }
@@ -838,11 +833,6 @@ class CerealParser {
         return this.parseBareString();
       case '$':
         return this.parseTaggedMessage();
-      case 'B':
-        if (this.peek(1) === '"') {
-          return this.parseArrayBuffer();
-        }
-        return this.parseBareString();
       default:
         // Number, Boolean, Null, Undefined, or Bare String
         return this.parsePrimitiveOrBareString();
@@ -1001,12 +991,6 @@ class CerealParser {
     this.cursor += 1;
     const value = this.parseString();
     return `${tag}${value}`;
-  }
-
-  private parseArrayBuffer(): ArrayBuffer {
-    this.expect('B');
-    const base64 = this.parseString();
-    return base64ToArrayBuffer(base64);
   }
 
   private parseString(): string {
@@ -1220,10 +1204,6 @@ function serializePrimitive(
       Array.isArray(value) ? value : [...value],
       ancestors
     );
-  }
-
-  if (isArrayBufferValue(value)) {
-    return serializeArrayBufferLiteral(unwrapArrayBuffer(value));
   }
 
   if (isMapValue(value)) {
@@ -1455,23 +1435,7 @@ function isSetValue(value: unknown): value is ReadonlySet<unknown> {
   return value instanceof Set || value instanceof ImmutableSet;
 }
 
-function isArrayBufferValue(
-  value: unknown
-): value is ArrayBuffer | ImmutableArrayBuffer {
-  return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
-}
 
-function serializeArrayBufferLiteral(buffer: ArrayBuffer): string {
-  return `${ARRAY_BUFFER_PREFIX}${JSON.stringify(arrayBufferToBase64(buffer))}`;
-}
-
-function unwrapArrayBuffer(
-  value: ArrayBuffer | ImmutableArrayBuffer
-): ArrayBuffer {
-  return value instanceof ImmutableArrayBuffer
-    ? value.toArrayBuffer()
-    : value;
-}
 
 interface ObjectEntry {
   key: string | null;
@@ -1579,43 +1543,6 @@ function serializeObjectKey(key: string): string {
     return key;
   }
   return JSON.stringify(key);
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(buffer).toString('base64');
-  }
-
-  if (typeof btoa === 'function') {
-    let binary = '';
-    const view = new Uint8Array(buffer);
-    for (const byte of view) {
-      // eslint-disable-next-line unicorn/prefer-code-point
-      binary += String.fromCharCode(byte);
-    }
-    return btoa(binary);
-  }
-
-  throw new Error('Base64 encoding is not supported in this environment.');
-}
-
-function base64ToArrayBuffer(encoded: string): ArrayBuffer {
-  if (typeof Buffer !== 'undefined') {
-    const buf = Buffer.from(encoded, 'base64');
-    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
-  }
-
-  if (typeof atob === 'function') {
-    const binary = atob(encoded);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i += 1) {
-      // eslint-disable-next-line unicorn/prefer-code-point
-      bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-
-  throw new Error('Base64 decoding is not supported in this environment.');
 }
 
 export {REACT_LISTENER_KEY, SET_UPDATE_LISTENER, FROM_ROOT, REGISTER_PATH, PROPAGATE_UPDATE, WITH_CHILD, GET_MESSAGE_CHILDREN, EQUALS_FROM_ROOT} from './symbols.js';

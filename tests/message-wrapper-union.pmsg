@@ -1,0 +1,6 @@
+import { Message } from '@propane/runtime';
+import { Flag } from './message-wrapper-flag.pmsg';
+
+export type WrapperUnion = Message<{
+  '1:value': Flag | string;
+}>;

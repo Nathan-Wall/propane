@@ -3,13 +3,15 @@
 import type { MessageWrapper, MessagePropDescriptor, DataObject, SetUpdates } from "../../pmsg-base.js";
 
 // @extend('./immutable-array-buffer.pmsg.ext.ts')
+// @compact('B')
 import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
 const TYPE_TAG_ImmutableArrayBuffer$Base = Symbol("ImmutableArrayBuffer");
 export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data> {
   static $typeId = "runtime/common/data/immutable-array-buffer.pmsg#ImmutableArrayBuffer";
-  static $typeHash = "sha256:25b8910ace30d83de92ff83660ebeb84194196c3bc168e96b6f6542982fb43a0";
+  static $typeHash = "sha256:62e0158b263d8d302d03d7c20cdd85a2099751f73120c8832e511717393f7edc";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableArrayBuffer$Base.$typeId);
   static override readonly $compact = true;
+  static override readonly $compactTag = "B";
   static readonly $typeName = "ImmutableArrayBuffer";
   static EMPTY: ImmutableArrayBuffer$Base;
   #value!: ArrayBuffer;
@@ -19,7 +21,9 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
   }) {
     if (!props && ImmutableArrayBuffer$Base.EMPTY) return ImmutableArrayBuffer$Base.EMPTY;
     super(TYPE_TAG_ImmutableArrayBuffer$Base, "ImmutableArrayBuffer");
-    this.#value = (props ? props.value : undefined) as ArrayBuffer;
+    this.#value = (props ? (typeof props === "object" && props !== null && "value" in props ? props as ImmutableArrayBuffer.Data : {
+      value: props
+    }).value : undefined) as ArrayBuffer;
     this.value = this.#value;
     if (!props) ImmutableArrayBuffer$Base.EMPTY = this;
   }
@@ -62,10 +66,11 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    if (typeof value !== "string") throw new Error("Compact message fromCompact expects a string value.");
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     const deserializer = this.$deserialize;
     if (typeof deserializer !== "function") throw new Error("ImmutableArrayBuffer.$deserialize() is not implemented.");
-    const decoded = deserializer.call(this, value);
+    const decoded = deserializer.call(this, resolvedValue);
     return new (this as any)({
       value: decoded
     }, options);
@@ -122,5 +127,5 @@ export namespace ImmutableArrayBuffer {
   export type Data = {
     value: ArrayBuffer;
   };
-  export type Value = ImmutableArrayBuffer$Base | ImmutableArrayBuffer.Data;
+  export type Value = ImmutableArrayBuffer$Base | ImmutableArrayBuffer.Data | ArrayBuffer;
 }

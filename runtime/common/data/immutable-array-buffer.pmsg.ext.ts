@@ -23,6 +23,10 @@ function cloneBuffer(input: ArrayBuffer): ArrayBuffer {
   return input.slice(0);
 }
 
+function bufferFromView(view: ArrayBufferView): ArrayBuffer {
+  return new Uint8Array(view.buffer, view.byteOffset, view.byteLength).slice().buffer;
+}
+
 function fromInput(
   input?: ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
 ): ArrayBuffer {
@@ -35,7 +39,7 @@ function fromInput(
   }
 
   if (ArrayBuffer.isView(input)) {
-    return cloneBuffer(input.buffer);
+    return bufferFromView(input);
   }
 
   // Iterable or array-like of numbers
@@ -67,7 +71,7 @@ function coerceBuffer(
   }
 
   if (ArrayBuffer.isView(input)) {
-    return cloneBuffer(input.buffer);
+    return bufferFromView(input);
   }
 
   if (input && typeof input === 'object') {
@@ -80,7 +84,7 @@ function coerceBuffer(
         return cloneBuffer(valueProp);
       }
       if (ArrayBuffer.isView(valueProp)) {
-        return cloneBuffer(valueProp.buffer);
+        return bufferFromView(valueProp);
       }
       return fromInput(valueProp as ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>);
     }
@@ -224,7 +228,7 @@ export class ImmutableArrayBuffer extends ImmutableArrayBuffer$Base {
       return arrayBufferEquals(this.value, other);
     }
     if (ArrayBuffer.isView(other)) {
-      return arrayBufferEquals(this.value, other.buffer);
+      return arrayBufferEquals(this.value, bufferFromView(other));
     }
     return false;
   }

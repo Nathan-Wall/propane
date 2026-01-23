@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { ImmutableArrayBuffer } from '../data/immutable-array-buffer.js';
 
 export function normalizeForJson(value: unknown): unknown {
   if (value === undefined) {
@@ -20,10 +19,6 @@ export function normalizeForJson(value: unknown): unknown {
 
   if (isUrl(value)) {
     return value.toString();
-  }
-
-  if (isArrayBuffer(value)) {
-    return `base64:${arrayBufferToBase64(value)}`;
   }
 
   if (
@@ -82,12 +77,6 @@ export function normalizeForJson(value: unknown): unknown {
   return value;
 }
 
-function isArrayBuffer(
-  value: unknown
-): value is ArrayBuffer | ImmutableArrayBuffer {
-  return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
-}
-
 function isUrl(value: unknown): value is URL | { toString(): string } {
   if (value instanceof URL) {
     return true;
@@ -107,27 +96,6 @@ function isImmutableDate(value: unknown): value is { toJSON: () => string } {
     && (value as { $typeName?: string }).$typeName === 'ImmutableDate'
     && typeof (value as { toJSON?: unknown }).toJSON === 'function'
   );
-}
-
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
-  const raw = buffer instanceof ImmutableArrayBuffer
-    ? buffer.toArrayBuffer()
-    : buffer;
-  if (typeof Buffer !== 'undefined') {
-    return Buffer.from(raw).toString('base64');
-  }
-
-  if (typeof btoa === 'function') {
-    let binary = '';
-    const view = new Uint8Array(raw);
-    for (const byte of view) {
-      // eslint-disable-next-line unicorn/prefer-code-point
-      binary += String.fromCharCode(byte);
-    }
-    return btoa(binary);
-  }
-
-  throw new Error('Base64 encoding is not supported in this environment.');
 }
 
 function isImmutableMapLike(

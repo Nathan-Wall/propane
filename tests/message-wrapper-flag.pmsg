@@ -1,0 +1,5 @@
+import { MessageWrapper } from '@propane/runtime';
+
+// @extend('./message-wrapper-flag.pmsg.ext.ts')
+// @compact('W')
+export type Flag = MessageWrapper<boolean>;

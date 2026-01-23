@@ -1,5 +1,4 @@
 // @ts-nocheck
-import { ImmutableArrayBuffer } from './immutable-array-buffer.js';
 import { ImmutableMap } from '../map/immutable.js';
 import { ImmutableSet } from '../set/immutable.js';
 import { ImmutableArray } from '../array/immutable.js';
@@ -27,28 +26,6 @@ function isArrayLike(value: unknown): value is ArrayLike<unknown> {
   return Array.isArray(value) || value instanceof ImmutableArray;
 }
 
-function isArrayBufferLike(value: unknown): value is ArrayBuffer {
-  return value instanceof ArrayBuffer || value instanceof ImmutableArrayBuffer;
-}
-
-function arrayBufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
-  if (a.byteLength !== b.byteLength) {
-    return false;
-  }
-
-  const viewA = new Uint8Array(a);
-  const viewB = new Uint8Array(b);
-
-
-  for (let i = 0; i < viewA.length; i += 1) {
-    if (viewA[i] !== viewB[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 export const equals: EqualsFn = (a, b): boolean => {
   if (a === b || Object.is(a, b)) {
     return true;
@@ -60,10 +37,6 @@ export const equals: EqualsFn = (a, b): boolean => {
 
   if (supportsEquals(b)) {
     return b.equals(a);
-  }
-
-  if (isArrayBufferLike(a) && isArrayBufferLike(b)) {
-    return arrayBufferEquals(a, b);
   }
 
   if (isMapLike(a) && isMapLike(b)) {

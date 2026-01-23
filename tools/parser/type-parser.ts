@@ -82,8 +82,14 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
     if (t.isBooleanLiteral(literal)) {
       return { kind: 'literal', value: literal.value };
     }
+    if (t.isBigIntLiteral(literal)) {
+      return { kind: 'literal', value: BigInt(literal.value) };
+    }
     if (t.isUnaryExpression(literal) && literal.operator === '-' && t.isNumericLiteral(literal.argument)) {
         return { kind: 'literal', value: -literal.argument.value };
+      }
+    if (t.isUnaryExpression(literal) && literal.operator === '-' && t.isBigIntLiteral(literal.argument)) {
+        return { kind: 'literal', value: -BigInt(literal.argument.value) };
       }
     // Fallback for other literals
     return { kind: 'primitive', primitive: 'string' };

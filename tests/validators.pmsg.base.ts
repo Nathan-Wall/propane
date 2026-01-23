@@ -1320,7 +1320,7 @@ export namespace ArrayValidators {
 const TYPE_TAG_BigintValidators = Symbol("BigintValidators");
 export class BigintValidators extends Message<BigintValidators.Data> {
   static $typeId = "tests/validators.pmsg#BigintValidators";
-  static $typeHash = "sha256:db66524fbaf0d42bf2de5f6041121dd6e6255a0461f027a103f5448c5a038075";
+  static $typeHash = "sha256:b15d323179bfdef32e19112896fc3a54cf6b079e8a81fe73817135ed5504ff01";
   static $instanceTag = Symbol.for("propane:message:" + BigintValidators.$typeId);
   static readonly $typeName = "BigintValidators";
   static EMPTY: BigintValidators;
