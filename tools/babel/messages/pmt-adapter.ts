@@ -377,7 +377,8 @@ function extractUnionMessageTypes(
  */
 export function pmtTypeParametersToTypeParameters(
   pmtTypeParams: PmtTypeParameter[],
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  isValueWrapper = false
 ): TypeParameter[] {
   return pmtTypeParams.map((param) => {
     if (!param.constraint) {
@@ -388,7 +389,8 @@ export function pmtTypeParametersToTypeParameters(
     }
     const constraintType = pmtTypeToBabelType(param.constraint);
     const requiresConstructor =
-      param.constraint.kind === 'reference'
+      !isValueWrapper
+      && param.constraint.kind === 'reference'
       && (param.constraint.name === 'Message'
         || declaredMessageTypeNames.has(param.constraint.name.split('.')[0]!));
     return {

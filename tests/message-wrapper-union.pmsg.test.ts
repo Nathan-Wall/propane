@@ -7,10 +7,19 @@ function hasOwn(obj: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+function getDescriptor(obj: object | null, key: string): PropertyDescriptor | undefined {
+  let current = obj;
+  while (current) {
+    const desc = Object.getOwnPropertyDescriptor(current, key);
+    if (desc) return desc;
+    current = Object.getPrototypeOf(current);
+  }
+  return undefined;
+}
+
 test('MessageWrapper shape exposes a protected getter for value', () => {
   const flag = new Flag({ value: true });
-  const proto = Object.getPrototypeOf(flag);
-  const protoDesc = Object.getOwnPropertyDescriptor(proto, 'value');
+  const protoDesc = getDescriptor(Object.getPrototypeOf(flag), 'value');
   assert(protoDesc !== undefined, 'MessageWrapper should define a value getter on the prototype.');
   assert(typeof protoDesc?.get === 'function', 'MessageWrapper value should be an accessor getter.');
   assert(!protoDesc?.set, 'MessageWrapper value should not define a setter.');

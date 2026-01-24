@@ -157,16 +157,6 @@ function processTypeAlias(
     { filePath: ctx.filePath, diagnostics: ctx.diagnostics }
   );
 
-  if (isValueWrapper && typeAlias.typeParameters?.params?.length) {
-    ctx.diagnostics.push({
-      filePath: ctx.filePath,
-      location,
-      severity: 'error',
-      code: 'PMT060',
-      message: 'MessageWrapper types cannot declare generic type parameters.',
-    });
-  }
-
   // Parse type parameters
   const typeParameters = parseTypeParameters(typeAlias.typeParameters, ctx);
 
@@ -283,24 +273,13 @@ function parseWrapperValueType(
   node: t.TSType,
   ctx: TypeParserContext
 ): PmtType | null {
-  if (containsWrapperGenericArgs(node)) {
-    ctx.diagnostics.push({
-      filePath: ctx.filePath,
-      location: getSourceLocation(node),
-      severity: 'error',
-      code: 'PMT064',
-      message: 'MessageWrapper does not allow generic type arguments.',
-    });
-    return null;
-  }
-
   if (!isAllowedWrapperValueType(node)) {
     ctx.diagnostics.push({
       filePath: ctx.filePath,
       location: getSourceLocation(node),
       severity: 'error',
       code: 'PMT063',
-      message: 'MessageWrapper requires a single non-generic type argument.',
+      message: 'MessageWrapper requires a single supported type argument.',
     });
     return null;
   }
@@ -315,19 +294,6 @@ function getQualifiedTypeName(typeName: t.TSQualifiedName): string {
   return `${getQualifiedTypeName(typeName.left)}.${typeName.right.name}`;
 }
 
-function containsWrapperGenericArgs(node: t.TSType): boolean {
-  if (t.isTSParenthesizedType(node)) {
-    return containsWrapperGenericArgs(node.typeAnnotation);
-  }
-  if (t.isTSUnionType(node)) {
-    return node.types.some(containsWrapperGenericArgs);
-  }
-  if (t.isTSTypeReference(node)) {
-    return Boolean(node.typeParameters?.params?.length);
-  }
-  return false;
-}
-
 function isAllowedWrapperValueType(node: t.TSType): boolean {
   if (t.isTSParenthesizedType(node)) {
     return isAllowedWrapperValueType(node.typeAnnotation);
@@ -335,6 +301,19 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
 
   if (t.isTSUnionType(node)) {
     return node.types.every(isAllowedWrapperValueType);
+  }
+
+  if (t.isTSArrayType(node)) {
+    return isAllowedWrapperValueType(node.elementType);
+  }
+
+  if (t.isTSTupleType(node)) {
+    return node.elementTypes.every((elem) => {
+      if (t.isTSNamedTupleMember(elem)) {
+        return isAllowedWrapperValueType(elem.elementType);
+      }
+      return isAllowedWrapperValueType(elem);
+    });
   }
 
   if (
@@ -365,7 +344,10 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
   }
 
   if (t.isTSTypeReference(node)) {
-    return !node.typeParameters || node.typeParameters.params.length === 0;
+    if (!node.typeParameters || node.typeParameters.params.length === 0) {
+      return true;
+    }
+    return node.typeParameters.params.every(isAllowedWrapperValueType);
   }
 
   return false;

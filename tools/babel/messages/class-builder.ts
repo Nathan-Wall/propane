@@ -2167,10 +2167,14 @@ function buildWrapperCompactMethods(
 
 function buildWrapperSerializerMethods(
   typeName: string,
-  valueType: t.TSType
+  valueType: t.TSType,
+  isGeneric: boolean
 ): { serializeMethod: t.ClassMethod; deserializeMethod: t.ClassMethod } {
+  const resolvedValueType = isGeneric
+    ? t.tsUnknownKeyword()
+    : t.cloneNode(valueType);
   const serializeParam = t.identifier('value');
-  serializeParam.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(valueType));
+  serializeParam.typeAnnotation = t.tsTypeAnnotation(resolvedValueType);
   const serializeMethod = t.classMethod(
     'method',
     t.identifier('$serialize'),
@@ -2195,7 +2199,7 @@ function buildWrapperSerializerMethods(
     false,
     true
   );
-  deserializeMethod.returnType = t.tsTypeAnnotation(t.cloneNode(valueType));
+  deserializeMethod.returnType = t.tsTypeAnnotation(resolvedValueType);
 
   return { serializeMethod, deserializeMethod };
 }
@@ -2273,7 +2277,7 @@ export function buildClassFromProperties(
   const hasNestedMessageTypes = propDescriptors.some(prop => prop.isMessageType);
   const wrapperValueProp = propDescriptors.find((prop) => prop.isWrapperValue);
   const wrapperSerializeMethods = wrapperValueProp
-    ? buildWrapperSerializerMethods(typeName, wrapperValueProp.typeAnnotation)
+    ? buildWrapperSerializerMethods(typeName, wrapperValueProp.typeAnnotation, isGeneric)
     : null;
   const wrapperCompactMethods = wrapperValueProp
     ? buildWrapperCompactMethods(wrapperValueProp.name, typeName)

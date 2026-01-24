@@ -104,26 +104,10 @@ function extractWrapperValueType(
   if (!valueNode) {
     return null;
   }
-  if (containsWrapperGenericArgs(valueNode)) {
-    return null;
-  }
   if (!isAllowedWrapperValueType(valueNode)) {
     return null;
   }
   return parseType(valueNode, ctx);
-}
-
-function containsWrapperGenericArgs(node: t.TSType): boolean {
-  if (t.isTSParenthesizedType(node)) {
-    return containsWrapperGenericArgs(node.typeAnnotation);
-  }
-  if (t.isTSUnionType(node)) {
-    return node.types.some(containsWrapperGenericArgs);
-  }
-  if (t.isTSTypeReference(node)) {
-    return Boolean(node.typeParameters?.params?.length);
-  }
-  return false;
 }
 
 function isAllowedWrapperValueType(node: t.TSType): boolean {
@@ -133,6 +117,19 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
 
   if (t.isTSUnionType(node)) {
     return node.types.every(isAllowedWrapperValueType);
+  }
+
+  if (t.isTSArrayType(node)) {
+    return isAllowedWrapperValueType(node.elementType);
+  }
+
+  if (t.isTSTupleType(node)) {
+    return node.elementTypes.every((elem) => {
+      if (t.isTSNamedTupleMember(elem)) {
+        return isAllowedWrapperValueType(elem.elementType);
+      }
+      return isAllowedWrapperValueType(elem);
+    });
   }
 
   if (
@@ -163,7 +160,10 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
   }
 
   if (t.isTSTypeReference(node)) {
-    return !node.typeParameters || node.typeParameters.params.length === 0;
+    if (!node.typeParameters || node.typeParameters.params.length === 0) {
+      return true;
+    }
+    return node.typeParameters.params.every(isAllowedWrapperValueType);
   }
 
   return false;
@@ -175,7 +175,8 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
  */
 function extractTypeParameters(
   typeParams: t.TSTypeParameterDeclaration | null | undefined,
-  declaredMessageTypeNames: Set<string>
+  declaredMessageTypeNames: Set<string>,
+  isValueWrapper = false
 ): TypeParameter[] {
   if (!typeParams) {
     return [];
@@ -203,7 +204,8 @@ function extractTypeParameters(
       }
       if (constraintName) {
         const baseConstraint = constraintName.split('.')[0]!;
-        if (baseConstraint === 'Message' || declaredMessageTypeNames.has(baseConstraint)) {
+        if (!isValueWrapper
+          && (baseConstraint === 'Message' || declaredMessageTypeNames.has(baseConstraint))) {
           requiresConstructor = true;
         }
       }
@@ -487,19 +489,15 @@ export function buildDeclarations(
     // Use PMT type parameters
     typeParameters = pmtTypeParametersToTypeParameters(
       pmtMessage.typeParameters,
-      declaredMessageTypeNames
+      declaredMessageTypeNames,
+      pmtMessage.isWrapperValue
     );
   } else {
     // Fallback to AST-based extraction (for non-PMT paths)
     typeParameters = extractTypeParameters(
       typeAlias.typeParameters,
-      declaredMessageTypeNames
-    );
-  }
-
-  if (wrapperInfo?.isValueWrapper && typeAlias.typeParameters?.params?.length) {
-    throw typeAliasPath.buildCodeFrameError(
-      'MessageWrapper types cannot declare generic type parameters.'
+      declaredMessageTypeNames,
+      Boolean(wrapperInfo?.isValueWrapper)
     );
   }
 
@@ -524,7 +522,7 @@ export function buildDeclarations(
       const wrapperValue = extractWrapperValueType(typeLiteralPath.node);
       if (!wrapperValue) {
         throw typeAliasPath.buildCodeFrameError(
-          'MessageWrapper requires a single non-generic type argument.'
+          'MessageWrapper requires a single supported type argument.'
         );
       }
       pmtProps = [{
