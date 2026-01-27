@@ -153,36 +153,6 @@ export class UrlUnion extends Message<UrlUnion.Data> {
     }
     this.#value = props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (ImmutableUrl.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new ImmutableUrl(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (UrlUnion_Value_Union1.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new UrlUnion_Value_Union1(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.value) : new ImmutableUrl("about:blank");
     if (!props) UrlUnion.EMPTY = this;
@@ -238,31 +208,6 @@ export class UrlUnion extends Message<UrlUnion.Data> {
           valueUnionValue = UrlUnion_Value_Union1.fromCompact(UrlUnion_Value_Union1.$compactTag && valueValue.startsWith(UrlUnion_Value_Union1.$compactTag) ? valueValue.slice(UrlUnion_Value_Union1.$compactTag.length) : valueValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"value\" (UrlUnion_Value_Union1).");
-        }
-      }
-    }
-    if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
-      let valueUnionValueMatched = false;
-      if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof ImmutableUrl) {
-          valueUnionValue = valueValue as any;
-          valueUnionValueMatched = true;
-        } else {
-          try {
-            valueUnionValue = new ImmutableUrl(ImmutableUrl.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
-            valueUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof UrlUnion_Value_Union1) {
-          valueUnionValue = valueValue as any;
-          valueUnionValueMatched = true;
-        } else {
-          try {
-            valueUnionValue = new UrlUnion_Value_Union1(UrlUnion_Value_Union1.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
-            valueUnionValueMatched = true;
-          } catch (e) {}
         }
       }
     }

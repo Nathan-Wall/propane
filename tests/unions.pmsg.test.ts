@@ -1,4 +1,4 @@
-import { assert } from './assert.js';
+import { assert, assertThrows } from './assert.js';
 import {
   Unions,
   Unions_Metadata_Union1,
@@ -135,10 +135,9 @@ export default function runUnionsImplicitUnionTests() {
   assert(updatedOut.updated.getTime() === updated.getTime(), 'updated value matches');
 
   const untagged = `:{username:null,email:null,metadata:{created:D"${created.toISOString()}"}}`;
-  const untaggedDeserialized = Unions.deserialize(untagged);
-  assert(
-    untaggedDeserialized.metadata instanceof Unions_Metadata_Union1,
-    `untagged metadata should coerce to Unions_Metadata_Union1. Got: ${untaggedDeserialized.metadata?.constructor?.name}`
+  assertThrows(
+    () => Unions.deserialize(untagged),
+    'untagged metadata should throw for ambiguous message unions.'
   );
 }
 

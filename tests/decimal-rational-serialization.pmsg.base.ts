@@ -210,36 +210,6 @@ export class NumericUnion extends Message<NumericUnion.Data> {
     }
     this.#value = (props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (Decimal.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Decimal(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Rational.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Rational(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.value) : undefined) as Decimal<10, 2> | Rational;
     if (!props) NumericUnion.EMPTY = this;
@@ -295,31 +265,6 @@ export class NumericUnion extends Message<NumericUnion.Data> {
           valueUnionValue = Rational.fromCompact(Rational.$compactTag && valueValue.startsWith(Rational.$compactTag) ? valueValue.slice(Rational.$compactTag.length) : valueValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"value\" (Rational).");
-        }
-      }
-    }
-    if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
-      let valueUnionValueMatched = false;
-      if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof Decimal) {
-          valueUnionValue = valueValue as any;
-          valueUnionValueMatched = true;
-        } else {
-          try {
-            valueUnionValue = new Decimal(Decimal.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
-            valueUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof Rational) {
-          valueUnionValue = valueValue as any;
-          valueUnionValueMatched = true;
-        } else {
-          try {
-            valueUnionValue = new Rational(Rational.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
-            valueUnionValueMatched = true;
-          } catch (e) {}
         }
       }
     }

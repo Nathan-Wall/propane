@@ -4193,127 +4193,125 @@ function buildTaggedMessageUnionHandler(
       );
     }
 
-    // Attempt to coerce untagged object values into union message types
-    const notTaggedCheck = t.unaryExpression(
-      '!',
-      t.callExpression(t.identifier('isTaggedMessageData'), [t.cloneNode(sourceExpr)])
-    );
-    const objectCheck = t.logicalExpression(
-      '&&',
-      t.binaryExpression(
-        '===',
-        t.unaryExpression('typeof', t.cloneNode(sourceExpr)),
-        t.stringLiteral('object')
-      ),
-      t.binaryExpression(
+    if (messageTypes.length === 1) {
+      // Attempt to coerce untagged object values into union message types
+      const notTaggedCheck = t.unaryExpression(
+        '!',
+        t.callExpression(t.identifier('isTaggedMessageData'), [t.cloneNode(sourceExpr)])
+      );
+      const objectCheck = t.logicalExpression(
+        '&&',
+        t.binaryExpression(
+          '===',
+          t.unaryExpression('typeof', t.cloneNode(sourceExpr)),
+          t.stringLiteral('object')
+        ),
+        t.binaryExpression(
+          '!==',
+          t.cloneNode(sourceExpr),
+          t.nullLiteral()
+        )
+      );
+      const definedCheck = t.binaryExpression(
         '!==',
         t.cloneNode(sourceExpr),
-        t.nullLiteral()
-      )
-    );
-    const definedCheck = t.binaryExpression(
-      '!==',
-      t.cloneNode(sourceExpr),
-      t.identifier('undefined')
-    );
-    const coercionCondition = isOptional
-      ? t.logicalExpression(
-        '&&',
-        definedCheck,
-        t.logicalExpression('&&', notTaggedCheck, objectCheck)
-      )
-      : t.logicalExpression('&&', notTaggedCheck, objectCheck);
-
-    const matchedId = t.identifier(`${targetId.name}Matched`);
-    const coercionStatements: t.Statement[] = [
-      t.variableDeclaration('let', [
-        t.variableDeclarator(matchedId, t.booleanLiteral(false)),
-      ]),
-    ];
-
-    for (const msgType of messageTypes) {
-      const instanceLhs = t.tsAsExpression(
-        t.cloneNode(sourceExpr),
-        t.tsTypeReference(t.identifier('object'))
+        t.identifier('undefined')
       );
-      const instanceCheck = t.binaryExpression(
-        'instanceof',
-        instanceLhs,
-        t.identifier(msgType.name)
-      );
-      const assignExisting = t.expressionStatement(
-        t.assignmentExpression(
-          '=',
-          t.cloneNode(targetId),
-          t.tsAsExpression(t.cloneNode(sourceExpr), t.cloneNode(unionType))
+      const coercionCondition = isOptional
+        ? t.logicalExpression(
+          '&&',
+          definedCheck,
+          t.logicalExpression('&&', notTaggedCheck, objectCheck)
         )
-      );
-      const markMatched = t.expressionStatement(
-        t.assignmentExpression('=', t.cloneNode(matchedId), t.booleanLiteral(true))
-      );
-      const fromEntriesCall = t.callExpression(
-        t.memberExpression(
-          t.memberExpression(t.identifier(msgType.name), t.identifier('prototype')),
-          t.identifier('$fromEntries')
-        ),
-        optionsExpr
-          ? [
-            t.tsAsExpression(
-              t.cloneNode(sourceExpr),
-              t.tsTypeReference(
-                t.identifier('Record'),
-                t.tsTypeParameterInstantiation([
-                  t.tsStringKeyword(),
-                  t.tsUnknownKeyword(),
-                ])
-              )
-            ),
-            t.cloneNode(optionsExpr),
-          ]
-          : [
-            t.tsAsExpression(
-              t.cloneNode(sourceExpr),
-              t.tsTypeReference(
-                t.identifier('Record'),
-                t.tsTypeParameterInstantiation([
-                  t.tsStringKeyword(),
-                  t.tsUnknownKeyword(),
-                ])
-              )
-            ),
-          ]
-      );
-      const constructorArgs: t.Expression[] = [fromEntriesCall];
-      if (optionsExpr) {
-        constructorArgs.push(t.cloneNode(optionsExpr));
+        : t.logicalExpression('&&', notTaggedCheck, objectCheck);
+
+      const matchedId = t.identifier(`${targetId.name}Matched`);
+      const coercionStatements: t.Statement[] = [
+        t.variableDeclaration('let', [
+          t.variableDeclarator(matchedId, t.booleanLiteral(false)),
+        ]),
+      ];
+
+      for (const msgType of messageTypes) {
+        const instanceLhs = t.tsAsExpression(
+          t.cloneNode(sourceExpr),
+          t.tsTypeReference(t.identifier('object'))
+        );
+        const instanceCheck = t.binaryExpression(
+          'instanceof',
+          instanceLhs,
+          t.identifier(msgType.name)
+        );
+        const assignExisting = t.expressionStatement(
+          t.assignmentExpression(
+            '=',
+            t.cloneNode(targetId),
+            t.tsAsExpression(t.cloneNode(sourceExpr), t.cloneNode(unionType))
+          )
+        );
+        const markMatched = t.expressionStatement(
+          t.assignmentExpression('=', t.cloneNode(matchedId), t.booleanLiteral(true))
+        );
+        const fromEntriesCall = t.callExpression(
+          t.memberExpression(
+            t.memberExpression(t.identifier(msgType.name), t.identifier('prototype')),
+            t.identifier('$fromEntries')
+          ),
+          optionsExpr
+            ? [
+              t.tsAsExpression(
+                t.cloneNode(sourceExpr),
+                t.tsTypeReference(
+                  t.identifier('Record'),
+                  t.tsTypeParameterInstantiation([
+                    t.tsStringKeyword(),
+                    t.tsUnknownKeyword(),
+                  ])
+                )
+              ),
+              t.cloneNode(optionsExpr),
+            ]
+            : [
+              t.tsAsExpression(
+                t.cloneNode(sourceExpr),
+                t.tsTypeReference(
+                  t.identifier('Record'),
+                  t.tsTypeParameterInstantiation([
+                    t.tsStringKeyword(),
+                    t.tsUnknownKeyword(),
+                  ])
+                )
+              ),
+            ]
+        );
+        const constructorArgs: t.Expression[] = [fromEntriesCall];
+        if (optionsExpr) {
+          constructorArgs.push(t.cloneNode(optionsExpr));
+        }
+        const constructorCall = t.newExpression(
+          t.identifier(msgType.name),
+          constructorArgs
+        );
+        const assignConstructed = t.expressionStatement(
+          t.assignmentExpression('=', t.cloneNode(targetId), constructorCall)
+        );
+        const attemptBlock = t.ifStatement(
+          instanceCheck,
+          t.blockStatement([assignExisting, markMatched]),
+          t.blockStatement([assignConstructed, markMatched])
+        );
+        coercionStatements.push(
+          t.ifStatement(
+            t.unaryExpression('!', t.cloneNode(matchedId)),
+            t.blockStatement([attemptBlock])
+          )
+        );
       }
-      const constructorCall = t.newExpression(
-        t.identifier(msgType.name),
-        constructorArgs
-      );
-      const assignConstructed = t.expressionStatement(
-        t.assignmentExpression('=', t.cloneNode(targetId), constructorCall)
-      );
-      const tryAssign = t.tryStatement(
-        t.blockStatement([assignConstructed, markMatched]),
-        t.catchClause(t.identifier('e'), t.blockStatement([]))
-      );
-      const attemptBlock = t.ifStatement(
-        instanceCheck,
-        t.blockStatement([assignExisting, markMatched]),
-        t.blockStatement([tryAssign])
-      );
-      coercionStatements.push(
-        t.ifStatement(
-          t.unaryExpression('!', t.cloneNode(matchedId)),
-          t.blockStatement([attemptBlock])
-        )
+
+      statements.push(
+        t.ifStatement(coercionCondition, t.blockStatement(coercionStatements))
       );
     }
-
-    statements.push(
-      t.ifStatement(coercionCondition, t.blockStatement(coercionStatements))
-    );
   }
 
   return statements;
@@ -4347,8 +4345,6 @@ function buildMessageUnionValueNormalizationExpression(
 ): t.Expression {
   const valueId = t.identifier('value');
   const resultId = t.identifier('result');
-  const matchedId = t.identifier('matched');
-  const isMessageId = t.identifier('isMessage');
 
   const statements: t.Statement[] = [
     t.variableDeclaration('let', [
@@ -4357,98 +4353,101 @@ function buildMessageUnionValueNormalizationExpression(
         t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
       ),
     ]),
-    t.variableDeclaration('const', [
-      t.variableDeclarator(
-        isMessageId,
-        t.callExpression(
-          t.memberExpression(t.identifier('Message'), t.identifier('isMessage')),
-          [t.cloneNode(valueId)]
-        )
-      ),
-    ]),
   ];
 
-  const objectCheck = t.logicalExpression(
-    '&&',
-    t.binaryExpression(
-      '===',
-      t.unaryExpression('typeof', t.cloneNode(valueId)),
-      t.stringLiteral('object')
-    ),
-    t.binaryExpression(
-      '!==',
-      t.cloneNode(valueId),
-      t.nullLiteral()
-    )
-  );
-  const notArrayCheck = t.unaryExpression(
-    '!',
-    t.callExpression(
-      t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
-      [t.cloneNode(valueId)]
-    )
-  );
-  const condition = t.logicalExpression('&&', objectCheck, notArrayCheck);
-
-  const coercionStatements: t.Statement[] = [
-    t.variableDeclaration('let', [
-      t.variableDeclarator(matchedId, t.booleanLiteral(false)),
-    ]),
-  ];
-
-  for (const msgType of messageTypes) {
-    const isInstanceCall = t.callExpression(
-      t.memberExpression(t.identifier(msgType.name), t.identifier('isInstance')),
-      [t.cloneNode(valueId)]
-    );
-    const assignExisting = t.expressionStatement(
-      t.assignmentExpression(
-        '=',
-        t.cloneNode(resultId),
-        t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
-      )
-    );
-    const markMatched = t.expressionStatement(
-      t.assignmentExpression('=', t.cloneNode(matchedId), t.booleanLiteral(true))
-    );
-    const ctorArgs: t.Expression[] = [
-      t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword()),
-    ];
-    if (optionsExpr) {
-      ctorArgs.push(t.cloneNode(optionsExpr));
-    }
-    const constructorCall = t.newExpression(
-      t.identifier(msgType.name),
-      ctorArgs
-    );
-    const assignConstructed = t.expressionStatement(
-      t.assignmentExpression('=', t.cloneNode(resultId), constructorCall)
-    );
-    const tryAssign = t.tryStatement(
-      t.blockStatement([assignConstructed, markMatched]),
-      t.catchClause(t.identifier('e'), t.blockStatement([]))
-    );
-    const attemptBlock = t.ifStatement(
-      isInstanceCall,
-      t.blockStatement([assignExisting, markMatched]),
-      t.blockStatement([
-        t.ifStatement(
-          t.unaryExpression('!', t.cloneNode(isMessageId)),
-          t.blockStatement([tryAssign])
+  if (messageTypes.length === 1) {
+    const matchedId = t.identifier('matched');
+    const isMessageId = t.identifier('isMessage');
+    statements.push(
+      t.variableDeclaration('const', [
+        t.variableDeclarator(
+          isMessageId,
+          t.callExpression(
+            t.memberExpression(t.identifier('Message'), t.identifier('isMessage')),
+            [t.cloneNode(valueId)]
+          )
         ),
       ])
     );
-    coercionStatements.push(
-      t.ifStatement(
-        t.unaryExpression('!', t.cloneNode(matchedId)),
-        t.blockStatement([attemptBlock])
+
+    const objectCheck = t.logicalExpression(
+      '&&',
+      t.binaryExpression(
+        '===',
+        t.unaryExpression('typeof', t.cloneNode(valueId)),
+        t.stringLiteral('object')
+      ),
+      t.binaryExpression(
+        '!==',
+        t.cloneNode(valueId),
+        t.nullLiteral()
       )
     );
-  }
+    const notArrayCheck = t.unaryExpression(
+      '!',
+      t.callExpression(
+        t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
+        [t.cloneNode(valueId)]
+      )
+    );
+    const condition = t.logicalExpression('&&', objectCheck, notArrayCheck);
 
-  statements.push(
-    t.ifStatement(condition, t.blockStatement(coercionStatements))
-  );
+    const coercionStatements: t.Statement[] = [
+      t.variableDeclaration('let', [
+        t.variableDeclarator(matchedId, t.booleanLiteral(false)),
+      ]),
+    ];
+
+    for (const msgType of messageTypes) {
+      const isInstanceCall = t.callExpression(
+        t.memberExpression(t.identifier(msgType.name), t.identifier('isInstance')),
+        [t.cloneNode(valueId)]
+      );
+      const assignExisting = t.expressionStatement(
+        t.assignmentExpression(
+          '=',
+          t.cloneNode(resultId),
+          t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword())
+        )
+      );
+      const markMatched = t.expressionStatement(
+        t.assignmentExpression('=', t.cloneNode(matchedId), t.booleanLiteral(true))
+      );
+      const ctorArgs: t.Expression[] = [
+        t.tsAsExpression(t.cloneNode(valueId), t.tsAnyKeyword()),
+      ];
+      if (optionsExpr) {
+        ctorArgs.push(t.cloneNode(optionsExpr));
+      }
+      const constructorCall = t.newExpression(
+        t.identifier(msgType.name),
+        ctorArgs
+      );
+      const assignConstructed = t.expressionStatement(
+        t.assignmentExpression('=', t.cloneNode(resultId), constructorCall)
+      );
+      const attemptBlock = t.ifStatement(
+        isInstanceCall,
+        t.blockStatement([assignExisting, markMatched]),
+        t.blockStatement([
+          t.ifStatement(
+            t.unaryExpression('!', t.cloneNode(isMessageId)),
+            t.blockStatement([assignConstructed, markMatched])
+          ),
+        ])
+      );
+      coercionStatements.push(
+        t.ifStatement(
+          t.unaryExpression('!', t.cloneNode(matchedId)),
+          t.blockStatement([attemptBlock])
+        )
+      );
+    }
+
+    statements.push(
+      t.ifStatement(condition, t.blockStatement(coercionStatements))
+    );
+  }
   statements.push(t.returnStatement(t.cloneNode(resultId)));
 
   const func = t.arrowFunctionExpression([valueId], t.blockStatement(statements));

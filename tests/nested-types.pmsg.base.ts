@@ -153,36 +153,6 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     this.#payload = props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (ImmutableDate.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new ImmutableDate(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Wrapper_Payload_Union1.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Wrapper_Payload_Union1(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.payload) : new ImmutableDate(0);
     if (!props) Wrapper.EMPTY = this;
@@ -238,31 +208,6 @@ export class Wrapper extends Message<Wrapper.Data> {
           payloadUnionValue = Wrapper_Payload_Union1.fromCompact(Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag) ? payloadValue.slice(Wrapper_Payload_Union1.$compactTag.length) : payloadValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"payload\" (Wrapper_Payload_Union1).");
-        }
-      }
-    }
-    if (!isTaggedMessageData(payloadValue) && typeof payloadValue === "object" && payloadValue !== null) {
-      let payloadUnionValueMatched = false;
-      if (!payloadUnionValueMatched) {
-        if (payloadValue as object instanceof ImmutableDate) {
-          payloadUnionValue = payloadValue as any;
-          payloadUnionValueMatched = true;
-        } else {
-          try {
-            payloadUnionValue = new ImmutableDate(ImmutableDate.prototype.$fromEntries(payloadValue as Record<string, unknown>, options), options);
-            payloadUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!payloadUnionValueMatched) {
-        if (payloadValue as object instanceof Wrapper_Payload_Union1) {
-          payloadUnionValue = payloadValue as any;
-          payloadUnionValueMatched = true;
-        } else {
-          try {
-            payloadUnionValue = new Wrapper_Payload_Union1(Wrapper_Payload_Union1.prototype.$fromEntries(payloadValue as Record<string, unknown>, options), options);
-            payloadUnionValueMatched = true;
-          } catch (e) {}
         }
       }
     }

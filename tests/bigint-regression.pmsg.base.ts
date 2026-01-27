@@ -120,10 +120,8 @@ export class Wrapper extends Message<Wrapper.Data> {
             matched = true;
           } else {
             if (!isMessage) {
-              try {
-                result = new Wrapper_Payload_Union1(value as any, options);
-                matched = true;
-              } catch (e) {}
+              result = new Wrapper_Payload_Union1(value as any, options);
+              matched = true;
             }
           }
         }
@@ -177,10 +175,8 @@ export class Wrapper extends Message<Wrapper.Data> {
           payloadUnionValue = payloadValue as any;
           payloadUnionValueMatched = true;
         } else {
-          try {
-            payloadUnionValue = new Wrapper_Payload_Union1(Wrapper_Payload_Union1.prototype.$fromEntries(payloadValue as Record<string, unknown>, options), options);
-            payloadUnionValueMatched = true;
-          } catch (e) {}
+          payloadUnionValue = new Wrapper_Payload_Union1(Wrapper_Payload_Union1.prototype.$fromEntries(payloadValue as Record<string, unknown>, options), options);
+          payloadUnionValueMatched = true;
         }
       }
     }

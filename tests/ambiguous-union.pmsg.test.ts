@@ -1,4 +1,4 @@
-import { assert } from './assert.js';
+import { assert, assertThrows } from './assert.js';
 import { Alpha, Beta, Wrapper } from './ambiguous-union.pmsg.js';
 import { test } from 'node:test';
 
@@ -26,34 +26,9 @@ export default function runAmbiguousUnionTests() {
   );
 
   const serialized = ':{union:{name:Alpha},list:[{name:One},{name:Two}],itemSet:S[{name:Three}],map:M[[key,{name:Four}]]}';
-  const decoded = Wrapper.deserialize(serialized);
-
-  assert(
-    decoded.union instanceof Alpha,
-    `untagged union should match first type (Alpha). Got: ${decoded.union?.constructor?.name}`
-  );
-  assert(
-    !(decoded.union instanceof Beta),
-    'untagged union should not match Beta when Alpha matches first'
-  );
-
-  const listValues = decoded.list ? [...decoded.list] : [];
-  assert(listValues.length === 2, 'list should contain two items');
-  assert(
-    listValues.every((value) => value instanceof Alpha),
-    'untagged list elements should match Alpha (first union type)'
-  );
-
-  const setValues = decoded.itemSet ? [...decoded.itemSet.values()] : [];
-  assert(setValues.length === 1, 'set should contain one item');
-  assert(
-    setValues.every((value) => value instanceof Alpha),
-    'untagged set elements should match Alpha (first union type)'
-  );
-
-  assert(
-    decoded.map?.get('key') instanceof Alpha,
-    `untagged map values should match Alpha (first union type). Got: ${decoded.map?.get('key')?.constructor?.name}`
+  assertThrows(
+    () => Wrapper.deserialize(serialized),
+    'untagged unions should throw when multiple message types exist.'
   );
 }
 

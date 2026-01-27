@@ -205,36 +205,6 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     this.#union = (props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (Alpha.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Alpha(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Beta.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Beta(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.union) : new Alpha()) as Alpha | Beta;
     this.#list = props ? (props.list === undefined || props.list === null ? props.list : props.list as object instanceof ImmutableArray ? props.list : new ImmutableArray(props.list as Iterable<unknown>)) as ImmutableArray<(Alpha | Beta)> : undefined;
@@ -311,31 +281,6 @@ export class Wrapper extends Message<Wrapper.Data> {
         }
       }
     }
-    if (!isTaggedMessageData(unionValue) && typeof unionValue === "object" && unionValue !== null) {
-      let unionUnionValueMatched = false;
-      if (!unionUnionValueMatched) {
-        if (unionValue as object instanceof Alpha) {
-          unionUnionValue = unionValue as any;
-          unionUnionValueMatched = true;
-        } else {
-          try {
-            unionUnionValue = new Alpha(Alpha.prototype.$fromEntries(unionValue as Record<string, unknown>, options), options);
-            unionUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!unionUnionValueMatched) {
-        if (unionValue as object instanceof Beta) {
-          unionUnionValue = unionValue as any;
-          unionUnionValueMatched = true;
-        } else {
-          try {
-            unionUnionValue = new Beta(Beta.prototype.$fromEntries(unionValue as Record<string, unknown>, options), options);
-            unionUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-    }
     if (!(Alpha.isInstance(unionUnionValue) || Beta.isInstance(unionUnionValue))) throw new Error("Invalid value for property \"union\".");
     props.union = unionUnionValue;
     const listValue = entries["list"];
@@ -378,31 +323,6 @@ export class Wrapper extends Message<Wrapper.Data> {
             unionValue = Beta.fromCompact(Beta.$compactTag && value.startsWith(Beta.$compactTag) ? value.slice(Beta.$compactTag.length) : value, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"list element\" (Beta).");
-          }
-        }
-      }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Alpha) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Alpha(Alpha.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Beta) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Beta(Beta.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
           }
         }
       }
@@ -453,31 +373,6 @@ export class Wrapper extends Message<Wrapper.Data> {
           }
         }
       }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Alpha) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Alpha(Alpha.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Beta) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Beta(Beta.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-      }
       return unionValue;
     })(element)));
     if (itemSetSetValueConverted !== undefined && !(itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set)) throw new Error("Invalid value for property \"itemSet\".");
@@ -522,31 +417,6 @@ export class Wrapper extends Message<Wrapper.Data> {
             unionValue = Beta.fromCompact(Beta.$compactTag && value.startsWith(Beta.$compactTag) ? value.slice(Beta.$compactTag.length) : value, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"map value\" (Beta).");
-          }
-        }
-      }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Alpha) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Alpha(Alpha.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Beta) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Beta(Beta.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
           }
         }
       }

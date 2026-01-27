@@ -1,4 +1,4 @@
-import { assert } from './assert.js';
+import { assert, assertThrows } from './assert.js';
 import { Wrapper, Wrapper_Payload_Union1 } from './nested-types.pmsg.js';
 import { ImmutableDate } from '../runtime/common/time/date.js';
 import { test } from 'node:test';
@@ -45,12 +45,11 @@ export default function runNestedTypesTest() {
   );
   assert(p3.d.getTime() === date.getTime(), 'Nested Date value matches');
 
-  // Case 3: Untagged object union should still coerce to implicit message type
+  // Case 3: Untagged object union should throw for ambiguous message unions
   const untagged = `:{payload:{d:D"${date.toISOString()}"}}`;
-  const w4 = Wrapper.deserialize(untagged);
-  assert(
-    w4.payload instanceof Wrapper_Payload_Union1,
-    `Untagged object union should coerce to Wrapper_Payload_Union1. Got: ${w4.payload?.constructor?.name}`
+  assertThrows(
+    () => Wrapper.deserialize(untagged),
+    'Untagged object union should throw when multiple message types exist.'
   );
 }
 

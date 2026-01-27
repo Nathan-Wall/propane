@@ -1092,36 +1092,6 @@ export class Unions extends Message<Unions.Data> {
     this.#email = (props ? props.email : undefined) as Email | null;
     this.#metadata = (props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (Unions_Metadata_Union1.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Unions_Metadata_Union1(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Unions_Metadata_Union2.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Unions_Metadata_Union2(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.metadata) : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
     this.#items = props ? (props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
@@ -1215,31 +1185,6 @@ export class Unions extends Message<Unions.Data> {
         }
       }
     }
-    if (!isTaggedMessageData(metadataValue) && typeof metadataValue === "object" && metadataValue !== null) {
-      let metadataUnionValueMatched = false;
-      if (!metadataUnionValueMatched) {
-        if (metadataValue as object instanceof Unions_Metadata_Union1) {
-          metadataUnionValue = metadataValue as any;
-          metadataUnionValueMatched = true;
-        } else {
-          try {
-            metadataUnionValue = new Unions_Metadata_Union1(Unions_Metadata_Union1.prototype.$fromEntries(metadataValue as Record<string, unknown>, options), options);
-            metadataUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!metadataUnionValueMatched) {
-        if (metadataValue as object instanceof Unions_Metadata_Union2) {
-          metadataUnionValue = metadataValue as any;
-          metadataUnionValueMatched = true;
-        } else {
-          try {
-            metadataUnionValue = new Unions_Metadata_Union2(Unions_Metadata_Union2.prototype.$fromEntries(metadataValue as Record<string, unknown>, options), options);
-            metadataUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-    }
     if (!(Unions_Metadata_Union1.isInstance(metadataUnionValue) || Unions_Metadata_Union2.isInstance(metadataUnionValue))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataUnionValue;
     const itemsValue = entries["items"];
@@ -1282,31 +1227,6 @@ export class Unions extends Message<Unions.Data> {
             unionValue = Unions_Items_Item_Union2.fromCompact(Unions_Items_Item_Union2.$compactTag && value.startsWith(Unions_Items_Item_Union2.$compactTag) ? value.slice(Unions_Items_Item_Union2.$compactTag.length) : value, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"items element\" (Unions_Items_Item_Union2).");
-          }
-        }
-      }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_Items_Item_Union1) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_Items_Item_Union1(Unions_Items_Item_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_Items_Item_Union2) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_Items_Item_Union2(Unions_Items_Item_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
           }
         }
       }
@@ -1357,31 +1277,6 @@ export class Unions extends Message<Unions.Data> {
           }
         }
       }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_ItemSet_Item_Union1) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_ItemSet_Item_Union1(Unions_ItemSet_Item_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_ItemSet_Item_Union2) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_ItemSet_Item_Union2(Unions_ItemSet_Item_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-      }
       return unionValue;
     })(element)));
     if (itemSetSetValueConverted !== undefined && !(itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set)) throw new Error("Invalid value for property \"itemSet\".");
@@ -1426,31 +1321,6 @@ export class Unions extends Message<Unions.Data> {
             unionValue = Unions_ItemMap_Value_Union2.fromCompact(Unions_ItemMap_Value_Union2.$compactTag && value.startsWith(Unions_ItemMap_Value_Union2.$compactTag) ? value.slice(Unions_ItemMap_Value_Union2.$compactTag.length) : value, options);
           } else {
             throw new Error("Invalid compact tagged value for property \"itemMap value\" (Unions_ItemMap_Value_Union2).");
-          }
-        }
-      }
-      if (!isTaggedMessageData(value) && typeof value === "object" && value !== null) {
-        let unionValueMatched = false;
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_ItemMap_Value_Union1) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_ItemMap_Value_Union1(Unions_ItemMap_Value_Union1.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
-          }
-        }
-        if (!unionValueMatched) {
-          if (value as object instanceof Unions_ItemMap_Value_Union2) {
-            unionValue = value as any;
-            unionValueMatched = true;
-          } else {
-            try {
-              unionValue = new Unions_ItemMap_Value_Union2(Unions_ItemMap_Value_Union2.prototype.$fromEntries(value as Record<string, unknown>, options), options);
-              unionValueMatched = true;
-            } catch (e) {}
           }
         }
       }

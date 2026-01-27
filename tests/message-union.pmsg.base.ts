@@ -247,70 +247,10 @@ export class PetOwner extends Message<PetOwner.Data> {
     this.#ownerName = (props ? props.ownerName : "") as string;
     this.#pet = (props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (Cat.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Cat(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Dog.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Dog(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.pet) : new Cat()) as Cat | Dog;
     this.#optionalPet = (props ? (value => {
       let result = value as any;
-      const isMessage = Message.isMessage(value);
-      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        let matched = false;
-        if (!matched) {
-          if (Cat.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Cat(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-        if (!matched) {
-          if (Dog.isInstance(value)) {
-            result = value as any;
-            matched = true;
-          } else {
-            if (!isMessage) {
-              try {
-                result = new Dog(value as any, options);
-                matched = true;
-              } catch (e) {}
-            }
-          }
-        }
-      }
       return result;
     })(props.optionalPet) : undefined) as Cat | Dog;
     if (!props) PetOwner.EMPTY = this;
@@ -382,31 +322,6 @@ export class PetOwner extends Message<PetOwner.Data> {
         }
       }
     }
-    if (!isTaggedMessageData(petValue) && typeof petValue === "object" && petValue !== null) {
-      let petUnionValueMatched = false;
-      if (!petUnionValueMatched) {
-        if (petValue as object instanceof Cat) {
-          petUnionValue = petValue as any;
-          petUnionValueMatched = true;
-        } else {
-          try {
-            petUnionValue = new Cat(Cat.prototype.$fromEntries(petValue as Record<string, unknown>, options), options);
-            petUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!petUnionValueMatched) {
-        if (petValue as object instanceof Dog) {
-          petUnionValue = petValue as any;
-          petUnionValueMatched = true;
-        } else {
-          try {
-            petUnionValue = new Dog(Dog.prototype.$fromEntries(petValue as Record<string, unknown>, options), options);
-            petUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-    }
     if (!(Cat.isInstance(petUnionValue) || Dog.isInstance(petUnionValue))) throw new Error("Invalid value for property \"pet\".");
     props.pet = petUnionValue;
     const optionalPetValue = entries["3"] === undefined ? entries["optionalPet"] : entries["3"];
@@ -447,31 +362,6 @@ export class PetOwner extends Message<PetOwner.Data> {
           optionalPetUnionValue = Dog.fromCompact(Dog.$compactTag && optionalPetNormalized.startsWith(Dog.$compactTag) ? optionalPetNormalized.slice(Dog.$compactTag.length) : optionalPetNormalized, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"optionalPet\" (Dog).");
-        }
-      }
-    }
-    if (optionalPetNormalized !== undefined && !isTaggedMessageData(optionalPetNormalized) && typeof optionalPetNormalized === "object" && optionalPetNormalized !== null) {
-      let optionalPetUnionValueMatched = false;
-      if (!optionalPetUnionValueMatched) {
-        if (optionalPetNormalized as object instanceof Cat) {
-          optionalPetUnionValue = optionalPetNormalized as any;
-          optionalPetUnionValueMatched = true;
-        } else {
-          try {
-            optionalPetUnionValue = new Cat(Cat.prototype.$fromEntries(optionalPetNormalized as Record<string, unknown>, options), options);
-            optionalPetUnionValueMatched = true;
-          } catch (e) {}
-        }
-      }
-      if (!optionalPetUnionValueMatched) {
-        if (optionalPetNormalized as object instanceof Dog) {
-          optionalPetUnionValue = optionalPetNormalized as any;
-          optionalPetUnionValueMatched = true;
-        } else {
-          try {
-            optionalPetUnionValue = new Dog(Dog.prototype.$fromEntries(optionalPetNormalized as Record<string, unknown>, options), options);
-            optionalPetUnionValueMatched = true;
-          } catch (e) {}
         }
       }
     }

@@ -30,10 +30,8 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
             matched = true;
           } else {
             if (!isMessage) {
-              try {
-                result = new Flag(value as any, options);
-                matched = true;
-              } catch (e) {}
+              result = new Flag(value as any, options);
+              matched = true;
             }
           }
         }
@@ -88,10 +86,8 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
           valueUnionValue = valueValue as any;
           valueUnionValueMatched = true;
         } else {
-          try {
-            valueUnionValue = new Flag(Flag.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
-            valueUnionValueMatched = true;
-          } catch (e) {}
+          valueUnionValue = new Flag(Flag.prototype.$fromEntries(valueValue as Record<string, unknown>, options), options);
+          valueUnionValueMatched = true;
         }
       }
     }
