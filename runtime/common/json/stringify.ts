@@ -13,14 +13,6 @@ export function normalizeForJson(value: unknown): unknown {
     return `${value.toString()}n`;
   }
 
-  if (value instanceof Date || isImmutableDate(value)) {
-    return value.toJSON();
-  }
-
-  if (isUrl(value)) {
-    return value.toString();
-  }
-
   if (
     value
     && typeof value === 'object'
@@ -75,27 +67,6 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   return value;
-}
-
-function isUrl(value: unknown): value is URL | { toString(): string } {
-  if (value instanceof URL) {
-    return true;
-  }
-  return (
-    !!value
-    && typeof value === 'object'
-    && (value as { $typeName?: string }).$typeName === 'ImmutableUrl'
-    && typeof (value as { toString?: unknown }).toString === 'function'
-  );
-}
-
-function isImmutableDate(value: unknown): value is { toJSON: () => string } {
-  return (
-    !!value
-    && typeof value === 'object'
-    && (value as { $typeName?: string }).$typeName === 'ImmutableDate'
-    && typeof (value as { toJSON?: unknown }).toJSON === 'function'
-  );
 }
 
 function isImmutableMapLike(
