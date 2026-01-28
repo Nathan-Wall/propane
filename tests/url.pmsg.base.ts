@@ -83,7 +83,6 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       }
       return result;
     })(primaryValue);
-    if (!(primaryMessageValue as object instanceof URL || primaryMessageValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"primary\".");
     props.primary = primaryMessageValue as ImmutableUrl | URL;
     const secondaryValue = entries["3"] === undefined ? entries["secondary"] : entries["3"];
     const secondaryNormalized = secondaryValue === null ? undefined : secondaryValue;
@@ -119,13 +118,12 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       }
       return result;
     })(secondaryNormalized);
-    if (secondaryMessageValue !== undefined && !(secondaryMessageValue as object instanceof URL || secondaryMessageValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"secondary\".");
     props.secondary = secondaryMessageValue as ImmutableUrl | URL;
     const linksValue = entries["4"] === undefined ? entries["links"] : entries["4"];
     if (linksValue === undefined) throw new Error("Missing required property \"links\".");
     const linksArrayValue = linksValue === undefined || linksValue === null ? new ImmutableArray() : linksValue as object instanceof ImmutableArray ? linksValue : new ImmutableArray(linksValue as Iterable<unknown>);
     const linksArrayValueConverted = linksArrayValue === undefined || linksArrayValue === null ? linksArrayValue : (linksArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ImmutableUrl.$compact === true ? ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && element.startsWith(ImmutableUrl.$compactTag) ? element.slice(ImmutableUrl.$compactTag.length) : element, options) as any : element);
-    if (!((linksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(linksArrayValueConverted)) && [...(linksArrayValueConverted as Iterable<unknown>)].every(element => element as object instanceof URL || element as object instanceof ImmutableUrl))) throw new Error("Invalid value for property \"links\".");
+    if (!(linksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(linksArrayValueConverted))) throw new Error("Invalid value for property \"links\".");
     props.links = linksArrayValueConverted as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>;
     return props as UrlMessage.Data;
   }

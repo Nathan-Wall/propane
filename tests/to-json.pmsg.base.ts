@@ -56,7 +56,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
     const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(imapValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? v : ImmutableDate.from(v as ImmutableDate.Value)]));
     const imapMapValueConverted = imapMapValue === undefined || imapMapValue === null ? imapMapValue : new ImmutableMap([...(imapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && v.startsWith(ImmutableDate.$compactTag) ? v.slice(ImmutableDate.$compactTag.length) : v, options) as any : v]));
-    if (!((imapMapValueConverted as object instanceof ImmutableMap || imapMapValueConverted as object instanceof Map) && [...(imapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (mapValue as object instanceof Date || mapValue as object instanceof ImmutableDate)))) throw new Error("Invalid value for property \"imap\".");
+    if (!((imapMapValueConverted as object instanceof ImmutableMap || imapMapValueConverted as object instanceof Map) && [...(imapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValueConverted as Map<string, Date> | Iterable<[string, Date]>;
     return props as ToJson_Nested.Data;
   }
@@ -579,7 +579,6 @@ export class ToJson extends Message<ToJson.Data> {
       }
       return result;
     })(dateValue);
-    if (!(dateMessageValue as object instanceof Date || dateMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"date\".");
     props.date = dateMessageValue as ImmutableDate | Date;
     const optionalValue = entries["5"] === undefined ? entries["optional"] : entries["5"];
     const optionalNormalized = optionalValue === null ? undefined : optionalValue;

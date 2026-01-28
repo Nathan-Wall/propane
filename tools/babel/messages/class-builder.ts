@@ -24,8 +24,6 @@ import type { MapConversionInfo } from './normalizers.js';
 import {
   getTypeName,
   isArrayTypeNode,
-  isArrayBufferReference,
-  isImmutableArrayBufferReference,
   isMapReference,
 } from './type-guards.js';
 import type { TypeRegistry } from '@/types/src/registry.js';
@@ -70,6 +68,247 @@ function buildInstanceofCheck(
   return t.binaryExpression('instanceof', castValueId, t.identifier(className));
 }
 
+function buildUnionMessageInstanceCheck(
+  valueExpr: t.Expression,
+  messageTypes: string[]
+): t.Expression | null {
+  if (!messageTypes.length) {
+    return null;
+  }
+  return messageTypes
+    .map((messageType) =>
+      t.callExpression(
+        t.memberExpression(t.identifier(messageType), t.identifier('isInstance')),
+        [t.cloneNode(valueExpr)]
+      )
+    )
+    .reduce<t.Expression | null>(
+      (acc, expr) => acc ? t.logicalExpression('||', acc, expr) : expr,
+      null
+    );
+}
+
+function stripMessageTypesFromUnion(
+  typeNode: t.TSType | null,
+  messageTypeNames: string[]
+): t.TSType | null {
+  const unwrapped = unwrapParenthesizedType(typeNode);
+  if (!unwrapped) {
+    return null;
+  }
+  if (t.isTSUnionType(unwrapped)) {
+    const filtered = unwrapped.types
+      .map((member) => stripMessageTypesFromUnion(member, messageTypeNames))
+      .filter((member): member is t.TSType => !!member);
+    if (filtered.length === 0) {
+      return null;
+    }
+    if (filtered.length === 1) {
+      return filtered[0]!;
+    }
+    return t.tsUnionType(filtered);
+  }
+  if (t.isTSTypeLiteral(unwrapped)) {
+    return null;
+  }
+  if (t.isTSTypeReference(unwrapped)) {
+    if (t.isIdentifier(unwrapped.typeName)) {
+      if (messageTypeNames.includes(unwrapped.typeName.name)) {
+        return null;
+      }
+    }
+  }
+  return unwrapped;
+}
+
+function combineChecks(
+  a: t.Expression | null,
+  b: t.Expression | null
+): t.Expression | null {
+  if (a && b) {
+    return t.logicalExpression('||', a, b);
+  }
+  return a ?? b;
+}
+
+function buildUnionMessageValueCheck(
+  valueExpr: t.Expression,
+  typeNode: t.TSType | null,
+  unionMessageTypes: string[]
+): t.Expression | null {
+  const messageCheck = buildUnionMessageInstanceCheck(valueExpr, unionMessageTypes);
+  const nonMessageType = stripMessageTypesFromUnion(typeNode, unionMessageTypes);
+  const nonMessageCheck = nonMessageType
+    ? buildRuntimeTypeCheckExpression(nonMessageType, valueExpr)
+    : null;
+  return combineChecks(nonMessageCheck, messageCheck);
+}
+
+function buildArrayCheckWithElementCheck(
+  valueExpr: t.Expression,
+  elementCheck: t.Expression | null
+): t.Expression {
+  const immutableInstanceCheck = buildInstanceofCheck(valueExpr, 'ImmutableArray');
+  const arrayInstanceCheck = t.callExpression(
+    t.memberExpression(
+      t.identifier('Array'),
+      t.identifier('isArray')
+    ),
+    [t.cloneNode(valueExpr)]
+  );
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, arrayInstanceCheck);
+
+  if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+    return baseCheck;
+  }
+
+  const valueAsIterable = t.tsAsExpression(
+    t.cloneNode(valueExpr),
+    t.tsTypeReference(
+      t.identifier('Iterable'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    )
+  );
+  const elementId = t.identifier('element');
+  return t.logicalExpression(
+    '&&',
+    baseCheck,
+    t.callExpression(
+      t.memberExpression(
+        t.arrayExpression([t.spreadElement(valueAsIterable)]),
+        t.identifier('every')
+      ),
+      [t.arrowFunctionExpression([elementId], elementCheck)]
+    )
+  );
+}
+
+function buildSetCheckWithElementCheck(
+  valueExpr: t.Expression,
+  elementCheck: t.Expression | null
+): t.Expression {
+  const immutableInstanceCheck = buildInstanceofCheck(valueExpr, 'ImmutableSet');
+  const setInstanceCheck = buildInstanceofCheck(valueExpr, 'Set');
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, setInstanceCheck);
+
+  if (!elementCheck || t.isBooleanLiteral(elementCheck, { value: true })) {
+    return baseCheck;
+  }
+
+  const valueAsIterable = t.tsAsExpression(
+    t.cloneNode(valueExpr),
+    t.tsTypeReference(
+      t.identifier('Iterable'),
+      t.tsTypeParameterInstantiation([t.tsUnknownKeyword()])
+    )
+  );
+  const elementId = t.identifier('setValue');
+  return t.logicalExpression(
+    '&&',
+    baseCheck,
+    t.callExpression(
+      t.memberExpression(
+        t.arrayExpression([t.spreadElement(valueAsIterable)]),
+        t.identifier('every')
+      ),
+      [t.arrowFunctionExpression([elementId], elementCheck)]
+    )
+  );
+}
+
+function buildMapCheckWithKeyValueCheck(
+  valueExpr: t.Expression,
+  keyCheck: t.Expression | null,
+  valueCheck: t.Expression | null
+): t.Expression {
+  const immutableInstanceCheck = buildInstanceofCheck(valueExpr, 'ImmutableMap');
+  const mapInstanceCheck = buildInstanceofCheck(valueExpr, 'Map');
+  const baseCheck = t.logicalExpression('||', immutableInstanceCheck, mapInstanceCheck);
+
+  let predicate: t.Expression | null = null;
+  if (keyCheck) {
+    predicate = keyCheck;
+  }
+  if (valueCheck) {
+    predicate = predicate
+      ? t.logicalExpression('&&', predicate, valueCheck)
+      : valueCheck;
+  }
+
+  if (!predicate) {
+    return baseCheck;
+  }
+
+  const valueAsMap = t.tsAsExpression(
+    t.cloneNode(valueExpr),
+    t.tsTypeReference(
+      t.identifier('ReadonlyMap'),
+      t.tsTypeParameterInstantiation([
+        t.tsUnknownKeyword(), t.tsUnknownKeyword()
+      ])
+    )
+  );
+
+  const keyId = t.identifier('mapKey');
+  const valueId = t.identifier('mapValue');
+  const entriesArray = t.arrayExpression([
+    t.spreadElement(
+      t.callExpression(
+        t.memberExpression(valueAsMap, t.identifier('entries')),
+        []
+      )
+    ),
+  ]);
+  const everyCall = t.callExpression(
+    t.memberExpression(entriesArray, t.identifier('every')),
+    [
+      t.arrowFunctionExpression(
+        [t.arrayPattern([keyId, valueId])],
+        predicate
+      ),
+    ]
+  );
+
+  return t.logicalExpression('&&', baseCheck, everyCall);
+}
+
+function wrapWithValidation(
+  valueExpr: t.Expression,
+  checkExpr: t.Expression | null,
+  propName: string,
+  isOptional: boolean
+): t.Expression {
+  if (!checkExpr) {
+    return valueExpr;
+  }
+  const valueId = t.identifier('value');
+  const skipValidationCheck = t.unaryExpression(
+    '!',
+    t.optionalMemberExpression(
+      t.identifier('options'),
+      t.identifier('skipValidation'),
+      false,
+      true
+    )
+  );
+  const undefinedCheck = isOptional
+    ? t.binaryExpression('!==', t.cloneNode(valueId), t.identifier('undefined'))
+    : t.booleanLiteral(true);
+  const shouldValidate = t.logicalExpression('&&', skipValidationCheck, undefinedCheck);
+  const failCheck = t.unaryExpression('!', t.cloneNode(checkExpr));
+  const guard = t.ifStatement(
+    t.logicalExpression('&&', shouldValidate, failCheck),
+    buildErrorThrow(`Invalid value for property "${propName}".`)
+  );
+  return t.callExpression(
+    t.arrowFunctionExpression(
+      [valueId],
+      t.blockStatement([guard, t.returnStatement(t.cloneNode(valueId))])
+    ),
+    [t.cloneNode(valueExpr)]
+  );
+}
+
 function buildWrapperRuntimeTypeCheckExpression(
   typeNode: t.TSType | null,
   valueId: t.Expression
@@ -81,12 +320,6 @@ function buildWrapperRuntimeTypeCheckExpression(
     return buildWrapperRuntimeTypeCheckExpression(typeNode.typeAnnotation, valueId);
   }
   if (t.isTSTypeReference(typeNode)) {
-    if (
-      isArrayBufferReference(typeNode)
-      || isImmutableArrayBufferReference(typeNode)
-    ) {
-      return buildInstanceofCheck(valueId, 'ArrayBuffer');
-    }
   }
   return buildRuntimeTypeCheckExpression(typeNode, valueId);
 }
@@ -2502,6 +2735,93 @@ export function buildClassFromProperties(
       );
     }
 
+    if (!prop.isWrapperValue && prop.unionMessageTypes.length > 1) {
+      const unionCheck = buildUnionMessageValueCheck(
+        t.identifier('value'),
+        prop.typeAnnotation,
+        prop.unionMessageTypes
+      );
+      valueExpr = wrapWithValidation(
+        valueExpr,
+        unionCheck,
+        prop.name,
+        Boolean(prop.optional)
+      );
+    }
+
+    if (!prop.isWrapperValue && prop.isArray && prop.arrayElementUnionMessageTypes.length > 1) {
+      const elementCheck = buildUnionMessageValueCheck(
+        t.identifier('element'),
+        prop.arrayElementType ?? t.tsUnknownKeyword(),
+        prop.arrayElementUnionMessageTypes
+      );
+      const arrayCheck = buildArrayCheckWithElementCheck(
+        t.identifier('value'),
+        elementCheck
+      );
+      valueExpr = wrapWithValidation(
+        valueExpr,
+        arrayCheck,
+        prop.name,
+        Boolean(prop.optional)
+      );
+    }
+
+    if (!prop.isWrapperValue && prop.isSet && prop.setElementUnionMessageTypes.length > 1) {
+      const elementCheck = buildUnionMessageValueCheck(
+        t.identifier('setValue'),
+        prop.setElementType ?? t.tsUnknownKeyword(),
+        prop.setElementUnionMessageTypes
+      );
+      const setCheck = buildSetCheckWithElementCheck(
+        t.identifier('value'),
+        elementCheck
+      );
+      valueExpr = wrapWithValidation(
+        valueExpr,
+        setCheck,
+        prop.name,
+        Boolean(prop.optional)
+      );
+    }
+
+    if (!prop.isWrapperValue
+      && prop.isMap
+      && (prop.mapKeyUnionMessageTypes.length > 1 || prop.mapValueUnionMessageTypes.length > 1)
+    ) {
+      const keyCheck = prop.mapKeyUnionMessageTypes.length > 1
+        ? buildUnionMessageValueCheck(
+          t.identifier('mapKey'),
+          prop.mapKeyType ?? t.tsUnknownKeyword(),
+          prop.mapKeyUnionMessageTypes
+        )
+        : buildRuntimeTypeCheckExpression(
+          prop.mapKeyType ?? t.tsUnknownKeyword(),
+          t.identifier('mapKey')
+        );
+      const valueCheck = prop.mapValueUnionMessageTypes.length > 1
+        ? buildUnionMessageValueCheck(
+          t.identifier('mapValue'),
+          prop.mapValueType ?? t.tsUnknownKeyword(),
+          prop.mapValueUnionMessageTypes
+        )
+        : buildRuntimeTypeCheckExpression(
+          prop.mapValueType ?? t.tsUnknownKeyword(),
+          t.identifier('mapValue')
+        );
+      const mapCheck = buildMapCheckWithKeyValueCheck(
+        t.identifier('value'),
+        keyCheck,
+        valueCheck
+      );
+      valueExpr = wrapWithValidation(
+        valueExpr,
+        mapCheck,
+        prop.name,
+        Boolean(prop.optional)
+      );
+    }
+
     // Add type cast for immutable collection types to match field type
     // This is needed because TypeScript can't infer the element type through instanceof checks
     if (!prop.isWrapperValue && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType)) {
@@ -3762,23 +4082,76 @@ function buildFieldValidationStatements(
     );
 
   if (prop.unionMessageTypes.length > 0) {
-    const messageChecks = prop.unionMessageTypes.map((messageType) =>
-      t.callExpression(
-        t.memberExpression(t.identifier(messageType), t.identifier('isInstance')),
-        [t.cloneNode(checkedValueId as t.Expression)]
-      )
+    const messageCheckExpr = buildUnionMessageInstanceCheck(
+      checkedValueId as t.Expression,
+      prop.unionMessageTypes
     );
-    if (messageChecks.length > 0) {
-      const messageCheckExpr = messageChecks.reduce<t.Expression | null>(
-        (acc, expr) => acc ? t.logicalExpression('||', acc, expr) : expr,
-        null
+    if (prop.unionMessageTypes.length > 1) {
+      const nonMessageType = stripMessageTypesFromUnion(
+        prop.typeAnnotation,
+        prop.unionMessageTypes
       );
-      if (messageCheckExpr) {
-        typeCheckExpr = typeCheckExpr
-          ? t.logicalExpression('||', typeCheckExpr, messageCheckExpr)
-          : messageCheckExpr;
-      }
+      const nonMessageCheck = nonMessageType
+        ? buildRuntimeTypeCheckExpression(nonMessageType, checkedValueId as t.Expression)
+        : null;
+      typeCheckExpr = combineChecks(nonMessageCheck, messageCheckExpr);
+    } else if (messageCheckExpr) {
+      typeCheckExpr = typeCheckExpr
+        ? t.logicalExpression('||', typeCheckExpr, messageCheckExpr)
+        : messageCheckExpr;
     }
+  }
+
+  if (prop.isArray && prop.arrayElementUnionMessageTypes.length > 1) {
+    const elementCheck = buildUnionMessageValueCheck(
+      t.identifier('element'),
+      prop.arrayElementType ?? t.tsUnknownKeyword(),
+      prop.arrayElementUnionMessageTypes
+    );
+    typeCheckExpr = buildArrayCheckWithElementCheck(
+      checkedValueId as t.Expression,
+      elementCheck
+    );
+  }
+
+  if (prop.isSet && prop.setElementUnionMessageTypes.length > 1) {
+    const elementCheck = buildUnionMessageValueCheck(
+      t.identifier('setValue'),
+      prop.setElementType ?? t.tsUnknownKeyword(),
+      prop.setElementUnionMessageTypes
+    );
+    typeCheckExpr = buildSetCheckWithElementCheck(
+      checkedValueId as t.Expression,
+      elementCheck
+    );
+  }
+
+  if (prop.isMap && (prop.mapKeyUnionMessageTypes.length > 1 || prop.mapValueUnionMessageTypes.length > 1)) {
+    const keyCheck = prop.mapKeyUnionMessageTypes.length > 1
+      ? buildUnionMessageValueCheck(
+        t.identifier('mapKey'),
+        prop.mapKeyType ?? t.tsUnknownKeyword(),
+        prop.mapKeyUnionMessageTypes
+      )
+      : buildRuntimeTypeCheckExpression(
+        prop.mapKeyType ?? t.tsUnknownKeyword(),
+        t.identifier('mapKey')
+      );
+    const valueCheck = prop.mapValueUnionMessageTypes.length > 1
+      ? buildUnionMessageValueCheck(
+        t.identifier('mapValue'),
+        prop.mapValueType ?? t.tsUnknownKeyword(),
+        prop.mapValueUnionMessageTypes
+      )
+      : buildRuntimeTypeCheckExpression(
+        prop.mapValueType ?? t.tsUnknownKeyword(),
+        t.identifier('mapValue')
+      );
+    typeCheckExpr = buildMapCheckWithKeyValueCheck(
+      checkedValueId as t.Expression,
+      keyCheck,
+      valueCheck
+    );
   }
 
   if (typeCheckExpr && !t.isBooleanLiteral(typeCheckExpr, { value: true })) {

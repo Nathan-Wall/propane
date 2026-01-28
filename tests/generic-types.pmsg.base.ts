@@ -802,7 +802,6 @@ export class Timestamped<T extends {
       }
       return result;
     })(timestampValue);
-    if (!(timestampMessageValue as object instanceof Date || timestampMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
     props.timestamp = timestampMessageValue as ImmutableDate | Date;
     const labelValue = entries["3"] === undefined ? entries["label"] : entries["3"];
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");
@@ -934,7 +933,6 @@ export class Timestamped<T extends {
       }
       return result;
     })(timestampValue);
-    if (!(timestampMessageValue as object instanceof Date || timestampMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"timestamp\".");
     const timestamp = timestampMessageValue as ImmutableDate | Date;
     const labelValue = payload["3"] === undefined ? payload["label"] : payload["3"];
     if (labelValue === undefined) throw new Error("Missing required property \"label\".");

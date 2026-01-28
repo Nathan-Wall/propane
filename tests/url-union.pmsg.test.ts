@@ -1,4 +1,4 @@
-import { assert } from './assert.js';
+import { assert, assertThrows } from './assert.js';
 import { UrlUnion, UrlUnion_Value_Union1 } from './url-union.pmsg.js';
 import { ImmutableUrl } from '../runtime/common/web/url.js';
 import { test } from 'node:test';
@@ -6,7 +6,12 @@ import { test } from 'node:test';
 export default function runUrlUnionTests() {
   const url = new URL('https://example.com/path?x=1');
 
-  const direct = new UrlUnion({ value: url });
+  assertThrows(
+    () => new UrlUnion({ value: url }),
+    'URL union should reject raw URL when multiple message types exist.'
+  );
+
+  const direct = new UrlUnion({ value: new ImmutableUrl(url) });
   const directSerialized = direct.serialize();
   const expectedDirect = `:{value:U"${url.toString()}"}`;
   assert(

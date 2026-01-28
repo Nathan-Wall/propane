@@ -1,0 +1,6 @@
+import { Message } from '@propane/runtime';
+
+export type SingleMessageUnion = Message<{
+  dateOrString: Date | string;
+  urlOrNumber: URL | number;
+}>;

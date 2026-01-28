@@ -6,8 +6,12 @@ import { test } from 'node:test';
 export default function runNestedTypesTest() {
   const date = new Date('2025-11-25T12:00:00Z');
 
-  // Case 1: Top-level Date (Should work fine)
-  const w1 = new Wrapper({ payload: date });
+  // Case 1: Top-level Date should require explicit ImmutableDate in union
+  assertThrows(
+    () => new Wrapper({ payload: date }),
+    'Union Date branch should reject raw Date when multiple message types exist.'
+  );
+  const w1 = new Wrapper({ payload: new ImmutableDate(date) });
   const w1Serialized = w1.serialize();
   assert(
     w1Serialized === `:{payload:D\"${date.toISOString()}\"}`,

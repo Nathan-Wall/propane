@@ -204,12 +204,24 @@ export class Wrapper extends Message<Wrapper.Data> {
       this.#validate(props);
     }
     this.#union = (props ? (value => {
+      if (!options?.skipValidation && true && !(Alpha.isInstance(value) || Beta.isInstance(value))) throw new Error("Invalid value for property \"union\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.union) : new Alpha()) as Alpha | Beta;
-    this.#list = props ? (props.list === undefined || props.list === null ? props.list : props.list as object instanceof ImmutableArray ? props.list : new ImmutableArray(props.list as Iterable<unknown>)) as ImmutableArray<(Alpha | Beta)> : undefined;
-    this.#itemSet = props ? (props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Alpha | Beta> : undefined;
-    this.#map = props ? (props.map === undefined || props.map === null ? props.map : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Alpha | Beta> : undefined;
+    })(props.union)) : new Alpha()) as Alpha | Beta;
+    this.#list = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableArray || Array.isArray(value)) && [...(value as Iterable<unknown>)].every(element => Alpha.isInstance(element) || Beta.isInstance(element)))) throw new Error("Invalid value for property \"list\".");
+      return value;
+    })(props.list === undefined || props.list === null ? props.list : props.list as object instanceof ImmutableArray ? props.list : new ImmutableArray(props.list as Iterable<unknown>)) as ImmutableArray<(Alpha | Beta)> : undefined;
+    this.#itemSet = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableSet || value as object instanceof Set) && [...(value as Iterable<unknown>)].every(setValue => Alpha.isInstance(setValue) || Beta.isInstance(setValue)))) throw new Error("Invalid value for property \"itemSet\".");
+      return value;
+    })(props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Alpha | Beta> : undefined;
+    this.#map = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableMap || value as object instanceof Map) && [...(value as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (Alpha.isInstance(mapValue) || Beta.isInstance(mapValue))))) throw new Error("Invalid value for property \"map\".");
+      return value;
+    })(props.map === undefined || props.map === null ? props.map : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Alpha | Beta> : undefined;
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -328,7 +340,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       }
       return unionValue;
     })(element));
-    if (listArrayValueConverted !== undefined && !(listArrayValueConverted as object instanceof ImmutableArray || Array.isArray(listArrayValueConverted))) throw new Error("Invalid value for property \"list\".");
+    if (listArrayValueConverted !== undefined && !((listArrayValueConverted as object instanceof ImmutableArray || Array.isArray(listArrayValueConverted)) && [...(listArrayValueConverted as Iterable<unknown>)].every(element => Alpha.isInstance(element) || Beta.isInstance(element)))) throw new Error("Invalid value for property \"list\".");
     props.list = listArrayValueConverted as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>;
     const itemSetValue = entries["itemSet"];
     const itemSetNormalized = itemSetValue === null ? undefined : itemSetValue;
@@ -375,7 +387,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       }
       return unionValue;
     })(element)));
-    if (itemSetSetValueConverted !== undefined && !(itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set)) throw new Error("Invalid value for property \"itemSet\".");
+    if (itemSetSetValueConverted !== undefined && !((itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set) && [...(itemSetSetValueConverted as Iterable<unknown>)].every(setValue => Alpha.isInstance(setValue) || Beta.isInstance(setValue)))) throw new Error("Invalid value for property \"itemSet\".");
     props.itemSet = itemSetSetValueConverted as Set<Alpha | Beta> | Iterable<Alpha | Beta>;
     const mapValue = entries["map"];
     const mapNormalized = mapValue === null ? undefined : mapValue;
@@ -422,7 +434,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       }
       return unionValue;
     })(v)]));
-    if (mapMapValueConverted !== undefined && !((mapMapValueConverted as object instanceof ImmutableMap || mapMapValueConverted as object instanceof Map) && [...(mapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"map\".");
+    if (mapMapValueConverted !== undefined && !((mapMapValueConverted as object instanceof ImmutableMap || mapMapValueConverted as object instanceof Map) && [...(mapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (Alpha.isInstance(mapValue) || Beta.isInstance(mapValue))))) throw new Error("Invalid value for property \"map\".");
     props.map = mapMapValueConverted as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>;
     return props as Wrapper.Data;
   }

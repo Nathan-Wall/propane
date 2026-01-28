@@ -209,9 +209,12 @@ export class NumericUnion extends Message<NumericUnion.Data> {
       this.#validate(props);
     }
     this.#value = (props ? (value => {
+      if (!options?.skipValidation && true && !(Decimal.isInstance(value) || Rational.isInstance(value))) throw new Error("Invalid value for property \"value\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.value) : undefined) as Decimal<10, 2> | Rational;
+    })(props.value)) : undefined) as Decimal<10, 2> | Rational;
     if (!props) NumericUnion.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumericUnion.Data>[] {
@@ -268,7 +271,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
         }
       }
     }
-    if (!(Decimal.isInstance(valueUnionValue) && valueUnionValue.precision === 10 && valueUnionValue.scale === 2 || Rational.isInstance(valueUnionValue) || Decimal.isInstance(valueUnionValue) || Rational.isInstance(valueUnionValue))) throw new Error("Invalid value for property \"value\".");
+    if (!(Decimal.isInstance(valueUnionValue) || Rational.isInstance(valueUnionValue))) throw new Error("Invalid value for property \"value\".");
     props.value = valueUnionValue;
     return props as NumericUnion.Data;
   }

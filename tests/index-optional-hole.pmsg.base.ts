@@ -83,7 +83,6 @@ export class OptionalHole extends Message<OptionalHole.Data> {
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     const noteValue = entries["3"] === undefined ? entries["note"] : entries["3"];
     const noteNormalized = noteValue === null ? undefined : noteValue;

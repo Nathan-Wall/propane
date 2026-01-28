@@ -130,7 +130,6 @@ export class User extends Message<User.Data> {
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     const updatedValue = entries["updated"];
     if (updatedValue === undefined) throw new Error("Missing required property \"updated\".");
@@ -163,7 +162,6 @@ export class User extends Message<User.Data> {
       }
       return result;
     })(updatedValue);
-    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedMessageValue as ImmutableDate | Date;
     const activeValue = entries["active"];
     if (activeValue === undefined) throw new Error("Missing required property \"active\".");

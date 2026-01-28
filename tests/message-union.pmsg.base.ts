@@ -246,13 +246,19 @@ export class PetOwner extends Message<PetOwner.Data> {
     }
     this.#ownerName = (props ? props.ownerName : "") as string;
     this.#pet = (props ? (value => {
+      if (!options?.skipValidation && true && !(Cat.isInstance(value) || Dog.isInstance(value))) throw new Error("Invalid value for property \"pet\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.pet) : new Cat()) as Cat | Dog;
+    })(props.pet)) : new Cat()) as Cat | Dog;
     this.#optionalPet = (props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !(Cat.isInstance(value) || Dog.isInstance(value))) throw new Error("Invalid value for property \"optionalPet\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.optionalPet) : undefined) as Cat | Dog;
+    })(props.optionalPet)) : undefined) as Cat | Dog;
     if (!props) PetOwner.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<PetOwner.Data>[] {

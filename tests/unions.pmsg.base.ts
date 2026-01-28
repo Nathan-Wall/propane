@@ -62,7 +62,6 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_Metadata_Union1.Data;
   }
@@ -195,7 +194,6 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
       }
       return result;
     })(updatedValue);
-    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_Metadata_Union2.Data;
   }
@@ -328,7 +326,6 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_Items_Item_Union1.Data;
   }
@@ -461,7 +458,6 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
       }
       return result;
     })(updatedValue);
-    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_Items_Item_Union2.Data;
   }
@@ -594,7 +590,6 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_ItemSet_Item_Union1.Data;
   }
@@ -727,7 +722,6 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
       }
       return result;
     })(updatedValue);
-    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_ItemSet_Item_Union2.Data;
   }
@@ -860,7 +854,6 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
       }
       return result;
     })(createdValue);
-    if (!(createdMessageValue as object instanceof Date || createdMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"created\".");
     props.created = createdMessageValue as ImmutableDate | Date;
     return props as Unions_ItemMap_Value_Union1.Data;
   }
@@ -993,7 +986,6 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
       }
       return result;
     })(updatedValue);
-    if (!(updatedMessageValue as object instanceof Date || updatedMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"updated\".");
     props.updated = updatedMessageValue as ImmutableDate | Date;
     return props as Unions_ItemMap_Value_Union2.Data;
   }
@@ -1091,12 +1083,24 @@ export class Unions extends Message<Unions.Data> {
     this.#username = (props ? props.username : "") as string | null;
     this.#email = (props ? props.email : undefined) as Email | null;
     this.#metadata = (props ? (value => {
+      if (!options?.skipValidation && true && !(Unions_Metadata_Union1.isInstance(value) || Unions_Metadata_Union2.isInstance(value))) throw new Error("Invalid value for property \"metadata\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.metadata) : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
-    this.#items = props ? (props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
-    this.#itemSet = props ? (props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
-    this.#itemMap = props ? (props.itemMap === undefined || props.itemMap === null ? props.itemMap : props.itemMap as object instanceof ImmutableMap ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
+    })(props.metadata)) : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
+    this.#items = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableArray || Array.isArray(value)) && [...(value as Iterable<unknown>)].every(element => Unions_Items_Item_Union1.isInstance(element) || Unions_Items_Item_Union2.isInstance(element)))) throw new Error("Invalid value for property \"items\".");
+      return value;
+    })(props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
+    this.#itemSet = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableSet || value as object instanceof Set) && [...(value as Iterable<unknown>)].every(setValue => Unions_ItemSet_Item_Union1.isInstance(setValue) || Unions_ItemSet_Item_Union2.isInstance(setValue)))) throw new Error("Invalid value for property \"itemSet\".");
+      return value;
+    })(props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
+    this.#itemMap = props ? (value => {
+      if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableMap || value as object instanceof Map) && [...(value as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (Unions_ItemMap_Value_Union1.isInstance(mapValue) || Unions_ItemMap_Value_Union2.isInstance(mapValue))))) throw new Error("Invalid value for property \"itemMap\".");
+      return value;
+    })(props.itemMap === undefined || props.itemMap === null ? props.itemMap : props.itemMap as object instanceof ImmutableMap ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
     if (!props) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -1232,7 +1236,7 @@ export class Unions extends Message<Unions.Data> {
       }
       return unionValue;
     })(element));
-    if (itemsArrayValueConverted !== undefined && !(itemsArrayValueConverted as object instanceof ImmutableArray || Array.isArray(itemsArrayValueConverted))) throw new Error("Invalid value for property \"items\".");
+    if (itemsArrayValueConverted !== undefined && !((itemsArrayValueConverted as object instanceof ImmutableArray || Array.isArray(itemsArrayValueConverted)) && [...(itemsArrayValueConverted as Iterable<unknown>)].every(element => Unions_Items_Item_Union1.isInstance(element) || Unions_Items_Item_Union2.isInstance(element)))) throw new Error("Invalid value for property \"items\".");
     props.items = itemsArrayValueConverted as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>;
     const itemSetValue = entries["itemSet"];
     const itemSetNormalized = itemSetValue === null ? undefined : itemSetValue;
@@ -1279,7 +1283,7 @@ export class Unions extends Message<Unions.Data> {
       }
       return unionValue;
     })(element)));
-    if (itemSetSetValueConverted !== undefined && !(itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set)) throw new Error("Invalid value for property \"itemSet\".");
+    if (itemSetSetValueConverted !== undefined && !((itemSetSetValueConverted as object instanceof ImmutableSet || itemSetSetValueConverted as object instanceof Set) && [...(itemSetSetValueConverted as Iterable<unknown>)].every(setValue => Unions_ItemSet_Item_Union1.isInstance(setValue) || Unions_ItemSet_Item_Union2.isInstance(setValue)))) throw new Error("Invalid value for property \"itemSet\".");
     props.itemSet = itemSetSetValueConverted as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>;
     const itemMapValue = entries["itemMap"];
     const itemMapNormalized = itemMapValue === null ? undefined : itemMapValue;
@@ -1326,7 +1330,7 @@ export class Unions extends Message<Unions.Data> {
       }
       return unionValue;
     })(v)]));
-    if (itemMapMapValueConverted !== undefined && !((itemMapMapValueConverted as object instanceof ImmutableMap || itemMapMapValueConverted as object instanceof Map) && [...(itemMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"itemMap\".");
+    if (itemMapMapValueConverted !== undefined && !((itemMapMapValueConverted as object instanceof ImmutableMap || itemMapMapValueConverted as object instanceof Map) && [...(itemMapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (Unions_ItemMap_Value_Union1.isInstance(mapValue) || Unions_ItemMap_Value_Union2.isInstance(mapValue))))) throw new Error("Invalid value for property \"itemMap\".");
     props.itemMap = itemMapMapValueConverted as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>;
     return props as Unions.Data;
   }

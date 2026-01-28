@@ -3,18 +3,12 @@ import {
   getArrayElementType,
   getMapTypeArguments,
   getSetTypeArguments,
-  isArrayBufferReference,
   getDecimalTypeArgs,
   isDecimalReference,
   isBrandReference,
-  isDateReference,
-  isImmutableArrayBufferReference,
-  isImmutableDateReference,
-  isImmutableUrlReference,
   isMapReference,
   isRationalReference,
   isSetReference,
-  isUrlReference,
 } from './type-guards.js';
 import { wrapImmutableType } from './properties.js';
 
@@ -98,27 +92,6 @@ export function buildRuntimeTypeCheckExpression(
   }
 
   if (t.isTSTypeReference(typeNode)) {
-    if (
-      isDateReference(typeNode)
-      || isImmutableDateReference(typeNode)
-    ) {
-      return buildDateCheckExpression(valueId);
-    }
-
-    if (
-      isUrlReference(typeNode)
-      || isImmutableUrlReference(typeNode)
-    ) {
-      return buildUrlCheckExpression(valueId);
-    }
-
-    if (
-      isArrayBufferReference(typeNode)
-      || isImmutableArrayBufferReference(typeNode)
-    ) {
-      return buildArrayBufferCheckExpression(valueId);
-    }
-
     if (isDecimalReference(typeNode)) {
       const decimalCheck = t.callExpression(
         t.memberExpression(t.identifier('Decimal'), t.identifier('isInstance')),
@@ -197,35 +170,6 @@ export function typeofCheck(
     '===',
     t.unaryExpression('typeof', valueId),
     t.stringLiteral(type)
-  );
-}
-
-export function buildDateCheckExpression(
-  valueId: t.Expression
-): t.Expression {
-  const instanceOfDate = buildInstanceofCheck(valueId, 'Date');
-  const instanceOfImmutableDate = buildInstanceofCheck(valueId, 'ImmutableDate');
-
-  return t.logicalExpression('||', instanceOfDate, instanceOfImmutableDate);
-}
-
-export function buildUrlCheckExpression(valueId: t.Expression): t.Expression {
-  const instanceOfUrl = buildInstanceofCheck(valueId, 'URL');
-  const instanceOfImmutableUrl = buildInstanceofCheck(valueId, 'ImmutableUrl');
-
-  return t.logicalExpression('||', instanceOfUrl, instanceOfImmutableUrl);
-}
-
-export function buildArrayBufferCheckExpression(
-  valueId: t.Expression
-): t.Expression {
-  const instanceOfArrayBuffer = buildInstanceofCheck(valueId, 'ArrayBuffer');
-  const instanceOfImmutableArrayBuffer = buildInstanceofCheck(valueId, 'ImmutableArrayBuffer');
-
-  return t.logicalExpression(
-    '||',
-    instanceOfArrayBuffer,
-    instanceOfImmutableArrayBuffer
   );
 }
 

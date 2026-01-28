@@ -83,7 +83,6 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       }
       return result;
     })(dataValue);
-    if (!(dataMessageValue as object instanceof ArrayBuffer || dataMessageValue as object instanceof ImmutableArrayBuffer)) throw new Error("Invalid value for property \"data\".");
     props.data = dataMessageValue;
     const extraValue = entries["3"] === undefined ? entries["extra"] : entries["3"];
     const extraNormalized = extraValue === null ? undefined : extraValue;
@@ -119,13 +118,12 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       }
       return result;
     })(extraNormalized);
-    if (extraMessageValue !== undefined && !(extraMessageValue as object instanceof ArrayBuffer || extraMessageValue as object instanceof ImmutableArrayBuffer)) throw new Error("Invalid value for property \"extra\".");
     props.extra = extraMessageValue;
     const chunksValue = entries["4"] === undefined ? entries["chunks"] : entries["4"];
     if (chunksValue === undefined) throw new Error("Missing required property \"chunks\".");
     const chunksArrayValue = chunksValue === undefined || chunksValue === null ? new ImmutableArray() : chunksValue as object instanceof ImmutableArray ? chunksValue : new ImmutableArray(chunksValue as Iterable<unknown>);
     const chunksArrayValueConverted = chunksArrayValue === undefined || chunksArrayValue === null ? chunksArrayValue : (chunksArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && element.startsWith(ImmutableArrayBuffer.$compactTag) ? element.slice(ImmutableArrayBuffer.$compactTag.length) : element, options) as any : element);
-    if (!((chunksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(chunksArrayValueConverted)) && [...(chunksArrayValueConverted as Iterable<unknown>)].every(element => element as object instanceof ArrayBuffer || element as object instanceof ImmutableArrayBuffer))) throw new Error("Invalid value for property \"chunks\".");
+    if (!(chunksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(chunksArrayValueConverted))) throw new Error("Invalid value for property \"chunks\".");
     props.chunks = chunksArrayValueConverted as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>;
     return props as ArrayBufferMessage.Data;
   }

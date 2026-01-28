@@ -39,7 +39,6 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     const props = {} as Partial<ImmutableArrayBuffer.Data>;
     const valueValue = entries["value"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
-    if (!(valueValue as object instanceof ArrayBuffer)) throw new Error("Invalid value for property \"value\".");
     props.value = valueValue as ArrayBuffer;
     return props as ImmutableArrayBuffer.Data;
   }

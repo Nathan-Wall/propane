@@ -61,7 +61,6 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
       }
       return result;
     })(dValue);
-    if (!(dMessageValue as object instanceof Date || dMessageValue as object instanceof ImmutableDate)) throw new Error("Invalid value for property \"d\".");
     props.d = dMessageValue as ImmutableDate | Date;
     return props as Wrapper_Payload_Union1.Data;
   }
@@ -152,9 +151,12 @@ export class Wrapper extends Message<Wrapper.Data> {
       this.#validate(props);
     }
     this.#payload = props ? (value => {
+      if (!options?.skipValidation && true && !(ImmutableDate.isInstance(value) || Wrapper_Payload_Union1.isInstance(value))) throw new Error("Invalid value for property \"payload\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.payload) : new ImmutableDate(0);
+    })(props.payload)) : new ImmutableDate(0);
     if (!props) Wrapper.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper.Data>[] {
@@ -211,7 +213,7 @@ export class Wrapper extends Message<Wrapper.Data> {
         }
       }
     }
-    if (!(payloadUnionValue as object instanceof Date || payloadUnionValue as object instanceof ImmutableDate || ImmutableDate.isInstance(payloadUnionValue) || Wrapper_Payload_Union1.isInstance(payloadUnionValue))) throw new Error("Invalid value for property \"payload\".");
+    if (!(ImmutableDate.isInstance(payloadUnionValue) || Wrapper_Payload_Union1.isInstance(payloadUnionValue))) throw new Error("Invalid value for property \"payload\".");
     props.payload = payloadUnionValue;
     return props as Wrapper.Data;
   }

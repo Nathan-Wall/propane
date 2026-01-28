@@ -61,7 +61,6 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
       }
       return result;
     })(urlValue);
-    if (!(urlMessageValue as object instanceof URL || urlMessageValue as object instanceof ImmutableUrl)) throw new Error("Invalid value for property \"url\".");
     props.url = urlMessageValue as ImmutableUrl | URL;
     return props as UrlUnion_Value_Union1.Data;
   }
@@ -152,9 +151,12 @@ export class UrlUnion extends Message<UrlUnion.Data> {
       this.#validate(props);
     }
     this.#value = props ? (value => {
+      if (!options?.skipValidation && true && !(ImmutableUrl.isInstance(value) || UrlUnion_Value_Union1.isInstance(value))) throw new Error("Invalid value for property \"value\".");
+      return value;
+    })((value => {
       let result = value as any;
       return result;
-    })(props.value) : new ImmutableUrl("about:blank");
+    })(props.value)) : new ImmutableUrl("about:blank");
     if (!props) UrlUnion.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlUnion.Data>[] {
@@ -211,7 +213,7 @@ export class UrlUnion extends Message<UrlUnion.Data> {
         }
       }
     }
-    if (!(valueUnionValue as object instanceof URL || valueUnionValue as object instanceof ImmutableUrl || ImmutableUrl.isInstance(valueUnionValue) || UrlUnion_Value_Union1.isInstance(valueUnionValue))) throw new Error("Invalid value for property \"value\".");
+    if (!(ImmutableUrl.isInstance(valueUnionValue) || UrlUnion_Value_Union1.isInstance(valueUnionValue))) throw new Error("Invalid value for property \"value\".");
     props.value = valueUnionValue;
     return props as UrlUnion.Data;
   }
