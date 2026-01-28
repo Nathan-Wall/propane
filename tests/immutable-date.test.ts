@@ -1,6 +1,6 @@
 import { assert } from './assert.js';
 import { computeExpectedHashCode } from './hash-helpers.js';
-import { ImmutableDate } from '../runtime/common/time/date.js';
+import { ImmutableDate } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runImmutableDateTests() {

@@ -28,15 +28,10 @@ const propaneConfig = loadPropaneConfig();
 
 const scanDirs = [
   'common/numbers',
-  'runtime/common/data',
-  'runtime/common/time',
-  'runtime/common/web',
+  'common/data',
+  'common/time',
+  'common/web',
 ];
-const runtimeOverrides = new Set([
-  'runtime/common/data/immutable-array-buffer.pmsg',
-  'runtime/common/time/date.pmsg',
-  'runtime/common/web/url.pmsg',
-]);
 const failSuffix = '-fail.pmsg';
 
 function findPmsgFiles(dir) {
@@ -101,15 +96,9 @@ function generateReexportFile(filePath, messageTypes, extendedTypes) {
 function compilePmsgFile(filePath) {
   const source = fs.readFileSync(filePath, 'utf8');
   const relativePath = path.relative(projectRoot, filePath).replaceAll('\\', '/');
-  const isRuntimeOverride = runtimeOverrides.has(relativePath);
-
   const pluginOptions = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
-    pluginOptions['runtimeImportBase'] = projectRoot;
-  }
-  if (isRuntimeOverride) {
-    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
     pluginOptions['runtimeImportBase'] = projectRoot;
   }
   if (propaneConfig.messageTypeIdPrefix) {

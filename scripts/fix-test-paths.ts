@@ -56,7 +56,7 @@ function fixFile(filePath: string, depthFromBuild: number): void {
   if (depthFromBuild === 1) {
     // build/tests/ → files have ../../ paths that need to become ../
     content = content.replaceAll('../../runtime/', '../runtime/');
-    content = content.replaceAll('../../common/', '../runtime/common/');
+    content = content.replaceAll('../../common/', '../common/');
   } else if (depthFromBuild === 2) {
     // build/pms-server/tests/ → files may have incorrect paths from tsc-alias
 

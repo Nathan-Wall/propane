@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
-// Generated from runtime/common/data/immutable-array-buffer.pmsg
-import type { MessageWrapper, MessagePropDescriptor, DataObject, SetUpdates } from "../../pmsg-base.js";
+// Generated from common/data/immutable-array-buffer.pmsg
+import type { MessageWrapper, MessagePropDescriptor, DataObject, SetUpdates } from "../../runtime/index.js";
 
 // @extend('./immutable-array-buffer.pmsg.ext.ts')
 // @compact('B')
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../runtime/index.js";
 const TYPE_TAG_ImmutableArrayBuffer$Base = Symbol("ImmutableArrayBuffer");
 export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data> {
-  static $typeId = "runtime/common/data/immutable-array-buffer.pmsg#ImmutableArrayBuffer";
+  static $typeId = "common/data/immutable-array-buffer.pmsg#ImmutableArrayBuffer";
   static $typeHash = "sha256:62e0158b263d8d302d03d7c20cdd85a2099751f73120c8832e511717393f7edc";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableArrayBuffer$Base.$typeId);
   static override readonly $compact = true;

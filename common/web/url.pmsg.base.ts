@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
-// Generated from runtime/common/web/url.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
+// Generated from common/web/url.pmsg
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../runtime/index.js";
 
 // @extend('./url.pmsg.ext.ts')
 // @compact('U')
-import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../pmsg-base.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../runtime/index.js";
 const TYPE_TAG_ImmutableUrl$Base = Symbol("ImmutableUrl");
 export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
-  static $typeId = "runtime/common/web/url.pmsg#ImmutableUrl";
+  static $typeId = "common/web/url.pmsg#ImmutableUrl";
   static $typeHash = "sha256:f66232bc5bfad325c017816ddf92e7d8eea8364b1c9c85bad84001911a9e9dc6";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableUrl$Base.$typeId);
   static override readonly $compact = true;

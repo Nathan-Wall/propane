@@ -39,17 +39,12 @@ const propaneConfig = loadPropaneConfig();
 // pms-server/src is excluded because response.pmsg.ts is checked in
 const scanDirs = [
   'common/numbers',
-  'runtime/common/data',
-  'runtime/common/time',
-  'runtime/common/web',
+  'common/data',
+  'common/time',
+  'common/web',
   'tests',
   'pms-server/tests',
 ];
-const runtimeOverrides = new Set([
-  'runtime/common/data/immutable-array-buffer.pmsg',
-  'runtime/common/time/date.pmsg',
-  'runtime/common/web/url.pmsg',
-]);
 
 // Suffix for files expected to fail (don't compile these)
 const failSuffix = '-fail.pmsg';
@@ -127,16 +122,10 @@ function compilePmsgFile(filePath: string): void {
   const relativePath = path
     .relative(projectRoot, filePath)
     .replaceAll('\\', '/');
-  const isRuntimeOverride = runtimeOverrides.has(relativePath);
-
   // Use config if available, otherwise use relative path
   const pluginOptions: Record<string, unknown> = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
-    pluginOptions['runtimeImportBase'] = projectRoot;
-  }
-  if (isRuntimeOverride) {
-    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
     pluginOptions['runtimeImportBase'] = projectRoot;
   }
   if (propaneConfig.messageTypeIdPrefix) {

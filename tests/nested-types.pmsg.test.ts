@@ -1,6 +1,6 @@
 import { assert, assertThrows } from './assert.js';
 import { Wrapper, Wrapper_Payload_Union1 } from './nested-types.pmsg.js';
-import { ImmutableDate } from '../runtime/common/time/date.js';
+import { ImmutableDate } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runNestedTypesTest() {

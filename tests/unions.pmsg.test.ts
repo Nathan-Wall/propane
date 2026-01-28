@@ -10,7 +10,7 @@ import {
   Unions_ItemMap_Value_Union1,
   Unions_ItemMap_Value_Union2,
 } from './unions.pmsg.js';
-import { ImmutableDate } from '../runtime/common/time/date.js';
+import { ImmutableDate } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runUnionsImplicitUnionTests() {

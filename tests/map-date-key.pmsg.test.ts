@@ -1,8 +1,7 @@
 import { assert } from './assert.js';
 import { MapDateKey } from './map-date-key.pmsg.js';
 import { ImmutableMap } from '../runtime/common/map/immutable.js';
-import { ImmutableDate } from '../runtime/common/time/date.js';
-import { ImmutableUrl } from '../runtime/common/web/url.js';
+import { ImmutableDate, ImmutableUrl } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runMapDateKeyTests() {

@@ -1,6 +1,6 @@
 import { assert, assertThrows } from './assert.js';
 import { UrlUnion, UrlUnion_Value_Union1 } from './url-union.pmsg.js';
-import { ImmutableUrl } from '../runtime/common/web/url.js';
+import { ImmutableUrl } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runUrlUnionTests() {

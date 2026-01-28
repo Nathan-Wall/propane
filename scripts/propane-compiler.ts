@@ -40,11 +40,6 @@ function loadPropaneConfig(): LoadedConfig {
 }
 
 const { config: propaneConfig, configDir } = loadPropaneConfig();
-const runtimeOverrides = new Set([
-  'runtime/common/time/date.pmsg',
-  'runtime/common/web/url.pmsg',
-]);
-
 function collectPropaneFiles(targetPath: string): string[] {
   const stats = fs.statSync(targetPath);
 
@@ -106,16 +101,11 @@ function transpileFile(sourcePath: string): void {
   const sourceCode = fs.readFileSync(sourcePath, 'utf8');
   const pluginOptions: Record<string, unknown> = {};
   const relativePath = path.relative(process.cwd(), sourcePath).replaceAll('\\', '/');
-  const isRuntimeOverride = runtimeOverrides.has(relativePath);
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
   }
   if (configDir) {
     pluginOptions['runtimeImportBase'] = configDir;
-  }
-  if (isRuntimeOverride) {
-    pluginOptions['runtimeImportPath'] = './runtime/pmsg-base.js';
-    pluginOptions['runtimeImportBase'] = configDir ?? process.cwd();
   }
   if (propaneConfig.messageTypeIdPrefix) {
     pluginOptions['messageTypeIdPrefix'] = propaneConfig.messageTypeIdPrefix;

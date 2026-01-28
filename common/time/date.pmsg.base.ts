@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
-// Generated from runtime/common/time/date.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../pmsg-base.js";
+// Generated from common/time/date.pmsg
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../../runtime/index.js";
 
 // @extend('./date.pmsg.ext.ts')
 // @compact('D')
-import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../pmsg-base.js";
+import type { MessagePropDescriptor, DataObject, SetUpdates } from "../../runtime/index.js";
 const TYPE_TAG_ImmutableDate$Base = Symbol("ImmutableDate");
 export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
-  static $typeId = "runtime/common/time/date.pmsg#ImmutableDate";
+  static $typeId = "common/time/date.pmsg#ImmutableDate";
   static $typeHash = "sha256:21c96c8ee9f69febb7b38bb56f5e78ccbed843348a1533947a8cd9c9d391efe1";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableDate$Base.$typeId);
   static override readonly $compact = true;

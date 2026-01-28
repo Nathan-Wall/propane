@@ -4,9 +4,9 @@ import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
 import { ImmutableArray } from './common/array/immutable.js';
-import type { ImmutableArrayBuffer } from './common/data/immutable-array-buffer.js';
-import type { ImmutableDate } from './common/time/date.js';
-import type { ImmutableUrl } from './common/web/url.js';
+import type { ImmutableArrayBuffer } from '@/common/data/immutable-array-buffer.js';
+import type { ImmutableDate } from '@/common/time/date.js';
+import type { ImmutableUrl } from '@/common/web/url.js';
 import type { Decimal, Rational } from '@/common/numbers/decimal.js';
 import {
   SET_UPDATE_LISTENER,

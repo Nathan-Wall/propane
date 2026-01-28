@@ -1,7 +1,6 @@
 import { assert } from './assert.js';
 import { SingleMessageUnion } from './single-message-union.pmsg.js';
-import { ImmutableDate } from '../runtime/common/time/date.js';
-import { ImmutableUrl } from '../runtime/common/web/url.js';
+import { ImmutableDate, ImmutableUrl } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runSingleMessageUnionTests() {

@@ -1,6 +1,6 @@
 import { assert } from './assert.js';
 import { computeExpectedHashCode } from './hash-helpers.js';
-import { ImmutableArrayBuffer } from '../runtime/common/data/immutable-array-buffer.js';
+import { ImmutableArrayBuffer } from '@propane/runtime';
 import { test } from 'node:test';
 
 export default function runImmutableArrayBufferTests() {
