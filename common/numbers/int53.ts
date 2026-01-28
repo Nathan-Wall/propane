@@ -5,7 +5,7 @@
  * safe integer range (Number.MIN_SAFE_INTEGER to Number.MAX_SAFE_INTEGER).
  */
 
-import type { Brand } from '@/runtime/common/types/brand.js';
+import type { Brand } from '@/common/types/brand.js';
 
 /**
  * Module-scoped namespace symbol for int53 type brand.

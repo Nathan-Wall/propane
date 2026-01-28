@@ -11,8 +11,8 @@ export * from '@/common/web/url.js';
 export * from '@/common/time/date.js';
 // Remaining helpers and scalar types.
 export * from '@/common/numbers/scalars.js';
-export { charLength } from './common/strings/char-length.js';
-export type { Brand } from './common/types/brand.js';
+export { charLength } from '@/common/strings/char-length.js';
+export type { Brand } from '@/common/types/brand.js';
 
 // Validation
 export { ValidationError } from './validation-error.js';
