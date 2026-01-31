@@ -15,6 +15,7 @@ import {
 import { introspectDatabase } from '../migration/introspector.js';
 import { compareSchemas } from '../migration/differ.js';
 import { parseFiles } from '@/tools/parser/index.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 import { generateSchema, validateSchema } from '../codegen/schema-generator.js';
 import { generateRepositories } from '../codegen/repository-generator.js';
 import type {
@@ -44,6 +45,7 @@ export interface CliConfig {
     typesImportPrefix?: string;
   };
   pmsgFiles?: string[];
+  typeAliases?: TypeAliasMap;
 }
 
 /**
@@ -270,7 +272,9 @@ export function generateCommand(
   console.log(`Found ${pmsgPaths.length} .pmsg file(s)`);
 
   // 2. Parse files
-  const { files, diagnostics } = parseFiles(pmsgPaths);
+  const { files, diagnostics } = parseFiles(pmsgPaths, {
+    typeAliases: config.typeAliases,
+  });
 
   // Report parse errors
   const errors = diagnostics.filter(d => d.severity === 'error');
@@ -378,7 +382,9 @@ export async function diffCommand(config: CliConfig): Promise<void> {
       return;
     }
 
-    const { files, diagnostics } = parseFiles(pmsgPaths);
+    const { files, diagnostics } = parseFiles(pmsgPaths, {
+      typeAliases: config.typeAliases,
+    });
     const errors = diagnostics.filter(d => d.severity === 'error');
     if (errors.length > 0) {
       console.error('Parse errors in .pmsg files:');
@@ -630,7 +636,9 @@ export async function migrateCreateCommand(
       };
     } else {
       // Parse .pmsg files
-      const { files, diagnostics } = parseFiles(pmsgPaths);
+      const { files, diagnostics } = parseFiles(pmsgPaths, {
+        typeAliases: config.typeAliases,
+      });
       const errors = diagnostics.filter(d => d.severity === 'error');
       if (errors.length > 0) {
         console.error('Parse errors in .pmsg files:');

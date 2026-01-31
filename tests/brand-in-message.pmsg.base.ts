@@ -45,7 +45,7 @@ export class User extends Message<User.Data> {
     }, {
       name: "ref",
       fieldNumber: 3,
-      getValue: () => this.#ref
+      getValue: () => this.#ref as UserId | UserId
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -120,21 +120,21 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: value as Brand<number, 'userId', typeof _User_id_brand>,
       name: this.#name,
-      ref: this.#ref
+      ref: this.#ref as UserId | UserId
     }) as this);
   }
   setName(value: string) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id as Brand<number, 'userId', typeof _User_id_brand>,
       name: value,
-      ref: this.#ref
+      ref: this.#ref as UserId | UserId
     }) as this);
   }
-  setRef(value: UserId) {
+  setRef(value: UserId | UserId) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id as Brand<number, 'userId', typeof _User_id_brand>,
       name: this.#name,
-      ref: value
+      ref: value as UserId | UserId
     }) as this);
   }
 }
@@ -142,7 +142,7 @@ export namespace User {
   export type Data = {
     id: Brand<number, 'userId', typeof _User_id_brand>;
     name: string;
-    ref: UserId;
+    ref: UserId | UserId;
   };
   export type Value = User | User.Data;
 }

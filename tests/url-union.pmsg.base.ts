@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, I
 const TYPE_TAG_UrlUnion_Value_Union1 = Symbol("UrlUnion_Value_Union1");
 export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
   static $typeId = "tests/url-union.pmsg#UrlUnion_Value_Union1";
-  static $typeHash = "sha256:1e161cb2d378f4a652dcf917ec755d9cc0b146bcd62fd6c7a3f199bfee771739";
+  static $typeHash = "sha256:878b2e5e8d89e818667dc2418a5f05b383e5c4fb6cf7905abfeeaa9e28930fbe";
   static $instanceTag = Symbol.for("propane:message:" + UrlUnion_Value_Union1.$typeId);
   static readonly $typeName = "UrlUnion_Value_Union1";
   static EMPTY: UrlUnion_Value_Union1;

@@ -52,11 +52,11 @@ export class User extends Message<User.Data> {
     }, {
       name: "email",
       fieldNumber: 3,
-      getValue: () => this.#email
+      getValue: () => this.#email as Email | Email
     }, {
       name: "passwordHash",
       fieldNumber: 4,
-      getValue: () => this.#passwordHash
+      getValue: () => this.#passwordHash as Hash | Hash
     }, {
       name: "created",
       fieldNumber: null,
@@ -224,8 +224,8 @@ export class User extends Message<User.Data> {
         return new (this.constructor as typeof User)({
           id: this.#id,
           name: this.#name,
-          email: this.#email,
-          passwordHash: this.#passwordHash,
+          email: this.#email as Email | Email,
+          passwordHash: this.#passwordHash as Hash | Hash,
           created: child as ImmutableDate | Date,
           updated: this.#updated as ImmutableDate | Date,
           active: this.#active,
@@ -236,8 +236,8 @@ export class User extends Message<User.Data> {
         return new (this.constructor as typeof User)({
           id: this.#id,
           name: this.#name,
-          email: this.#email,
-          passwordHash: this.#passwordHash,
+          email: this.#email as Email | Email,
+          passwordHash: this.#passwordHash as Hash | Hash,
           created: this.#created as ImmutableDate | Date,
           updated: child as ImmutableDate | Date,
           active: this.#active,
@@ -248,8 +248,8 @@ export class User extends Message<User.Data> {
         return new (this.constructor as typeof User)({
           id: this.#id,
           name: this.#name,
-          email: this.#email,
-          passwordHash: this.#passwordHash,
+          email: this.#email as Email | Email,
+          passwordHash: this.#passwordHash as Hash | Hash,
           created: this.#created as ImmutableDate | Date,
           updated: this.#updated as ImmutableDate | Date,
           active: this.#active,
@@ -335,8 +335,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: value,
@@ -348,8 +348,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -357,12 +357,12 @@ export class User extends Message<User.Data> {
       height: this.#height as Distance.Value
     }) as this);
   }
-  setEmail(value: Email) {
+  setEmail(value: Email | Email) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: value,
-      passwordHash: this.#passwordHash,
+      email: value as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -374,8 +374,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -387,8 +387,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -400,8 +400,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: value,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -413,8 +413,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: value,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -422,12 +422,12 @@ export class User extends Message<User.Data> {
       height: this.#height as Distance.Value
     }) as this);
   }
-  setPasswordHash(value: Hash) {
+  setPasswordHash(value: Hash | Hash) {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: value,
+      email: this.#email as Email | Email,
+      passwordHash: value as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
@@ -439,8 +439,8 @@ export class User extends Message<User.Data> {
     return this.$update(new (this.constructor as typeof User)({
       id: this.#id,
       name: this.#name,
-      email: this.#email,
-      passwordHash: this.#passwordHash,
+      email: this.#email as Email | Email,
+      passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
       updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       active: this.#active,
@@ -453,8 +453,8 @@ export namespace User {
   export type Data = {
     id: number;
     name: string;
-    email: Email;
-    passwordHash: Hash;
+    email: Email | Email;
+    passwordHash: Hash | Hash;
     created: ImmutableDate | Date;
     updated: ImmutableDate | Date;
     active: boolean;

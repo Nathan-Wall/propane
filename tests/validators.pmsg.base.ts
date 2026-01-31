@@ -6,7 +6,7 @@
  * Tests validation code generation for various validator types.
  */
 
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
 import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53 } from '@propane/types';
 
 // Test: Numeric sign validators
@@ -629,11 +629,11 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
     return [{
       name: "positiveInt32",
       fieldNumber: 1,
-      getValue: () => this.#positiveInt32 as Positive<int32>
+      getValue: () => this.#positiveInt32 as Positive<int32> | Positive<int32>
     }, {
       name: "positiveInt53",
       fieldNumber: 2,
-      getValue: () => this.#positiveInt53 as Positive<int53>
+      getValue: () => this.#positiveInt53 as Positive<int53> | Positive<int53>
     }, {
       name: "positiveDecimal",
       fieldNumber: 3,
@@ -842,8 +842,8 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   }
   setMaxDecimal(value: Max<Decimal<10, 2>, "1000">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32 as Positive<int32>,
-      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveInt32: this.#positiveInt32 as Positive<int32> | Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53> | Positive<int53>,
       positiveDecimal: this.#positiveDecimal as Positive<Decimal<10, 2>>,
       minDecimal: this.#minDecimal as Min<Decimal<10, 2>, "100">,
       maxDecimal: value as Max<Decimal<10, 2>, "1000">,
@@ -852,8 +852,8 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   }
   setMinDecimal(value: Min<Decimal<10, 2>, "100">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32 as Positive<int32>,
-      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveInt32: this.#positiveInt32 as Positive<int32> | Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53> | Positive<int53>,
       positiveDecimal: this.#positiveDecimal as Positive<Decimal<10, 2>>,
       minDecimal: value as Min<Decimal<10, 2>, "100">,
       maxDecimal: this.#maxDecimal as Max<Decimal<10, 2>, "1000">,
@@ -862,28 +862,28 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   }
   setPositiveDecimal(value: Positive<Decimal<10, 2>>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32 as Positive<int32>,
-      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveInt32: this.#positiveInt32 as Positive<int32> | Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53> | Positive<int53>,
       positiveDecimal: value as Positive<Decimal<10, 2>>,
       minDecimal: this.#minDecimal as Min<Decimal<10, 2>, "100">,
       maxDecimal: this.#maxDecimal as Max<Decimal<10, 2>, "1000">,
       rangeDecimal: this.#rangeDecimal as Range<Decimal<10, 2>, "0", "999.99">
     }) as this);
   }
-  setPositiveInt32(value: Positive<int32>) {
+  setPositiveInt32(value: Positive<int32> | Positive<int32>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: value as Positive<int32>,
-      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveInt32: value as Positive<int32> | Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53> | Positive<int53>,
       positiveDecimal: this.#positiveDecimal as Positive<Decimal<10, 2>>,
       minDecimal: this.#minDecimal as Min<Decimal<10, 2>, "100">,
       maxDecimal: this.#maxDecimal as Max<Decimal<10, 2>, "1000">,
       rangeDecimal: this.#rangeDecimal as Range<Decimal<10, 2>, "0", "999.99">
     }) as this);
   }
-  setPositiveInt53(value: Positive<int53>) {
+  setPositiveInt53(value: Positive<int53> | Positive<int53>) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32 as Positive<int32>,
-      positiveInt53: value as Positive<int53>,
+      positiveInt32: this.#positiveInt32 as Positive<int32> | Positive<int32>,
+      positiveInt53: value as Positive<int53> | Positive<int53>,
       positiveDecimal: this.#positiveDecimal as Positive<Decimal<10, 2>>,
       minDecimal: this.#minDecimal as Min<Decimal<10, 2>, "100">,
       maxDecimal: this.#maxDecimal as Max<Decimal<10, 2>, "1000">,
@@ -892,8 +892,8 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
   }
   setRangeDecimal(value: Range<Decimal<10, 2>, "0", "999.99">) {
     return this.$update(new (this.constructor as typeof BrandedValidators)({
-      positiveInt32: this.#positiveInt32 as Positive<int32>,
-      positiveInt53: this.#positiveInt53 as Positive<int53>,
+      positiveInt32: this.#positiveInt32 as Positive<int32> | Positive<int32>,
+      positiveInt53: this.#positiveInt53 as Positive<int53> | Positive<int53>,
       positiveDecimal: this.#positiveDecimal as Positive<Decimal<10, 2>>,
       minDecimal: this.#minDecimal as Min<Decimal<10, 2>, "100">,
       maxDecimal: this.#maxDecimal as Max<Decimal<10, 2>, "1000">,
@@ -903,8 +903,8 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
 }
 export namespace BrandedValidators {
   export type Data = {
-    positiveInt32: Positive<int32>;
-    positiveInt53: Positive<int53>;
+    positiveInt32: Positive<int32> | Positive<int32>;
+    positiveInt53: Positive<int53> | Positive<int53>;
     positiveDecimal: Positive<Decimal<10, 2>>;
     minDecimal: Min<Decimal<10, 2>, "100">;
     maxDecimal: Max<Decimal<10, 2>, "1000">;
@@ -1152,9 +1152,9 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
   static $instanceTag = Symbol.for("propane:message:" + ArrayValidators.$typeId);
   static readonly $typeName = "ArrayValidators";
   static EMPTY: ArrayValidators;
-  #nonEmptyArray!: NonEmpty<string[]>;
-  #minLengthArray!: MinLength<number[], 1>;
-  #maxLengthArray!: MaxLength<number[], 10>;
+  #nonEmptyArray!: NonEmpty<ImmutableArray<string>>;
+  #minLengthArray!: MinLength<ImmutableArray<number>, 1>;
+  #maxLengthArray!: MaxLength<ImmutableArray<number>, 10>;
   constructor(props?: ArrayValidators.Value, options?: {
     skipValidation?: boolean;
   }) {
@@ -1163,24 +1163,24 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     if (!options?.skipValidation) {
       this.#validate(props);
     }
-    this.#nonEmptyArray = (props ? props.nonEmptyArray : undefined) as NonEmpty<string[]>;
-    this.#minLengthArray = (props ? props.minLengthArray : undefined) as MinLength<number[], 1>;
-    this.#maxLengthArray = (props ? props.maxLengthArray : undefined) as MaxLength<number[], 10>;
+    this.#nonEmptyArray = (props ? props.nonEmptyArray : undefined) as NonEmpty<ImmutableArray<string>>;
+    this.#minLengthArray = (props ? props.minLengthArray : undefined) as MinLength<ImmutableArray<number>, 1>;
+    this.#maxLengthArray = (props ? props.maxLengthArray : undefined) as MaxLength<ImmutableArray<number>, 10>;
     if (!props) ArrayValidators.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayValidators.Data>[] {
     return [{
       name: "nonEmptyArray",
       fieldNumber: 1,
-      getValue: () => this.#nonEmptyArray as NonEmpty<string[]>
+      getValue: () => this.#nonEmptyArray as NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>
     }, {
       name: "minLengthArray",
       fieldNumber: 2,
-      getValue: () => this.#minLengthArray as MinLength<number[], 1>
+      getValue: () => this.#minLengthArray as MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>
     }, {
       name: "maxLengthArray",
       fieldNumber: 3,
-      getValue: () => this.#maxLengthArray as MaxLength<number[], 10>
+      getValue: () => this.#maxLengthArray as MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -1190,13 +1190,13 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     const props = {} as Partial<ArrayValidators.Data>;
     const nonEmptyArrayValue = entries["1"] === undefined ? entries["nonEmptyArray"] : entries["1"];
     if (nonEmptyArrayValue === undefined) throw new Error("Missing required property \"nonEmptyArray\".");
-    props.nonEmptyArray = nonEmptyArrayValue as NonEmpty<string[]>;
+    props.nonEmptyArray = nonEmptyArrayValue as NonEmpty<ImmutableArray<string>>;
     const minLengthArrayValue = entries["2"] === undefined ? entries["minLengthArray"] : entries["2"];
     if (minLengthArrayValue === undefined) throw new Error("Missing required property \"minLengthArray\".");
-    props.minLengthArray = minLengthArrayValue as MinLength<number[], 1>;
+    props.minLengthArray = minLengthArrayValue as MinLength<ImmutableArray<number>, 1>;
     const maxLengthArrayValue = entries["3"] === undefined ? entries["maxLengthArray"] : entries["3"];
     if (maxLengthArrayValue === undefined) throw new Error("Missing required property \"maxLengthArray\".");
-    props.maxLengthArray = maxLengthArrayValue as MaxLength<number[], 10>;
+    props.maxLengthArray = maxLengthArrayValue as MaxLength<ImmutableArray<number>, 10>;
     return props as ArrayValidators.Data;
   }
   static from(value: ArrayValidators.Value): ArrayValidators {
@@ -1269,13 +1269,13 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }
-  get nonEmptyArray(): NonEmpty<string[]> {
+  get nonEmptyArray(): NonEmpty<ImmutableArray<string>> {
     return this.#nonEmptyArray;
   }
-  get minLengthArray(): MinLength<number[], 1> {
+  get minLengthArray(): MinLength<ImmutableArray<number>, 1> {
     return this.#minLengthArray;
   }
-  get maxLengthArray(): MaxLength<number[], 10> {
+  get maxLengthArray(): MaxLength<ImmutableArray<number>, 10> {
     return this.#maxLengthArray;
   }
   set(updates: Partial<SetUpdates<ArrayValidators.Data>>) {
@@ -1287,33 +1287,33 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     }
     return this.$update(new (this.constructor as typeof ArrayValidators)(data) as this);
   }
-  setMaxLengthArray(value: MaxLength<number[], 10>) {
+  setMaxLengthArray(value: MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]>,
-      minLengthArray: this.#minLengthArray as MinLength<number[], 1>,
-      maxLengthArray: value as MaxLength<number[], 10>
+      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>,
+      minLengthArray: this.#minLengthArray as MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>,
+      maxLengthArray: value as MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>
     }) as this);
   }
-  setMinLengthArray(value: MinLength<number[], 1>) {
+  setMinLengthArray(value: MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]>,
-      minLengthArray: value as MinLength<number[], 1>,
-      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10>
+      nonEmptyArray: this.#nonEmptyArray as NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>,
+      minLengthArray: value as MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>,
+      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>
     }) as this);
   }
-  setNonEmptyArray(value: NonEmpty<string[]>) {
+  setNonEmptyArray(value: NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>) {
     return this.$update(new (this.constructor as typeof ArrayValidators)({
-      nonEmptyArray: value as NonEmpty<string[]>,
-      minLengthArray: this.#minLengthArray as MinLength<number[], 1>,
-      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10>
+      nonEmptyArray: value as NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>,
+      minLengthArray: this.#minLengthArray as MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>,
+      maxLengthArray: this.#maxLengthArray as MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>
     }) as this);
   }
 }
 export namespace ArrayValidators {
   export type Data = {
-    nonEmptyArray: NonEmpty<string[]>;
-    minLengthArray: MinLength<number[], 1>;
-    maxLengthArray: MaxLength<number[], 10>;
+    nonEmptyArray: NonEmpty<string[]> | NonEmpty<ImmutableArray<string>>;
+    minLengthArray: MinLength<number[], 1> | MinLength<ImmutableArray<number>, 1>;
+    maxLengthArray: MaxLength<number[], 10> | MaxLength<ImmutableArray<number>, 10>;
   };
   export type Value = ArrayValidators | ArrayValidators.Data;
 } // Test: Bigint validators

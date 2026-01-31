@@ -11,6 +11,11 @@ import path from 'node:path';
 import type { ParseFileResult, ParseFilesResult, PmtDiagnostic } from './types.js';
 import { getBabelParserOptions } from './babel-config.js';
 import { parseFromAst } from './parse-ast.js';
+import type { TypeAliasMap } from './type-aliases.js';
+
+export interface ParseOptions {
+  typeAliases?: TypeAliasMap;
+}
 
 /**
  * Parse a single .pmsg file from source code.
@@ -19,12 +24,16 @@ import { parseFromAst } from './parse-ast.js';
  * @param filePath - The file path (used for error messages and PMT metadata)
  * @returns Parse result with PMT file and diagnostics
  */
-export function parseSource(source: string, filePath: string): ParseFileResult {
+export function parseSource(
+  source: string,
+  filePath: string,
+  options?: ParseOptions
+): ParseFileResult {
   const diagnostics: PmtDiagnostic[] = [];
 
   try {
     const ast = parse(source, getBabelParserOptions());
-    const result = parseFromAst(ast, filePath);
+    const result = parseFromAst(ast, filePath, options);
     return result;
   } catch (error) {
     // Handle Babel parse errors
@@ -59,12 +68,15 @@ export function parseSource(source: string, filePath: string): ParseFileResult {
  * @param filePath - Path to the .pmsg file
  * @returns Parse result with PMT file and diagnostics
  */
-export function parseFile(filePath: string): ParseFileResult {
+export function parseFile(
+  filePath: string,
+  options?: ParseOptions
+): ParseFileResult {
   const absolutePath = path.resolve(filePath);
 
   try {
     const source = readFileSync(absolutePath, 'utf8');
-    return parseSource(source, absolutePath);
+    return parseSource(source, absolutePath, options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const diagnostics: PmtDiagnostic[] = [
@@ -99,12 +111,15 @@ export function parseFile(filePath: string): ParseFileResult {
  * @param filePaths - Paths to the .pmsg files
  * @returns Parse result with all PMT files and aggregated diagnostics
  */
-export function parseFiles(filePaths: string[]): ParseFilesResult {
+export function parseFiles(
+  filePaths: string[],
+  options?: ParseOptions
+): ParseFilesResult {
   const files = [];
   const allDiagnostics: PmtDiagnostic[] = [];
 
   for (const filePath of filePaths) {
-    const result = parseFile(filePath);
+    const result = parseFile(filePath, options);
     files.push(result.file);
     allDiagnostics.push(...result.diagnostics);
   }
@@ -122,13 +137,14 @@ export function parseFiles(filePaths: string[]): ParseFilesResult {
  * @returns Promise resolving to parse result with PMT file and diagnostics
  */
 export async function parseFileAsync(
-  filePath: string
+  filePath: string,
+  options?: ParseOptions
 ): Promise<ParseFileResult> {
   const absolutePath = path.resolve(filePath);
 
   try {
     const source = await readFile(absolutePath, 'utf8');
-    return parseSource(source, absolutePath);
+    return parseSource(source, absolutePath, options);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const diagnostics: PmtDiagnostic[] = [
@@ -164,10 +180,11 @@ export async function parseFileAsync(
  * @returns Parse result with all PMT files and aggregated diagnostics
  */
 export async function parseFilesAsync(
-  filePaths: string[]
+  filePaths: string[],
+  options?: ParseOptions
 ): Promise<ParseFilesResult> {
   const results = await Promise.all(
-    filePaths.map((filePath) => parseFileAsync(filePath))
+    filePaths.map((filePath) => parseFileAsync(filePath, options))
   );
 
   const files = results.map((r) => r.file);

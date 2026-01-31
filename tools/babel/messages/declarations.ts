@@ -421,7 +421,7 @@ export function buildDeclarations(
 
   if (!actualTypeLiteralPath.isTSTypeLiteral()) {
     if (!wrapperInfo?.isValueWrapper) {
-      assertSupportedTopLevelType(typeLiteralPath);
+      assertSupportedTopLevelType(typeLiteralPath, state.typeAliases);
       insertPrimitiveTypeAlias(typeAliasPath, exported);
       return null;
     }
@@ -509,7 +509,7 @@ export function buildDeclarations(
     typePath: NodePath<t.TSType>,
     declared: Set<string>
   ) => {
-    assertSupportedType(typePath, declared, typeParamNames);
+    assertSupportedType(typePath, declared, typeParamNames, state.typeAliases);
   };
 
   const generatedTypes: t.TSTypeAliasDeclaration[] = [];

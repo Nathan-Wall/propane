@@ -59,7 +59,13 @@ const stringType: PmtType = { kind: 'primitive', primitive: 'string' };
 const numberType: PmtType = { kind: 'primitive', primitive: 'number' };
 const bigintType: PmtType = { kind: 'primitive', primitive: 'bigint' };
 const booleanType: PmtType = { kind: 'primitive', primitive: 'boolean' };
-const dateType: PmtType = { kind: 'date' };
+const dateType: PmtType = {
+  kind: 'alias',
+  source: 'Date',
+  target: 'ImmutableDate',
+  aliasKind: 'message',
+  typeArguments: [],
+};
 const nullType: PmtType = { kind: 'primitive', primitive: 'null' };
 
 // Wrapper type helpers

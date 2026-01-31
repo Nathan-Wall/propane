@@ -25,7 +25,7 @@ export class Distance extends Message<Distance.Data> {
     return [{
       name: "unit",
       fieldNumber: null,
-      getValue: () => this.#unit
+      getValue: () => this.#unit as DistanceUnit | DistanceUnit
     }, {
       name: "value",
       fieldNumber: null,
@@ -94,22 +94,22 @@ export class Distance extends Message<Distance.Data> {
     }
     return this.$update(new (this.constructor as typeof Distance)(data) as this);
   }
-  setUnit(value: DistanceUnit) {
+  setUnit(value: DistanceUnit | DistanceUnit) {
     return this.$update(new (this.constructor as typeof Distance)({
-      unit: value,
+      unit: value as DistanceUnit | DistanceUnit,
       value: this.#value
     }) as this);
   }
   setValue(value: number) {
     return this.$update(new (this.constructor as typeof Distance)({
-      unit: this.#unit,
+      unit: this.#unit as DistanceUnit | DistanceUnit,
       value: value
     }) as this);
   }
 }
 export namespace Distance {
   export type Data = {
-    unit: DistanceUnit;
+    unit: DistanceUnit | DistanceUnit;
     value: number;
   };
   export type Value = Distance | Distance.Data;

@@ -14,6 +14,8 @@ import {
   isUrlReference,
   resolveQualifiedRoot,
 } from './type-guards.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
+import { resolveAliasTargetName } from './alias-utils.js';
 
 function isGenericTypeReference(
   typePath: NodePath<t.TSType>,
@@ -32,7 +34,8 @@ function isGenericTypeReference(
 export function assertSupportedMapType(
   typePath: NodePath<t.TSTypeReference>,
   declaredTypeNames: Set<string>,
-  typeParamNames?: Set<string>
+  typeParamNames?: Set<string>,
+  typeAliases?: TypeAliasMap
 ): void {
   const typeParametersPath = typePath.get('typeParameters');
   if (typeParametersPath?.node?.params.length !== 2) {
@@ -42,14 +45,15 @@ export function assertSupportedMapType(
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames, typeParamNames);
-  assertSupportedType(valueTypePath!, declaredTypeNames, typeParamNames);
+  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames, typeParamNames, typeAliases);
+  assertSupportedType(valueTypePath!, declaredTypeNames, typeParamNames, typeAliases);
 }
 
 export function assertSupportedSetType(
   typePath: NodePath<t.TSTypeReference>,
   declaredTypeNames: Set<string>,
-  typeParamNames?: Set<string>
+  typeParamNames?: Set<string>,
+  typeAliases?: TypeAliasMap
 ): void {
   const typeNode = typePath.node;
 
@@ -66,13 +70,14 @@ export function assertSupportedSetType(
   }
 
   const elementPath = typePath.get('typeParameters').get('params')[0]!;
-  assertSupportedType(elementPath, declaredTypeNames, typeParamNames);
+  assertSupportedType(elementPath, declaredTypeNames, typeParamNames, typeAliases);
 }
 
 export function assertSupportedMapKeyType(
   typePath: NodePath<t.TSType>,
   declaredTypeNames: Set<string>,
-  typeParamNames?: Set<string>
+  typeParamNames?: Set<string>,
+  typeAliases?: TypeAliasMap
 ): void {
   if (!typePath?.node) {
     throw typePath.buildCodeFrameError('Missing Map key type.');
@@ -86,14 +91,15 @@ export function assertSupportedMapKeyType(
     assertSupportedMapKeyType(
       typePath.get('typeAnnotation'),
       declaredTypeNames,
-      typeParamNames
+      typeParamNames,
+      typeAliases
     );
     return;
   }
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath, declaredTypeNames, typeParamNames);
+      assertSupportedMapKeyType(memberPath, declaredTypeNames, typeParamNames, typeAliases);
     }
     return;
   }
@@ -121,7 +127,8 @@ export function assertSupportedMapKeyType(
       assertSupportedType(
         nestedTypeAnnotation.get('typeAnnotation'),
         declaredTypeNames,
-        typeParamNames
+        typeParamNames,
+        typeAliases
       );
     }
     return;
@@ -131,25 +138,31 @@ export function assertSupportedMapKeyType(
     assertSupportedType(
       typePath.get('elementType'),
       declaredTypeNames,
-      typeParamNames
+      typeParamNames,
+      typeAliases
     );
     return; // Arrays are allowed as map keys
   }
 
-  if (typePath.isTSTypeReference() && isDateReference(typePath.node)) {
+  const aliasTarget = typePath.isTSTypeReference()
+    ? resolveAliasTargetName(typePath, typeAliases ?? {}, typePath.scope)
+    : null;
+
+  if (typePath.isTSTypeReference() && (isDateReference(typePath.node) || aliasTarget === 'ImmutableDate')) {
     return; // Date is allowed as a map key
   }
 
-  if (typePath.isTSTypeReference() && isUrlReference(typePath.node)) {
+  if (typePath.isTSTypeReference() && (isUrlReference(typePath.node) || aliasTarget === 'ImmutableUrl')) {
     return; // URL is allowed as a map key
   }
 
   // key types must still be valid primitives/identifiers
-  assertSupportedType(typePath, declaredTypeNames, typeParamNames);
+  assertSupportedType(typePath, declaredTypeNames, typeParamNames, typeAliases);
 }
 
 export function assertSupportedTopLevelType(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  typeAliases?: TypeAliasMap
 ): void {
   if (isPrimitiveLikeType(typePath)) {
     return;
@@ -157,15 +170,15 @@ export function assertSupportedTopLevelType(
 
   throw typePath.buildCodeFrameError(
     'Propane files must export an object type or a primitive-like '
-    + 'alias (string, number, boolean, bigint, null, undefined, '
-    + 'Date, URL, ArrayBuffer, Brand).'
+    + 'alias (string, number, boolean, bigint, null, undefined, Brand).'
   );
 }
 
 export function assertSupportedType(
   typePath: NodePath<t.TSType>,
   declaredTypeNames: Set<string>,
-  typeParamNames?: Set<string>
+  typeParamNames?: Set<string>,
+  typeAliases?: TypeAliasMap
 ): void {
   if (!typePath?.node) {
     throw new Error('Missing type information for propane property.');
@@ -181,7 +194,7 @@ export function assertSupportedType(
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedType(memberPath, declaredTypeNames, typeParamNames);
+      assertSupportedType(memberPath, declaredTypeNames, typeParamNames, typeAliases);
     }
     return;
   }
@@ -190,17 +203,20 @@ export function assertSupportedType(
     assertSupportedType(
       typePath.get('elementType'),
       declaredTypeNames,
-      typeParamNames
+      typeParamNames,
+      typeAliases
     );
     return;
   }
 
   if (typePath.isTSTypeReference()) {
-    if (isDateReference(typePath.node)) {
+    const aliasTarget = resolveAliasTargetName(typePath, typeAliases ?? {}, typePath.scope);
+
+    if (isDateReference(typePath.node) || aliasTarget === 'ImmutableDate') {
       return;
     }
 
-    if (isUrlReference(typePath.node)) {
+    if (isUrlReference(typePath.node) || aliasTarget === 'ImmutableUrl') {
       return;
     }
 
@@ -211,17 +227,18 @@ export function assertSupportedType(
     if (
       isArrayBufferReference(typePath.node)
       || isImmutableArrayBufferReference(typePath.node)
+      || aliasTarget === 'ImmutableArrayBuffer'
     ) {
       return;
     }
 
-    if (isMapReference(typePath.node)) {
-      assertSupportedMapType(typePath, declaredTypeNames, typeParamNames);
+    if (isMapReference(typePath.node) || aliasTarget === 'ImmutableMap') {
+      assertSupportedMapType(typePath, declaredTypeNames, typeParamNames, typeAliases);
       return;
     }
 
-    if (isSetReference(typePath.node)) {
-      assertSupportedSetType(typePath, declaredTypeNames, typeParamNames);
+    if (isSetReference(typePath.node) || aliasTarget === 'ImmutableSet') {
+      assertSupportedSetType(typePath, declaredTypeNames, typeParamNames, typeAliases);
       return;
     }
 

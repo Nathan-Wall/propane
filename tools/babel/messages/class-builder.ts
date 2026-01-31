@@ -3646,6 +3646,8 @@ function buildFieldValidationStatements(
             {
               allowUndefined: Boolean(prop.optional),
               allowNull: allowsNull,
+              allowCompact: true,
+              optionsExpr: options.optionsExpr,
             }
           )
         ),

@@ -141,6 +141,13 @@ export function getResponseTypeName(responseType: PmtType): string {
   if (responseType.kind === 'reference') {
     return responseType.name;
   }
+  if (responseType.kind === 'alias') {
+    if (responseType.typeArguments.length === 0) {
+      return responseType.source;
+    }
+    const args = responseType.typeArguments.map(getResponseTypeName).join(', ');
+    return `${responseType.source}<${args}>`;
+  }
 
   // For other types, return a simplified representation
   switch (responseType.kind) {
@@ -154,12 +161,6 @@ export function getResponseTypeName(responseType: PmtType): string {
       return `Map<${getResponseTypeName(responseType.keyType)}, ${getResponseTypeName(responseType.valueType)}>`;
     case 'set':
       return `Set<${getResponseTypeName(responseType.elementType)}>`;
-    case 'date':
-      return 'Date';
-    case 'url':
-      return 'URL';
-    case 'arraybuffer':
-      return 'ArrayBuffer';
     case 'literal':
       return typeof responseType.value === 'string'
         ? `'${responseType.value}'`

@@ -110,6 +110,9 @@ function compilePmsgFile(filePath) {
       propaneConfig.messageTypeIdRoot
     );
   }
+  if (propaneConfig.typeAliases) {
+    pluginOptions['typeAliases'] = propaneConfig.typeAliases;
+  }
 
   const result = transformSync(source, {
     filename: filePath,

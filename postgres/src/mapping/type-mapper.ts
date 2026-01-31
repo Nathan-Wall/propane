@@ -400,14 +400,32 @@ function classifyTypes(
   let hasMessages = false;
   let hasScalars = false;
 
+  const wrapperTargets = new Set([
+    'ImmutableDate',
+    'ImmutableUrl',
+    'ImmutableArrayBuffer',
+  ]);
+
   for (const t of types) {
+    if (t.kind === 'alias') {
+      if (t.aliasKind === 'message') {
+        if (wrapperTargets.has(t.target)) {
+          hasScalars = true;
+        } else if (messageTypeNames.has(t.target)) {
+          hasMessages = true;
+        } else {
+          hasScalars = true;
+        }
+      } else {
+        hasScalars = true;
+      }
+      continue;
+    }
     if (t.kind === 'reference' && messageTypeNames.has(t.name)) {
       hasMessages = true;
     } else if (t.kind === 'literal') {
       hasScalars = true;
     } else if (t.kind === 'primitive' && t.primitive !== 'null' && t.primitive !== 'undefined') {
-      hasScalars = true;
-    } else if (t.kind === 'date' || t.kind === 'url' || t.kind === 'arraybuffer') {
       hasScalars = true;
     } else if (t.kind === 'reference' && !messageTypeNames.has(t.name)) {
       // Non-message reference (e.g., type alias for scalar)
@@ -433,9 +451,14 @@ export function pmtTypeToScalarType(type: PmtType): ScalarType {
         case 'undefined': return 'undefined';
       }
       break;
-    case 'date': return 'Date';
-    case 'url': return 'URL';
-    case 'arraybuffer': return 'ArrayBuffer';
+    case 'alias':
+      if (type.target === 'ImmutableDate') return 'Date';
+      if (type.target === 'ImmutableUrl') return 'URL';
+      if (type.target === 'ImmutableArrayBuffer') return 'ArrayBuffer';
+      if (type.target === 'ImmutableArray') return 'array';
+      if (type.target === 'ImmutableMap') return 'map';
+      if (type.target === 'ImmutableSet') return 'set';
+      return 'object';
     case 'array': return 'array';
     case 'map': return 'map';
     case 'set': return 'set';

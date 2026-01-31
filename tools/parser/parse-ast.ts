@@ -24,6 +24,10 @@ import {
   type TypeParserContext,
 } from './type-parser.js';
 import {
+  normalizeTypeAliases,
+  type TypeAliasMap,
+} from './type-aliases.js';
+import {
   validateNoInterfaces,
   validateNoIntersections,
   validateObjectLiteralRequiresWrapper,
@@ -36,7 +40,8 @@ import { detectWrapper } from './wrapper-detection.js';
  */
 export function parseFromAst(
   ast: t.File,
-  filePath: string
+  filePath: string,
+  options?: { typeAliases?: TypeAliasMap }
 ): { file: PmtFile; diagnostics: PmtDiagnostic[] } {
   const diagnostics: PmtDiagnostic[] = [];
   const messages: PmtMessage[] = [];
@@ -57,8 +62,38 @@ export function parseFromAst(
     }
   }
 
+  const localTypeNames = collectLocalTypeNames(ast);
+  const { aliases, errors: aliasErrors } = normalizeTypeAliases(
+    options?.typeAliases
+  );
+
+  for (const error of aliasErrors) {
+    diagnostics.push({
+      filePath,
+      location: {
+        start: { line: 0, column: 0 },
+        end: { line: 0, column: 0 },
+      },
+      severity: 'error',
+      code: 'PMT050',
+      message: error.message,
+    });
+  }
+
+  for (const imp of imports) {
+    for (const spec of imp.specifiers) {
+      localTypeNames.add(spec.local);
+    }
+  }
+
   // Create context with imports for wrapper detection
-  const ctx: ProcessTypeAliasContext = { filePath, diagnostics, imports };
+  const ctx: ProcessTypeAliasContext = {
+    filePath,
+    diagnostics,
+    imports,
+    typeAliases: aliases,
+    localTypeNames,
+  };
 
   // Second pass: process type aliases
   for (const stmt of ast.program.body) {
@@ -84,6 +119,26 @@ export function parseFromAst(
   };
 
   return { file, diagnostics };
+}
+
+function collectLocalTypeNames(ast: t.File): Set<string> {
+  const localNames = new Set<string>();
+  for (const stmt of ast.program.body) {
+    if (t.isImportDeclaration(stmt)) {
+      for (const spec of stmt.specifiers) {
+        if (t.isImportSpecifier(spec)) {
+          localNames.add(spec.local.name);
+        } else if (t.isImportDefaultSpecifier(spec) || t.isImportNamespaceSpecifier(spec)) {
+          localNames.add(spec.local.name);
+        }
+      }
+    }
+    const alias = extractTypeAlias(stmt);
+    if (alias) {
+      localNames.add(alias.id.name);
+    }
+  }
+  return localNames;
 }
 
 /**

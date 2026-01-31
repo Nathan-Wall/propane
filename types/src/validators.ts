@@ -19,6 +19,8 @@ import type { Decimal, Rational } from '@/common/numbers/decimal.js';
  */
 export type numeric = number | bigint | Decimal<any, any> | Rational;
 
+type Lengthwise = { readonly length: number };
+
 /**
  * Value must be greater than zero.
  *
@@ -160,7 +162,7 @@ export type Range<
  * '2:tags': NonEmpty<string[]>;
  * ```
  */
-export type NonEmpty<T extends string | unknown[]> = T & {
+export type NonEmpty<T extends string | Lengthwise> = T & {
   readonly __nonEmpty: unique symbol;
 };
 
@@ -174,7 +176,7 @@ export type NonEmpty<T extends string | unknown[]> = T & {
  * ```
  */
 export type MinLength<
-  T extends string | unknown[],
+  T extends string | Lengthwise,
   MinLen extends number,
 > = T & {
   readonly __minLength: MinLen;
@@ -190,7 +192,7 @@ export type MinLength<
  * ```
  */
 export type MaxLength<
-  T extends string | unknown[],
+  T extends string | Lengthwise,
   MaxLen extends number,
 > = T & {
   readonly __maxLength: MaxLen;
@@ -206,7 +208,7 @@ export type MaxLength<
  * ```
  */
 export type Length<
-  T extends string | unknown[],
+  T extends string | Lengthwise,
   MinLen extends number,
   MaxLen extends number,
 > = T & {

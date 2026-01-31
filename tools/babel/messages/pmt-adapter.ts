@@ -19,6 +19,103 @@ import {
   type TypeParameter,
 } from './properties.js';
 
+const DEFAULT_ALIAS_STRING_TYPE: PmtType = { kind: 'primitive', primitive: 'string' };
+
+function resolveAliasType(pmtType: PmtType): PmtType {
+  if (pmtType.kind !== 'alias') {
+    return pmtType;
+  }
+
+  switch (pmtType.target) {
+    case 'ImmutableArray':
+      return {
+        kind: 'array',
+        elementType: pmtType.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    case 'ImmutableMap':
+      return {
+        kind: 'map',
+        keyType: pmtType.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+        valueType: pmtType.typeArguments[1] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    case 'ImmutableSet':
+      return {
+        kind: 'set',
+        elementType: pmtType.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    default:
+      return {
+        kind: 'reference',
+        name: pmtType.target,
+        typeArguments: pmtType.typeArguments,
+      };
+  }
+}
+
+function resolveAliasTypeForMessage(pmtType: PmtType): PmtType | null {
+  if (pmtType.kind !== 'alias') {
+    return pmtType;
+  }
+  if (pmtType.aliasKind !== 'message') {
+    return null;
+  }
+  return resolveAliasType(pmtType);
+}
+
+function resolveRuntimeType(pmtType: PmtType): PmtType {
+  if (pmtType.kind === 'alias') {
+    if (pmtType.aliasKind === 'message') {
+      return resolveRuntimeType(resolveAliasType(pmtType));
+    }
+    return pmtType;
+  }
+
+  if (pmtType.kind === 'array') {
+    return {
+      kind: 'array',
+      elementType: resolveRuntimeType(pmtType.elementType),
+    };
+  }
+
+  if (pmtType.kind === 'set') {
+    return {
+      kind: 'set',
+      elementType: resolveRuntimeType(pmtType.elementType),
+    };
+  }
+
+  if (pmtType.kind === 'map') {
+    return {
+      kind: 'map',
+      keyType: resolveRuntimeType(pmtType.keyType),
+      valueType: resolveRuntimeType(pmtType.valueType),
+    };
+  }
+
+  if (pmtType.kind === 'union') {
+    return {
+      kind: 'union',
+      types: pmtType.types.map((member) => resolveRuntimeType(member)),
+    };
+  }
+
+  if (pmtType.kind === 'reference') {
+    return {
+      kind: 'reference',
+      name: pmtType.name,
+      typeArguments: pmtType.typeArguments.map((arg) => resolveRuntimeType(arg)),
+    };
+  }
+
+  return pmtType;
+}
+
+function isWrapperMessageTypeName(name: string): boolean {
+  return name === 'ImmutableDate'
+    || name === 'ImmutableUrl'
+    || name === 'ImmutableArrayBuffer';
+}
+
 // ============================================================================
 // Core Type Conversion
 // ============================================================================
@@ -52,17 +149,19 @@ export function pmtTypeToBabelType(pmtType: PmtType): t.TSType {
         ])
       );
 
-    case 'date':
-      return t.tsTypeReference(t.identifier('Date'));
-
-    case 'url':
-      return t.tsTypeReference(t.identifier('URL'));
-
-    case 'arraybuffer':
-      return t.tsTypeReference(t.identifier('ArrayBuffer'));
-
     case 'union':
       return t.tsUnionType(pmtType.types.map(pmtTypeToBabelType));
+
+    case 'alias': {
+      const typeParams = pmtType.typeArguments;
+      if (typeParams.length === 0) {
+        return t.tsTypeReference(t.identifier(pmtType.source));
+      }
+      return t.tsTypeReference(
+        t.identifier(pmtType.source),
+        t.tsTypeParameterInstantiation(typeParams.map(pmtTypeToBabelType))
+      );
+    }
 
     case 'reference':
       if (pmtType.typeArguments.length === 0) {
@@ -147,7 +246,8 @@ function buildLiteralType(value: string | number | boolean | bigint): t.TSType {
  * Used for: typeAnnotation field in PropDescriptor
  */
 export function pmtTypeToRuntimeType(pmtType: PmtType): t.TSType {
-  return wrapImmutableType(pmtTypeToBabelType(pmtType));
+  const resolved = resolveRuntimeType(pmtType);
+  return wrapImmutableType(pmtTypeToBabelType(resolved));
 }
 
 /**
@@ -155,7 +255,8 @@ export function pmtTypeToRuntimeType(pmtType: PmtType): t.TSType {
  * Used for: inputTypeAnnotation, mapKeyInputType, etc.
  */
 export function pmtTypeToInputType(pmtType: PmtType): t.TSType {
-  return buildInputAcceptingMutable(pmtTypeToBabelType(pmtType));
+  const resolved = resolveRuntimeType(pmtType);
+  return buildInputAcceptingMutable(pmtTypeToBabelType(resolved));
 }
 
 /**
@@ -181,21 +282,21 @@ export function buildDisplayType(
   }
 
   // Date/URL/ArrayBuffer show both variants
-  if (pmtType.kind === 'date') {
+  if (isDateType(pmtType)) {
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableDate')),
       t.tsTypeReference(t.identifier('Date')),
     ]);
   }
 
-  if (pmtType.kind === 'url') {
+  if (isUrlType(pmtType)) {
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableUrl')),
       t.tsTypeReference(t.identifier('URL')),
     ]);
   }
 
-  if (pmtType.kind === 'arraybuffer') {
+  if (isArrayBufferType(pmtType)) {
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
       t.tsTypeReference(t.identifier('ArrayBuffer')),
@@ -238,7 +339,23 @@ export function buildDisplayType(
   }
 
   if (pmtType.kind === 'array') {
-    const elementType = pmtTypeToBabelType(pmtType.elementType);
+    let elementType = pmtTypeToBabelType(pmtType.elementType);
+    if (isArrayBufferType(pmtType.elementType)) {
+      elementType = t.tsUnionType([
+        t.tsTypeReference(t.identifier('ArrayBuffer')),
+        t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
+      ]);
+    } else if (isDateType(pmtType.elementType)) {
+      elementType = t.tsUnionType([
+        t.tsTypeReference(t.identifier('Date')),
+        t.tsTypeReference(t.identifier('ImmutableDate')),
+      ]);
+    } else if (isUrlType(pmtType.elementType)) {
+      elementType = t.tsUnionType([
+        t.tsTypeReference(t.identifier('URL')),
+        t.tsTypeReference(t.identifier('ImmutableUrl')),
+      ]);
+    }
     return t.tsUnionType([
       t.tsArrayType(t.cloneNode(elementType)),
       t.tsTypeReference(
@@ -257,13 +374,13 @@ function buildUnionDateUrlDisplayType(pmtType: PmtType): t.TSType | null {
   const types: t.TSType[] = [];
 
   for (const member of pmtType.types) {
-    if (member.kind === 'date') {
+    if (isDateType(member)) {
       hasDateOrUrl = true;
       types.push(t.tsTypeReference(t.identifier('Date')));
       types.push(t.tsTypeReference(t.identifier('ImmutableDate')));
       continue;
     }
-    if (member.kind === 'url') {
+    if (isUrlType(member)) {
       hasDateOrUrl = true;
       types.push(t.tsTypeReference(t.identifier('URL')));
       types.push(t.tsTypeReference(t.identifier('ImmutableUrl')));
@@ -336,12 +453,14 @@ function getMessageTypeName(
   pmtType: PmtType,
   knownMessages: Set<string>
 ): string | null {
-  if (pmtType.kind === 'reference'
-    && (knownMessages.has(pmtType.name)
-      || pmtType.name === 'ImmutableDate'
-      || pmtType.name === 'ImmutableUrl')
+  const resolved = resolveAliasTypeForMessage(pmtType);
+  if (!resolved) {
+    return null;
+  }
+  if (resolved.kind === 'reference'
+    && (knownMessages.has(resolved.name) || isWrapperMessageTypeName(resolved.name))
   ) {
-    return pmtType.name;
+    return resolved.name;
   }
   return null;
 }
@@ -357,15 +476,14 @@ function extractUnionMessageTypes(
     return [];
   }
 
-  return pmtType.types
-    .filter(
-      (memberType) =>
-        memberType.kind === 'reference'
-        && (knownMessages.has(memberType.name)
-          || memberType.name === 'ImmutableDate'
-          || memberType.name === 'ImmutableUrl')
-    )
-    .map((memberType) => (memberType as { kind: 'reference'; name: string }).name);
+  const names: string[] = [];
+  for (const memberType of pmtType.types) {
+    const messageName = getMessageTypeName(memberType, knownMessages);
+    if (messageName) {
+      names.push(messageName);
+    }
+  }
+  return names;
 }
 
 // ============================================================================
@@ -387,12 +505,13 @@ export function pmtTypeParametersToTypeParameters(
         + `Example: ${param.name} extends Message`
       );
     }
+    const resolvedConstraint = resolveAliasTypeForMessage(param.constraint) ?? param.constraint;
     const constraintType = pmtTypeToBabelType(param.constraint);
     const requiresConstructor =
       !isValueWrapper
-      && param.constraint.kind === 'reference'
-      && (param.constraint.name === 'Message'
-        || declaredMessageTypeNames.has(param.constraint.name.split('.')[0]!));
+      && resolvedConstraint.kind === 'reference'
+      && (resolvedConstraint.name === 'Message'
+        || declaredMessageTypeNames.has(resolvedConstraint.name.split('.')[0]!));
     return {
       name: param.name,
       constraint: constraintType,
@@ -412,50 +531,89 @@ export function pmtPropertyToDescriptor(
   knownMessages: Set<string>,
   typeParameters: TypeParameter[]
 ): PropDescriptor {
+  const resolvedType = resolveRuntimeType(prop.type);
   const messageTypeName = getMessageTypeName(prop.type, knownMessages);
-  const arrayElementMessageTypeName = prop.type.kind === 'array'
-    ? getMessageTypeName(prop.type.elementType, knownMessages)
+  const isDate = isDateType(resolvedType);
+  const isUrl = isUrlType(resolvedType);
+  const isArrayBuffer = isArrayBufferType(resolvedType);
+  const effectiveMessageTypeName = (isDate || isUrl) ? null : messageTypeName;
+  const arrayElementMessageTypeName = resolvedType.kind === 'array'
+    ? getMessageTypeName(resolvedType.elementType, knownMessages)
     : null;
-  const setElementMessageTypeName = prop.type.kind === 'set'
-    ? getMessageTypeName(prop.type.elementType, knownMessages)
+  const setElementMessageTypeName = resolvedType.kind === 'set'
+    ? getMessageTypeName(resolvedType.elementType, knownMessages)
     : null;
-  const mapKeyMessageTypeName = prop.type.kind === 'map'
-    ? getMessageTypeName(prop.type.keyType, knownMessages)
+  const mapKeyMessageTypeName = resolvedType.kind === 'map'
+    ? getMessageTypeName(resolvedType.keyType, knownMessages)
     : null;
-  const mapValueMessageTypeName = prop.type.kind === 'map'
-    ? getMessageTypeName(prop.type.valueType, knownMessages)
+  const mapValueMessageTypeName = resolvedType.kind === 'map'
+    ? getMessageTypeName(resolvedType.valueType, knownMessages)
     : null;
-  const arrayElementUnionMessageTypes = prop.type.kind === 'array'
-    ? extractUnionMessageTypes(prop.type.elementType, knownMessages)
+  const arrayElementUnionMessageTypes = resolvedType.kind === 'array'
+    ? extractUnionMessageTypes(resolvedType.elementType, knownMessages)
     : [];
-  const setElementUnionMessageTypes = prop.type.kind === 'set'
-    ? extractUnionMessageTypes(prop.type.elementType, knownMessages)
+  const setElementUnionMessageTypes = resolvedType.kind === 'set'
+    ? extractUnionMessageTypes(resolvedType.elementType, knownMessages)
     : [];
-  const mapKeyUnionMessageTypes = prop.type.kind === 'map'
-    ? extractUnionMessageTypes(prop.type.keyType, knownMessages)
+  const mapKeyUnionMessageTypes = resolvedType.kind === 'map'
+    ? extractUnionMessageTypes(resolvedType.keyType, knownMessages)
     : [];
-  const mapValueUnionMessageTypes = prop.type.kind === 'map'
-    ? extractUnionMessageTypes(prop.type.valueType, knownMessages)
+  const mapValueUnionMessageTypes = resolvedType.kind === 'map'
+    ? extractUnionMessageTypes(resolvedType.valueType, knownMessages)
     : [];
-  const unionHasString = extractUnionHasString(prop.type);
-  const unionHasDate = extractUnionHasDate(prop.type);
-  const unionHasUrl = extractUnionHasUrl(prop.type);
-  const arrayElementUnionHasString = prop.type.kind === 'array'
-    ? extractUnionHasString(prop.type.elementType)
+  const unionHasString = extractUnionHasString(resolvedType);
+  const unionHasDate = extractUnionHasDate(resolvedType);
+  const unionHasUrl = extractUnionHasUrl(resolvedType);
+  const arrayElementUnionHasString = resolvedType.kind === 'array'
+    ? extractUnionHasString(resolvedType.elementType)
     : false;
-  const setElementUnionHasString = prop.type.kind === 'set'
-    ? extractUnionHasString(prop.type.elementType)
+  const setElementUnionHasString = resolvedType.kind === 'set'
+    ? extractUnionHasString(resolvedType.elementType)
     : false;
-  const mapKeyUnionHasString = prop.type.kind === 'map'
-    ? extractUnionHasString(prop.type.keyType)
+  const mapKeyUnionHasString = resolvedType.kind === 'map'
+    ? extractUnionHasString(resolvedType.keyType)
     : false;
-  const mapValueUnionHasString = prop.type.kind === 'map'
-    ? extractUnionHasString(prop.type.valueType)
+  const mapValueUnionHasString = resolvedType.kind === 'map'
+    ? extractUnionHasString(resolvedType.valueType)
     : false;
 
   // Detect generic type parameters
   const genericInfo = getGenericParamInfo(prop.type, typeParameters);
   const unionGenericParams = extractUnionGenericParams(prop.type, typeParameters);
+
+  let inputTypeAnnotation = pmtTypeToInputType(resolvedType);
+  let displayType = buildDisplayType(resolvedType, effectiveMessageTypeName);
+
+  if (isDate || isUrl) {
+    inputTypeAnnotation = displayType;
+  } else if (isArrayBuffer) {
+    inputTypeAnnotation = t.tsUnionType([
+      displayType,
+      t.tsTypeReference(t.identifier('ArrayBufferView')),
+      t.tsTypeReference(
+        t.identifier('Iterable'),
+        t.tsTypeParameterInstantiation([t.tsNumberKeyword()])
+      ),
+      t.tsArrayType(t.tsNumberKeyword()),
+    ]);
+  }
+
+  if (messageTypeName && !isDate && !isUrl) {
+    const typeArgs = resolvedType.kind === 'reference'
+      && resolvedType.typeArguments.length > 0
+      ? t.tsTypeParameterInstantiation(
+        resolvedType.typeArguments.map((arg) => pmtTypeToBabelType(arg))
+      )
+      : null;
+    inputTypeAnnotation = t.tsTypeReference(
+      t.tsQualifiedName(
+        t.identifier(messageTypeName),
+        t.identifier('Value')
+      ),
+      typeArgs ?? undefined
+    );
+    displayType = t.cloneNode(inputTypeAnnotation);
+  }
 
   // Build the PropDescriptor
   return {
@@ -464,20 +622,20 @@ export function pmtPropertyToDescriptor(
     optional: prop.optional,
     readonly: prop.readonly,
 
-    // Boolean flags derived from PmtType.kind
-    isArray: prop.type.kind === 'array',
-    isSet: prop.type.kind === 'set',
-    isMap: prop.type.kind === 'map',
-    isDateType: prop.type.kind === 'date',
-    isUrlType: prop.type.kind === 'url',
-    isArrayBufferType: prop.type.kind === 'arraybuffer',
+    // Boolean flags derived from resolved type
+    isArray: resolvedType.kind === 'array',
+    isSet: resolvedType.kind === 'set',
+    isMap: resolvedType.kind === 'map',
+    isDateType: isDate,
+    isUrlType: isUrl,
+    isArrayBufferType: isArrayBuffer,
     isMessageType: messageTypeName !== null,
     messageTypeName,
     arrayElementMessageTypeName,
     setElementMessageTypeName,
     mapKeyMessageTypeName,
     mapValueMessageTypeName,
-    unionMessageTypes: extractUnionMessageTypes(prop.type, knownMessages),
+    unionMessageTypes: extractUnionMessageTypes(resolvedType, knownMessages),
     arrayElementUnionMessageTypes,
     setElementUnionMessageTypes,
     mapKeyUnionMessageTypes,
@@ -491,34 +649,34 @@ export function pmtPropertyToDescriptor(
     unionHasUrl,
 
     // Babel type fields
-    typeAnnotation: pmtTypeToRuntimeType(prop.type),
-    inputTypeAnnotation: pmtTypeToInputType(prop.type),
-    displayType: buildDisplayType(prop.type, messageTypeName),
+    typeAnnotation: pmtTypeToRuntimeType(resolvedType),
+    inputTypeAnnotation,
+    displayType,
 
     // Element/key/value types for collections
     arrayElementType:
-      prop.type.kind === 'array'
-        ? pmtTypeToBabelType(prop.type.elementType)
+      resolvedType.kind === 'array'
+        ? pmtTypeToBabelType(resolvedType.elementType)
         : null,
     mapKeyType:
-      prop.type.kind === 'map' ? pmtTypeToBabelType(prop.type.keyType) : null,
+      resolvedType.kind === 'map' ? pmtTypeToBabelType(resolvedType.keyType) : null,
     mapValueType:
-      prop.type.kind === 'map'
-        ? pmtTypeToBabelType(prop.type.valueType)
+      resolvedType.kind === 'map'
+        ? pmtTypeToBabelType(resolvedType.valueType)
         : null,
     mapKeyInputType:
-      prop.type.kind === 'map' ? pmtTypeToInputType(prop.type.keyType) : null,
+      resolvedType.kind === 'map' ? pmtTypeToInputType(resolvedType.keyType) : null,
     mapValueInputType:
-      prop.type.kind === 'map'
-        ? pmtTypeToInputType(prop.type.valueType)
+      resolvedType.kind === 'map'
+        ? pmtTypeToInputType(resolvedType.valueType)
         : null,
     setElementType:
-      prop.type.kind === 'set'
-        ? pmtTypeToBabelType(prop.type.elementType)
+      resolvedType.kind === 'set'
+        ? pmtTypeToBabelType(resolvedType.elementType)
         : null,
     setElementInputType:
-      prop.type.kind === 'set'
-        ? pmtTypeToInputType(prop.type.elementType)
+      resolvedType.kind === 'set'
+        ? pmtTypeToInputType(resolvedType.elementType)
         : null,
 
     // Generic type parameter tracking
@@ -559,17 +717,34 @@ function isStringType(type: PmtType): boolean {
 }
 
 function isDateType(type: PmtType): boolean {
-  if (type.kind === 'date') return true;
   if (type.kind === 'union') {
     return type.types.some((member) => isDateType(member));
   }
-  return false;
+  const resolved = resolveAliasTypeForMessage(type);
+  if (!resolved) {
+    return false;
+  }
+  return resolved.kind === 'reference' && resolved.name === 'ImmutableDate';
 }
 
 function isUrlType(type: PmtType): boolean {
-  if (type.kind === 'url') return true;
   if (type.kind === 'union') {
     return type.types.some((member) => isUrlType(member));
   }
-  return false;
+  const resolved = resolveAliasTypeForMessage(type);
+  if (!resolved) {
+    return false;
+  }
+  return resolved.kind === 'reference' && resolved.name === 'ImmutableUrl';
+}
+
+function isArrayBufferType(type: PmtType): boolean {
+  if (type.kind === 'union') {
+    return type.types.some((member) => isArrayBufferType(member));
+  }
+  const resolved = resolveAliasTypeForMessage(type);
+  if (!resolved) {
+    return false;
+  }
+  return resolved.kind === 'reference' && resolved.name === 'ImmutableArrayBuffer';
 }

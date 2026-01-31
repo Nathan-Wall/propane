@@ -313,6 +313,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   [n: number]: T;
+  readonly [Symbol.unscopables]: { [K in keyof any[]]?: boolean } = {};
 
   at(index: number): T | undefined {
     return this.#items.at(index);

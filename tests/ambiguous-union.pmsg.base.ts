@@ -228,7 +228,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     return [{
       name: "union",
       fieldNumber: null,
-      getValue: () => this.#union as Alpha | Beta,
+      getValue: () => this.#union as Alpha | Beta | Alpha | Beta,
       unionMessageTypes: ["Alpha", "Beta"]
     }, {
       name: "list",
@@ -455,21 +455,21 @@ export class Wrapper extends Message<Wrapper.Data> {
     switch (key) {
       case "list":
         return new (this.constructor as typeof Wrapper)({
-          union: this.#union as Alpha | Beta,
+          union: this.#union as Alpha | Beta | Alpha | Beta,
           list: child as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
           itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
           map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
         }) as this;
       case "itemSet":
         return new (this.constructor as typeof Wrapper)({
-          union: this.#union as Alpha | Beta,
+          union: this.#union as Alpha | Beta | Alpha | Beta,
           list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
           itemSet: child as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
           map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
         }) as this;
       case "map":
         return new (this.constructor as typeof Wrapper)({
-          union: this.#union as Alpha | Beta,
+          union: this.#union as Alpha | Beta | Alpha | Beta,
           list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
           itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
           map: child as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -532,7 +532,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     itemSetSetNext.add(value);
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -547,7 +547,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -560,7 +560,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     itemSetSetNext.clear();
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -574,7 +574,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.clear();
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -585,7 +585,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     listNext.copyWithin(target, start, end);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -598,7 +598,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     itemSetSetNext.delete(value);
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -613,7 +613,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -627,7 +627,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.delete(key);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -638,7 +638,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     (listNext as unknown as (Alpha | Beta)[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -658,7 +658,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -673,7 +673,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.map === mapMapNext as unknown || this.map?.equals(mapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -694,7 +694,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -715,7 +715,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.map === mapMapNext as unknown || this.map?.equals(mapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -730,7 +730,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.map === mapMapNext as unknown || this.map?.equals(mapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -742,7 +742,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     listNext.pop();
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -753,7 +753,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listArray = this.#list === undefined ? [] : this.#list;
     const listNext = [...listArray, ...values];
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -764,7 +764,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     listNext.reverse();
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -781,7 +781,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   setItemSet(value: Set<Alpha | Beta> | Iterable<Alpha | Beta> | undefined) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: (value === undefined || value === null ? value : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -789,7 +789,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   setList(value: (Alpha | Beta)[] | Iterable<(Alpha | Beta)> | undefined) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: value as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -797,7 +797,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   setMap(value: Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]> | undefined) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: (value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -814,15 +814,15 @@ export class Wrapper extends Message<Wrapper.Data> {
     const mapMapNext = new Map(mapMapEntries);
     mapMapNext.set(key, value);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
     }) as this);
   }
-  setUnion(value: Alpha | Beta) {
+  setUnion(value: Alpha | Beta | Alpha | Beta) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: value as Alpha | Beta,
+      union: value as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -834,7 +834,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     listNext.shift();
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -845,7 +845,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     (listNext as unknown as (Alpha | Beta)[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -856,7 +856,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listNext = [...listArray];
     listNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -864,21 +864,21 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   unsetItemSet() {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
     }) as this);
   }
   unsetList() {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
     }) as this);
   }
   unsetMap() {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>
     }) as this);
@@ -888,7 +888,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const listArray = this.#list === undefined ? [] : this.#list;
     const listNext = [...values, ...listArray];
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: listNext as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -905,7 +905,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: itemSetSetNext as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: this.#map as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -920,7 +920,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     mapMapNext.set(key, updatedValue);
     if (this.map === mapMapNext as unknown || this.map?.equals(mapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Wrapper)({
-      union: this.#union as Alpha | Beta,
+      union: this.#union as Alpha | Beta | Alpha | Beta,
       list: this.#list as (Alpha | Beta)[] | Iterable<(Alpha | Beta)>,
       itemSet: this.#itemSet as Set<Alpha | Beta> | Iterable<Alpha | Beta>,
       map: mapMapNext as Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]>
@@ -929,7 +929,7 @@ export class Wrapper extends Message<Wrapper.Data> {
 }
 export namespace Wrapper {
   export type Data = {
-    union: Alpha | Beta;
+    union: Alpha | Beta | Alpha | Beta;
     list?: (Alpha | Beta)[] | Iterable<(Alpha | Beta)> | undefined;
     itemSet?: Set<Alpha | Beta> | Iterable<Alpha | Beta> | undefined;
     map?: Map<string, Alpha | Beta> | Iterable<[string, Alpha | Beta]> | undefined;

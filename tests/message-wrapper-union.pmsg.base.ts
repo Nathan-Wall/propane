@@ -44,7 +44,7 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
     return [{
       name: "value",
       fieldNumber: 1,
-      getValue: () => this.#value as Flag | string,
+      getValue: () => this.#value as Flag | string | Flag | string,
       unionMessageTypes: ["Flag"],
       unionHasString: true
     }];
@@ -150,15 +150,15 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
     }
     return this.$update(new (this.constructor as typeof WrapperUnion)(data) as this);
   }
-  setValue(value: Flag | string) {
+  setValue(value: Flag | string | Flag | string) {
     return this.$update(new (this.constructor as typeof WrapperUnion)({
-      value: value as Flag | string
+      value: value as Flag | string | Flag | string
     }) as this);
   }
 }
 export namespace WrapperUnion {
   export type Data = {
-    value: Flag | string;
+    value: Flag | string | Flag | string;
   };
   export type Value = WrapperUnion | WrapperUnion.Data;
 }

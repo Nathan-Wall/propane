@@ -1,6 +1,35 @@
 import { createHash } from 'node:crypto';
 import type { PmtMessage, PmtType, PmtTypeParameter } from './types.js';
 
+const DEFAULT_ALIAS_STRING_TYPE: PmtType = { kind: 'primitive', primitive: 'string' };
+
+function resolveAliasType(type: Extract<PmtType, { kind: 'alias' }>): PmtType {
+  switch (type.target) {
+    case 'ImmutableArray':
+      return {
+        kind: 'array',
+        elementType: type.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    case 'ImmutableMap':
+      return {
+        kind: 'map',
+        keyType: type.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+        valueType: type.typeArguments[1] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    case 'ImmutableSet':
+      return {
+        kind: 'set',
+        elementType: type.typeArguments[0] ?? DEFAULT_ALIAS_STRING_TYPE,
+      };
+    default:
+      return {
+        kind: 'reference',
+        name: type.target,
+        typeArguments: type.typeArguments,
+      };
+  }
+}
+
 const HASH_VERSION = 'pmt-v1';
 
 type CanonicalType =
@@ -10,9 +39,6 @@ type CanonicalType =
   | ['map', CanonicalType, CanonicalType]
   | ['set', CanonicalType]
   | ['union', CanonicalType[]]
-  | ['date']
-  | ['url']
-  | ['arraybuffer']
   | ['literal', string | number | boolean | ['bigint', string]];
 
 type CanonicalTypeParam = [string, CanonicalType | null];
@@ -51,12 +77,8 @@ function canonicalizeType(type: PmtType): CanonicalType {
       return ['set', canonicalizeType(type.elementType)];
     case 'union':
       return ['union', type.types.map(canonicalizeType)];
-    case 'date':
-      return ['date'];
-    case 'url':
-      return ['url'];
-    case 'arraybuffer':
-      return ['arraybuffer'];
+    case 'alias':
+      return canonicalizeType(resolveAliasType(type));
     case 'literal':
       if (typeof type.value === 'bigint') {
         return ['literal', ['bigint', type.value.toString()]];

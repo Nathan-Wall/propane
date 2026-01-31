@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, I
 const TYPE_TAG_Wrapper_Payload_Union1 = Symbol("Wrapper_Payload_Union1");
 export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data> {
   static $typeId = "tests/nested-types.pmsg#Wrapper_Payload_Union1";
-  static $typeHash = "sha256:e76bc8c8d904f5ed113467dc8f17f7af003e36cb07ae5345e7c21cb520eac98b";
+  static $typeHash = "sha256:b7b82b2db0e8be8b30fee7c0347c037ac930b617c27eae1700e3b978cd6062eb";
   static $instanceTag = Symbol.for("propane:message:" + Wrapper_Payload_Union1.$typeId);
   static readonly $typeName = "Wrapper_Payload_Union1";
   static EMPTY: Wrapper_Payload_Union1;

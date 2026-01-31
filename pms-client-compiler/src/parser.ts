@@ -5,7 +5,12 @@
  * Looks for types using Endpoint<Payload, Response> wrapper.
  */
 
-import { parseFile as pmtParseFile, findEndpoints, getResponseTypeName } from '@/tools/parser/index.js';
+import {
+  parseFile as pmtParseFile,
+  findEndpoints,
+  getResponseTypeName,
+  type ParseOptions,
+} from '@/tools/parser/index.js';
 import type { PmtDiagnostic, PmtEndpointInfo } from '@/tools/parser/types.js';
 
 /**
@@ -66,8 +71,8 @@ export interface ParseResult {
  *
  * @throws {ParseError} If the file contains syntax or validation errors
  */
-export function parseFile(filePath: string): RpcEndpoint[] {
-  const { file, diagnostics } = pmtParseFile(filePath);
+export function parseFile(filePath: string, options?: ParseOptions): RpcEndpoint[] {
+  const { file, diagnostics } = pmtParseFile(filePath, options);
 
   // Check for errors
   const errors = diagnostics.filter((d) => d.severity === 'error');
@@ -83,12 +88,12 @@ export function parseFile(filePath: string): RpcEndpoint[] {
 /**
  * Parse multiple .pmsg files and aggregate results.
  */
-export function parseFiles(filePaths: string[]): ParseResult {
+export function parseFiles(filePaths: string[], options?: ParseOptions): ParseResult {
   const endpoints: RpcEndpoint[] = [];
   const fileEndpoints = new Map<string, RpcEndpoint[]>();
 
   for (const filePath of filePaths) {
-    const fileResults = parseFile(filePath);
+    const fileResults = parseFile(filePath, options);
     endpoints.push(...fileResults);
     fileEndpoints.set(filePath, fileResults);
   }

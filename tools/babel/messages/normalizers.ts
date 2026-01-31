@@ -176,8 +176,15 @@ export function buildImmutableArrayBufferNormalizationExpression(
   valueExpr: t.Expression,
   {
     allowUndefined = false,
-    allowNull = false
-  }: { allowUndefined?: boolean; allowNull?: boolean } = {}
+    allowNull = false,
+    allowCompact = false,
+    optionsExpr,
+  }: {
+    allowUndefined?: boolean;
+    allowNull?: boolean;
+    allowCompact?: boolean;
+    optionsExpr?: t.Expression;
+  } = {}
 ): t.Expression {
   const instanceCheck = t.binaryExpression(
     'instanceof',
@@ -211,6 +218,55 @@ export function buildImmutableArrayBufferNormalizationExpression(
     t.cloneNode(valueExpr),
     t.conditionalExpression(isArrayBufferView, newFromView, newInstance)
   );
+
+  if (allowCompact) {
+    const stringCheck = t.binaryExpression(
+      '===',
+      t.unaryExpression('typeof', t.cloneNode(valueExpr)),
+      t.stringLiteral('string')
+    );
+    const compactCheck = t.binaryExpression(
+      '===',
+      t.memberExpression(
+        t.identifier('ImmutableArrayBuffer'),
+        t.identifier('$compact')
+      ),
+      t.booleanLiteral(true)
+    );
+    const compactTag = t.memberExpression(
+      t.identifier('ImmutableArrayBuffer'),
+      t.identifier('$compactTag')
+    );
+    const startsWith = t.callExpression(
+      t.memberExpression(t.cloneNode(valueExpr), t.identifier('startsWith')),
+      [t.cloneNode(compactTag)]
+    );
+    const shouldStrip = t.logicalExpression('&&', t.cloneNode(compactTag), startsWith);
+    const payloadExpr = t.conditionalExpression(
+      shouldStrip,
+      t.callExpression(
+        t.memberExpression(t.cloneNode(valueExpr), t.identifier('slice')),
+        [t.memberExpression(t.cloneNode(compactTag), t.identifier('length'))]
+      ),
+      t.cloneNode(valueExpr)
+    );
+    const fromCompactArgs: t.Expression[] = [payloadExpr];
+    if (optionsExpr) {
+      fromCompactArgs.push(t.cloneNode(optionsExpr));
+    }
+    const fromCompactCall = t.callExpression(
+      t.memberExpression(
+        t.identifier('ImmutableArrayBuffer'),
+        t.identifier('fromCompact')
+      ),
+      fromCompactArgs
+    );
+    normalized = t.conditionalExpression(
+      t.logicalExpression('&&', stringCheck, compactCheck),
+      t.tsAsExpression(fromCompactCall, t.tsAnyKeyword()),
+      normalized
+    );
+  }
 
   if (allowNull) {
     normalized = t.conditionalExpression(

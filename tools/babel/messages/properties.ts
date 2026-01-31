@@ -21,6 +21,13 @@ import {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getTypeName,
 } from './type-guards.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
+import {
+  COLLECTION_ALIAS_TARGETS,
+  resolveAliasConfigForName,
+  resolveAliasTargetName,
+  resolveAliasTypeNode,
+} from './alias-utils.js';
 import { capitalize } from './utils.js';
 import {
   isTSTypeParameterInstantiation,
@@ -72,6 +79,8 @@ export interface PluginStateFlags {
   usesInRange: boolean;
   /** Map of message type name to its compact tag (or full tag fallback) */
   messageTagsByName?: Map<string, string>;
+  /** Normalized type alias configuration */
+  typeAliases?: TypeAliasMap;
 }
 
 /**
@@ -277,13 +286,26 @@ function unwrapParenthesizedTypePath(
 }
 
 function getArrayElementTypePath(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
 ): NodePath<t.TSType> | null {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (unwrapped.isTSArrayType()) {
     return unwrapped.get('elementType');
   }
   if (unwrapped.isTSTypeReference()) {
+    const aliasTarget = resolveAliasTargetName(unwrapped, aliases, unwrapped.scope);
+    if (aliasTarget === 'ImmutableArray') {
+      const paramsPath = unwrapped.get('typeParameters');
+      if (
+        !Array.isArray(paramsPath)
+        && paramsPath.node
+        && t.isTSTypeParameterInstantiation(paramsPath.node)
+      ) {
+        const params = paramsPath.get('params');
+        return Array.isArray(params) ? params[0] ?? null : null;
+      }
+    }
     const typeName = unwrapped.node.typeName;
     if (
       t.isIdentifier(typeName)
@@ -308,10 +330,23 @@ function getArrayElementTypePath(
 }
 
 function getSetElementTypePath(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
 ): NodePath<t.TSType> | null {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (unwrapped.isTSTypeReference()) {
+    const aliasTarget = resolveAliasTargetName(unwrapped, aliases, unwrapped.scope);
+    if (aliasTarget === 'ImmutableSet') {
+      const paramsPath = unwrapped.get('typeParameters');
+      if (
+        !Array.isArray(paramsPath)
+        && paramsPath.node
+        && t.isTSTypeParameterInstantiation(paramsPath.node)
+      ) {
+        const params = paramsPath.get('params');
+        return Array.isArray(params) ? params[0] ?? null : null;
+      }
+    }
     const typeName = unwrapped.node.typeName;
     if (
       t.isIdentifier(typeName)
@@ -336,11 +371,29 @@ function getSetElementTypePath(
 }
 
 function getMapTypeArgumentPaths(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
 ): { keyPath: NodePath<t.TSType> | null; valuePath: NodePath<t.TSType> | null } | null {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (!unwrapped.isTSTypeReference()) {
     return null;
+  }
+  const aliasTarget = resolveAliasTargetName(unwrapped, aliases, unwrapped.scope);
+  if (aliasTarget === 'ImmutableMap') {
+    const paramsPath = unwrapped.get('typeParameters');
+    if (
+      !Array.isArray(paramsPath)
+      && paramsPath.node
+      && t.isTSTypeParameterInstantiation(paramsPath.node)
+    ) {
+      const params = paramsPath.get('params');
+      if (Array.isArray(params)) {
+        return {
+          keyPath: params[0] ?? null,
+          valuePath: params[1] ?? null,
+        };
+      }
+    }
   }
   const typeName = unwrapped.node.typeName;
   if (
@@ -447,17 +500,41 @@ export function extractProperties(
     // Validate supported types after implicit type expansion
     assertSupportedType(propTypePath, declaredTypeNames);
 
-    const mapType = isMapTypeNode(propTypePath.node);
-    const mapArgs = mapType ? getMapTypeArguments(propTypePath.node) : null;
-    const arrayType = isArrayTypeNode(propTypePath.node);
-    const arrayElementType = arrayType
-      ? getArrayElementType(propTypePath.node)
+    const aliases = state.typeAliases ?? {};
+    const aliasTarget = propTypePath.isTSTypeReference()
+      ? resolveAliasTargetName(propTypePath, aliases, propTypePath.scope)
       : null;
-    const setType = isSetTypeNode(propTypePath.node);
-    const setArg = setType ? getSetTypeArguments(propTypePath.node) : null;
-    const arrayElementPath = arrayType ? getArrayElementTypePath(propTypePath) : null;
-    const setElementPath = setType ? getSetElementTypePath(propTypePath) : null;
-    const mapArgPaths = mapType ? getMapTypeArgumentPaths(propTypePath) : null;
+    const propTypeRef = propTypePath.isTSTypeReference()
+      ? propTypePath.node
+      : null;
+
+    const mapType = isMapTypeNode(propTypePath.node) || aliasTarget === 'ImmutableMap';
+    const mapArgs = mapType
+      ? (getMapTypeArguments(propTypePath.node)
+        ?? (aliasTarget === 'ImmutableMap'
+          ? {
+            keyType: propTypeRef?.typeParameters?.params?.[0] ?? t.tsUnknownKeyword(),
+            valueType: propTypeRef?.typeParameters?.params?.[1] ?? t.tsUnknownKeyword(),
+          }
+          : null))
+      : null;
+    const arrayType = isArrayTypeNode(propTypePath.node) || aliasTarget === 'ImmutableArray';
+    const arrayElementType = arrayType
+      ? (getArrayElementType(propTypePath.node)
+        ?? (aliasTarget === 'ImmutableArray'
+          ? propTypeRef?.typeParameters?.params?.[0] ?? null
+          : null))
+      : null;
+    const setType = isSetTypeNode(propTypePath.node) || aliasTarget === 'ImmutableSet';
+    const setArg = setType
+      ? (getSetTypeArguments(propTypePath.node)
+        ?? (aliasTarget === 'ImmutableSet'
+          ? propTypeRef?.typeParameters?.params?.[0] ?? t.tsUnknownKeyword()
+          : null))
+      : null;
+    const arrayElementPath = arrayType ? getArrayElementTypePath(propTypePath, aliases) : null;
+    const setElementPath = setType ? getSetElementTypePath(propTypePath, aliases) : null;
+    const mapArgPaths = mapType ? getMapTypeArgumentPaths(propTypePath, aliases) : null;
     const messageTypeName = getMessageReferenceName(propTypePath);
     const arrayElementMessageTypeName = arrayElementPath
       ? getMessageReferenceName(arrayElementPath)
@@ -492,8 +569,8 @@ export function extractProperties(
       ? extractUnionMessageTypes(mapArgPaths.valuePath, getMessageReferenceName)
       : [];
     const unionHasString = extractUnionHasString(propTypePath);
-    const unionHasDate = extractUnionHasDate(propTypePath);
-    const unionHasUrl = extractUnionHasUrl(propTypePath);
+    const unionHasDate = extractUnionHasDate(propTypePath, aliases);
+    const unionHasUrl = extractUnionHasUrl(propTypePath, aliases);
     const arrayElementUnionHasString = arrayElementPath
       ? extractUnionHasString(arrayElementPath)
       : false;
@@ -556,13 +633,23 @@ export function extractProperties(
     }
 
     const isDateType = propTypePath.isTSTypeReference()
-      && isDateReference(propTypePath.node);
+      && (
+        isDateReference(propTypePath.node)
+        || isImmutableDateReference(propTypePath.node)
+        || aliasTarget === 'ImmutableDate'
+      );
     const isUrlType = propTypePath.isTSTypeReference()
-      && isUrlReference(propTypePath.node);
+      && (
+        isUrlReference(propTypePath.node)
+        || isImmutableUrlReference(propTypePath.node)
+        || aliasTarget === 'ImmutableUrl'
+      );
     const isArrayBufferType = propTypePath.isTSTypeReference()
-      && (isArrayBufferReference(propTypePath.node)
-        || isImmutableArrayBufferReference(propTypePath.node))
-      && !messageTypeName;
+      && (
+        isArrayBufferReference(propTypePath.node)
+        || isImmutableArrayBufferReference(propTypePath.node)
+        || aliasTarget === 'ImmutableArrayBuffer'
+      );
 
     // Recursively scan for type usage to ensure imports are generated
     scanTypeForUsage(propTypePath, state);
@@ -572,7 +659,17 @@ export function extractProperties(
       state.usesEquals = true;
       // Check if map key or value types need ImmutableDate/ImmutableUrl/ImmutableArray
       if (mapArgs) {
-        if (isArrayTypeNode(mapArgs.keyType)) {
+        const resolvedKeyType = resolveAliasTypeNode(
+          t.cloneNode(mapArgs.keyType),
+          aliases,
+          propTypePath.scope
+        );
+        if (
+          isArrayTypeNode(mapArgs.keyType)
+          || (t.isTSTypeReference(resolvedKeyType)
+            && t.isIdentifier(resolvedKeyType.typeName)
+            && resolvedKeyType.typeName.name === 'ImmutableArray')
+        ) {
           state.usesImmutableArray = true;
         }
       }
@@ -593,15 +690,21 @@ export function extractProperties(
       state.usesImmutableArrayBuffer = true;
     }
 
+    const resolvedTypeNode = resolveAliasTypeNode(
+      t.cloneNode(propTypePath.node),
+      aliases,
+      propTypePath.scope
+    );
     const runtimeType = mapType || setType || arrayType
-      ? wrapImmutableType(t.cloneNode(propTypePath.node))
-      : t.cloneNode(propTypePath.node);
+      ? wrapImmutableType(t.cloneNode(resolvedTypeNode))
+      : t.cloneNode(resolvedTypeNode);
 
     let inputTypeAnnotation: t.TSType = mapType || setType || arrayType
-      ? buildInputAcceptingMutable(t.cloneNode(propTypePath.node))
-      : t.cloneNode(propTypePath.node);
+      ? buildInputAcceptingMutable(t.cloneNode(resolvedTypeNode))
+      : t.cloneNode(resolvedTypeNode);
 
-    let displayType: t.TSType = t.cloneNode(propTypePath.node);
+    const originalTypeNode = t.cloneNode(propTypePath.node);
+    let displayType: t.TSType = t.cloneNode(originalTypeNode);
     if (mapType && mapArgs) {
       const mapRef = t.tsTypeReference(
         t.identifier('Map'),
@@ -634,18 +737,23 @@ export function extractProperties(
       // If so, include both mutable and immutable element variants in the union
       // so that internal immutable arrays can be passed to the constructor
       let elementUnionType: t.TSType | null = null;
-      if (t.isTSTypeReference(arrayElementType)) {
-        if (isArrayBufferReference(arrayElementType)) {
+      const resolvedElementType = resolveAliasTypeNode(
+        t.cloneNode(arrayElementType),
+        aliases,
+        propTypePath.scope
+      );
+      if (t.isTSTypeReference(resolvedElementType) && t.isIdentifier(resolvedElementType.typeName)) {
+        if (resolvedElementType.typeName.name === 'ImmutableArrayBuffer') {
           elementUnionType = t.tsUnionType([
             t.tsTypeReference(t.identifier('ArrayBuffer')),
             t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
           ]);
-        } else if (isDateReference(arrayElementType)) {
+        } else if (resolvedElementType.typeName.name === 'ImmutableDate') {
           elementUnionType = t.tsUnionType([
             t.tsTypeReference(t.identifier('Date')),
             t.tsTypeReference(t.identifier('ImmutableDate')),
           ]);
-        } else if (isUrlReference(arrayElementType)) {
+        } else if (resolvedElementType.typeName.name === 'ImmutableUrl') {
           elementUnionType = t.tsUnionType([
             t.tsTypeReference(t.identifier('URL')),
             t.tsTypeReference(t.identifier('ImmutableUrl')),
@@ -688,9 +796,28 @@ export function extractProperties(
       ]);
     }
 
-    const unionDateUrlDisplayType = buildUnionDateUrlDisplayType(propTypePath);
+    const unionDateUrlDisplayType = buildUnionDateUrlDisplayType(propTypePath, aliases);
     if (unionDateUrlDisplayType) {
       displayType = unionDateUrlDisplayType;
+    }
+
+    if (
+      !mapType
+      && !setType
+      && !arrayType
+      && !isDateType
+      && !isUrlType
+      && !isArrayBufferType
+      && !messageTypeName
+      && !t.isNodesEquivalent(originalTypeNode, resolvedTypeNode)
+      && t.isNodesEquivalent(displayType, originalTypeNode)
+    ) {
+      const unionType = t.tsUnionType([
+        t.cloneNode(originalTypeNode),
+        t.cloneNode(resolvedTypeNode),
+      ]);
+      displayType = unionType;
+      inputTypeAnnotation = t.cloneNode(unionType);
     }
 
     if (messageTypeName && !isDateType && !isUrlType) {
@@ -709,6 +836,19 @@ export function extractProperties(
       );
       displayType = t.cloneNode(inputTypeAnnotation);
     }
+
+    const resolvedArrayElementType = arrayElementType
+      ? resolveAliasTypeNode(t.cloneNode(arrayElementType), aliases, propTypePath.scope)
+      : null;
+    const resolvedMapKeyType = mapArgs?.keyType
+      ? resolveAliasTypeNode(t.cloneNode(mapArgs.keyType), aliases, propTypePath.scope)
+      : null;
+    const resolvedMapValueType = mapArgs?.valueType
+      ? resolveAliasTypeNode(t.cloneNode(mapArgs.valueType), aliases, propTypePath.scope)
+      : null;
+    const resolvedSetElementType = setArg
+      ? resolveAliasTypeNode(t.cloneNode(setArg), aliases, propTypePath.scope)
+      : null;
 
     props.push({
       name,
@@ -741,17 +881,19 @@ export function extractProperties(
       unionHasUrl,
       typeAnnotation: runtimeType,
       inputTypeAnnotation,
-      arrayElementType,
-      mapKeyType: mapArgs ? mapArgs.keyType : null,
-      mapValueType: mapArgs ? mapArgs.valueType : null,
-      mapKeyInputType: mapArgs
-        ? buildInputAcceptingMutable(mapArgs.keyType)
+      arrayElementType: resolvedArrayElementType,
+      mapKeyType: resolvedMapKeyType,
+      mapValueType: resolvedMapValueType,
+      mapKeyInputType: resolvedMapKeyType
+        ? buildInputAcceptingMutable(resolvedMapKeyType)
         : null,
-      mapValueInputType: mapArgs
-        ? buildInputAcceptingMutable(mapArgs.valueType)
+      mapValueInputType: resolvedMapValueType
+        ? buildInputAcceptingMutable(resolvedMapValueType)
         : null,
-      setElementType: setArg,
-      setElementInputType: setArg ? buildInputAcceptingMutable(setArg) : null,
+      setElementType: resolvedSetElementType,
+      setElementInputType: resolvedSetElementType
+        ? buildInputAcceptingMutable(resolvedSetElementType)
+        : null,
       displayType,
       // Generic type parameter tracking
       isGenericParam,
@@ -1371,7 +1513,10 @@ function extractUnionHasString(typePath: NodePath<t.TSType>): boolean {
   );
 }
 
-function extractUnionHasDate(typePath: NodePath<t.TSType>): boolean {
+function extractUnionHasDate(
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
+): boolean {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (!unwrapped.isTSUnionType()) {
     return false;
@@ -1379,11 +1524,18 @@ function extractUnionHasDate(typePath: NodePath<t.TSType>): boolean {
   return unwrapped.get('types').some((memberPath) => {
     const member = unwrapParenthesizedTypePath(memberPath);
     return member.isTSTypeReference()
-      && (isDateReference(member.node) || isImmutableDateReference(member.node));
+      && (
+        isDateReference(member.node)
+        || isImmutableDateReference(member.node)
+        || resolveAliasTargetName(member, aliases, member.scope) === 'ImmutableDate'
+      );
   });
 }
 
-function extractUnionHasUrl(typePath: NodePath<t.TSType>): boolean {
+function extractUnionHasUrl(
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
+): boolean {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (!unwrapped.isTSUnionType()) {
     return false;
@@ -1391,12 +1543,17 @@ function extractUnionHasUrl(typePath: NodePath<t.TSType>): boolean {
   return unwrapped.get('types').some((memberPath) => {
     const member = unwrapParenthesizedTypePath(memberPath);
     return member.isTSTypeReference()
-      && (isUrlReference(member.node) || isImmutableUrlReference(member.node));
+      && (
+        isUrlReference(member.node)
+        || isImmutableUrlReference(member.node)
+        || resolveAliasTargetName(member, aliases, member.scope) === 'ImmutableUrl'
+      );
   });
 }
 
 function buildUnionDateUrlDisplayType(
-  typePath: NodePath<t.TSType>
+  typePath: NodePath<t.TSType>,
+  aliases: TypeAliasMap
 ): t.TSType | null {
   const unwrapped = unwrapParenthesizedTypePath(typePath);
   if (!unwrapped.isTSUnionType()) {
@@ -1409,13 +1566,25 @@ function buildUnionDateUrlDisplayType(
 
   for (const memberPath of members) {
     const member = unwrapParenthesizedTypePath(memberPath);
-    if (member.isTSTypeReference() && isDateReference(member.node)) {
+    if (
+      member.isTSTypeReference()
+      && (
+        isDateReference(member.node)
+        || resolveAliasTargetName(member, aliases, member.scope) === 'ImmutableDate'
+      )
+    ) {
       hasDateOrUrl = true;
       types.push(t.cloneNode(member.node));
       types.push(t.tsTypeReference(t.identifier('ImmutableDate')));
       continue;
     }
-    if (member.isTSTypeReference() && isUrlReference(member.node)) {
+    if (
+      member.isTSTypeReference()
+      && (
+        isUrlReference(member.node)
+        || resolveAliasTargetName(member, aliases, member.scope) === 'ImmutableUrl'
+      )
+    ) {
       hasDateOrUrl = true;
       types.push(t.cloneNode(member.node));
       types.push(t.tsTypeReference(t.identifier('ImmutableUrl')));
@@ -1474,43 +1643,53 @@ function scanTypeForUsage(
 ): void {
   if (!typePath?.node) return;
 
+  const aliases = state.typeAliases ?? {};
+
   if (typePath.isTSTypeReference()) {
+    const aliasTarget = resolveAliasTargetName(typePath, aliases, typePath.scope);
     if (isDecimalReference(typePath.node)) state.usesDecimalClass = true;
     if (isRationalReference(typePath.node)) state.usesRationalClass = true;
-    if (isDateReference(typePath.node) || isImmutableDateReference(typePath.node)) {
+    if (
+      isDateReference(typePath.node)
+      || isImmutableDateReference(typePath.node)
+      || aliasTarget === 'ImmutableDate'
+    ) {
       state.usesImmutableDate = true;
     }
-    if (isUrlReference(typePath.node) || isImmutableUrlReference(typePath.node)) {
+    if (
+      isUrlReference(typePath.node)
+      || isImmutableUrlReference(typePath.node)
+      || aliasTarget === 'ImmutableUrl'
+    ) {
       state.usesImmutableUrl = true;
     }
     if (
       isArrayBufferReference(typePath.node)
       || isImmutableArrayBufferReference(typePath.node)
+      || aliasTarget === 'ImmutableArrayBuffer'
     ) {
       state.usesImmutableArrayBuffer = true;
     }
-    if (isMapReference(typePath.node)) {
+    if (isMapReference(typePath.node) || aliasTarget === 'ImmutableMap') {
       state.usesImmutableMap = true;
       state.usesEquals = true;
-      const params = typePath.get('typeParameters');
-      if (isTSTypeParameterInstantiation(params)) {
-        for (const p of getTypeParams(params)) {
-          scanTypeForUsage(p, state);
-        }
-      }
     }
-    if (isSetReference(typePath.node)) {
+    if (isSetReference(typePath.node) || aliasTarget === 'ImmutableSet') {
       state.usesImmutableSet = true;
-      const params = typePath.get('typeParameters');
-      if (isTSTypeParameterInstantiation(params)) {
-        for (const p of getTypeParams(params)) {
-          scanTypeForUsage(p, state);
-        }
+    }
+    const params = typePath.get('typeParameters');
+    if (isTSTypeParameterInstantiation(params)) {
+      for (const p of getTypeParams(params)) {
+        scanTypeForUsage(p, state);
       }
     }
   }
 
-  if (isArrayTypeNode(typePath.node)) {
+  if (
+    isArrayTypeNode(typePath.node)
+    || (typePath.isTSTypeReference()
+      && resolveAliasTargetName(typePath, aliases, typePath.scope) === 'ImmutableArray')
+  ) {
     state.usesImmutableArray = true;
   }
 

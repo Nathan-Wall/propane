@@ -143,7 +143,7 @@ export class Container<T extends {
     return [{
       name: "inner",
       fieldNumber: 1,
-      getValue: () => this.#inner
+      getValue: () => this.#inner as T | T
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -251,9 +251,9 @@ export class Container<T extends {
     }
     return this.$update(new Container(this.#tClass, data) as this as this);
   }
-  setInner(value: T) {
+  setInner(value: T | T) {
     return this.$update(new Container(this.#tClass, {
-      inner: value
+      inner: value as T | T
     }) as this as this);
   }
 }
@@ -264,7 +264,7 @@ export namespace Container {
     hashCode(): number;
     equals(other: unknown): boolean;
   }> = {
-    inner: T;
+    inner: T | T;
   };
   export type Value<T extends {
     $typeName: string;
@@ -296,7 +296,7 @@ export class Optional<T extends {
     return [{
       name: "value",
       fieldNumber: 1,
-      getValue: () => this.#value
+      getValue: () => this.#value as T | T
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -405,9 +405,9 @@ export class Optional<T extends {
     }
     return this.$update(new Optional(this.#tClass, data) as this as this);
   }
-  setValue(value: T | undefined) {
+  setValue(value: T | T | undefined) {
     return this.$update(new Optional(this.#tClass, {
-      value: value
+      value: value as T | T
     }) as this as this);
   }
   unsetValue() {
@@ -421,7 +421,7 @@ export namespace Optional {
     hashCode(): number;
     equals(other: unknown): boolean;
   }> = {
-    value?: T | undefined;
+    value?: T | T | undefined;
   };
   export type Value<T extends {
     $typeName: string;
@@ -462,11 +462,11 @@ export class Pair<T extends {
     return [{
       name: "first",
       fieldNumber: 1,
-      getValue: () => this.#first
+      getValue: () => this.#first as T | T
     }, {
       name: "second",
       fieldNumber: 2,
-      getValue: () => this.#second
+      getValue: () => this.#second as U | U
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -594,16 +594,16 @@ export class Pair<T extends {
     }
     return this.$update(new Pair(this.#tClass, this.#uClass, data) as this as this);
   }
-  setFirst(value: T) {
+  setFirst(value: T | T) {
     return this.$update(new Pair(this.#tClass, this.#uClass, {
-      first: value,
-      second: this.#second
+      first: value as T | T,
+      second: this.#second as U | U
     }) as this as this);
   }
-  setSecond(value: U) {
+  setSecond(value: U | U) {
     return this.$update(new Pair(this.#tClass, this.#uClass, {
-      first: this.#first,
-      second: value
+      first: this.#first as T | T,
+      second: value as U | U
     }) as this as this);
   }
 }
@@ -619,8 +619,8 @@ export namespace Pair {
     hashCode(): number;
     equals(other: unknown): boolean;
   }> = {
-    first: T;
-    second: U;
+    first: T | T;
+    second: U | U;
   };
   export type Value<T extends {
     $typeName: string;
@@ -752,7 +752,7 @@ export class Timestamped<T extends {
     return [{
       name: "inner",
       fieldNumber: 1,
-      getValue: () => this.#inner
+      getValue: () => this.#inner as T | T
     }, {
       name: "timestamp",
       fieldNumber: 2,
@@ -813,7 +813,7 @@ export class Timestamped<T extends {
     switch (key) {
       case "timestamp":
         return new Timestamped(this.#tClass, {
-          inner: this.#inner,
+          inner: this.#inner as T | T,
           timestamp: child as ImmutableDate | Date,
           label: this.#label
         }) as this;
@@ -963,23 +963,23 @@ export class Timestamped<T extends {
     }
     return this.$update(new Timestamped(this.#tClass, data) as this as this);
   }
-  setInner(value: T) {
+  setInner(value: T | T) {
     return this.$update(new Timestamped(this.#tClass, {
-      inner: value,
+      inner: value as T | T,
       timestamp: this.#timestamp as ImmutableDate | Date,
       label: this.#label
     }) as this as this);
   }
   setLabel(value: string) {
     return this.$update(new Timestamped(this.#tClass, {
-      inner: this.#inner,
+      inner: this.#inner as T | T,
       timestamp: this.#timestamp as ImmutableDate | Date,
       label: value
     }) as this as this);
   }
   setTimestamp(value: ImmutableDate | Date) {
     return this.$update(new Timestamped(this.#tClass, {
-      inner: this.#inner,
+      inner: this.#inner as T | T,
       timestamp: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       label: this.#label
     }) as this as this);
@@ -992,7 +992,7 @@ export namespace Timestamped {
     hashCode(): number;
     equals(other: unknown): boolean;
   }> = {
-    inner: T;
+    inner: T | T;
     timestamp: ImmutableDate | Date;
     label: string;
   };
@@ -1023,7 +1023,7 @@ export class Sized<P extends number> extends Message<Sized.Data<P>> {
     return [{
       name: "size",
       fieldNumber: 1,
-      getValue: () => this.#size
+      getValue: () => this.#size as P | P
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -1078,15 +1078,15 @@ export class Sized<P extends number> extends Message<Sized.Data<P>> {
     }
     return this.$update(new (this.constructor as typeof Sized)(data) as this);
   }
-  setSize(value: P) {
+  setSize(value: P | P) {
     return this.$update(new (this.constructor as typeof Sized)({
-      size: value
+      size: value as P | P
     }) as this);
   }
 }
 export namespace Sized {
   export type Data<P extends number> = {
-    size: P;
+    size: P | P;
   };
   export type Value<P extends number> = Sized<P> | Sized.Data<P>;
 }

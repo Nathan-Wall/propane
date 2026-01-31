@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from '@babel/core';
 import propanePlugin from '@/tools/babel/messages/index.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +19,7 @@ interface PropaneConfig {
   runtimeImportPath?: string;
   messageTypeIdPrefix?: string;
   messageTypeIdRoot?: string;
+  typeAliases?: TypeAliasMap;
 }
 
 // Load propane config
@@ -136,6 +138,9 @@ function compilePmsgFile(filePath: string): void {
       projectRoot,
       propaneConfig.messageTypeIdRoot
     );
+  }
+  if (propaneConfig.typeAliases) {
+    pluginOptions['typeAliases'] = propaneConfig.typeAliases;
   }
 
   const result = transformSync(source, {

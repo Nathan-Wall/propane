@@ -5,6 +5,7 @@ import path from 'node:path';
 import { writeFileSync, existsSync, mkdirSync, readdirSync, statSync, readFileSync } from 'node:fs';
 import chokidar from 'chokidar';
 import { parseFiles } from './parser.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 import { generateClient } from './generator.js';
 
 interface CliOptions {
@@ -15,6 +16,7 @@ interface CliOptions {
   className?: string;
   websocket: boolean;
   watch: boolean;
+  typeAliases?: TypeAliasMap;
 }
 
 interface PmsConfig {
@@ -27,15 +29,16 @@ interface PmsConfig {
 
 interface PropaneConfig {
   pms?: PmsConfig;
+  typeAliases?: TypeAliasMap;
 }
 
-function loadConfig(): PmsConfig | null {
+function loadConfig(): PropaneConfig | null {
   const configPath = path.resolve(process.cwd(), 'propane.config.json');
   if (existsSync(configPath)) {
     try {
       const content = readFileSync(configPath, 'utf8');
       const config = JSON.parse(content) as PropaneConfig;
-      return config.pms || null;
+      return config;
     } catch (e) {
       console.warn(`Warning: Failed to parse propane.config.json: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -123,12 +126,13 @@ function parseCliArgs(): CliOptions | null {
     }
 
     const config = loadConfig();
+    const pmsConfig = config?.pms;
 
     let output: string | undefined;
     if (values.output) {
       output = path.resolve(values.output);
-    } else if (config?.output) {
-      output = path.resolve(config.output);
+    } else if (pmsConfig?.output) {
+      output = path.resolve(pmsConfig.output);
     }
 
     if (!output) {
@@ -139,7 +143,7 @@ function parseCliArgs(): CliOptions | null {
 
     const positionalFiles: string[] = positionals.map((f) => path.resolve(f));
     let files: string[] = [...positionalFiles];
-    const dir = values.dir || config?.inputDir;
+    const dir = values.dir || pmsConfig?.inputDir;
 
     if (dir) {
       const dirPath = path.resolve(dir);
@@ -161,9 +165,10 @@ function parseCliArgs(): CliOptions | null {
       positionalFiles,
       dir,
       output,
-      className: values.name || config?.className,
-      websocket: values.websocket || config?.websocket || false,
-      watch: values.watch || config?.watch || false,
+      className: values.name || pmsConfig?.className,
+      websocket: values.websocket || pmsConfig?.websocket || false,
+      watch: values.watch || pmsConfig?.watch || false,
+      typeAliases: config?.typeAliases,
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -191,7 +196,9 @@ function compile(options: CliOptions, verbose = true): boolean {
   }
 
   // Parse files
-  const parseResult = parseFiles(options.files);
+  const parseResult = parseFiles(options.files, {
+    typeAliases: options.typeAliases,
+  });
 
   if (parseResult.endpoints.length === 0) {
     console.error('Error: No RPC endpoints found');

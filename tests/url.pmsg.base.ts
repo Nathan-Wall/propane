@@ -215,10 +215,10 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }
-  fillLink(value: URL, start?: number, end?: number) {
+  fillLink(value: ImmutableUrl, start?: number, end?: number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
-    (linksNext as unknown as URL[]).fill(value, start, end);
+    (linksNext as unknown as ImmutableUrl[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary as ImmutableUrl | URL,
@@ -238,7 +238,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }
-  pushLink(...values: URL[]) {
+  pushLink(...values: ImmutableUrl[]) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...linksArray, ...values];
@@ -313,10 +313,10 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }
-  sortLinks(compareFn?: (a: URL, b: URL) => number) {
+  sortLinks(compareFn?: (a: ImmutableUrl, b: ImmutableUrl) => number) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
-    (linksNext as unknown as URL[]).sort(compareFn);
+    (linksNext as unknown as ImmutableUrl[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary as ImmutableUrl | URL,
@@ -324,7 +324,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: linksNext as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }
-  spliceLink(start: number, deleteCount?: number, ...items: URL[]) {
+  spliceLink(start: number, deleteCount?: number, ...items: ImmutableUrl[]) {
     const linksArray = this.#links;
     const linksNext = [...linksArray];
     linksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -342,7 +342,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
       links: this.#links as (URL | ImmutableUrl)[] | Iterable<URL | ImmutableUrl>
     }) as this);
   }
-  unshiftLink(...values: URL[]) {
+  unshiftLink(...values: ImmutableUrl[]) {
     if (values.length === 0) return this;
     const linksArray = this.#links;
     const linksNext = [...values, ...linksArray];

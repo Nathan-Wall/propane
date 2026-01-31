@@ -6,6 +6,7 @@
 
 import * as t from '@babel/types';
 import type { PmtType, PmtTypeParameter, SourceLocation, PmtDiagnostic } from './types.js';
+import type { TypeAliasMap, TypeAliasConfig } from './type-aliases.js';
 
 /**
  * Context passed through type parsing for diagnostics collection.
@@ -13,6 +14,8 @@ import type { PmtType, PmtTypeParameter, SourceLocation, PmtDiagnostic } from '.
 export interface TypeParserContext {
   filePath: string;
   diagnostics: PmtDiagnostic[];
+  typeAliases?: TypeAliasMap;
+  localTypeNames?: Set<string>;
 }
 
 /**
@@ -40,6 +43,31 @@ function getTypeName(typeName: t.TSEntityName): string {
   }
   // Qualified name (e.g., Namespace.Type)
   return `${getTypeName(typeName.left)}.${typeName.right.name}`;
+}
+
+function resolveAliasConfig(
+  name: string,
+  ctx: TypeParserContext
+): TypeAliasConfig | null {
+  if (!ctx.typeAliases) return null;
+  if (ctx.localTypeNames && ctx.localTypeNames.has(name)) {
+    return null;
+  }
+  return ctx.typeAliases[name] ?? null;
+}
+
+function buildAliasType(
+  source: string,
+  config: TypeAliasConfig,
+  typeArguments: PmtType[]
+): PmtType {
+  return {
+    kind: 'alias',
+    source,
+    target: config.target,
+    aliasKind: config.kind,
+    typeArguments,
+  };
 }
 
 /**
@@ -97,9 +125,14 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
 
   // Array types (T[] syntax)
   if (t.isTSArrayType(node)) {
+    const arrayAlias = resolveAliasConfig('Array', ctx);
+    const elementType = parseType(node.elementType, ctx);
+    if (arrayAlias) {
+      return buildAliasType('Array', arrayAlias, [elementType]);
+    }
     return {
       kind: 'array',
-      elementType: parseType(node.elementType, ctx),
+      elementType,
     };
   }
 
@@ -120,11 +153,19 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
   if (t.isTSTypeReference(node)) {
     const name = getTypeName(node.typeName);
     const typeArgs = node.typeParameters?.params ?? [];
+    const parsedArgs = typeArgs.map((arg) => parseType(arg, ctx));
+
+    if (t.isIdentifier(node.typeName)) {
+      const alias = resolveAliasConfig(node.typeName.name, ctx);
+      if (alias) {
+        return buildAliasType(node.typeName.name, alias, parsedArgs);
+      }
+    }
 
     // Handle built-in collection types
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
-      const elementType: PmtType = typeArgs[0]
-        ? parseType(typeArgs[0], ctx)
+      const elementType: PmtType = parsedArgs[0]
+        ? parsedArgs[0]
         : { kind: 'primitive', primitive: 'string' };
       return { kind: 'array', elementType };
     }
@@ -132,34 +173,23 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
     if (name === 'Map' || name === 'ReadonlyMap' || name === 'ImmutableMap') {
       return {
         kind: 'map',
-        keyType: typeArgs[0] ? parseType(typeArgs[0], ctx) : { kind: 'primitive', primitive: 'string' },
-        valueType: typeArgs[1] ? parseType(typeArgs[1], ctx) : { kind: 'primitive', primitive: 'string' },
+        keyType: parsedArgs[0] ?? { kind: 'primitive', primitive: 'string' },
+        valueType: parsedArgs[1] ?? { kind: 'primitive', primitive: 'string' },
       };
     }
 
     if (name === 'Set' || name === 'ReadonlySet' || name === 'ImmutableSet') {
       return {
         kind: 'set',
-        elementType: typeArgs[0] ? parseType(typeArgs[0], ctx) : { kind: 'primitive', primitive: 'string' },
+        elementType: parsedArgs[0] ?? { kind: 'primitive', primitive: 'string' },
       };
-    }
-
-    // Handle built-in special types (Date/URL map to immutable message types)
-    if (name === 'Date' || name === 'ImmutableDate') {
-      return { kind: 'reference', name: 'ImmutableDate', typeArguments: [] };
-    }
-    if (name === 'URL' || name === 'ImmutableUrl') {
-      return { kind: 'reference', name: 'ImmutableUrl', typeArguments: [] };
-    }
-    if (name === 'ArrayBuffer' || name === 'ImmutableArrayBuffer') {
-      return { kind: 'arraybuffer' };
     }
 
     // Generic type reference
     return {
       kind: 'reference',
       name,
-      typeArguments: typeArgs.map((arg) => parseType(arg, ctx)),
+      typeArguments: parsedArgs,
     };
   }
 

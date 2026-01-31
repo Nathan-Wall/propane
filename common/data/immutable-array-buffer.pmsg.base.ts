@@ -8,7 +8,7 @@ import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCe
 const TYPE_TAG_ImmutableArrayBuffer$Base = Symbol("ImmutableArrayBuffer");
 export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data> {
   static $typeId = "common/data/immutable-array-buffer.pmsg#ImmutableArrayBuffer";
-  static $typeHash = "sha256:62e0158b263d8d302d03d7c20cdd85a2099751f73120c8832e511717393f7edc";
+  static $typeHash = "sha256:fd0879d8912ffba2b39e3003d8ec71d91c4eb8ec413516507923655dab815725";
   static $instanceTag = Symbol.for("propane:message:" + ImmutableArrayBuffer$Base.$typeId);
   static override readonly $compact = true;
   static override readonly $compactTag = "B";

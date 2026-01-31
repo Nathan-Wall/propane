@@ -6,7 +6,7 @@ import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/i
 const TYPE_TAG_Unions_Metadata_Union1 = Symbol("Unions_Metadata_Union1");
 export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Metadata_Union1";
-  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
+  static $typeHash = "sha256:20fd82383a102902b283c4e368a743436df950145022fe82bd7afddec60f710b";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union1.$typeId);
   static readonly $typeName = "Unions_Metadata_Union1";
   static EMPTY: Unions_Metadata_Union1;
@@ -138,7 +138,7 @@ export namespace Unions_Metadata_Union1 {
 const TYPE_TAG_Unions_Metadata_Union2 = Symbol("Unions_Metadata_Union2");
 export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Metadata_Union2";
-  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
+  static $typeHash = "sha256:5766ab54f69d9e889876ff9bf295f481ebf6a2ec57b452b42d11285ee791d97e";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Metadata_Union2.$typeId);
   static readonly $typeName = "Unions_Metadata_Union2";
   static EMPTY: Unions_Metadata_Union2;
@@ -270,7 +270,7 @@ export namespace Unions_Metadata_Union2 {
 const TYPE_TAG_Unions_Items_Item_Union1 = Symbol("Unions_Items_Item_Union1");
 export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union1";
-  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
+  static $typeHash = "sha256:20fd82383a102902b283c4e368a743436df950145022fe82bd7afddec60f710b";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union1.$typeId);
   static readonly $typeName = "Unions_Items_Item_Union1";
   static EMPTY: Unions_Items_Item_Union1;
@@ -402,7 +402,7 @@ export namespace Unions_Items_Item_Union1 {
 const TYPE_TAG_Unions_Items_Item_Union2 = Symbol("Unions_Items_Item_Union2");
 export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_Items_Item_Union2";
-  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
+  static $typeHash = "sha256:5766ab54f69d9e889876ff9bf295f481ebf6a2ec57b452b42d11285ee791d97e";
   static $instanceTag = Symbol.for("propane:message:" + Unions_Items_Item_Union2.$typeId);
   static readonly $typeName = "Unions_Items_Item_Union2";
   static EMPTY: Unions_Items_Item_Union2;
@@ -534,7 +534,7 @@ export namespace Unions_Items_Item_Union2 {
 const TYPE_TAG_Unions_ItemSet_Item_Union1 = Symbol("Unions_ItemSet_Item_Union1");
 export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union1";
-  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
+  static $typeHash = "sha256:20fd82383a102902b283c4e368a743436df950145022fe82bd7afddec60f710b";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union1.$typeId);
   static readonly $typeName = "Unions_ItemSet_Item_Union1";
   static EMPTY: Unions_ItemSet_Item_Union1;
@@ -666,7 +666,7 @@ export namespace Unions_ItemSet_Item_Union1 {
 const TYPE_TAG_Unions_ItemSet_Item_Union2 = Symbol("Unions_ItemSet_Item_Union2");
 export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemSet_Item_Union2";
-  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
+  static $typeHash = "sha256:5766ab54f69d9e889876ff9bf295f481ebf6a2ec57b452b42d11285ee791d97e";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemSet_Item_Union2.$typeId);
   static readonly $typeName = "Unions_ItemSet_Item_Union2";
   static EMPTY: Unions_ItemSet_Item_Union2;
@@ -798,7 +798,7 @@ export namespace Unions_ItemSet_Item_Union2 {
 const TYPE_TAG_Unions_ItemMap_Value_Union1 = Symbol("Unions_ItemMap_Value_Union1");
 export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Union1.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union1";
-  static $typeHash = "sha256:d85256f370fc2e41c420d263ebc08f81b74552bc5969a77f3e367bc40bc1d09c";
+  static $typeHash = "sha256:20fd82383a102902b283c4e368a743436df950145022fe82bd7afddec60f710b";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union1.$typeId);
   static readonly $typeName = "Unions_ItemMap_Value_Union1";
   static EMPTY: Unions_ItemMap_Value_Union1;
@@ -930,7 +930,7 @@ export namespace Unions_ItemMap_Value_Union1 {
 const TYPE_TAG_Unions_ItemMap_Value_Union2 = Symbol("Unions_ItemMap_Value_Union2");
 export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Union2.Data> {
   static $typeId = "tests/unions.pmsg#Unions_ItemMap_Value_Union2";
-  static $typeHash = "sha256:160e9d544101c92a01de35a8a918e0a0f5ac3e1c6a9501a144523060203ac7f6";
+  static $typeHash = "sha256:5766ab54f69d9e889876ff9bf295f481ebf6a2ec57b452b42d11285ee791d97e";
   static $instanceTag = Symbol.for("propane:message:" + Unions_ItemMap_Value_Union2.$typeId);
   static readonly $typeName = "Unions_ItemMap_Value_Union2";
   static EMPTY: Unions_ItemMap_Value_Union2;
@@ -1112,7 +1112,7 @@ export class Unions extends Message<Unions.Data> {
     }, {
       name: "email",
       fieldNumber: null,
-      getValue: () => this.#email as Email | null
+      getValue: () => this.#email as Email | null | Email | null
     }, {
       name: "metadata",
       fieldNumber: null,
@@ -1352,7 +1352,7 @@ export class Unions extends Message<Unions.Data> {
       case "items":
         return new (this.constructor as typeof Unions)({
           username: this.#username as string | null,
-          email: this.#email as Email | null,
+          email: this.#email as Email | null | Email | null,
           metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
           items: child as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
           itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1361,7 +1361,7 @@ export class Unions extends Message<Unions.Data> {
       case "itemSet":
         return new (this.constructor as typeof Unions)({
           username: this.#username as string | null,
-          email: this.#email as Email | null,
+          email: this.#email as Email | null | Email | null,
           metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
           items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
           itemSet: child as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1370,7 +1370,7 @@ export class Unions extends Message<Unions.Data> {
       case "itemMap":
         return new (this.constructor as typeof Unions)({
           username: this.#username as string | null,
-          email: this.#email as Email | null,
+          email: this.#email as Email | null | Email | null,
           metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
           items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
           itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1441,7 +1441,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1458,7 +1458,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1474,7 +1474,7 @@ export class Unions extends Message<Unions.Data> {
     itemMapMapNext.clear();
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1489,7 +1489,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1502,7 +1502,7 @@ export class Unions extends Message<Unions.Data> {
     itemsNext.copyWithin(target, start, end);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1518,7 +1518,7 @@ export class Unions extends Message<Unions.Data> {
     itemMapMapNext.delete(key);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1533,7 +1533,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1550,7 +1550,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1563,7 +1563,7 @@ export class Unions extends Message<Unions.Data> {
     (itemsNext as unknown as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1580,7 +1580,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1602,7 +1602,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1625,7 +1625,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1648,7 +1648,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1665,7 +1665,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1679,7 +1679,7 @@ export class Unions extends Message<Unions.Data> {
     itemsNext.pop();
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1692,7 +1692,7 @@ export class Unions extends Message<Unions.Data> {
     const itemsNext = [...itemsArray, ...values];
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1705,7 +1705,7 @@ export class Unions extends Message<Unions.Data> {
     itemsNext.reverse();
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1721,10 +1721,10 @@ export class Unions extends Message<Unions.Data> {
     }
     return this.$update(new (this.constructor as typeof Unions)(data) as this);
   }
-  setEmail(value: Email | null) {
+  setEmail(value: Email | null | Email | null) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: value as Email | null,
+      email: value as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1734,7 +1734,7 @@ export class Unions extends Message<Unions.Data> {
   setItemMap(value: Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]> | undefined) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1753,7 +1753,7 @@ export class Unions extends Message<Unions.Data> {
     itemMapMapNext.set(key, value);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1763,7 +1763,7 @@ export class Unions extends Message<Unions.Data> {
   setItemSet(value: Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: (value === undefined || value === null ? value : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1773,7 +1773,7 @@ export class Unions extends Message<Unions.Data> {
   setItems(value: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: value as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1783,7 +1783,7 @@ export class Unions extends Message<Unions.Data> {
   setMetadata(value: Unions_Metadata_Union1 | Unions_Metadata_Union2) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: value as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1793,7 +1793,7 @@ export class Unions extends Message<Unions.Data> {
   setUsername(value: string | null) {
     return this.$update(new (this.constructor as typeof Unions)({
       username: value as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1807,7 +1807,7 @@ export class Unions extends Message<Unions.Data> {
     itemsNext.shift();
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1820,7 +1820,7 @@ export class Unions extends Message<Unions.Data> {
     (itemsNext as unknown as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1833,7 +1833,7 @@ export class Unions extends Message<Unions.Data> {
     itemsNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1843,7 +1843,7 @@ export class Unions extends Message<Unions.Data> {
   unsetItemMap() {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>
@@ -1852,7 +1852,7 @@ export class Unions extends Message<Unions.Data> {
   unsetItemSet() {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
@@ -1861,7 +1861,7 @@ export class Unions extends Message<Unions.Data> {
   unsetItems() {
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
       itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
@@ -1873,7 +1873,7 @@ export class Unions extends Message<Unions.Data> {
     const itemsNext = [...values, ...itemsArray];
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: itemsNext as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1890,7 +1890,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemMap === itemMapMapNext as unknown || this.itemMap?.equals(itemMapMapNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1909,7 +1909,7 @@ export class Unions extends Message<Unions.Data> {
     if (this.itemSet === itemSetSetNext as unknown || this.itemSet?.equals(itemSetSetNext)) return this;
     return this.$update(new (this.constructor as typeof Unions)({
       username: this.#username as string | null,
-      email: this.#email as Email | null,
+      email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: itemSetSetNext as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
@@ -1920,7 +1920,7 @@ export class Unions extends Message<Unions.Data> {
 export namespace Unions {
   export type Data = {
     username: string | null;
-    email: Email | null;
+    email: Email | null | Email | null;
     metadata: Unions_Metadata_Union1 | Unions_Metadata_Union2;
     items?: (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> | undefined;
     itemSet?: Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | undefined;

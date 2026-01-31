@@ -157,12 +157,14 @@ function toScalarType(type: PmtType): ScalarType {
         case 'undefined': return 'undefined';
       }
       break;
-    case 'date':
-      return 'Date';
-    case 'url':
-      return 'URL';
-    case 'arraybuffer':
-      return 'ArrayBuffer';
+    case 'alias':
+      if (type.target === 'ImmutableDate') return 'Date';
+      if (type.target === 'ImmutableUrl') return 'URL';
+      if (type.target === 'ImmutableArrayBuffer') return 'ArrayBuffer';
+      if (type.target === 'ImmutableArray') return 'array';
+      if (type.target === 'ImmutableMap') return 'map';
+      if (type.target === 'ImmutableSet') return 'set';
+      return 'object';
     case 'array':
       return 'array';
     case 'map':

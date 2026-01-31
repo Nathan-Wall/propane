@@ -156,11 +156,17 @@ describe('parseSource - type parsing', () => {
     const props = file.messages[0]!.properties;
     const itemsProp = props.find(p => p.name === 'items');
     assert.ok(itemsProp);
-    assert.strictEqual(itemsProp.type.kind, 'array');
+    assert.strictEqual(itemsProp.type.kind, 'alias');
+    if (itemsProp.type.kind === 'alias') {
+      assert.strictEqual(itemsProp.type.target, 'ImmutableArray');
+    }
 
     const numbersProp = props.find(p => p.name === 'numbers');
     assert.ok(numbersProp);
-    assert.strictEqual(numbersProp.type.kind, 'array');
+    assert.strictEqual(numbersProp.type.kind, 'alias');
+    if (numbersProp.type.kind === 'alias') {
+      assert.strictEqual(numbersProp.type.target, 'ImmutableArray');
+    }
   });
 
   it('should parse map types', () => {
@@ -234,17 +240,64 @@ describe('parseSource - type parsing', () => {
     const props = file.messages[0]!.properties;
     const createdType = props.find(p => p.name === 'created')?.type;
     assert.ok(createdType);
-    assert.strictEqual(createdType.kind, 'reference');
-    if (createdType.kind === 'reference') {
-      assert.strictEqual(createdType.name, 'ImmutableDate');
+    assert.strictEqual(createdType.kind, 'alias');
+    if (createdType.kind === 'alias') {
+      assert.strictEqual(createdType.source, 'Date');
+      assert.strictEqual(createdType.target, 'ImmutableDate');
+      assert.strictEqual(createdType.aliasKind, 'message');
     }
     const linkType = props.find(p => p.name === 'link')?.type;
     assert.ok(linkType);
-    assert.strictEqual(linkType.kind, 'reference');
-    if (linkType.kind === 'reference') {
-      assert.strictEqual(linkType.name, 'ImmutableUrl');
+    assert.strictEqual(linkType.kind, 'alias');
+    if (linkType.kind === 'alias') {
+      assert.strictEqual(linkType.source, 'URL');
+      assert.strictEqual(linkType.target, 'ImmutableUrl');
+      assert.strictEqual(linkType.aliasKind, 'message');
     }
-    assert.strictEqual(props.find(p => p.name === 'data')?.type.kind, 'arraybuffer');
+    const dataType = props.find(p => p.name === 'data')?.type;
+    assert.ok(dataType);
+    assert.strictEqual(dataType.kind, 'alias');
+    if (dataType.kind === 'alias') {
+      assert.strictEqual(dataType.source, 'ArrayBuffer');
+      assert.strictEqual(dataType.target, 'ImmutableArrayBuffer');
+      assert.strictEqual(dataType.aliasKind, 'message');
+    }
+  });
+
+  it('should apply custom typeAliases', () => {
+    const source = `
+      import { Message } from '@propane/runtime';
+
+      export type Custom = Message<{
+        '1:when': Instant;
+        '2:items': Vector<string>;
+      }>;
+    `;
+
+    const { file } = parseSource(source, 'test.pmsg', {
+      typeAliases: {
+        Instant: { target: 'ImmutableDate', kind: 'message' },
+        Vector: { target: 'ImmutableArray', kind: 'message' },
+      },
+    });
+
+    const props = file.messages[0]!.properties;
+    const whenType = props.find(p => p.name === 'when')?.type;
+    assert.ok(whenType);
+    assert.strictEqual(whenType.kind, 'alias');
+    if (whenType.kind === 'alias') {
+      assert.strictEqual(whenType.source, 'Instant');
+      assert.strictEqual(whenType.target, 'ImmutableDate');
+    }
+
+    const itemsType = props.find(p => p.name === 'items')?.type;
+    assert.ok(itemsType);
+    assert.strictEqual(itemsType.kind, 'alias');
+    if (itemsType.kind === 'alias') {
+      assert.strictEqual(itemsType.source, 'Vector');
+      assert.strictEqual(itemsType.target, 'ImmutableArray');
+      assert.strictEqual(itemsType.typeArguments[0]?.kind, 'primitive');
+    }
   });
 
   it('should parse type references', () => {
@@ -301,7 +354,11 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(message.properties.length, 1);
     const prop = message.properties[0]!;
     assert.strictEqual(prop.name, 'value');
-    assert.strictEqual(prop.type.kind, 'arraybuffer');
+    assert.strictEqual(prop.type.kind, 'alias');
+    if (prop.type.kind === 'alias') {
+      assert.strictEqual(prop.type.source, 'ArrayBuffer');
+      assert.strictEqual(prop.type.target, 'ImmutableArrayBuffer');
+    }
   });
 
   it('should allow primitives, literals, and unions in MessageWrapper', () => {
@@ -414,7 +471,7 @@ describe('parseSource - decorators', () => {
     assert.strictEqual(mixedProp.type.kind, 'union');
     if (mixedProp.type.kind === 'union') {
       assert.strictEqual(mixedProp.type.types.length, 3);
-      assert.ok(mixedProp.type.types.some((t) => t.kind === 'arraybuffer'));
+      assert.ok(mixedProp.type.types.some((t) => t.kind === 'alias'));
       assert.ok(mixedProp.type.types.some((t) => t.kind === 'primitive' && t.primitive === 'string'));
       assert.ok(mixedProp.type.types.some((t) => t.kind === 'literal' && t.value === 2));
     }
@@ -448,9 +505,10 @@ describe('parseSource - decorators', () => {
     assert.ok(wrapped);
     assert.strictEqual(wrapped!.typeParameters.length, 1);
     const wrappedProp = wrapped!.properties[0]!;
-    assert.strictEqual(wrappedProp.type.kind, 'array');
-    if (wrappedProp.type.kind === 'array') {
-      assert.strictEqual(wrappedProp.type.elementType.kind, 'reference');
+    assert.strictEqual(wrappedProp.type.kind, 'alias');
+    if (wrappedProp.type.kind === 'alias') {
+      assert.strictEqual(wrappedProp.type.target, 'ImmutableArray');
+      assert.strictEqual(wrappedProp.type.typeArguments[0]?.kind, 'reference');
     }
 
     const paramWrap = file.messages.find(m => m.name === 'ParamWrap');

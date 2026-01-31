@@ -81,6 +81,7 @@ export {
   parseFiles,
   parseFileAsync,
   parseFilesAsync,
+  type ParseOptions,
 } from './parse-file.js';
 
 export { parseFromAst } from './parse-ast.js';
@@ -110,6 +111,17 @@ export {
   extractWrapperInfo,
   type TypeParserContext,
 } from './type-parser.js';
+
+export type {
+  TypeAliasConfig,
+  TypeAliasKind,
+  TypeAliasMap,
+} from './type-aliases.js';
+
+export {
+  DEFAULT_TYPE_ALIASES,
+  normalizeTypeAliases,
+} from './type-aliases.js';
 
 // ============================================================================
 // Decorator Extraction (for advanced use cases)

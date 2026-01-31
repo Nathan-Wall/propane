@@ -17,6 +17,8 @@ import {
   transformBrandInTypeAlias,
 } from './brand-transform.js';
 import { parseFromAst } from '@/tools/parser/parse-ast.js';
+import { normalizeTypeAliases } from '@/tools/parser/type-aliases.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 import type { PmtFile, PmtMessage } from '@/tools/parser/types.js';
 import {
   buildRegistry,
@@ -39,6 +41,8 @@ export interface PropanePluginOptions {
   messageTypeIdPrefix?: string;
   /** Root directory used to compute relative paths for message type IDs. */
   messageTypeIdRoot?: string;
+  /** Configurable type aliases for Date/URL/etc and custom aliases. */
+  typeAliases?: TypeAliasMap;
   /** Path aliases for resolving @extend paths (mirrors tsconfig paths). */
   paths?: Record<string, string[]>;
   /** Base directory for resolving paths (typically the project root). */
@@ -112,6 +116,10 @@ export interface PropaneState {
   usesInRange: boolean;
   /** Map of message type name to its compact tag (or full tag fallback) */
   messageTagsByName?: Map<string, string>;
+  /** Normalized type alias configuration (defaults + overrides). */
+  typeAliases: TypeAliasMap;
+  /** Alias-aware message reference resolver. */
+  getMessageReferenceName?: MessageReferenceResolver;
   runtimeImportPath: string;
   file?: { opts?: { filename?: string | null }; code?: string };
   opts?: PropanePluginOptions;
@@ -570,8 +578,7 @@ export default function propanePlugin() {
   const declaredMessageTypeNames = new Set<string>();
   // Map of type alias name -> type annotation for resolving defaults
   const typeAliasDefinitions = new Map<string, t.TSType>();
-  const getMessageReferenceName: MessageReferenceResolver =
-    createMessageReferenceResolver(declaredMessageTypeNames);
+  let getMessageReferenceName: MessageReferenceResolver | null = null;
 
   return {
     name: 'propane-plugin',
@@ -622,6 +629,12 @@ export default function propanePlugin() {
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
           state.validatorTracker = createValidatorImportTracker();
+          state.typeAliases = normalizeTypeAliases(state.opts?.typeAliases).aliases;
+          state.getMessageReferenceName = createMessageReferenceResolver(
+            declaredMessageTypeNames,
+            state.typeAliases
+          );
+          getMessageReferenceName = state.getMessageReferenceName;
 
           // Load the type registry (cached at module level for performance)
           state.typeRegistry = loadRegistry(state.opts);
@@ -633,7 +646,8 @@ export default function propanePlugin() {
 
           const { file: pmtFile, diagnostics } = parseFromAst(
             path.parent as t.File,
-            filename
+            filename,
+            { typeAliases: state.typeAliases }
           );
 
           // Check for errors from the shared parser
@@ -796,7 +810,7 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           typeAliasDefinitions,
-          getMessageReferenceName,
+          getMessageReferenceName: state.getMessageReferenceName ?? getMessageReferenceName!,
           extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,
@@ -875,7 +889,7 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           typeAliasDefinitions,
-          getMessageReferenceName,
+          getMessageReferenceName: state.getMessageReferenceName ?? getMessageReferenceName!,
           extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,

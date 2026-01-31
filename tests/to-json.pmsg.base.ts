@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, ImmutableSet, SetUpdates } from
 const TYPE_TAG_ToJson_Nested = Symbol("ToJson_Nested");
 export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   static $typeId = "tests/to-json.pmsg#ToJson_Nested";
-  static $typeHash = "sha256:3de5d1b5b862d1574062ba5f9d5356933e62f37a9825d104ccc1c5006ea32f80";
+  static $typeHash = "sha256:8139468312d884ff21ed34be146ed93213f3049a6f766fad3ca2080b60c182a4";
   static $instanceTag = Symbol.for("propane:message:" + ToJson_Nested.$typeId);
   static readonly $typeName = "ToJson_Nested";
   static EMPTY: ToJson_Nested;

@@ -49,9 +49,13 @@ export type PmtType =
   | { kind: 'map'; keyType: PmtType; valueType: PmtType }
   | { kind: 'set'; elementType: PmtType }
   | { kind: 'union'; types: PmtType[] }
-  | { kind: 'date' }
-  | { kind: 'url' }
-  | { kind: 'arraybuffer' }
+  | {
+    kind: 'alias';
+    source: string;
+    target: string;
+    aliasKind: 'message' | 'type';
+    typeArguments: PmtType[];
+  }
   | { kind: 'literal'; value: string | number | boolean | bigint };
 
 // ============================================================================

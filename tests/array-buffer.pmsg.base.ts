@@ -5,7 +5,7 @@ import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, Set
 const TYPE_TAG_ArrayBufferMessage = Symbol("ArrayBufferMessage");
 export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   static $typeId = "tests/array-buffer.pmsg#ArrayBufferMessage";
-  static $typeHash = "sha256:c722f9ec54cdd2ab8cd197b01e5de0f50750d370f456f7272470b32108d71102";
+  static $typeHash = "sha256:f0b28f05c5a160bf31fd4fdb4ed61d37cac5b0ae4003adf89c8870c95c23665d";
   static $instanceTag = Symbol.for("propane:message:" + ArrayBufferMessage.$typeId);
   static readonly $typeName = "ArrayBufferMessage";
   static EMPTY: ArrayBufferMessage;
@@ -19,8 +19,8 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
     super(TYPE_TAG_ArrayBufferMessage, "ArrayBufferMessage");
     this.#id = (props ? props.id : 0) as number;
-    this.#data = props ? props.data instanceof ImmutableArrayBuffer ? props.data : new ImmutableArrayBuffer(props.data, options) : new ImmutableArrayBuffer();
-    this.#extra = props ? props.extra === undefined ? props.extra : props.extra instanceof ImmutableArrayBuffer ? props.extra : new ImmutableArrayBuffer(props.extra, options) : undefined;
+    this.#data = props ? ((props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer)) instanceof ImmutableArrayBuffer ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer) : new ImmutableArrayBuffer(props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer), options)) as ImmutableArrayBuffer : new ImmutableArrayBuffer();
+    this.#extra = props ? ((props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) === undefined ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : (props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) instanceof ImmutableArrayBuffer ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : new ImmutableArrayBuffer(props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer), options)) as ImmutableArrayBuffer : undefined;
     this.#chunks = props ? (props.chunks === undefined || props.chunks === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.chunks as Iterable<unknown>).map(v => v instanceof ImmutableArrayBuffer ? v : new ImmutableArrayBuffer(v as ImmutableArrayBuffer.Value)))) as ImmutableArray<ImmutableArrayBuffer> : new ImmutableArray();
     if (!props) ArrayBufferMessage.EMPTY = this;
   }
@@ -54,71 +54,12 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     props.id = idValue as number;
     const dataValue = entries["2"] === undefined ? entries["data"] : entries["2"];
     if (dataValue === undefined) throw new Error("Missing required property \"data\".");
-    const dataMessageValue = (value => {
-      let result = value as any;
-      if (typeof value === "string" && ImmutableArrayBuffer.$compact === true) {
-        result = ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && value.startsWith(ImmutableArrayBuffer.$compactTag) ? value.slice(ImmutableArrayBuffer.$compactTag.length) : value, options) as any;
-      } else {
-        if (isTaggedMessageData(value)) {
-          if (value.$tag === "ImmutableArrayBuffer") {
-            if (typeof value.$data === "string") {
-              if (ImmutableArrayBuffer.$compact === true) {
-                result = ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && value.$data.startsWith(ImmutableArrayBuffer.$compactTag) ? value.$data.slice(ImmutableArrayBuffer.$compactTag.length) : value.$data, options) as any;
-              } else {
-                throw new Error("Invalid compact tagged value for ImmutableArrayBuffer.");
-              }
-            } else {
-              result = new ImmutableArrayBuffer(ImmutableArrayBuffer.prototype.$fromEntries(value.$data, options), options);
-            }
-          } else {
-            throw new Error("Tagged message type mismatch: expected ImmutableArrayBuffer.");
-          }
-        } else {
-          if (value instanceof ImmutableArrayBuffer) {
-            result = value;
-          } else {
-            result = new ImmutableArrayBuffer(value as ImmutableArrayBuffer.Value, options);
-          }
-        }
-      }
-      return result;
-    })(dataValue);
-    props.data = dataMessageValue;
+    const dataArrayBufferValue = typeof dataValue === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && dataValue.startsWith(ImmutableArrayBuffer.$compactTag) ? dataValue.slice(ImmutableArrayBuffer.$compactTag.length) : dataValue, options) as any : dataValue instanceof ImmutableArrayBuffer ? dataValue : ArrayBuffer.isView(dataValue) ? new ImmutableArrayBuffer(dataValue as ArrayBufferView) : new ImmutableArrayBuffer(dataValue as ArrayBuffer);
+    props.data = dataArrayBufferValue as ImmutableArrayBuffer.Value;
     const extraValue = entries["3"] === undefined ? entries["extra"] : entries["3"];
     const extraNormalized = extraValue === null ? undefined : extraValue;
-    const extraMessageValue = (value => {
-      let result = value as any;
-      if (typeof value === "string" && ImmutableArrayBuffer.$compact === true) {
-        result = ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && value.startsWith(ImmutableArrayBuffer.$compactTag) ? value.slice(ImmutableArrayBuffer.$compactTag.length) : value, options) as any;
-      } else {
-        if (isTaggedMessageData(value)) {
-          if (value.$tag === "ImmutableArrayBuffer") {
-            if (typeof value.$data === "string") {
-              if (ImmutableArrayBuffer.$compact === true) {
-                result = ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && value.$data.startsWith(ImmutableArrayBuffer.$compactTag) ? value.$data.slice(ImmutableArrayBuffer.$compactTag.length) : value.$data, options) as any;
-              } else {
-                throw new Error("Invalid compact tagged value for ImmutableArrayBuffer.");
-              }
-            } else {
-              result = new ImmutableArrayBuffer(ImmutableArrayBuffer.prototype.$fromEntries(value.$data, options), options);
-            }
-          } else {
-            throw new Error("Tagged message type mismatch: expected ImmutableArrayBuffer.");
-          }
-        } else {
-          if (value instanceof ImmutableArrayBuffer) {
-            result = value;
-          } else {
-            result = new ImmutableArrayBuffer(value as ImmutableArrayBuffer.Value, options);
-          }
-        }
-      }
-      if (value === undefined) {
-        result = value;
-      }
-      return result;
-    })(extraNormalized);
-    props.extra = extraMessageValue;
+    const extraArrayBufferValue = extraNormalized === undefined ? undefined : typeof extraNormalized === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && extraNormalized.startsWith(ImmutableArrayBuffer.$compactTag) ? extraNormalized.slice(ImmutableArrayBuffer.$compactTag.length) : extraNormalized, options) as any : extraNormalized instanceof ImmutableArrayBuffer ? extraNormalized : ArrayBuffer.isView(extraNormalized) ? new ImmutableArrayBuffer(extraNormalized as ArrayBufferView) : new ImmutableArrayBuffer(extraNormalized as ArrayBuffer);
+    props.extra = extraArrayBufferValue as ImmutableArrayBuffer.Value;
     const chunksValue = entries["4"] === undefined ? entries["chunks"] : entries["4"];
     if (chunksValue === undefined) throw new Error("Missing required property \"chunks\".");
     const chunksArrayValue = chunksValue === undefined || chunksValue === null ? new ImmutableArray() : chunksValue as object instanceof ImmutableArray ? chunksValue : new ImmutableArray(chunksValue as Iterable<unknown>);
@@ -215,10 +156,10 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
     }) as this);
   }
-  fillChunk(value: ArrayBuffer, start?: number, end?: number) {
+  fillChunk(value: ImmutableArrayBuffer, start?: number, end?: number) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
-    (chunksNext as unknown as ArrayBuffer[]).fill(value, start, end);
+    (chunksNext as unknown as ImmutableArrayBuffer[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
@@ -238,7 +179,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
     }) as this);
   }
-  pushChunk(...values: ArrayBuffer[]) {
+  pushChunk(...values: ImmutableArrayBuffer[]) {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray, ...values];
@@ -313,10 +254,10 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
     }) as this);
   }
-  sortChunks(compareFn?: (a: ArrayBuffer, b: ArrayBuffer) => number) {
+  sortChunks(compareFn?: (a: ImmutableArrayBuffer, b: ImmutableArrayBuffer) => number) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
-    (chunksNext as unknown as ArrayBuffer[]).sort(compareFn);
+    (chunksNext as unknown as ImmutableArrayBuffer[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
@@ -324,7 +265,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
     }) as this);
   }
-  spliceChunk(start: number, deleteCount?: number, ...items: ArrayBuffer[]) {
+  spliceChunk(start: number, deleteCount?: number, ...items: ImmutableArrayBuffer[]) {
     const chunksArray = this.#chunks;
     const chunksNext = [...chunksArray];
     chunksNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
@@ -342,7 +283,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
     }) as this);
   }
-  unshiftChunk(...values: ArrayBuffer[]) {
+  unshiftChunk(...values: ImmutableArrayBuffer[]) {
     if (values.length === 0) return this;
     const chunksArray = this.#chunks;
     const chunksNext = [...values, ...chunksArray];

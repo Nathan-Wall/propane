@@ -221,7 +221,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
     return [{
       name: "value",
       fieldNumber: 1,
-      getValue: () => this.#value as Decimal<10, 2> | Rational,
+      getValue: () => this.#value as Decimal<10, 2> | Rational | Decimal<10, 2> | Rational,
       unionMessageTypes: ["Decimal", "Rational"]
     }];
   }
@@ -330,15 +330,15 @@ export class NumericUnion extends Message<NumericUnion.Data> {
     }
     return this.$update(new (this.constructor as typeof NumericUnion)(data) as this);
   }
-  setValue(value: Decimal<10, 2> | Rational) {
+  setValue(value: Decimal<10, 2> | Rational | Decimal<10, 2> | Rational) {
     return this.$update(new (this.constructor as typeof NumericUnion)({
-      value: value as Decimal<10, 2> | Rational
+      value: value as Decimal<10, 2> | Rational | Decimal<10, 2> | Rational
     }) as this);
   }
 }
 export namespace NumericUnion {
   export type Data = {
-    value: Decimal<10, 2> | Rational;
+    value: Decimal<10, 2> | Rational | Decimal<10, 2> | Rational;
   };
   export type Value = NumericUnion | NumericUnion.Data;
 }

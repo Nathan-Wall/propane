@@ -4,11 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { transformSync } from '@babel/core';
 import propanePlugin from '@/tools/babel/messages/index.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 
 interface PropaneConfig {
   runtimeImportPath?: string;
   messageTypeIdPrefix?: string;
   messageTypeIdRoot?: string;
+  typeAliases?: TypeAliasMap;
 }
 
 interface LoadedConfig {
@@ -115,6 +117,9 @@ function transpileFile(sourcePath: string): void {
       configDir ?? process.cwd(),
       propaneConfig.messageTypeIdRoot
     );
+  }
+  if (propaneConfig.typeAliases) {
+    pluginOptions['typeAliases'] = propaneConfig.typeAliases;
   }
   const result = transformSync(sourceCode, {
     filename: sourcePath,

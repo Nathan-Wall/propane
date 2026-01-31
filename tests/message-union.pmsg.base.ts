@@ -269,12 +269,12 @@ export class PetOwner extends Message<PetOwner.Data> {
     }, {
       name: "pet",
       fieldNumber: 2,
-      getValue: () => this.#pet as Cat | Dog,
+      getValue: () => this.#pet as Cat | Dog | Cat | Dog,
       unionMessageTypes: ["Cat", "Dog"]
     }, {
       name: "optionalPet",
       fieldNumber: 3,
-      getValue: () => this.#optionalPet as Cat | Dog,
+      getValue: () => this.#optionalPet as Cat | Dog | Cat | Dog,
       unionMessageTypes: ["Cat", "Dog"]
     }];
   }
@@ -439,39 +439,39 @@ export class PetOwner extends Message<PetOwner.Data> {
     }
     return this.$update(new (this.constructor as typeof PetOwner)(data) as this);
   }
-  setOptionalPet(value: Cat | Dog | undefined) {
+  setOptionalPet(value: Cat | Dog | Cat | Dog | undefined) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
-      pet: this.#pet as Cat | Dog,
-      optionalPet: value as Cat | Dog
+      pet: this.#pet as Cat | Dog | Cat | Dog,
+      optionalPet: value as Cat | Dog | Cat | Dog
     }) as this);
   }
   setOwnerName(value: string) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: value,
-      pet: this.#pet as Cat | Dog,
-      optionalPet: this.#optionalPet as Cat | Dog
+      pet: this.#pet as Cat | Dog | Cat | Dog,
+      optionalPet: this.#optionalPet as Cat | Dog | Cat | Dog
     }) as this);
   }
-  setPet(value: Cat | Dog) {
+  setPet(value: Cat | Dog | Cat | Dog) {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
-      pet: value as Cat | Dog,
-      optionalPet: this.#optionalPet as Cat | Dog
+      pet: value as Cat | Dog | Cat | Dog,
+      optionalPet: this.#optionalPet as Cat | Dog | Cat | Dog
     }) as this);
   }
   unsetOptionalPet() {
     return this.$update(new (this.constructor as typeof PetOwner)({
       ownerName: this.#ownerName,
-      pet: this.#pet as Cat | Dog
+      pet: this.#pet as Cat | Dog | Cat | Dog
     }) as this);
   }
 }
 export namespace PetOwner {
   export type Data = {
     ownerName: string;
-    pet: Cat | Dog;
-    optionalPet?: Cat | Dog | undefined;
+    pet: Cat | Dog | Cat | Dog;
+    optionalPet?: Cat | Dog | Cat | Dog | undefined;
   };
   export type Value = PetOwner | PetOwner.Data;
 }
