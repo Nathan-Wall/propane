@@ -41,7 +41,7 @@ export interface PropanePluginOptions {
   messageTypeIdPrefix?: string;
   /** Root directory used to compute relative paths for message type IDs. */
   messageTypeIdRoot?: string;
-  /** Configurable type aliases for Date/URL/etc and custom aliases. */
+  /** Configurable type aliases for built-in and custom types. */
   typeAliases?: TypeAliasMap;
   /** Path aliases for resolving @extend paths (mirrors tsconfig paths). */
   paths?: Record<string, string[]>;

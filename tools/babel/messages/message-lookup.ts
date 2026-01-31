@@ -8,7 +8,7 @@ import {
 } from './imports.js';
 import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 import { normalizeTypeAliases } from '@/tools/parser/type-aliases.js';
-import { COLLECTION_ALIAS_TARGETS, resolveAliasConfigForName } from './alias-utils.js';
+import { COLLECTION_ALIAS_TARGETS, getAliasTargets, resolveAliasConfigForName } from './alias-utils.js';
 
 export type MessageReferenceResolver = (
   typePath: NodePath<t.TSType>
@@ -20,12 +20,14 @@ export function createMessageReferenceResolver(
 ): MessageReferenceResolver {
   const messageModuleCache = new Map<string, Set<string>>();
   const aliases = normalizeTypeAliases(typeAliases).aliases;
+  const aliasMessageTargets = getAliasTargets(aliases, 'message');
+  for (const target of COLLECTION_ALIAS_TARGETS) {
+    aliasMessageTargets.delete(target);
+  }
   const builtinMessageNames = new Set([
     'Decimal',
     'Rational',
-    'ImmutableDate',
-    'ImmutableUrl',
-    'ImmutableArrayBuffer',
+    ...aliasMessageTargets,
   ]);
 
   return function getMessageReferenceName(

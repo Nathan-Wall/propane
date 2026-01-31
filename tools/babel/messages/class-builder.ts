@@ -2849,7 +2849,12 @@ export function buildClassFromProperties(
         [t.identifier('undefined')]
       );
     } else {
-      defaultValue = getDefaultValue(prop, declaredMessageTypeNames, typeAliasDefinitions);
+      defaultValue = getDefaultValue(
+        prop,
+        declaredMessageTypeNames,
+        typeAliasDefinitions,
+        state.typeAliases
+      );
     }
     const assignedExpr: t.Expression = t.conditionalExpression(
       t.identifier('props'),
@@ -2861,9 +2866,8 @@ export function buildClassFromProperties(
     // the conditional expression type doesn't match (e.g., branded types
     // where `props ? props.id : undefined` returns `Brand | undefined`
     // but the field type is just `Brand`)
-    // Skip casting for Date/URL/ArrayBuffer types because the stored type
-    // is the Immutable version (ImmutableDate, ImmutableUrl, ImmutableArrayBuffer)
-    // but typeAnnotation refers to the user-facing type (Date, URL, ArrayBuffer)
+    // Skip casting for alias wrapper types because the stored type
+    // is the immutable version but typeAnnotation refers to the user-facing type.
     const skipTypeCast = prop.isDateType || prop.isUrlType
       || prop.unionHasDate || prop.unionHasUrl
       || prop.isArrayBufferType
@@ -5709,7 +5713,7 @@ function buildMapMutatorMethods(
         (mapRef) => {
           const mergeKeyId = t.identifier('mergeKey');
           const mergeValueId = t.identifier('mergeValue');
-          // Convert key and value to internal types for set() - handles Date/URL/Message types
+          // Convert key and value to internal types for set() - handles alias wrappers/message types
           const keyExpr = buildKeyConversionExpr(mergeKeyId, conversions);
           const valueExpr = buildValueConversionExpr(mergeValueId, conversions);
           return [
@@ -5820,7 +5824,7 @@ function buildMapMutatorMethods(
             t.identifier(`${prop.name}MappedEntries`),
             { typeAnnotation: t.tsTypeAnnotation(arrayType) }
           );
-          // Convert from input types to internal types - handles Date/URL/Message types
+          // Convert from input types to internal types - handles alias wrappers/message types
           const keyExpr = buildKeyConversionExpr(newKeyId, conversions);
           const valueExpr = buildValueConversionExpr(newValueId, conversions);
           return [

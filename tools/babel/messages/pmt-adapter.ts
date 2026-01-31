@@ -12,12 +12,14 @@ import type {
   PmtProperty,
   PmtTypeParameter,
 } from '@/tools/parser/types.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 import {
   wrapImmutableType,
   buildInputAcceptingMutable,
   type PropDescriptor,
   type TypeParameter,
 } from './properties.js';
+import { getAliasSourcesForTarget } from './alias-utils.js';
 
 const DEFAULT_ALIAS_STRING_TYPE: PmtType = { kind: 'primitive', primitive: 'string' };
 
@@ -245,18 +247,24 @@ function buildLiteralType(value: string | number | boolean | bigint): t.TSType {
  * Convert PmtType to runtime type (wrapped with Immutable* variants).
  * Used for: typeAnnotation field in PropDescriptor
  */
-export function pmtTypeToRuntimeType(pmtType: PmtType): t.TSType {
+export function pmtTypeToRuntimeType(
+  pmtType: PmtType,
+  aliases?: TypeAliasMap
+): t.TSType {
   const resolved = resolveRuntimeType(pmtType);
-  return wrapImmutableType(pmtTypeToBabelType(resolved));
+  return wrapImmutableType(pmtTypeToBabelType(resolved), aliases);
 }
 
 /**
  * Convert PmtType to input type (union accepting mutable or immutable).
  * Used for: inputTypeAnnotation, mapKeyInputType, etc.
  */
-export function pmtTypeToInputType(pmtType: PmtType): t.TSType {
+export function pmtTypeToInputType(
+  pmtType: PmtType,
+  aliases?: TypeAliasMap
+): t.TSType {
   const resolved = resolveRuntimeType(pmtType);
-  return buildInputAcceptingMutable(pmtTypeToBabelType(resolved));
+  return buildInputAcceptingMutable(pmtTypeToBabelType(resolved), aliases);
 }
 
 /**
@@ -265,7 +273,8 @@ export function pmtTypeToInputType(pmtType: PmtType): t.TSType {
  */
 export function buildDisplayType(
   pmtType: PmtType,
-  messageTypeName: string | null
+  messageTypeName: string | null,
+  aliases?: TypeAliasMap
 ): t.TSType {
   // Message types use MessageType.Value
   if (messageTypeName) {
@@ -275,31 +284,40 @@ export function buildDisplayType(
   }
 
   if (pmtType.kind === 'union') {
-    const unionDisplay = buildUnionDateUrlDisplayType(pmtType);
+    const unionDisplay = buildUnionDateUrlDisplayType(pmtType, aliases);
     if (unionDisplay) {
       return unionDisplay;
     }
   }
 
-  // Date/URL/ArrayBuffer show both variants
+  // Alias message targets show both variants
   if (isDateType(pmtType)) {
+    const aliasSources = aliases
+      ? getAliasSourcesForTarget('ImmutableDate', aliases)
+      : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableDate')),
-      t.tsTypeReference(t.identifier('Date')),
+      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
   if (isUrlType(pmtType)) {
+    const aliasSources = aliases
+      ? getAliasSourcesForTarget('ImmutableUrl', aliases)
+      : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableUrl')),
-      t.tsTypeReference(t.identifier('URL')),
+      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
   if (isArrayBufferType(pmtType)) {
+    const aliasSources = aliases
+      ? getAliasSourcesForTarget('ImmutableArrayBuffer', aliases)
+      : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
-      t.tsTypeReference(t.identifier('ArrayBuffer')),
+      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
@@ -341,19 +359,28 @@ export function buildDisplayType(
   if (pmtType.kind === 'array') {
     let elementType = pmtTypeToBabelType(pmtType.elementType);
     if (isArrayBufferType(pmtType.elementType)) {
+      const aliasSources = aliases
+        ? getAliasSourcesForTarget('ImmutableArrayBuffer', aliases)
+        : [];
       elementType = t.tsUnionType([
-        t.tsTypeReference(t.identifier('ArrayBuffer')),
         t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
+        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
       ]);
     } else if (isDateType(pmtType.elementType)) {
+      const aliasSources = aliases
+        ? getAliasSourcesForTarget('ImmutableDate', aliases)
+        : [];
       elementType = t.tsUnionType([
-        t.tsTypeReference(t.identifier('Date')),
         t.tsTypeReference(t.identifier('ImmutableDate')),
+        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
       ]);
     } else if (isUrlType(pmtType.elementType)) {
+      const aliasSources = aliases
+        ? getAliasSourcesForTarget('ImmutableUrl', aliases)
+        : [];
       elementType = t.tsUnionType([
-        t.tsTypeReference(t.identifier('URL')),
         t.tsTypeReference(t.identifier('ImmutableUrl')),
+        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
       ]);
     }
     return t.tsUnionType([
@@ -368,7 +395,10 @@ export function buildDisplayType(
   return pmtTypeToBabelType(pmtType);
 }
 
-function buildUnionDateUrlDisplayType(pmtType: PmtType): t.TSType | null {
+function buildUnionDateUrlDisplayType(
+  pmtType: PmtType,
+  aliases?: TypeAliasMap
+): t.TSType | null {
   if (pmtType.kind !== 'union') return null;
   let hasDateOrUrl = false;
   const types: t.TSType[] = [];
@@ -376,14 +406,24 @@ function buildUnionDateUrlDisplayType(pmtType: PmtType): t.TSType | null {
   for (const member of pmtType.types) {
     if (isDateType(member)) {
       hasDateOrUrl = true;
-      types.push(t.tsTypeReference(t.identifier('Date')));
+      const aliasSources = aliases
+        ? getAliasSourcesForTarget('ImmutableDate', aliases)
+        : [];
       types.push(t.tsTypeReference(t.identifier('ImmutableDate')));
+      for (const source of aliasSources) {
+        types.push(t.tsTypeReference(t.identifier(source)));
+      }
       continue;
     }
     if (isUrlType(member)) {
       hasDateOrUrl = true;
-      types.push(t.tsTypeReference(t.identifier('URL')));
+      const aliasSources = aliases
+        ? getAliasSourcesForTarget('ImmutableUrl', aliases)
+        : [];
       types.push(t.tsTypeReference(t.identifier('ImmutableUrl')));
+      for (const source of aliasSources) {
+        types.push(t.tsTypeReference(t.identifier(source)));
+      }
       continue;
     }
     types.push(pmtTypeToBabelType(member));
@@ -529,7 +569,8 @@ export function pmtTypeParametersToTypeParameters(
 export function pmtPropertyToDescriptor(
   prop: PmtProperty,
   knownMessages: Set<string>,
-  typeParameters: TypeParameter[]
+  typeParameters: TypeParameter[],
+  aliases?: TypeAliasMap
 ): PropDescriptor {
   const resolvedType = resolveRuntimeType(prop.type);
   const messageTypeName = getMessageTypeName(prop.type, knownMessages);
@@ -581,8 +622,8 @@ export function pmtPropertyToDescriptor(
   const genericInfo = getGenericParamInfo(prop.type, typeParameters);
   const unionGenericParams = extractUnionGenericParams(prop.type, typeParameters);
 
-  let inputTypeAnnotation = pmtTypeToInputType(resolvedType);
-  let displayType = buildDisplayType(resolvedType, effectiveMessageTypeName);
+  let inputTypeAnnotation = pmtTypeToInputType(resolvedType, aliases);
+  let displayType = buildDisplayType(resolvedType, effectiveMessageTypeName, aliases);
 
   if (isDate || isUrl) {
     inputTypeAnnotation = displayType;
@@ -649,7 +690,7 @@ export function pmtPropertyToDescriptor(
     unionHasUrl,
 
     // Babel type fields
-    typeAnnotation: pmtTypeToRuntimeType(resolvedType),
+    typeAnnotation: pmtTypeToRuntimeType(resolvedType, aliases),
     inputTypeAnnotation,
     displayType,
 

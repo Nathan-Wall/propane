@@ -1,37 +1,6 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 
-export function isDateReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'Date';
-}
-
-export function isImmutableDateReference(node: t.TSTypeReference): boolean {
-  return (
-    t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableDate'
-  );
-}
-
-export function isUrlReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'URL';
-}
-
-export function isImmutableUrlReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'ImmutableUrl';
-}
-
-export function isArrayBufferReference(node: t.TSTypeReference): boolean {
-  return t.isIdentifier(node.typeName) && node.typeName.name === 'ArrayBuffer';
-}
-
-export function isImmutableArrayBufferReference(
-  node: t.TSTypeReference
-): boolean {
-  return (
-    t.isIdentifier(node.typeName)
-    && node.typeName.name === 'ImmutableArrayBuffer'
-  );
-}
-
 export function isDecimalReference(node: t.TSTypeReference): boolean {
   return t.isIdentifier(node.typeName) && node.typeName.name === 'Decimal';
 }
@@ -351,13 +320,7 @@ export function isPrimitiveLikeType(
 
   if (typePath.isTSTypeReference()) {
     return (
-      isDateReference(typePath.node)
-      || isImmutableDateReference(typePath.node)
-      || isUrlReference(typePath.node)
-      || isImmutableUrlReference(typePath.node)
-      || isArrayBufferReference(typePath.node)
-      || isImmutableArrayBufferReference(typePath.node)
-      || isBrandReference(typePath.node)
+      isBrandReference(typePath.node)
     );
   }
 

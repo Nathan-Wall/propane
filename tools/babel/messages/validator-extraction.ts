@@ -790,12 +790,6 @@ function generateTypeGuard(node: t.TSType): { guardKey: string; typeGuard: strin
     // For type references, check if it's a known class or branded type
     if (t.isIdentifier(node.typeName)) {
       const name = node.typeName.name;
-      if (name === 'Date') {
-        return {
-          guardKey: 'date',
-          typeGuard: 'value instanceof Date',
-        };
-      }
       if (name === 'Decimal') {
         const typeParams = node.typeParameters?.params;
         let precision: number | undefined;

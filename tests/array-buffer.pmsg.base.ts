@@ -40,7 +40,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     }, {
       name: "chunks",
       fieldNumber: 4,
-      getValue: () => this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      getValue: () => this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }];
   }
   /** @internal - Do not use directly. Subject to change without notice. */
@@ -65,7 +65,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     const chunksArrayValue = chunksValue === undefined || chunksValue === null ? new ImmutableArray() : chunksValue as object instanceof ImmutableArray ? chunksValue : new ImmutableArray(chunksValue as Iterable<unknown>);
     const chunksArrayValueConverted = chunksArrayValue === undefined || chunksArrayValue === null ? chunksArrayValue : (chunksArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && element.startsWith(ImmutableArrayBuffer.$compactTag) ? element.slice(ImmutableArrayBuffer.$compactTag.length) : element, options) as any : element);
     if (!(chunksArrayValueConverted as object instanceof ImmutableArray || Array.isArray(chunksArrayValueConverted))) throw new Error("Invalid value for property \"chunks\".");
-    props.chunks = chunksArrayValueConverted as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>;
+    props.chunks = chunksArrayValueConverted as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>;
     return props as ArrayBufferMessage.Data;
   }
   static from(value: ArrayBufferMessage.Value): ArrayBufferMessage {
@@ -78,21 +78,21 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
           id: this.#id,
           data: child as ImmutableArrayBuffer.Value,
           extra: this.#extra as ImmutableArrayBuffer.Value,
-          chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+          chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
         }) as this;
       case "extra":
         return new (this.constructor as typeof ArrayBufferMessage)({
           id: this.#id,
           data: this.#data as ImmutableArrayBuffer.Value,
           extra: child as ImmutableArrayBuffer.Value,
-          chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+          chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
         }) as this;
       case "chunks":
         return new (this.constructor as typeof ArrayBufferMessage)({
           id: this.#id,
           data: this.#data as ImmutableArrayBuffer.Value,
           extra: this.#extra as ImmutableArrayBuffer.Value,
-          chunks: child as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+          chunks: child as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
         }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
@@ -153,7 +153,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   fillChunk(value: ImmutableArrayBuffer, start?: number, end?: number) {
@@ -164,7 +164,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   popChunk() {
@@ -176,7 +176,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   pushChunk(...values: ImmutableArrayBuffer[]) {
@@ -187,7 +187,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   reverseChunks() {
@@ -198,7 +198,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   set(updates: Partial<SetUpdates<ArrayBufferMessage.Data>>) {
@@ -210,12 +210,12 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     }
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)(data) as this);
   }
-  setChunks(value: (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>) {
+  setChunks(value: (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: value as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: value as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   setData(value: ImmutableArrayBuffer.Value) {
@@ -223,7 +223,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: (value instanceof ImmutableArrayBuffer ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   setExtra(value: ImmutableArrayBuffer.Value | undefined) {
@@ -231,7 +231,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: (value === undefined ? value : value instanceof ImmutableArrayBuffer ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
-      chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   setId(value: number) {
@@ -239,7 +239,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: value,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   shiftChunk() {
@@ -251,7 +251,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   sortChunks(compareFn?: (a: ImmutableArrayBuffer, b: ImmutableArrayBuffer) => number) {
@@ -262,7 +262,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   spliceChunk(start: number, deleteCount?: number, ...items: ImmutableArrayBuffer[]) {
@@ -273,14 +273,14 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   unsetExtra() {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
-      chunks: this.#chunks as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
   unshiftChunk(...values: ImmutableArrayBuffer[]) {
@@ -291,7 +291,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
-      chunks: chunksNext as (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>
+      chunks: chunksNext as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }
 }
@@ -300,7 +300,7 @@ export namespace ArrayBufferMessage {
     id: number;
     data: ImmutableArrayBuffer.Value;
     extra?: ImmutableArrayBuffer.Value | undefined;
-    chunks: (ArrayBuffer | ImmutableArrayBuffer)[] | Iterable<ArrayBuffer | ImmutableArrayBuffer>;
+    chunks: (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>;
   };
   export type Value = ArrayBufferMessage | ArrayBufferMessage.Data;
 }

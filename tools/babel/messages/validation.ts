@@ -1,21 +1,15 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import {
-  isArrayBufferReference,
-  isImmutableArrayBufferReference,
   isBrandReference,
-  isDateReference,
-  isImmutableDateReference,
   isMapReference,
-  isImmutableUrlReference,
   isPrimitiveKeyword,
   isPrimitiveLiteral,
   isSetReference,
-  isUrlReference,
   resolveQualifiedRoot,
 } from './type-guards.js';
 import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
-import { resolveAliasTargetName } from './alias-utils.js';
+import { getAliasTargets, resolveAliasTargetName } from './alias-utils.js';
 
 function isGenericTypeReference(
   typePath: NodePath<t.TSType>,
@@ -144,16 +138,18 @@ export function assertSupportedMapKeyType(
     return; // Arrays are allowed as map keys
   }
 
+  const aliases = typeAliases ?? {};
   const aliasTarget = typePath.isTSTypeReference()
-    ? resolveAliasTargetName(typePath, typeAliases ?? {}, typePath.scope)
+    ? resolveAliasTargetName(typePath, aliases, typePath.scope)
     : null;
+  const typeName = typePath.isTSTypeReference() && t.isIdentifier(typePath.node.typeName)
+    ? typePath.node.typeName.name
+    : null;
+  const resolvedTarget = aliasTarget
+    ?? (typeName && getAliasTargets(aliases, 'message').has(typeName) ? typeName : null);
 
-  if (typePath.isTSTypeReference() && (isDateReference(typePath.node) || aliasTarget === 'ImmutableDate')) {
-    return; // Date is allowed as a map key
-  }
-
-  if (typePath.isTSTypeReference() && (isUrlReference(typePath.node) || aliasTarget === 'ImmutableUrl')) {
-    return; // URL is allowed as a map key
+  if (resolvedTarget === 'ImmutableDate' || resolvedTarget === 'ImmutableUrl') {
+    return; // Alias wrapper targets are allowed as map keys
   }
 
   // key types must still be valid primitives/identifiers
@@ -164,7 +160,7 @@ export function assertSupportedTopLevelType(
   typePath: NodePath<t.TSType>,
   typeAliases?: TypeAliasMap
 ): void {
-  if (isPrimitiveLikeType(typePath)) {
+  if (isPrimitiveLikeType(typePath, typeAliases)) {
     return;
   }
 
@@ -210,25 +206,18 @@ export function assertSupportedType(
   }
 
   if (typePath.isTSTypeReference()) {
-    const aliasTarget = resolveAliasTargetName(typePath, typeAliases ?? {}, typePath.scope);
+    const aliases = typeAliases ?? {};
+    const aliasTarget = resolveAliasTargetName(typePath, aliases, typePath.scope);
+    const aliasMessageTargets = getAliasTargets(aliases, 'message');
+    const typeName = t.isIdentifier(typePath.node.typeName)
+      ? typePath.node.typeName.name
+      : null;
 
-    if (isDateReference(typePath.node) || aliasTarget === 'ImmutableDate') {
-      return;
-    }
-
-    if (isUrlReference(typePath.node) || aliasTarget === 'ImmutableUrl') {
+    if (aliasTarget || (typeName && aliasMessageTargets.has(typeName))) {
       return;
     }
 
     if (isBrandReference(typePath.node)) {
-      return;
-    }
-
-    if (
-      isArrayBufferReference(typePath.node)
-      || isImmutableArrayBufferReference(typePath.node)
-      || aliasTarget === 'ImmutableArrayBuffer'
-    ) {
       return;
     }
 
@@ -297,7 +286,7 @@ export function assertSupportedType(
 
   throw typePath.buildCodeFrameError(
     'Unsupported type in propane file. Only primitives, identifiers, '
-    + 'Date, Brand, or object literals are allowed.'
+    + 'Brand, or object literals are allowed.'
   );
 }
 
@@ -341,7 +330,10 @@ export function registerTypeAlias(
   }
 }
 
-function isPrimitiveLikeType(typePath: NodePath<t.TSType>): boolean {
+function isPrimitiveLikeType(
+  typePath: NodePath<t.TSType>,
+  typeAliases?: TypeAliasMap
+): boolean {
   if (!typePath?.node) {
     return false;
   }
@@ -363,15 +355,22 @@ function isPrimitiveLikeType(typePath: NodePath<t.TSType>): boolean {
   }
 
   if (typePath.isTSTypeReference()) {
-    return (
-      isDateReference(typePath.node)
-      || isImmutableDateReference(typePath.node)
-      || isUrlReference(typePath.node)
-      || isImmutableUrlReference(typePath.node)
-      || isArrayBufferReference(typePath.node)
-      || isImmutableArrayBufferReference(typePath.node)
-      || isBrandReference(typePath.node)
-    );
+    if (isBrandReference(typePath.node)) {
+      return true;
+    }
+    const aliases = typeAliases ?? {};
+    const aliasTarget = resolveAliasTargetName(typePath, aliases, typePath.scope, 'all');
+    if (aliasTarget) {
+      return true;
+    }
+    const typeName = t.isIdentifier(typePath.node.typeName)
+      ? typePath.node.typeName.name
+      : null;
+    if (!typeName) {
+      return false;
+    }
+    const aliasTargets = getAliasTargets(aliases, 'all');
+    return aliasTargets.has(typeName);
   }
 
   return false;

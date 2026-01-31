@@ -63,13 +63,13 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     return [{
       name: "dateOrString",
       fieldNumber: null,
-      getValue: () => this.#dateOrString as Date | ImmutableDate | string,
+      getValue: () => this.#dateOrString as ImmutableDate | Date | string,
       unionMessageTypes: ["ImmutableDate"],
       unionHasString: true
     }, {
       name: "urlOrNumber",
       fieldNumber: null,
-      getValue: () => this.#urlOrNumber as URL | ImmutableUrl | number,
+      getValue: () => this.#urlOrNumber as ImmutableUrl | URL | number,
       unionMessageTypes: ["ImmutableUrl"]
     }];
   }
@@ -219,23 +219,23 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     }
     return this.$update(new (this.constructor as typeof SingleMessageUnion)(data) as this);
   }
-  setDateOrString(value: Date | ImmutableDate | string) {
+  setDateOrString(value: ImmutableDate | Date | string) {
     return this.$update(new (this.constructor as typeof SingleMessageUnion)({
-      dateOrString: value as Date | ImmutableDate | string,
-      urlOrNumber: this.#urlOrNumber as URL | ImmutableUrl | number
+      dateOrString: value as ImmutableDate | Date | string,
+      urlOrNumber: this.#urlOrNumber as ImmutableUrl | URL | number
     }) as this);
   }
-  setUrlOrNumber(value: URL | ImmutableUrl | number) {
+  setUrlOrNumber(value: ImmutableUrl | URL | number) {
     return this.$update(new (this.constructor as typeof SingleMessageUnion)({
-      dateOrString: this.#dateOrString as Date | ImmutableDate | string,
-      urlOrNumber: value as URL | ImmutableUrl | number
+      dateOrString: this.#dateOrString as ImmutableDate | Date | string,
+      urlOrNumber: value as ImmutableUrl | URL | number
     }) as this);
   }
 }
 export namespace SingleMessageUnion {
   export type Data = {
-    dateOrString: Date | ImmutableDate | string;
-    urlOrNumber: URL | ImmutableUrl | number;
+    dateOrString: ImmutableDate | Date | string;
+    urlOrNumber: ImmutableUrl | URL | number;
   };
   export type Value = SingleMessageUnion | SingleMessageUnion.Data;
 }

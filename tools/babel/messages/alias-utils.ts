@@ -13,6 +13,34 @@ function shouldApplyAlias(config: TypeAliasConfig, applyKind: TypeAliasKind | 'a
   return config.kind === applyKind;
 }
 
+export function getAliasTargets(
+  aliases: TypeAliasMap,
+  applyKind: TypeAliasKind | 'all' = 'message'
+): Set<string> {
+  const targets = new Set<string>();
+  for (const config of Object.values(aliases)) {
+    if (!shouldApplyAlias(config, applyKind)) continue;
+    targets.add(config.target);
+  }
+  return targets;
+}
+
+export function getAliasSourcesForTarget(
+  target: string,
+  aliases: TypeAliasMap,
+  scope?: Scope | null,
+  applyKind: TypeAliasKind | 'all' = 'message'
+): string[] {
+  const sources: string[] = [];
+  for (const [alias, config] of Object.entries(aliases)) {
+    if (config.target !== target) continue;
+    if (!shouldApplyAlias(config, applyKind)) continue;
+    if (scope?.getBinding(alias)) continue;
+    sources.push(alias);
+  }
+  return sources;
+}
+
 export function resolveAliasConfigForName(
   name: string,
   aliases: TypeAliasMap,

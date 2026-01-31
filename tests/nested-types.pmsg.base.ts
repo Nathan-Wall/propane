@@ -163,7 +163,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     return [{
       name: "payload",
       fieldNumber: null,
-      getValue: () => this.#payload as Date | ImmutableDate | Wrapper_Payload_Union1,
+      getValue: () => this.#payload as ImmutableDate | Date | Wrapper_Payload_Union1,
       unionMessageTypes: ["ImmutableDate", "Wrapper_Payload_Union1"]
     }];
   }
@@ -272,15 +272,15 @@ export class Wrapper extends Message<Wrapper.Data> {
     }
     return this.$update(new (this.constructor as typeof Wrapper)(data) as this);
   }
-  setPayload(value: Date | ImmutableDate | Wrapper_Payload_Union1) {
+  setPayload(value: ImmutableDate | Date | Wrapper_Payload_Union1) {
     return this.$update(new (this.constructor as typeof Wrapper)({
-      payload: value as Date | ImmutableDate | Wrapper_Payload_Union1
+      payload: value as ImmutableDate | Date | Wrapper_Payload_Union1
     }) as this);
   }
 }
 export namespace Wrapper {
   export type Data = {
-    payload: Date | ImmutableDate | Wrapper_Payload_Union1;
+    payload: ImmutableDate | Date | Wrapper_Payload_Union1;
   };
   export type Value = Wrapper | Wrapper.Data;
   export import Payload_Union1 = Wrapper_Payload_Union1;

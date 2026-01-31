@@ -542,7 +542,8 @@ export function buildDeclarations(
       const descriptor = pmtPropertyToDescriptor(
         prop,
         declaredMessageTypeNames,
-        typeParameters
+        typeParameters,
+        state.typeAliases
       );
       const rawType = pmtTypeToBabelType(prop.type);
       return {

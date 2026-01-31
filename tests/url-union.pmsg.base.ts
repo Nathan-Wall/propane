@@ -163,7 +163,7 @@ export class UrlUnion extends Message<UrlUnion.Data> {
     return [{
       name: "value",
       fieldNumber: null,
-      getValue: () => this.#value as URL | ImmutableUrl | UrlUnion_Value_Union1,
+      getValue: () => this.#value as ImmutableUrl | URL | UrlUnion_Value_Union1,
       unionMessageTypes: ["ImmutableUrl", "UrlUnion_Value_Union1"]
     }];
   }
@@ -272,15 +272,15 @@ export class UrlUnion extends Message<UrlUnion.Data> {
     }
     return this.$update(new (this.constructor as typeof UrlUnion)(data) as this);
   }
-  setValue(value: URL | ImmutableUrl | UrlUnion_Value_Union1) {
+  setValue(value: ImmutableUrl | URL | UrlUnion_Value_Union1) {
     return this.$update(new (this.constructor as typeof UrlUnion)({
-      value: value as URL | ImmutableUrl | UrlUnion_Value_Union1
+      value: value as ImmutableUrl | URL | UrlUnion_Value_Union1
     }) as this);
   }
 }
 export namespace UrlUnion {
   export type Data = {
-    value: URL | ImmutableUrl | UrlUnion_Value_Union1;
+    value: ImmutableUrl | URL | UrlUnion_Value_Union1;
   };
   export type Value = UrlUnion | UrlUnion.Data;
   export import Value_Union1 = UrlUnion_Value_Union1;
