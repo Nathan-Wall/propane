@@ -1,0 +1,19 @@
+import { Message } from '@propane/runtime';
+
+// @compact('Z')
+export type CompactTiny = Message<{
+  '1:value': string;
+}>;
+
+// @compact
+export type CompactFull = Message<{
+  '1:value': string;
+}>;
+
+export type CompactUnion = Message<{
+  '1:value': CompactFull | number;
+}>;
+
+export type CompactUnionWithString = Message<{
+  '1:value': CompactTiny | string;
+}>;

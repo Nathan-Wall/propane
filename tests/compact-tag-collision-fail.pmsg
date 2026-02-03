@@ -1,0 +1,14 @@
+import { Message } from '@propane/runtime';
+
+// @compact('Z')
+export type Alpha = Message<{
+  '1:value': string;
+}>;
+
+export type Z = Message<{
+  '1:value': string;
+}>;
+
+export type Wrapper = Message<{
+  '1:value': Alpha | Z;
+}>;
