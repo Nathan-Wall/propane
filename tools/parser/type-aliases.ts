@@ -61,6 +61,13 @@ export function normalizeTypeAliases(
       });
       continue;
     }
+    if (!IDENTIFIER_RE.test(target)) {
+      errors.push({
+        alias,
+        message: `Alias "${alias}" must target a simple identifier.`,
+      });
+      continue;
+    }
 
     if (kind !== 'message' && kind !== 'type') {
       errors.push({
