@@ -118,6 +118,8 @@ export interface PropaneState {
   messageTagsByName?: Map<string, string>;
   /** Normalized type alias configuration (defaults + overrides). */
   typeAliases: TypeAliasMap;
+  /** Alias targets used in this file (for import generation). */
+  aliasTargetsUsed: Set<string>;
   /** Alias-aware message reference resolver. */
   getMessageReferenceName?: MessageReferenceResolver;
   runtimeImportPath: string;
@@ -630,6 +632,7 @@ export default function propanePlugin() {
           state.brandTracker = createBrandImportTracker();
           state.validatorTracker = createValidatorImportTracker();
           state.typeAliases = normalizeTypeAliases(state.opts?.typeAliases).aliases;
+          state.aliasTargetsUsed = new Set<string>();
           state.getMessageReferenceName = createMessageReferenceResolver(
             declaredMessageTypeNames,
             state.typeAliases

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace,@typescript-eslint/no-explicit-any*/
 // Generated from tests/generic-types.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ImmutableDate } from "../runtime/index.js";
 
 /**
  * Test file for generic message types.

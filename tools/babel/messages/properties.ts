@@ -76,6 +76,8 @@ export interface PluginStateFlags {
   messageTagsByName?: Map<string, string>;
   /** Normalized type alias configuration */
   typeAliases?: TypeAliasMap;
+  /** Alias targets used in this file (for import generation). */
+  aliasTargetsUsed?: Set<string>;
 }
 
 /**
@@ -1670,6 +1672,9 @@ function scanTypeForUsage(
       ?? (typeName && getAliasSourcesForTarget(typeName, aliases, typePath.scope).length > 0
         ? typeName
         : null);
+    if (resolvedTarget && state.aliasTargetsUsed) {
+      state.aliasTargetsUsed.add(resolvedTarget);
+    }
     if (isDecimalReference(typePath.node)) state.usesDecimalClass = true;
     if (isRationalReference(typePath.node)) state.usesRationalClass = true;
     if (resolvedTarget === 'ImmutableDate') {
@@ -1702,6 +1707,12 @@ function scanTypeForUsage(
       && resolveAliasTargetName(typePath, aliases, typePath.scope) === 'ImmutableArray')
   ) {
     state.usesImmutableArray = true;
+    if (state.aliasTargetsUsed) {
+      const arrayAlias = resolveAliasConfigForName('Array', aliases, typePath.scope);
+      if (arrayAlias && arrayAlias.kind === 'message') {
+        state.aliasTargetsUsed.add(arrayAlias.target);
+      }
+    }
   }
 
   if (typePath.isTSArrayType()) {

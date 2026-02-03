@@ -7,7 +7,7 @@ import { Table } from '@propane/postgres';
  * Table types are message types that also generate database schema.
  */
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ImmutableDate } from "../runtime/index.js";
 const TYPE_TAG_User = Symbol("User");
 export class User extends Message<User.Data> {
   static $typeId = "tests/table-wrapper.pmsg#User";

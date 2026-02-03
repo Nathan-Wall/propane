@@ -41,6 +41,18 @@ export function getAliasSourcesForTarget(
   return sources;
 }
 
+export function getAliasImportFrom(
+  target: string,
+  aliases: TypeAliasMap
+): string | null {
+  for (const config of Object.values(aliases)) {
+    if (config.target === target) {
+      return config.importFrom;
+    }
+  }
+  return null;
+}
+
 export function resolveAliasConfigForName(
   name: string,
   aliases: TypeAliasMap,

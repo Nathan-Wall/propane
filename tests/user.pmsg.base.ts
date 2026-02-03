@@ -3,7 +3,7 @@
 import { Distance } from './distance.pmsg.js';
 import { Email } from './email.pmsg.js';
 import { Hash } from './hash.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableDate, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, ImmutableDate } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_User = Symbol("User");
 export class User extends Message<User.Data> {

@@ -1,6 +1,7 @@
 import * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import type { PropaneState } from './plugin.js';
+import { getAliasImportFrom } from './alias-utils.js';
 
 export const DEFAULT_RUNTIME_SOURCE = '@propane/runtime';
 
@@ -37,6 +38,12 @@ export function ensureBaseImport(
         )
     );
   const runtimeSource = state.runtimeImportPath;
+  const resolveAliasImportSource = (target: string): string | null => {
+    const configured = getAliasImportFrom(target, state.typeAliases);
+    if (!configured) return null;
+    return configured === DEFAULT_RUNTIME_SOURCE ? runtimeSource : configured;
+  };
+  const aliasImportsBySource = new Map<string, Set<string>>();
 
   // Check if the source already has imports from the default runtime path
   // and rewrite them to use the configured path
@@ -75,18 +82,6 @@ export function ensureBaseImport(
   }
   if (state.usesImmutableSet && !hasValueImportBinding('ImmutableSet')) {
     requiredSpecifiers.push('ImmutableSet');
-  }
-  if (state.usesImmutableArray && !hasValueImportBinding('ImmutableArray')) {
-    requiredSpecifiers.push('ImmutableArray');
-  }
-  if (state.usesImmutableDate && !hasValueImportBinding('ImmutableDate')) {
-    requiredSpecifiers.push('ImmutableDate');
-  }
-  if (state.usesImmutableUrl && !hasValueImportBinding('ImmutableUrl')) {
-    requiredSpecifiers.push('ImmutableUrl');
-  }
-  if (state.usesImmutableArrayBuffer && !hasValueImportBinding('ImmutableArrayBuffer')) {
-    requiredSpecifiers.push('ImmutableArrayBuffer');
   }
   if (state.usesEquals) {
     requiredSpecifiers.push('equals');
@@ -156,6 +151,30 @@ export function ensureBaseImport(
     requiredSpecifiers.push('inRange');
   }
 
+  if (state.aliasTargetsUsed && state.aliasTargetsUsed.size > 0) {
+    for (const target of state.aliasTargetsUsed) {
+      if (hasValueImportBinding(target)) {
+        continue;
+      }
+      const source = resolveAliasImportSource(target);
+      if (!source) {
+        continue;
+      }
+      if (source === runtimeSource) {
+        if (!requiredSpecifiers.includes(target)) {
+          requiredSpecifiers.push(target);
+        }
+      } else {
+        let specifiers = aliasImportsBySource.get(source);
+        if (!specifiers) {
+          specifiers = new Set<string>();
+          aliasImportsBySource.set(source, specifiers);
+        }
+        specifiers.add(target);
+      }
+    }
+  }
+
   const removeTypeOnlyBindings = new Set<string>();
   if (state.usesDecimalClass) {
     removeTypeOnlyBindings.add('Decimal');
@@ -184,114 +203,95 @@ export function ensureBaseImport(
     }
   }
   // MessageConstructor, MessagePropDescriptor, DataValue, and DataObject are type-only imports
-  const typeOnlyImports: string[] = ['MessagePropDescriptor'];
-  if (state.usesMessageConstructor && !hasAnyImportBinding('MessageConstructor')) {
-    typeOnlyImports.push('MessageConstructor');
+  const typeOnlyImportsBySource = new Map<string, Set<string>>();
+  const addTypeOnlyImport = (name: string, source: string) => {
+    if (hasAnyImportBinding(name)) {
+      return;
+    }
+    let specifiers = typeOnlyImportsBySource.get(source);
+    if (!specifiers) {
+      specifiers = new Set<string>();
+      typeOnlyImportsBySource.set(source, specifiers);
+    }
+    specifiers.add(name);
+  };
+
+  addTypeOnlyImport('MessagePropDescriptor', runtimeSource);
+  if (state.usesMessageConstructor) {
+    addTypeOnlyImport('MessageConstructor', runtimeSource);
   }
-  if (state.usesDataValue && !hasAnyImportBinding('DataValue')) {
-    typeOnlyImports.push('DataValue');
+  if (state.usesDataValue) {
+    addTypeOnlyImport('DataValue', runtimeSource);
   }
-  if (state.usesMessageValue && !hasAnyImportBinding('MessageValue')) {
-    typeOnlyImports.push('MessageValue');
+  if (state.usesMessageValue) {
+    addTypeOnlyImport('MessageValue', runtimeSource);
   }
-  if (state.usesDataObject && !hasAnyImportBinding('DataObject')) {
-    typeOnlyImports.push('DataObject');
+  if (state.usesDataObject) {
+    addTypeOnlyImport('DataObject', runtimeSource);
   }
   // Add ImmutableArray/Set/Map as type imports when only needed for type annotations
   // (not as values for instantiation)
-  if (
-    state.needsImmutableArrayType
-    && !state.usesImmutableArray
-    && !hasAnyImportBinding('ImmutableArray')
-  ) {
-    typeOnlyImports.push('ImmutableArray');
+  if (state.needsImmutableArrayType && !state.usesImmutableArray) {
+    const source = resolveAliasImportSource('ImmutableArray') ?? runtimeSource;
+    addTypeOnlyImport('ImmutableArray', source);
   }
-  if (
-    state.needsImmutableSetType
-    && !state.usesImmutableSet
-    && !hasAnyImportBinding('ImmutableSet')
-  ) {
-    typeOnlyImports.push('ImmutableSet');
+  if (state.needsImmutableSetType && !state.usesImmutableSet) {
+    addTypeOnlyImport('ImmutableSet', runtimeSource);
   }
-  if (
-    state.needsImmutableMapType
-    && !state.usesImmutableMap
-    && !hasAnyImportBinding('ImmutableMap')
-  ) {
-    typeOnlyImports.push('ImmutableMap');
+  if (state.needsImmutableMapType && !state.usesImmutableMap) {
+    addTypeOnlyImport('ImmutableMap', runtimeSource);
   }
-  if (state.needsSetUpdatesType && !hasAnyImportBinding('SetUpdates')) {
-    typeOnlyImports.push('SetUpdates');
+  if (state.needsSetUpdatesType) {
+    addTypeOnlyImport('SetUpdates', runtimeSource);
   }
-  if (typeOnlyImports.length > 0) {
-    // Check if type import already exists
-    const existingTypeImport = program.body.find(
-      (stmt): stmt is t.ImportDeclaration =>
-        t.isImportDeclaration(stmt)
-        && stmt.source.value === runtimeSource
-        && stmt.importKind === 'type'
-    );
 
-    // Find names already in value imports to avoid duplicate identifier errors
-    const valueImportNames = new Set<string>();
-    for (const stmt of program.body) {
-      if (
-        t.isImportDeclaration(stmt)
-        && stmt.source.value === runtimeSource
-        && stmt.importKind !== 'type'
-      ) {
-        for (const spec of stmt.specifiers) {
-          if (t.isImportSpecifier(spec)) {
-            valueImportNames.add(spec.local.name);
+  if (typeOnlyImportsBySource.size > 0) {
+    for (const [source, specifiers] of typeOnlyImportsBySource.entries()) {
+      if (specifiers.size === 0) continue;
+      const existingTypeImport = program.body.find(
+        (stmt): stmt is t.ImportDeclaration =>
+          t.isImportDeclaration(stmt)
+          && stmt.source.value === source
+          && stmt.importKind === 'type'
+      );
+
+      if (existingTypeImport) {
+        type ImportSpec = t.ImportSpecifier;
+        const isImportSpec = (s: t.Node): s is ImportSpec =>
+          t.isImportSpecifier(s);
+        const existingSpecifiers = new Set(
+          existingTypeImport.specifiers
+            .filter(isImportSpec)
+            .map((spec) =>
+              t.isIdentifier(spec.imported)
+                ? spec.imported.name
+                : spec.imported.value
+            )
+        );
+        for (const name of specifiers) {
+          if (!existingSpecifiers.has(name)) {
+            existingTypeImport.specifiers.push(
+              t.importSpecifier(t.identifier(name), t.identifier(name))
+            );
           }
         }
-      }
-    }
-
-    // Filter out names that are already value imports
-    const filteredTypeImports = typeOnlyImports.filter(
-      (name) => !valueImportNames.has(name)
-    );
-
-    if (existingTypeImport && filteredTypeImports.length > 0) {
-      // Add to existing type import
-      type ImportSpec = t.ImportSpecifier;
-      const isImportSpec = (s: t.Node): s is ImportSpec =>
-        t.isImportSpecifier(s);
-      const existingSpecifiers = new Set(
-        existingTypeImport.specifiers
-          .filter(isImportSpec)
-          .map((spec) =>
-            t.isIdentifier(spec.imported)
-              ? spec.imported.name
-              : spec.imported.value
-          )
-      );
-      for (const name of filteredTypeImports) {
-        if (!existingSpecifiers.has(name)) {
-          existingTypeImport.specifiers.push(
-            t.importSpecifier(t.identifier(name), t.identifier(name))
-          );
-        }
-      }
-    } else if (filteredTypeImports.length > 0) {
-      // Create new type-only import
-      const typeImportDecl = t.importDeclaration(
-        filteredTypeImports.map((name) =>
-          t.importSpecifier(t.identifier(name), t.identifier(name))
-        ),
-        t.stringLiteral(runtimeSource)
-      );
-      typeImportDecl.importKind = 'type';
-
-      // Insert at the beginning with other imports
-      const insertionIndex = program.body.findIndex(
-        (stmt) => !t.isImportDeclaration(stmt)
-      );
-      if (insertionIndex === -1) {
-        program.body.push(typeImportDecl);
       } else {
-        program.body.splice(insertionIndex, 0, typeImportDecl);
+        const typeImportDecl = t.importDeclaration(
+          Array.from(specifiers).map((name) =>
+            t.importSpecifier(t.identifier(name), t.identifier(name))
+          ),
+          t.stringLiteral(source)
+        );
+        typeImportDecl.importKind = 'type';
+
+        const insertionIndex = program.body.findIndex(
+          (stmt) => !t.isImportDeclaration(stmt)
+        );
+        if (insertionIndex === -1) {
+          program.body.push(typeImportDecl);
+        } else {
+          program.body.splice(insertionIndex, 0, typeImportDecl);
+        }
       }
     }
   }
@@ -313,23 +313,67 @@ export function ensureBaseImport(
         );
       }
     }
-    return;
+  } else if (requiredSpecifiers.length > 0) {
+    const importDecl = t.importDeclaration(
+      requiredSpecifiers.map((name) =>
+        t.importSpecifier(t.identifier(name), t.identifier(name))
+      ),
+      t.stringLiteral(runtimeSource)
+    );
+
+    const insertionIndex = program.body.findIndex(
+      (stmt) => !t.isImportDeclaration(stmt)
+    );
+
+    if (insertionIndex === -1) {
+      program.body.push(importDecl);
+    } else {
+      program.body.splice(insertionIndex, 0, importDecl);
+    }
   }
 
-  const importDecl = t.importDeclaration(
-    requiredSpecifiers.map((name) =>
-      t.importSpecifier(t.identifier(name), t.identifier(name))
-    ),
-    t.stringLiteral(runtimeSource)
-  );
-
-  const insertionIndex = program.body.findIndex(
-    (stmt) => !t.isImportDeclaration(stmt)
-  );
-
-  if (insertionIndex === -1) {
-    program.body.push(importDecl);
-  } else {
-    program.body.splice(insertionIndex, 0, importDecl);
+  if (aliasImportsBySource.size > 0) {
+    for (const [source, specifiers] of aliasImportsBySource.entries()) {
+      if (specifiers.size === 0) continue;
+      const existingAliasImport = program.body.find(
+        (stmt): stmt is t.ImportDeclaration =>
+          t.isImportDeclaration(stmt)
+          && stmt.source.value === source
+          && stmt.importKind !== 'type'
+      );
+      if (existingAliasImport) {
+        const existingSpecifiers = new Set(
+          existingAliasImport.specifiers
+            .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
+            .map((spec) =>
+              t.isIdentifier(spec.imported)
+                ? spec.imported.name
+                : spec.imported.value
+            )
+        );
+        for (const name of specifiers) {
+          if (!existingSpecifiers.has(name)) {
+            existingAliasImport.specifiers.push(
+              t.importSpecifier(t.identifier(name), t.identifier(name))
+            );
+          }
+        }
+      } else {
+        const importDecl = t.importDeclaration(
+          Array.from(specifiers).map((name) =>
+            t.importSpecifier(t.identifier(name), t.identifier(name))
+          ),
+          t.stringLiteral(source)
+        );
+        const insertionIndex = program.body.findIndex(
+          (stmt) => !t.isImportDeclaration(stmt)
+        );
+        if (insertionIndex === -1) {
+          program.body.push(importDecl);
+        } else {
+          program.body.splice(insertionIndex, 0, importDecl);
+        }
+      }
+    }
   }
 }

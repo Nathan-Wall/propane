@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/unions.pmsg
 import { Email } from './email.pmsg.js';
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableSet, ImmutableArray, ImmutableDate, equals, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableMap, ImmutableSet, equals, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, ImmutableArray, ImmutableDate } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_Unions_Metadata_Union1 = Symbol("Unions_Metadata_Union1");
 export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data> {

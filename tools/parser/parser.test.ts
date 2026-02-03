@@ -276,8 +276,8 @@ describe('parseSource - type parsing', () => {
 
     const { file } = parseSource(source, 'test.pmsg', {
       typeAliases: {
-        Instant: { target: 'ImmutableDate', kind: 'message' },
-        Vector: { target: 'ImmutableArray', kind: 'message' },
+        Instant: { target: 'ImmutableDate', kind: 'message', importFrom: '@propane/runtime' },
+        Vector: { target: 'ImmutableArray', kind: 'message', importFrom: '@propane/runtime' },
       },
     });
 

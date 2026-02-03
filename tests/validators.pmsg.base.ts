@@ -6,7 +6,7 @@
  * Tests validation code generation for various validator types.
  */
 
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, isInt32, isInt53, isDecimalOf, Decimal, isPositive, greaterThanOrEqual, lessThanOrEqual, inRange, ImmutableArray } from "../runtime/index.js";
 import type { Positive, Negative, NonNegative, NonPositive, Min, Max, Range, NonEmpty, MinLength, MaxLength, Length, int32, int53 } from '@propane/types';
 
 // Test: Numeric sign validators

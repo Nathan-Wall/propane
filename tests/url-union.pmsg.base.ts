@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
 // Generated from tests/url-union.pmsg
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableUrl, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError } from "../runtime/index.js";
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, ImmutableUrl } from "../runtime/index.js";
 import type { MessagePropDescriptor, DataObject, ImmutableArray, ImmutableSet, ImmutableMap, SetUpdates } from "../runtime/index.js";
 const TYPE_TAG_UrlUnion_Value_Union1 = Symbol("UrlUnion_Value_Union1");
 export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
