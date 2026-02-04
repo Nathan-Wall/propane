@@ -9,6 +9,8 @@ import {
 import { needsDetach, detachValue } from '../detach.js';
 import type { Message, DataObject } from '../../message.js';
 
+const IMMUTABLE_MAP_TAG = Symbol.for('propane:ImmutableMap');
+
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
@@ -200,9 +202,8 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     return Boolean(
       value
       && typeof value === 'object'
-      && typeof (value as { entries?: unknown }).entries === 'function'
-      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-        === 'ImmutableMap'
+      && (value as { [IMMUTABLE_MAP_TAG]?: boolean })[IMMUTABLE_MAP_TAG]
+        === true
     );
   }
 
@@ -215,6 +216,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   ) {
     this.#buckets = new Map();
     this.#size = 0;
+    Object.defineProperty(this, IMMUTABLE_MAP_TAG, { value: true });
 
     if (entries) {
       const source: Iterable<readonly [K, V]> =

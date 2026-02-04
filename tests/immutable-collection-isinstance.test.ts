@@ -4,6 +4,10 @@ import { ImmutableMap } from '../runtime/common/map/immutable.js';
 import { ImmutableSet } from '../runtime/common/set/immutable.js';
 import { ImmutableArray } from '../runtime/common/array/immutable.js';
 
+const IMMUTABLE_MAP_TAG = Symbol.for('propane:ImmutableMap');
+const IMMUTABLE_SET_TAG = Symbol.for('propane:ImmutableSet');
+const IMMUTABLE_ARRAY_TAG = Symbol.for('propane:ImmutableArray');
+
 function* mapEntries() {
   yield ['a', 1];
 }
@@ -17,47 +21,44 @@ function* arrayValues() {
   yield 2;
 }
 
-test('ImmutableMap.isInstance uses structural predicate', () => {
+test('ImmutableMap.isInstance uses brand predicate', () => {
   const stub = {
-    [Symbol.toStringTag]: 'ImmutableMap',
-    entries: mapEntries,
+    [IMMUTABLE_MAP_TAG]: true,
   };
   assert(
     ImmutableMap.isInstance(stub),
-    'ImmutableMap.isInstance should accept map-like objects with matching tag.'
+    'ImmutableMap.isInstance should accept objects with matching brand.'
   );
   assert(
-    !ImmutableMap.isInstance({ [Symbol.toStringTag]: 'ImmutableMap' }),
-    'ImmutableMap.isInstance should reject missing entries().'
+    !ImmutableMap.isInstance({ entries: mapEntries }),
+    'ImmutableMap.isInstance should reject objects missing brand.'
   );
 });
 
-test('ImmutableSet.isInstance uses structural predicate', () => {
+test('ImmutableSet.isInstance uses brand predicate', () => {
   const stub = {
-    [Symbol.toStringTag]: 'ImmutableSet',
-    values: setValues,
+    [IMMUTABLE_SET_TAG]: true,
   };
   assert(
     ImmutableSet.isInstance(stub),
-    'ImmutableSet.isInstance should accept set-like objects with matching tag.'
+    'ImmutableSet.isInstance should accept objects with matching brand.'
   );
   assert(
-    !ImmutableSet.isInstance({ [Symbol.toStringTag]: 'ImmutableSet' }),
-    'ImmutableSet.isInstance should reject missing values().'
+    !ImmutableSet.isInstance({ values: setValues }),
+    'ImmutableSet.isInstance should reject objects missing brand.'
   );
 });
 
-test('ImmutableArray.isInstance uses structural predicate', () => {
+test('ImmutableArray.isInstance uses brand predicate', () => {
   const stub = {
-    [Symbol.toStringTag]: 'ImmutableArray',
-    values: arrayValues,
+    [IMMUTABLE_ARRAY_TAG]: true,
   };
   assert(
     ImmutableArray.isInstance(stub),
-    'ImmutableArray.isInstance should accept array-like objects with matching tag.'
+    'ImmutableArray.isInstance should accept objects with matching brand.'
   );
   assert(
-    !ImmutableArray.isInstance({ [Symbol.toStringTag]: 'ImmutableArray' }),
-    'ImmutableArray.isInstance should reject missing values().'
+    !ImmutableArray.isInstance({ values: arrayValues }),
+    'ImmutableArray.isInstance should reject objects missing brand.'
   );
 });

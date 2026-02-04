@@ -9,6 +9,8 @@ import {
 import { needsDetach, detachValue } from '../detach.js';
 import type { Message, DataObject } from '../../message.js';
 
+const IMMUTABLE_SET_TAG = Symbol.for('propane:ImmutableSet');
+
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
@@ -111,15 +113,15 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     return Boolean(
       value
       && typeof value === 'object'
-      && typeof (value as { values?: unknown }).values === 'function'
-      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-        === 'ImmutableSet'
+      && (value as { [IMMUTABLE_SET_TAG]?: boolean })[IMMUTABLE_SET_TAG]
+        === true
     );
   }
 
   constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[]) {
     this.#buckets = new Map();
     this.#size = 0;
+    Object.defineProperty(this, IMMUTABLE_SET_TAG, { value: true });
 
     if (values) {
       const source: Iterable<T> =

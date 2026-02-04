@@ -9,6 +9,8 @@ import {
 import { needsDetach, detachValue } from '../detach.js';
 import type { Message, DataObject } from '../../message.js';
 
+const IMMUTABLE_ARRAY_TAG = Symbol.for('propane:ImmutableArray');
+
 function isMessageLike(
   value: unknown
 ): value is {
@@ -112,13 +114,13 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     return Boolean(
       value
       && typeof value === 'object'
-      && typeof (value as { values?: unknown }).values === 'function'
-      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-        === 'ImmutableArray'
+      && (value as { [IMMUTABLE_ARRAY_TAG]?: boolean })[IMMUTABLE_ARRAY_TAG]
+        === true
     );
   }
 
   constructor(items?: Iterable<T> | ArrayLike<T>) {
+    Object.defineProperty(this, IMMUTABLE_ARRAY_TAG, { value: true });
     if (!items) {
       this.#items = [];
       this.#defineIndexProps();
