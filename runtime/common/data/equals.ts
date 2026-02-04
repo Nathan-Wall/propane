@@ -15,15 +15,15 @@ function supportsEquals(
 }
 
 function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
-  return value instanceof Map || value instanceof ImmutableMap;
+  return value instanceof Map || ImmutableMap.isInstance(value);
 }
 
 function isSetLike(value: unknown): value is ReadonlySet<unknown> {
-  return value instanceof Set || value instanceof ImmutableSet;
+  return value instanceof Set || ImmutableSet.isInstance(value);
 }
 
 function isArrayLike(value: unknown): value is ArrayLike<unknown> {
-  return Array.isArray(value) || value instanceof ImmutableArray;
+  return Array.isArray(value) || ImmutableArray.isInstance(value);
 }
 
 export const equals: EqualsFn = (a, b): boolean => {

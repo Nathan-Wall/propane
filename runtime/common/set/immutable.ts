@@ -104,7 +104,17 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
    * If the input is already an ImmutableSet, returns it as-is.
    */
   static from<T>(input: ImmutableSet<T> | ReadonlySet<T> | Iterable<T>): ImmutableSet<T> {
-    return input instanceof ImmutableSet ? input : new ImmutableSet(input);
+    return ImmutableSet.isInstance(input) ? input : new ImmutableSet(input);
+  }
+
+  static isInstance(value: unknown): value is ImmutableSet<unknown> {
+    return Boolean(
+      value
+      && typeof value === 'object'
+      && typeof (value as { values?: unknown }).values === 'function'
+      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+        === 'ImmutableSet'
+    );
   }
 
   constructor(values?: Iterable<T> | ReadonlySet<T> | readonly T[]) {
@@ -113,7 +123,7 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
 
     if (values) {
       const source: Iterable<T> =
-        values instanceof Set || values instanceof ImmutableSet
+        values instanceof Set || ImmutableSet.isInstance(values)
           ? values.values()
           // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(values)

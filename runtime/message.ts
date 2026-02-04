@@ -1167,7 +1167,7 @@ function serializePrimitive(
   }
 
   if ((tagArrayElements || forceQuotedArrayElements)
-    && (Array.isArray(value) || value instanceof ImmutableArray)) {
+    && (Array.isArray(value) || ImmutableArray.isInstance(value))) {
     return serializeArrayLiteral(
       Array.isArray(value) ? value : [...value],
       ancestors,
@@ -1199,7 +1199,7 @@ function serializePrimitive(
     });
   }
 
-  if (Array.isArray(value) || value instanceof ImmutableArray) {
+  if (Array.isArray(value) || ImmutableArray.isInstance(value)) {
     return serializeArrayLiteral(
       Array.isArray(value) ? value : [...value],
       ancestors
@@ -1428,11 +1428,11 @@ function serializeTaggedMessage(
 }
 
 function isMapValue(value: unknown): value is ReadonlyMap<unknown, unknown> {
-  return value instanceof Map || value instanceof ImmutableMap;
+  return value instanceof Map || ImmutableMap.isInstance(value);
 }
 
 function isSetValue(value: unknown): value is ReadonlySet<unknown> {
-  return value instanceof Set || value instanceof ImmutableSet;
+  return value instanceof Set || ImmutableSet.isInstance(value);
 }
 
 

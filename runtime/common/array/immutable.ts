@@ -105,7 +105,17 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * If the input is already an ImmutableArray, returns it as-is.
    */
   static from<T>(input: ImmutableArray<T> | Iterable<T> | ArrayLike<T>): ImmutableArray<T> {
-    return input instanceof ImmutableArray ? input : new ImmutableArray(input);
+    return ImmutableArray.isInstance(input) ? input : new ImmutableArray(input);
+  }
+
+  static isInstance(value: unknown): value is ImmutableArray<unknown> {
+    return Boolean(
+      value
+      && typeof value === 'object'
+      && typeof (value as { values?: unknown }).values === 'function'
+      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+        === 'ImmutableArray'
+    );
   }
 
   constructor(items?: Iterable<T> | ArrayLike<T>) {

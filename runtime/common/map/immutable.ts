@@ -33,11 +33,11 @@ function isMessageLike(value: unknown): value is {
 function isImmutableMapLike(
   value: unknown
 ): value is ImmutableMap<unknown, unknown> {
-  return value instanceof ImmutableMap;
+  return ImmutableMap.isInstance(value);
 }
 
 function isMapLike(value: unknown): value is ReadonlyMap<unknown, unknown> {
-  return value instanceof Map || value instanceof ImmutableMap;
+  return value instanceof Map || ImmutableMap.isInstance(value);
 }
 
 function equalKeys(a: unknown, b: unknown): boolean {
@@ -193,7 +193,17 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   static from<K, V>(
     input: ImmutableMap<K, V> | ReadonlyMap<K, V> | Iterable<readonly [K, V]>
   ): ImmutableMap<K, V> {
-    return input instanceof ImmutableMap ? input : new ImmutableMap(input);
+    return ImmutableMap.isInstance(input) ? input : new ImmutableMap(input);
+  }
+
+  static isInstance(value: unknown): value is ImmutableMap<unknown, unknown> {
+    return Boolean(
+      value
+      && typeof value === 'object'
+      && typeof (value as { entries?: unknown }).entries === 'function'
+      && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
+        === 'ImmutableMap'
+    );
   }
 
   constructor(
@@ -209,7 +219,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     if (entries) {
       const source: Iterable<readonly [K, V]> =
         entries instanceof Map
-        || entries instanceof ImmutableMap
+        || ImmutableMap.isInstance(entries)
           ? entries.entries()
           // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(entries)

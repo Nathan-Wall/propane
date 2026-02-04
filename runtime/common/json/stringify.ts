@@ -1,4 +1,7 @@
 // @ts-nocheck
+import { ImmutableMap } from '../map/immutable.js';
+import { ImmutableSet } from '../set/immutable.js';
+import { ImmutableArray } from '../array/immutable.js';
 
 export function normalizeForJson(value: unknown): unknown {
   if (value === undefined) {
@@ -71,36 +74,18 @@ export function normalizeForJson(value: unknown): unknown {
 
 function isImmutableMapLike(
   value: unknown
-): value is { entries: () => IterableIterator<unknown[]> } {
-  return (
-    !!value
-    && typeof value === 'object'
-    && typeof (value as { entries?: unknown }).entries === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-      === 'ImmutableMap'
-  );
+): value is ImmutableMap<unknown, unknown> {
+  return ImmutableMap.isInstance(value);
 }
 
 function isImmutableSetLike(
   value: unknown
-): value is { values: () => IterableIterator<unknown> } {
-  return (
-    !!value
-    && typeof value === 'object'
-    && typeof (value as { values?: unknown }).values === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-      === 'ImmutableSet'
-  );
+): value is ImmutableSet<unknown> {
+  return ImmutableSet.isInstance(value);
 }
 
 function isImmutableArrayLike(
   value: unknown
-): value is { values: () => IterableIterator<unknown> } {
-  return (
-    !!value
-    && typeof value === 'object'
-    && typeof (value as { values?: unknown }).values === 'function'
-    && (value as { [Symbol.toStringTag]?: string })[Symbol.toStringTag]
-      === 'ImmutableArray'
-  );
+): value is ImmutableArray<unknown> {
+  return ImmutableArray.isInstance(value);
 }
