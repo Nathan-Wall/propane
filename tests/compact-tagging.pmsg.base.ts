@@ -57,7 +57,7 @@ export class CompactTiny extends Message<CompactTiny.Data> {
     }, options);
   }
   static from(value: CompactTiny.Value): CompactTiny {
-    return value instanceof CompactTiny ? value : new CompactTiny(value);
+    return CompactTiny.isInstance(value) ? value : new CompactTiny(value);
   }
   static deserialize<T extends typeof CompactTiny>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -165,7 +165,7 @@ export class CompactFull extends Message<CompactFull.Data> {
     }, options);
   }
   static from(value: CompactFull.Value): CompactFull {
-    return value instanceof CompactFull ? value : new CompactFull(value);
+    return CompactFull.isInstance(value) ? value : new CompactFull(value);
   }
   static deserialize<T extends typeof CompactFull>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -299,7 +299,7 @@ export class CompactUnion extends Message<CompactUnion.Data> {
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof CompactFull) {
+        if (CompactFull.isInstance(valueValue)) {
           valueUnionValue = valueValue as any;
           valueUnionValueMatched = true;
         } else {
@@ -313,7 +313,7 @@ export class CompactUnion extends Message<CompactUnion.Data> {
     return props as CompactUnion.Data;
   }
   static from(value: CompactUnion.Value): CompactUnion {
-    return value instanceof CompactUnion ? value : new CompactUnion(value);
+    return CompactUnion.isInstance(value) ? value : new CompactUnion(value);
   }
   #validate(data: CompactUnion.Value | undefined) {
     if (data === undefined) return;
@@ -458,7 +458,7 @@ export class CompactUnionWithString extends Message<CompactUnionWithString.Data>
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof CompactTiny) {
+        if (CompactTiny.isInstance(valueValue)) {
           valueUnionValue = valueValue as any;
           valueUnionValueMatched = true;
         } else {
@@ -472,7 +472,7 @@ export class CompactUnionWithString extends Message<CompactUnionWithString.Data>
     return props as CompactUnionWithString.Data;
   }
   static from(value: CompactUnionWithString.Value): CompactUnionWithString {
-    return value instanceof CompactUnionWithString ? value : new CompactUnionWithString(value);
+    return CompactUnionWithString.isInstance(value) ? value : new CompactUnionWithString(value);
   }
   #validate(data: CompactUnionWithString.Value | undefined) {
     if (data === undefined) return;

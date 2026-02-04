@@ -52,7 +52,7 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
     return props as UnionStringBool.Data;
   }
   static from(value: UnionStringBool.Value): UnionStringBool {
-    return value instanceof UnionStringBool ? value : new UnionStringBool(value);
+    return UnionStringBool.isInstance(value) ? value : new UnionStringBool(value);
   }
   #validate(data: UnionStringBool.Value | undefined) {
     if (data === undefined) return;

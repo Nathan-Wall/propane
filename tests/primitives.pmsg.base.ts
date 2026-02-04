@@ -87,7 +87,7 @@ export class Primitives extends Message<Primitives.Data> {
     return props as Primitives.Data;
   }
   static from(value: Primitives.Value): Primitives {
-    return value instanceof Primitives ? value : new Primitives(value);
+    return Primitives.isInstance(value) ? value : new Primitives(value);
   }
   static deserialize<T extends typeof Primitives>(this: T, data: string, options?: {
     skipValidation: boolean;

@@ -74,7 +74,7 @@ export class Flag$Base extends Message<Flag.Data> {
     }, options);
   }
   static from(value: Flag.Value): Flag$Base {
-    return value instanceof Flag$Base ? value : new Flag$Base(value);
+    return Flag$Base.isInstance(value) ? value : new Flag$Base(value);
   }
   static deserialize<T extends typeof Flag$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

@@ -107,7 +107,7 @@ export class Indexed extends Message<Indexed.Data> {
     return props as Indexed.Data;
   }
   static from(value: Indexed.Value): Indexed {
-    return value instanceof Indexed ? value : new Indexed(value);
+    return Indexed.isInstance(value) ? value : new Indexed(value);
   }
   static deserialize<T extends typeof Indexed>(this: T, data: string, options?: {
     skipValidation: boolean;

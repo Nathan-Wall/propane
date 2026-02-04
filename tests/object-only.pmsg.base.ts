@@ -67,7 +67,7 @@ export class ObjectOnly extends Message<ObjectOnly.Data> {
     return props as ObjectOnly.Data;
   }
   static from(value: ObjectOnly.Value): ObjectOnly {
-    return value instanceof ObjectOnly ? value : new ObjectOnly(value);
+    return ObjectOnly.isInstance(value) ? value : new ObjectOnly(value);
   }
   static deserialize<T extends typeof ObjectOnly>(this: T, data: string, options?: {
     skipValidation: boolean;

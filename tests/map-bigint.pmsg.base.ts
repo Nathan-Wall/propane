@@ -38,7 +38,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     return props as MapBigintKey.Data;
   }
   static from(value: MapBigintKey.Value): MapBigintKey {
-    return value instanceof MapBigintKey ? value : new MapBigintKey(value);
+    return MapBigintKey.isInstance(value) ? value : new MapBigintKey(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

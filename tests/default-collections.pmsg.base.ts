@@ -65,7 +65,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
     return props as DefaultCollections.Data;
   }
   static from(value: DefaultCollections.Value): DefaultCollections {
-    return value instanceof DefaultCollections ? value : new DefaultCollections(value);
+    return DefaultCollections.isInstance(value) ? value : new DefaultCollections(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

@@ -186,10 +186,9 @@ export function buildImmutableArrayBufferNormalizationExpression(
     optionsExpr?: t.Expression;
   } = {}
 ): t.Expression {
-  const instanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier('ImmutableArrayBuffer')
+  const instanceCheck = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableArrayBuffer'), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
   const isArrayBufferView = t.callExpression(
     t.memberExpression(t.identifier('ArrayBuffer'), t.identifier('isView')),
@@ -320,10 +319,9 @@ export function buildMessageNormalizationExpression(
     allowTagged?: boolean;
   } = {}
 ): t.Expression {
-  const instanceCheck = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueExpr),
-    t.identifier(className)
+  const instanceCheck = t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
   const buildNewInstance = (inputExpr: t.Expression) => {
     // Pass options to nested message constructor if provided
@@ -454,10 +452,9 @@ export function buildMessageNormalizationExpression(
     ]),
   ];
 
-  const instanceCheckTagged = t.binaryExpression(
-    'instanceof',
-    t.cloneNode(valueId),
-    t.identifier(className)
+  const instanceCheckTagged = t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('isInstance')),
+    [t.cloneNode(valueId)]
   );
   const instanceAssign = t.ifStatement(
     instanceCheckTagged,
@@ -686,10 +683,9 @@ export function buildImmutableArrayOfMessagesExpression(
       t.arrowFunctionExpression(
         [t.identifier('v')],
         t.conditionalExpression(
-          t.binaryExpression(
-            'instanceof',
-            t.identifier('v'),
-            t.identifier(messageTypeName)
+          t.callExpression(
+            t.memberExpression(t.identifier(messageTypeName), t.identifier('isInstance')),
+            [t.identifier('v')]
           ),
           t.identifier('v'),
           t.newExpression(
@@ -765,10 +761,9 @@ export function buildImmutableSetOfMessagesExpression(
       t.arrowFunctionExpression(
         [t.identifier('v')],
         t.conditionalExpression(
-          t.binaryExpression(
-            'instanceof',
-            t.identifier('v'),
-            t.identifier(messageTypeName)
+          t.callExpression(
+            t.memberExpression(t.identifier(messageTypeName), t.identifier('isInstance')),
+            [t.identifier('v')]
           ),
           t.identifier('v'),
           t.newExpression(
@@ -814,10 +809,11 @@ export function buildImmutableMapOfMessagesExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  // When castToAny is true, values are 'unknown' and need casting for instanceof and constructor
-  const vInstanceofLhs = castToAny
-    ? t.tsAsExpression(t.identifier('v'), t.tsTypeReference(t.identifier('object')))
-    : t.identifier('v');
+  // When castToAny is true, values are 'unknown' and need casting for constructor
+  const vInstanceCheck = t.callExpression(
+    t.memberExpression(t.identifier(messageTypeName), t.identifier('isInstance')),
+    [t.identifier('v')]
+  );
   // Cast v to the message's Value type for the constructor call
   const vForConstructor = castToAny
     ? t.tsAsExpression(
@@ -843,11 +839,7 @@ export function buildImmutableMapOfMessagesExpression(
         t.arrayExpression([
           t.identifier('k'),
           t.conditionalExpression(
-            t.binaryExpression(
-              'instanceof',
-              vInstanceofLhs,
-              t.identifier(messageTypeName)
-            ),
+            vInstanceCheck,
             t.identifier('v'),
             t.newExpression(
               t.identifier(messageTypeName),

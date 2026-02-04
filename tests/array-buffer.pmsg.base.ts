@@ -19,9 +19,9 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     if (!props && ArrayBufferMessage.EMPTY) return ArrayBufferMessage.EMPTY;
     super(TYPE_TAG_ArrayBufferMessage, "ArrayBufferMessage");
     this.#id = (props ? props.id : 0) as number;
-    this.#data = props ? ((props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer)) instanceof ImmutableArrayBuffer ? props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer) : new ImmutableArrayBuffer(props.data instanceof ImmutableArrayBuffer ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer), options)) as ImmutableArrayBuffer : new ImmutableArrayBuffer();
-    this.#extra = props ? ((props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) === undefined ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : (props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) instanceof ImmutableArrayBuffer ? props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : new ImmutableArrayBuffer(props.extra === undefined ? undefined : props.extra instanceof ImmutableArrayBuffer ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer), options)) as ImmutableArrayBuffer : undefined;
-    this.#chunks = props ? (props.chunks === undefined || props.chunks === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.chunks as Iterable<unknown>).map(v => v instanceof ImmutableArrayBuffer ? v : new ImmutableArrayBuffer(v as ImmutableArrayBuffer.Value)))) as ImmutableArray<ImmutableArrayBuffer> : new ImmutableArray();
+    this.#data = props ? (ImmutableArrayBuffer.isInstance(ImmutableArrayBuffer.isInstance(props.data) ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer)) ? ImmutableArrayBuffer.isInstance(props.data) ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer) : new ImmutableArrayBuffer(ImmutableArrayBuffer.isInstance(props.data) ? props.data : ArrayBuffer.isView(props.data) ? new ImmutableArrayBuffer(props.data as ArrayBufferView) : new ImmutableArrayBuffer(props.data as ArrayBuffer), options)) as ImmutableArrayBuffer : new ImmutableArrayBuffer();
+    this.#extra = props ? ((props.extra === undefined ? undefined : ImmutableArrayBuffer.isInstance(props.extra) ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) === undefined ? props.extra === undefined ? undefined : ImmutableArrayBuffer.isInstance(props.extra) ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : ImmutableArrayBuffer.isInstance(props.extra === undefined ? undefined : ImmutableArrayBuffer.isInstance(props.extra) ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer)) ? props.extra === undefined ? undefined : ImmutableArrayBuffer.isInstance(props.extra) ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer) : new ImmutableArrayBuffer(props.extra === undefined ? undefined : ImmutableArrayBuffer.isInstance(props.extra) ? props.extra : ArrayBuffer.isView(props.extra) ? new ImmutableArrayBuffer(props.extra as ArrayBufferView) : new ImmutableArrayBuffer(props.extra as ArrayBuffer), options)) as ImmutableArrayBuffer : undefined;
+    this.#chunks = props ? (props.chunks === undefined || props.chunks === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.chunks as Iterable<unknown>).map(v => ImmutableArrayBuffer.isInstance(v) ? v : new ImmutableArrayBuffer(v as ImmutableArrayBuffer.Value)))) as ImmutableArray<ImmutableArrayBuffer> : new ImmutableArray();
     if (!props) ArrayBufferMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayBufferMessage.Data>[] {
@@ -54,11 +54,11 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     props.id = idValue as number;
     const dataValue = entries["2"] === undefined ? entries["data"] : entries["2"];
     if (dataValue === undefined) throw new Error("Missing required property \"data\".");
-    const dataArrayBufferValue = typeof dataValue === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && dataValue.startsWith(ImmutableArrayBuffer.$compactTag) ? dataValue.slice(ImmutableArrayBuffer.$compactTag.length) : dataValue, options) as any : dataValue instanceof ImmutableArrayBuffer ? dataValue : ArrayBuffer.isView(dataValue) ? new ImmutableArrayBuffer(dataValue as ArrayBufferView) : new ImmutableArrayBuffer(dataValue as ArrayBuffer);
+    const dataArrayBufferValue = typeof dataValue === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && dataValue.startsWith(ImmutableArrayBuffer.$compactTag) ? dataValue.slice(ImmutableArrayBuffer.$compactTag.length) : dataValue, options) as any : ImmutableArrayBuffer.isInstance(dataValue) ? dataValue : ArrayBuffer.isView(dataValue) ? new ImmutableArrayBuffer(dataValue as ArrayBufferView) : new ImmutableArrayBuffer(dataValue as ArrayBuffer);
     props.data = dataArrayBufferValue as ImmutableArrayBuffer.Value;
     const extraValue = entries["3"] === undefined ? entries["extra"] : entries["3"];
     const extraNormalized = extraValue === null ? undefined : extraValue;
-    const extraArrayBufferValue = extraNormalized === undefined ? undefined : typeof extraNormalized === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && extraNormalized.startsWith(ImmutableArrayBuffer.$compactTag) ? extraNormalized.slice(ImmutableArrayBuffer.$compactTag.length) : extraNormalized, options) as any : extraNormalized instanceof ImmutableArrayBuffer ? extraNormalized : ArrayBuffer.isView(extraNormalized) ? new ImmutableArrayBuffer(extraNormalized as ArrayBufferView) : new ImmutableArrayBuffer(extraNormalized as ArrayBuffer);
+    const extraArrayBufferValue = extraNormalized === undefined ? undefined : typeof extraNormalized === "string" && ImmutableArrayBuffer.$compact === true ? ImmutableArrayBuffer.fromCompact(ImmutableArrayBuffer.$compactTag && extraNormalized.startsWith(ImmutableArrayBuffer.$compactTag) ? extraNormalized.slice(ImmutableArrayBuffer.$compactTag.length) : extraNormalized, options) as any : ImmutableArrayBuffer.isInstance(extraNormalized) ? extraNormalized : ArrayBuffer.isView(extraNormalized) ? new ImmutableArrayBuffer(extraNormalized as ArrayBufferView) : new ImmutableArrayBuffer(extraNormalized as ArrayBuffer);
     props.extra = extraArrayBufferValue as ImmutableArrayBuffer.Value;
     const chunksValue = entries["4"] === undefined ? entries["chunks"] : entries["4"];
     if (chunksValue === undefined) throw new Error("Missing required property \"chunks\".");
@@ -69,7 +69,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     return props as ArrayBufferMessage.Data;
   }
   static from(value: ArrayBufferMessage.Value): ArrayBufferMessage {
-    return value instanceof ArrayBufferMessage ? value : new ArrayBufferMessage(value);
+    return ArrayBufferMessage.isInstance(value) ? value : new ArrayBufferMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -221,7 +221,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
   setData(value: ImmutableArrayBuffer.Value) {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
-      data: (value instanceof ImmutableArrayBuffer ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
+      data: (ImmutableArrayBuffer.isInstance(value) ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
       extra: this.#extra as ImmutableArrayBuffer.Value,
       chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
@@ -230,7 +230,7 @@ export class ArrayBufferMessage extends Message<ArrayBufferMessage.Data> {
     return this.$update(new (this.constructor as typeof ArrayBufferMessage)({
       id: this.#id,
       data: this.#data as ImmutableArrayBuffer.Value,
-      extra: (value === undefined ? value : value instanceof ImmutableArrayBuffer ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
+      extra: (value === undefined ? value : ImmutableArrayBuffer.isInstance(value) ? value : new ImmutableArrayBuffer(value)) as ImmutableArrayBuffer.Value,
       chunks: this.#chunks as (ImmutableArrayBuffer | ArrayBuffer)[] | Iterable<ImmutableArrayBuffer | ArrayBuffer>
     }) as this);
   }

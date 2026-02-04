@@ -145,7 +145,7 @@ export class Rational extends Rational$Base {
     let numerator: bigint;
     let denominator: bigint;
 
-    if (props instanceof Rational$Base) {
+    if (Rational$Base.isInstance(props)) {
       numerator = props.numerator;
       denominator = props.denominator;
     } else if (props) {

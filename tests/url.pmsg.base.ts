@@ -19,9 +19,9 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     if (!props && UrlMessage.EMPTY) return UrlMessage.EMPTY;
     super(TYPE_TAG_UrlMessage, "UrlMessage");
     this.#id = (props ? props.id : 0) as number;
-    this.#primary = props ? props.primary instanceof ImmutableUrl ? props.primary : new ImmutableUrl(props.primary, options) : new ImmutableUrl();
-    this.#secondary = props ? props.secondary === undefined ? props.secondary : props.secondary instanceof ImmutableUrl ? props.secondary : new ImmutableUrl(props.secondary, options) : undefined;
-    this.#links = props ? (props.links === undefined || props.links === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.links as Iterable<unknown>).map(v => v instanceof ImmutableUrl ? v : new ImmutableUrl(v as ImmutableUrl.Value)))) as ImmutableArray<ImmutableUrl> : new ImmutableArray();
+    this.#primary = props ? ImmutableUrl.isInstance(props.primary) ? props.primary : new ImmutableUrl(props.primary, options) : new ImmutableUrl();
+    this.#secondary = props ? props.secondary === undefined ? props.secondary : ImmutableUrl.isInstance(props.secondary) ? props.secondary : new ImmutableUrl(props.secondary, options) : undefined;
+    this.#links = props ? (props.links === undefined || props.links === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.links as Iterable<unknown>).map(v => ImmutableUrl.isInstance(v) ? v : new ImmutableUrl(v as ImmutableUrl.Value)))) as ImmutableArray<ImmutableUrl> : new ImmutableArray();
     if (!props) UrlMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlMessage.Data>[] {
@@ -74,7 +74,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (value instanceof ImmutableUrl) {
+          if (ImmutableUrl.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableUrl(value as ImmutableUrl.Value, options);
@@ -106,7 +106,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (value instanceof ImmutableUrl) {
+          if (ImmutableUrl.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableUrl(value as ImmutableUrl.Value, options);
@@ -128,7 +128,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     return props as UrlMessage.Data;
   }
   static from(value: UrlMessage.Value): UrlMessage {
-    return value instanceof UrlMessage ? value : new UrlMessage(value);
+    return UrlMessage.isInstance(value) ? value : new UrlMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -288,7 +288,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
   setPrimary(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
-      primary: (value instanceof ImmutableUrl ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
+      primary: (ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
       secondary: this.#secondary as ImmutableUrl | URL,
       links: this.#links as (ImmutableUrl | URL)[] | Iterable<ImmutableUrl | URL>
     }) as this);
@@ -297,7 +297,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
     return this.$update(new (this.constructor as typeof UrlMessage)({
       id: this.#id,
       primary: this.#primary as ImmutableUrl | URL,
-      secondary: (value === undefined ? value : value instanceof ImmutableUrl ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
+      secondary: (value === undefined ? value : ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value)) as ImmutableUrl | URL,
       links: this.#links as (ImmutableUrl | URL)[] | Iterable<ImmutableUrl | URL>
     }) as this);
   }

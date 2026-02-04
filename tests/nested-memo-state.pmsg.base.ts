@@ -39,7 +39,7 @@ export class InnerMessage extends Message<InnerMessage.Data> {
     return props as InnerMessage.Data;
   }
   static from(value: InnerMessage.Value): InnerMessage {
-    return value instanceof InnerMessage ? value : new InnerMessage(value);
+    return InnerMessage.isInstance(value) ? value : new InnerMessage(value);
   }
   static deserialize<T extends typeof InnerMessage>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -110,7 +110,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     if (!props && OuterMessage.EMPTY) return OuterMessage.EMPTY;
     super(TYPE_TAG_OuterMessage, "OuterMessage");
     this.#counter = (props ? props.counter : 0) as number;
-    this.#inner = props ? props.inner instanceof InnerMessage ? props.inner : new InnerMessage(props.inner, options) : new InnerMessage();
+    this.#inner = props ? InnerMessage.isInstance(props.inner) ? props.inner : new InnerMessage(props.inner, options) : new InnerMessage();
     if (!props) OuterMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<OuterMessage.Data>[] {
@@ -155,7 +155,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
             throw new Error("Tagged message type mismatch: expected InnerMessage.");
           }
         } else {
-          if (value instanceof InnerMessage) {
+          if (InnerMessage.isInstance(value)) {
             result = value;
           } else {
             result = new InnerMessage(value as InnerMessage.Value, options);
@@ -168,7 +168,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
     return props as OuterMessage.Data;
   }
   static from(value: OuterMessage.Value): OuterMessage {
-    return value instanceof OuterMessage ? value : new OuterMessage(value);
+    return OuterMessage.isInstance(value) ? value : new OuterMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -238,7 +238,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
   setInner(value: InnerMessage.Value) {
     return this.$update(new (this.constructor as typeof OuterMessage)({
       counter: this.#counter,
-      inner: (value instanceof InnerMessage ? value : new InnerMessage(value)) as InnerMessage.Value
+      inner: (InnerMessage.isInstance(value) ? value : new InnerMessage(value)) as InnerMessage.Value
     }) as this);
   }
 }

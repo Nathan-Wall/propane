@@ -53,7 +53,7 @@ export class Item extends Message<Item.Data> {
     return props as Item.Data;
   }
   static from(value: Item.Value): Item {
-    return value instanceof Item ? value : new Item(value);
+    return Item.isInstance(value) ? value : new Item(value);
   }
   static deserialize<T extends typeof Item>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -173,7 +173,7 @@ export class Container<T extends {
     isInstance: (value: unknown) => value is Container<T>;
   } {
     const boundCtor = function (props: Container.Value<T>) {
-      const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+      const inner = tClass.isInstance(props.inner) ? props.inner : new tClass(props.inner as any);
       return new Container(tClass, {
         ...props,
         inner
@@ -326,7 +326,7 @@ export class Optional<T extends {
     isInstance: (value: unknown) => value is Optional<T>;
   } {
     const boundCtor = function (props: Optional.Value<T>) {
-      const value = props.value === undefined ? undefined : props.value instanceof tClass ? props.value : new tClass(props.value as any);
+      const value = props.value === undefined ? undefined : tClass.isInstance(props.value) ? props.value : new tClass(props.value as any);
       return new Optional(tClass, {
         ...props,
         value
@@ -504,8 +504,8 @@ export class Pair<T extends {
     isInstance: (value: unknown) => value is Pair<T, U>;
   } {
     const boundCtor = function (props: Pair.Value<T, U>) {
-      const first = props.first instanceof tClass ? props.first : new tClass(props.first as any);
-      const second = props.second instanceof uClass ? props.second : new uClass(props.second as any);
+      const first = tClass.isInstance(props.first) ? props.first : new tClass(props.first as any);
+      const second = uClass.isInstance(props.second) ? props.second : new uClass(props.second as any);
       return new Pair(tClass, uClass, {
         ...props,
         first,
@@ -669,7 +669,7 @@ export class Parent extends Message<Parent.Data> {
     return props as Parent.Data;
   }
   static from(value: Parent.Value): Parent {
-    return value instanceof Parent ? value : new Parent(value);
+    return Parent.isInstance(value) ? value : new Parent(value);
   }
   static deserialize<T extends typeof Parent>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -745,7 +745,7 @@ export class Timestamped<T extends {
     super(TYPE_TAG_Timestamped, `Timestamped<${tClass.$typeName}>`);
     this.#tClass = tClass;
     this.#inner = (props ? props.inner : new this.#tClass(undefined)) as T;
-    this.#timestamp = props ? props.timestamp instanceof ImmutableDate ? props.timestamp : new ImmutableDate(props.timestamp, options) : new ImmutableDate();
+    this.#timestamp = props ? ImmutableDate.isInstance(props.timestamp) ? props.timestamp : new ImmutableDate(props.timestamp, options) : new ImmutableDate();
     this.#label = (props ? props.label : "") as string;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Timestamped.Data<T>>[] {
@@ -793,7 +793,7 @@ export class Timestamped<T extends {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -841,7 +841,7 @@ export class Timestamped<T extends {
     isInstance: (value: unknown) => value is Timestamped<T>;
   } {
     const boundCtor = function (props: Timestamped.Value<T>) {
-      const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+      const inner = tClass.isInstance(props.inner) ? props.inner : new tClass(props.inner as any);
       return new Timestamped(tClass, {
         ...props,
         inner
@@ -924,7 +924,7 @@ export class Timestamped<T extends {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -980,7 +980,7 @@ export class Timestamped<T extends {
   setTimestamp(value: ImmutableDate | Date) {
     return this.$update(new Timestamped(this.#tClass, {
       inner: this.#inner as T | T,
-      timestamp: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      timestamp: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       label: this.#label
     }) as this as this);
   }

@@ -41,7 +41,7 @@ export class StringFirst extends Message<StringFirst.Data> {
     return props as StringFirst.Data;
   }
   static from(value: StringFirst.Value): StringFirst {
-    return value instanceof StringFirst ? value : new StringFirst(value);
+    return StringFirst.isInstance(value) ? value : new StringFirst(value);
   }
   #validate(data: StringFirst.Value | undefined) {
     if (data === undefined) return;
@@ -146,7 +146,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
     return props as NumberFirst.Data;
   }
   static from(value: NumberFirst.Value): NumberFirst {
-    return value instanceof NumberFirst ? value : new NumberFirst(value);
+    return NumberFirst.isInstance(value) ? value : new NumberFirst(value);
   }
   #validate(data: NumberFirst.Value | undefined) {
     if (data === undefined) return;

@@ -16,8 +16,8 @@ export class NumericPair extends Message<NumericPair.Data> {
   }) {
     if (!props && NumericPair.EMPTY) return NumericPair.EMPTY;
     super(TYPE_TAG_NumericPair, "NumericPair");
-    this.#amount = props ? props.amount instanceof Decimal ? props.amount : new Decimal(props.amount, options) : new Decimal();
-    this.#ratio = props ? props.ratio instanceof Rational ? props.ratio : new Rational(props.ratio, options) : new Rational();
+    this.#amount = props ? Decimal.isInstance(props.amount) ? props.amount : new Decimal(props.amount, options) : new Decimal();
+    this.#ratio = props ? Rational.isInstance(props.ratio) ? props.ratio : new Rational(props.ratio, options) : new Rational();
     if (!props) NumericPair.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<NumericPair.Data>[] {
@@ -58,7 +58,7 @@ export class NumericPair extends Message<NumericPair.Data> {
             throw new Error("Tagged message type mismatch: expected Decimal.");
           }
         } else {
-          if (value instanceof Decimal) {
+          if (Decimal.isInstance(value)) {
             result = value;
           } else {
             result = new Decimal(value as Decimal.Value<10, 2>, options);
@@ -91,7 +91,7 @@ export class NumericPair extends Message<NumericPair.Data> {
             throw new Error("Tagged message type mismatch: expected Rational.");
           }
         } else {
-          if (value instanceof Rational) {
+          if (Rational.isInstance(value)) {
             result = value;
           } else {
             result = new Rational(value as Rational.Value, options);
@@ -105,7 +105,7 @@ export class NumericPair extends Message<NumericPair.Data> {
     return props as NumericPair.Data;
   }
   static from(value: NumericPair.Value): NumericPair {
-    return value instanceof NumericPair ? value : new NumericPair(value);
+    return NumericPair.isInstance(value) ? value : new NumericPair(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -174,14 +174,14 @@ export class NumericPair extends Message<NumericPair.Data> {
   }
   setAmount(value: Decimal.Value<10, 2>) {
     return this.$update(new (this.constructor as typeof NumericPair)({
-      amount: (value instanceof Decimal ? value : new Decimal(value)) as Decimal.Value<10, 2>,
+      amount: (Decimal.isInstance(value) ? value : new Decimal(value)) as Decimal.Value<10, 2>,
       ratio: this.#ratio as Rational.Value
     }) as this);
   }
   setRatio(value: Rational.Value) {
     return this.$update(new (this.constructor as typeof NumericPair)({
       amount: this.#amount as Decimal.Value<10, 2>,
-      ratio: (value instanceof Rational ? value : new Rational(value)) as Rational.Value
+      ratio: (Rational.isInstance(value) ? value : new Rational(value)) as Rational.Value
     }) as this);
   }
 }
@@ -276,7 +276,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
     return props as NumericUnion.Data;
   }
   static from(value: NumericUnion.Value): NumericUnion {
-    return value instanceof NumericUnion ? value : new NumericUnion(value);
+    return NumericUnion.isInstance(value) ? value : new NumericUnion(value);
   }
   #validate(data: NumericUnion.Value | undefined) {
     if (data === undefined) return;

@@ -57,7 +57,7 @@ export class Hole extends Message<Hole.Data> {
     return props as Hole.Data;
   }
   static from(value: Hole.Value): Hole {
-    return value instanceof Hole ? value : new Hole(value);
+    return Hole.isInstance(value) ? value : new Hole(value);
   }
   static deserialize<T extends typeof Hole>(this: T, data: string, options?: {
     skipValidation: boolean;

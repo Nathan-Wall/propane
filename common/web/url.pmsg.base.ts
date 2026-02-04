@@ -58,7 +58,7 @@ export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
     }, options);
   }
   static from(value: ImmutableUrl.Value): ImmutableUrl$Base {
-    return value instanceof ImmutableUrl$Base ? value : new ImmutableUrl$Base(value);
+    return ImmutableUrl$Base.isInstance(value) ? value : new ImmutableUrl$Base(value);
   }
   static deserialize<T extends typeof ImmutableUrl$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

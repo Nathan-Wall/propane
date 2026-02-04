@@ -42,7 +42,7 @@ export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
     return props as ImmutableDate.Data;
   }
   static from(value: ImmutableDate.Value): ImmutableDate$Base {
-    return value instanceof ImmutableDate$Base ? value : new ImmutableDate$Base(value);
+    return ImmutableDate$Base.isInstance(value) ? value : new ImmutableDate$Base(value);
   }
   static deserialize<T extends typeof ImmutableDate$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

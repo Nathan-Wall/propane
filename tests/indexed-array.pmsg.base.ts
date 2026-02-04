@@ -37,7 +37,7 @@ export class ArrayMessage_Labels_Item extends Message<ArrayMessage_Labels_Item.D
     return props as ArrayMessage_Labels_Item.Data;
   }
   static from(value: ArrayMessage_Labels_Item.Value): ArrayMessage_Labels_Item {
-    return value instanceof ArrayMessage_Labels_Item ? value : new ArrayMessage_Labels_Item(value);
+    return ArrayMessage_Labels_Item.isInstance(value) ? value : new ArrayMessage_Labels_Item(value);
   }
   static deserialize<T extends typeof ArrayMessage_Labels_Item>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -112,7 +112,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     this.#names = props ? (props.names === undefined || props.names === null ? new ImmutableArray() : props.names as object instanceof ImmutableArray ? props.names : new ImmutableArray(props.names as Iterable<unknown>)) as ImmutableArray<string> : new ImmutableArray();
     this.#scores = props ? (props.scores === undefined || props.scores === null ? new ImmutableArray() : props.scores as object instanceof ImmutableArray ? props.scores : new ImmutableArray(props.scores as Iterable<unknown>)) as ImmutableArray<number> : new ImmutableArray();
     this.#flags = props ? (props.flags === undefined || props.flags === null ? props.flags : props.flags as object instanceof ImmutableArray ? props.flags : new ImmutableArray(props.flags as Iterable<unknown>)) as ImmutableArray<boolean> : undefined;
-    this.#labels = props ? (props.labels === undefined || props.labels === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.labels as Iterable<unknown>).map(v => v instanceof ArrayMessage_Labels_Item ? v : new ArrayMessage_Labels_Item(v as ArrayMessage_Labels_Item.Value)))) as ImmutableArray<ArrayMessage_Labels_Item> : new ImmutableArray();
+    this.#labels = props ? (props.labels === undefined || props.labels === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.labels as Iterable<unknown>).map(v => ArrayMessage_Labels_Item.isInstance(v) ? v : new ArrayMessage_Labels_Item(v as ArrayMessage_Labels_Item.Value)))) as ImmutableArray<ArrayMessage_Labels_Item> : new ImmutableArray();
     if (!props) ArrayMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ArrayMessage.Data>[] {
@@ -163,7 +163,7 @@ export class ArrayMessage extends Message<ArrayMessage.Data> {
     return props as ArrayMessage.Data;
   }
   static from(value: ArrayMessage.Value): ArrayMessage {
-    return value instanceof ArrayMessage ? value : new ArrayMessage(value);
+    return ArrayMessage.isInstance(value) ? value : new ArrayMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

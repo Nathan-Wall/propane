@@ -38,7 +38,7 @@ export class TestResponse extends Message<TestResponse.Data> {
     return props as TestResponse.Data;
   }
   static from(value: TestResponse.Value): TestResponse {
-    return value instanceof TestResponse ? value : new TestResponse(value);
+    return TestResponse.isInstance(value) ? value : new TestResponse(value);
   }
   static deserialize<T extends typeof TestResponse>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -129,7 +129,7 @@ export class TestRequest extends Message<TestRequest.Data> {
     return props as TestRequest.Data;
   }
   static from(value: TestRequest.Value): TestRequest {
-    return value instanceof TestRequest ? value : new TestRequest(value);
+    return TestRequest.isInstance(value) ? value : new TestRequest(value);
   }
   static deserialize<T extends typeof TestRequest>(this: T, data: string, options?: {
     skipValidation: boolean;

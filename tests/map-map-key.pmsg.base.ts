@@ -49,7 +49,7 @@ export class MapMapKey extends Message<MapMapKey.Data> {
     return props as MapMapKey.Data;
   }
   static from(value: MapMapKey.Value): MapMapKey {
-    return value instanceof MapMapKey ? value : new MapMapKey(value);
+    return MapMapKey.isInstance(value) ? value : new MapMapKey(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

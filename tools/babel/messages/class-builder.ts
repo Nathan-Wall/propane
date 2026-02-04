@@ -68,6 +68,16 @@ function buildInstanceofCheck(
   return t.binaryExpression('instanceof', castValueId, t.identifier(className));
 }
 
+function buildIsInstanceCheck(
+  valueId: t.Expression,
+  className: string
+): t.CallExpression {
+  return t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('isInstance')),
+    [t.cloneNode(valueId)]
+  );
+}
+
 function buildUnionMessageInstanceCheck(
   valueExpr: t.Expression,
   messageTypes: string[]
@@ -1040,7 +1050,7 @@ function buildBindMethod(
 
   // Build the bound constructor function that reconstructs generic type parameter fields
   // const boundCtor = function(props: TypeName.Value<T>) {
-  //   const inner = props.inner instanceof tClass ? props.inner : new tClass(props.inner as any);
+  //   const inner = tClass.isInstance(props.inner) ? props.inner : new tClass(props.inner as any);
   //   return new TypeName(tClass, { ...props, inner });
   // }
   const propsParam = t.identifier('props');
@@ -1069,22 +1079,18 @@ function buildBindMethod(
     const tClassName = getConstructorFieldName(paramName);
     reconstructedPropNames.push(propName);
 
-    // const propName = props.propName instanceof tClass
+    // const propName = tClass.isInstance(props.propName)
     //   ? props.propName
     //   : new tClass(props.propName as any);
     // For optional fields:
     // const propName = props.propName === undefined
     //   ? undefined
-    //   : props.propName instanceof tClass
+    //   : tClass.isInstance(props.propName)
     //     ? props.propName
     //     : new tClass(props.propName as any);
 
     const propAccess = t.memberExpression(t.identifier('props'), t.identifier(propName));
-    const instanceofCheck = t.binaryExpression(
-      'instanceof',
-      t.cloneNode(propAccess),
-      t.identifier(tClassName)
-    );
+    const instanceofCheck = buildIsInstanceCheck(propAccess, tClassName);
     const constructCall = t.newExpression(
       t.identifier(tClassName),
       [t.tsAsExpression(t.cloneNode(propAccess), t.tsAnyKeyword())]
@@ -1932,7 +1938,7 @@ function buildStaticTypeName(typeName: string): t.ClassProperty {
  *
  * Generated code:
  *   static from(value: TypeName.Value): TypeName {
- *     return value instanceof TypeName ? value : new TypeName(value);
+ *     return TypeName.isInstance(value) ? value : new TypeName(value);
  *   }
  */
 function buildFromMethod(typeName: string, className: string): t.ClassMethod {
@@ -1944,15 +1950,11 @@ function buildFromMethod(typeName: string, className: string): t.ClassMethod {
     )
   );
 
-  // Body: return value instanceof ClassName ? value : new ClassName(value)
+  // Body: return ClassName.isInstance(value) ? value : new ClassName(value)
   const body = t.blockStatement([
     t.returnStatement(
       t.conditionalExpression(
-        t.binaryExpression(
-          'instanceof',
-          t.identifier('value'),
-          t.identifier(className)
-        ),
+        buildIsInstanceCheck(t.identifier('value'), className),
         t.identifier('value'),
         t.newExpression(t.identifier(className), [t.identifier('value')])
       )
@@ -4612,14 +4614,9 @@ function buildTaggedMessageUnionHandler(
       ];
 
       for (const msgType of messageTypes) {
-        const instanceLhs = t.tsAsExpression(
+        const instanceCheck = buildIsInstanceCheck(
           t.cloneNode(sourceExpr),
-          t.tsTypeReference(t.identifier('object'))
-        );
-        const instanceCheck = t.binaryExpression(
-          'instanceof',
-          instanceLhs,
-          t.identifier(msgType.name)
+          msgType.name
         );
         const assignExisting = t.expressionStatement(
           t.assignmentExpression(

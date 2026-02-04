@@ -47,7 +47,7 @@ export class Distance extends Message<Distance.Data> {
     return props as Distance.Data;
   }
   static from(value: Distance.Value): Distance {
-    return value instanceof Distance ? value : new Distance(value);
+    return Distance.isInstance(value) ? value : new Distance(value);
   }
   static deserialize<T extends typeof Distance>(this: T, data: string, options?: {
     skipValidation: boolean;

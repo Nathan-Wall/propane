@@ -75,7 +75,7 @@ export class NumericSignValidators extends Message<NumericSignValidators.Data> {
     return props as NumericSignValidators.Data;
   }
   static from(value: NumericSignValidators.Value): NumericSignValidators {
-    return value instanceof NumericSignValidators ? value : new NumericSignValidators(value);
+    return NumericSignValidators.isInstance(value) ? value : new NumericSignValidators(value);
   }
   #validate(data: NumericSignValidators.Value | undefined) {
     if (data === undefined) return;
@@ -272,7 +272,7 @@ export class NumericBoundValidators extends Message<NumericBoundValidators.Data>
     return props as NumericBoundValidators.Data;
   }
   static from(value: NumericBoundValidators.Value): NumericBoundValidators {
-    return value instanceof NumericBoundValidators ? value : new NumericBoundValidators(value);
+    return NumericBoundValidators.isInstance(value) ? value : new NumericBoundValidators(value);
   }
   #validate(data: NumericBoundValidators.Value | undefined) {
     if (data === undefined) return;
@@ -454,7 +454,7 @@ export class StringValidators extends Message<StringValidators.Data> {
     return props as StringValidators.Data;
   }
   static from(value: StringValidators.Value): StringValidators {
-    return value instanceof StringValidators ? value : new StringValidators(value);
+    return StringValidators.isInstance(value) ? value : new StringValidators(value);
   }
   #validate(data: StringValidators.Value | undefined) {
     if (data === undefined) return;
@@ -678,7 +678,7 @@ export class BrandedValidators extends Message<BrandedValidators.Data> {
     return props as BrandedValidators.Data;
   }
   static from(value: BrandedValidators.Value): BrandedValidators {
-    return value instanceof BrandedValidators ? value : new BrandedValidators(value);
+    return BrandedValidators.isInstance(value) ? value : new BrandedValidators(value);
   }
   #validate(data: BrandedValidators.Value | undefined) {
     if (data === undefined) return;
@@ -977,7 +977,7 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
     return props as OptionalValidators.Data;
   }
   static from(value: OptionalValidators.Value): OptionalValidators {
-    return value instanceof OptionalValidators ? value : new OptionalValidators(value);
+    return OptionalValidators.isInstance(value) ? value : new OptionalValidators(value);
   }
   #validate(data: OptionalValidators.Value | undefined) {
     if (data === undefined) return;
@@ -1200,7 +1200,7 @@ export class ArrayValidators extends Message<ArrayValidators.Data> {
     return props as ArrayValidators.Data;
   }
   static from(value: ArrayValidators.Value): ArrayValidators {
-    return value instanceof ArrayValidators ? value : new ArrayValidators(value);
+    return ArrayValidators.isInstance(value) ? value : new ArrayValidators(value);
   }
   #validate(data: ArrayValidators.Value | undefined) {
     if (data === undefined) return;
@@ -1381,7 +1381,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     return props as BigintValidators.Data;
   }
   static from(value: BigintValidators.Value): BigintValidators {
-    return value instanceof BigintValidators ? value : new BigintValidators(value);
+    return BigintValidators.isInstance(value) ? value : new BigintValidators(value);
   }
   #validate(data: BigintValidators.Value | undefined) {
     if (data === undefined) return;

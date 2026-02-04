@@ -15,7 +15,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
   }) {
     if (!props && Wrapper_Payload_Union1.EMPTY) return Wrapper_Payload_Union1.EMPTY;
     super(TYPE_TAG_Wrapper_Payload_Union1, "Wrapper_Payload_Union1");
-    this.#d = props ? props.d instanceof ImmutableDate ? props.d : new ImmutableDate(props.d, options) : new ImmutableDate();
+    this.#d = props ? ImmutableDate.isInstance(props.d) ? props.d : new ImmutableDate(props.d, options) : new ImmutableDate();
     if (!props) Wrapper_Payload_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Wrapper_Payload_Union1.Data>[] {
@@ -52,7 +52,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -65,7 +65,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
     return props as Wrapper_Payload_Union1.Data;
   }
   static from(value: Wrapper_Payload_Union1.Value): Wrapper_Payload_Union1 {
-    return value instanceof Wrapper_Payload_Union1 ? value : new Wrapper_Payload_Union1(value);
+    return Wrapper_Payload_Union1.isInstance(value) ? value : new Wrapper_Payload_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -124,7 +124,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
   }
   setD(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Wrapper_Payload_Union1)({
-      d: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      d: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -218,7 +218,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     return props as Wrapper.Data;
   }
   static from(value: Wrapper.Value): Wrapper {
-    return value instanceof Wrapper ? value : new Wrapper(value);
+    return Wrapper.isInstance(value) ? value : new Wrapper(value);
   }
   #validate(data: Wrapper.Value | undefined) {
     if (data === undefined) return;

@@ -106,7 +106,7 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     if (!isTaggedMessageData(dateOrStringValue) && typeof dateOrStringValue === "object" && dateOrStringValue !== null) {
       let dateOrStringUnionValueMatched = false;
       if (!dateOrStringUnionValueMatched) {
-        if (dateOrStringValue as object instanceof ImmutableDate) {
+        if (ImmutableDate.isInstance(dateOrStringValue)) {
           dateOrStringUnionValue = dateOrStringValue as any;
           dateOrStringUnionValueMatched = true;
         } else {
@@ -145,7 +145,7 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     if (!isTaggedMessageData(urlOrNumberValue) && typeof urlOrNumberValue === "object" && urlOrNumberValue !== null) {
       let urlOrNumberUnionValueMatched = false;
       if (!urlOrNumberUnionValueMatched) {
-        if (urlOrNumberValue as object instanceof ImmutableUrl) {
+        if (ImmutableUrl.isInstance(urlOrNumberValue)) {
           urlOrNumberUnionValue = urlOrNumberValue as any;
           urlOrNumberUnionValueMatched = true;
         } else {
@@ -159,7 +159,7 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     return props as SingleMessageUnion.Data;
   }
   static from(value: SingleMessageUnion.Value): SingleMessageUnion {
-    return value instanceof SingleMessageUnion ? value : new SingleMessageUnion(value);
+    return SingleMessageUnion.isInstance(value) ? value : new SingleMessageUnion(value);
   }
   #validate(data: SingleMessageUnion.Value | undefined) {
     if (data === undefined) return;

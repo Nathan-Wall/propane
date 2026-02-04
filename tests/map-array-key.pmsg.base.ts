@@ -61,7 +61,7 @@ export class MapArrayKey extends Message<MapArrayKey.Data> {
     return props as MapArrayKey.Data;
   }
   static from(value: MapArrayKey.Value): MapArrayKey {
-    return value instanceof MapArrayKey ? value : new MapArrayKey(value);
+    return MapArrayKey.isInstance(value) ? value : new MapArrayKey(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

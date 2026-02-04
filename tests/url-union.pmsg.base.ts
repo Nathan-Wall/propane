@@ -15,7 +15,7 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
   }) {
     if (!props && UrlUnion_Value_Union1.EMPTY) return UrlUnion_Value_Union1.EMPTY;
     super(TYPE_TAG_UrlUnion_Value_Union1, "UrlUnion_Value_Union1");
-    this.#url = props ? props.url instanceof ImmutableUrl ? props.url : new ImmutableUrl(props.url, options) : new ImmutableUrl();
+    this.#url = props ? ImmutableUrl.isInstance(props.url) ? props.url : new ImmutableUrl(props.url, options) : new ImmutableUrl();
     if (!props) UrlUnion_Value_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<UrlUnion_Value_Union1.Data>[] {
@@ -52,7 +52,7 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (value instanceof ImmutableUrl) {
+          if (ImmutableUrl.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableUrl(value as ImmutableUrl.Value, options);
@@ -65,7 +65,7 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
     return props as UrlUnion_Value_Union1.Data;
   }
   static from(value: UrlUnion_Value_Union1.Value): UrlUnion_Value_Union1 {
-    return value instanceof UrlUnion_Value_Union1 ? value : new UrlUnion_Value_Union1(value);
+    return UrlUnion_Value_Union1.isInstance(value) ? value : new UrlUnion_Value_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -124,7 +124,7 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
   }
   setUrl(value: ImmutableUrl | URL) {
     return this.$update(new (this.constructor as typeof UrlUnion_Value_Union1)({
-      url: (value instanceof ImmutableUrl ? value : new ImmutableUrl(value)) as ImmutableUrl | URL
+      url: (ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value)) as ImmutableUrl | URL
     }) as this);
   }
 }
@@ -218,7 +218,7 @@ export class UrlUnion extends Message<UrlUnion.Data> {
     return props as UrlUnion.Data;
   }
   static from(value: UrlUnion.Value): UrlUnion {
-    return value instanceof UrlUnion ? value : new UrlUnion(value);
+    return UrlUnion.isInstance(value) ? value : new UrlUnion(value);
   }
   #validate(data: UrlUnion.Value | undefined) {
     if (data === undefined) return;

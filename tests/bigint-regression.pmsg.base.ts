@@ -37,7 +37,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
     return props as Wrapper_Payload_Union1.Data;
   }
   static from(value: Wrapper_Payload_Union1.Value): Wrapper_Payload_Union1 {
-    return value instanceof Wrapper_Payload_Union1 ? value : new Wrapper_Payload_Union1(value);
+    return Wrapper_Payload_Union1.isInstance(value) ? value : new Wrapper_Payload_Union1(value);
   }
   static deserialize<T extends typeof Wrapper_Payload_Union1>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -171,7 +171,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     if (!isTaggedMessageData(payloadValue) && typeof payloadValue === "object" && payloadValue !== null) {
       let payloadUnionValueMatched = false;
       if (!payloadUnionValueMatched) {
-        if (payloadValue as object instanceof Wrapper_Payload_Union1) {
+        if (Wrapper_Payload_Union1.isInstance(payloadValue)) {
           payloadUnionValue = payloadValue as any;
           payloadUnionValueMatched = true;
         } else {
@@ -185,7 +185,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     return props as Wrapper.Data;
   }
   static from(value: Wrapper.Value): Wrapper {
-    return value instanceof Wrapper ? value : new Wrapper(value);
+    return Wrapper.isInstance(value) ? value : new Wrapper(value);
   }
   #validate(data: Wrapper.Value | undefined) {
     if (data === undefined) return;

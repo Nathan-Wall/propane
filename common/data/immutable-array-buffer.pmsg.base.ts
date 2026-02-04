@@ -73,7 +73,7 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     }, options);
   }
   static from(value: ImmutableArrayBuffer.Value): ImmutableArrayBuffer$Base {
-    return value instanceof ImmutableArrayBuffer$Base ? value : new ImmutableArrayBuffer$Base(value);
+    return ImmutableArrayBuffer$Base.isInstance(value) ? value : new ImmutableArrayBuffer$Base(value);
   }
   static deserialize<T extends typeof ImmutableArrayBuffer$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

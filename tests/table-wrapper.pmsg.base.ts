@@ -29,7 +29,7 @@ export class User extends Message<User.Data> {
     this.#email = (props ? props.email : "") as string;
     this.#name = (props ? props.name : "") as string;
     this.#active = (props ? props.active : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -98,7 +98,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -111,7 +111,7 @@ export class User extends Message<User.Data> {
     return props as User.Data;
   }
   static from(value: User.Value): User {
-    return value instanceof User ? value : new User(value);
+    return User.isInstance(value) ? value : new User(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -199,7 +199,7 @@ export class User extends Message<User.Data> {
       email: this.#email,
       name: this.#name,
       active: this.#active,
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
   setEmail(value: string) {
@@ -264,8 +264,8 @@ export class Post extends Message<Post.Data> {
     this.#title = (props ? props.title : "") as string;
     this.#content = (props ? props.content : "") as string;
     this.#published = (props ? props.published : false) as boolean;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Post.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Post.Data>[] {
@@ -346,7 +346,7 @@ export class Post extends Message<Post.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -378,7 +378,7 @@ export class Post extends Message<Post.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -391,7 +391,7 @@ export class Post extends Message<Post.Data> {
     return props as Post.Data;
   }
   static from(value: Post.Value): Post {
-    return value instanceof Post ? value : new Post(value);
+    return Post.isInstance(value) ? value : new Post(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -501,7 +501,7 @@ export class Post extends Message<Post.Data> {
       title: this.#title,
       content: this.#content,
       published: this.#published,
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date
     }) as this);
   }
@@ -546,7 +546,7 @@ export class Post extends Message<Post.Data> {
       content: this.#content,
       published: this.#published,
       created: this.#created as ImmutableDate | Date,
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
   setUserId(value: bigint) {

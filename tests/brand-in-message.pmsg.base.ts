@@ -66,7 +66,7 @@ export class User extends Message<User.Data> {
     return props as User.Data;
   }
   static from(value: User.Value): User {
-    return value instanceof User ? value : new User(value);
+    return User.isInstance(value) ? value : new User(value);
   }
   static deserialize<T extends typeof User>(this: T, data: string, options?: {
     skipValidation: boolean;

@@ -59,7 +59,7 @@ export class Person$Base extends Message<Person.Data> {
     return props as Person.Data;
   }
   static from(value: Person.Value): Person$Base {
-    return value instanceof Person$Base ? value : new Person$Base(value);
+    return Person$Base.isInstance(value) ? value : new Person$Base(value);
   }
   static deserialize<T extends typeof Person$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

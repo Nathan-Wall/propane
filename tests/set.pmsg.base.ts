@@ -49,7 +49,7 @@ export class SetMessage extends Message<SetMessage.Data> {
     return props as SetMessage.Data;
   }
   static from(value: SetMessage.Value): SetMessage {
-    return value instanceof SetMessage ? value : new SetMessage(value);
+    return SetMessage.isInstance(value) ? value : new SetMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

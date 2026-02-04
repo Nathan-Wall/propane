@@ -37,7 +37,7 @@ export class Alpha extends Message<Alpha.Data> {
     return props as Alpha.Data;
   }
   static from(value: Alpha.Value): Alpha {
-    return value instanceof Alpha ? value : new Alpha(value);
+    return Alpha.isInstance(value) ? value : new Alpha(value);
   }
   static deserialize<T extends typeof Alpha>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -128,7 +128,7 @@ export class Beta extends Message<Beta.Data> {
     return props as Beta.Data;
   }
   static from(value: Beta.Value): Beta {
-    return value instanceof Beta ? value : new Beta(value);
+    return Beta.isInstance(value) ? value : new Beta(value);
   }
   static deserialize<T extends typeof Beta>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -439,7 +439,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     return props as Wrapper.Data;
   }
   static from(value: Wrapper.Value): Wrapper {
-    return value instanceof Wrapper ? value : new Wrapper(value);
+    return Wrapper.isInstance(value) ? value : new Wrapper(value);
   }
   #validate(data: Wrapper.Value | undefined) {
     if (data === undefined) return;

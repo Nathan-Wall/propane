@@ -47,7 +47,7 @@ export class Foo extends Message<Foo.Data> {
     return props as Foo.Data;
   }
   static from(value: Foo.Value): Foo {
-    return value instanceof Foo ? value : new Foo(value);
+    return Foo.isInstance(value) ? value : new Foo(value);
   }
   static deserialize<T extends typeof Foo>(this: T, data: string, options?: {
     skipValidation: boolean;

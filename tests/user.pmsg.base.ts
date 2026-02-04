@@ -33,11 +33,11 @@ export class User extends Message<User.Data> {
     this.#name = (props ? props.name : "") as string;
     this.#email = (props ? props.email : undefined) as Email;
     this.#passwordHash = (props ? props.passwordHash : undefined) as Hash;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     this.#active = (props ? props.active : false) as boolean;
     this.#eyeColor = (props ? props.eyeColor : "blue") as 'blue' | 'green' | 'brown' | 'hazel';
-    this.#height = props ? props.height instanceof Distance ? props.height : new Distance(props.height, options) : new Distance();
+    this.#height = props ? Distance.isInstance(props.height) ? props.height : new Distance(props.height, options) : new Distance();
     if (!props) User.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<User.Data>[] {
@@ -121,7 +121,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -153,7 +153,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -193,7 +193,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected Distance.");
           }
         } else {
-          if (value instanceof Distance) {
+          if (Distance.isInstance(value)) {
             result = value;
           } else {
             result = new Distance(value as Distance.Value, options);
@@ -206,7 +206,7 @@ export class User extends Message<User.Data> {
     return props as User.Data;
   }
   static from(value: User.Value): User {
-    return value instanceof User ? value : new User(value);
+    return User.isInstance(value) ? value : new User(value);
   }
   #validate(data: User.Value | undefined) {
     if (data === undefined) return;
@@ -350,7 +350,7 @@ export class User extends Message<User.Data> {
       name: this.#name,
       email: this.#email as Email | Email,
       passwordHash: this.#passwordHash as Hash | Hash,
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
       eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
@@ -393,7 +393,7 @@ export class User extends Message<User.Data> {
       updated: this.#updated as ImmutableDate | Date,
       active: this.#active,
       eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
-      height: (value instanceof Distance ? value : new Distance(value)) as Distance.Value
+      height: (Distance.isInstance(value) ? value : new Distance(value)) as Distance.Value
     }) as this);
   }
   setId(value: number) {
@@ -442,7 +442,7 @@ export class User extends Message<User.Data> {
       email: this.#email as Email | Email,
       passwordHash: this.#passwordHash as Hash | Hash,
       created: this.#created as ImmutableDate | Date,
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       active: this.#active,
       eyeColor: this.#eyeColor as 'blue' | 'green' | 'brown' | 'hazel',
       height: this.#height as Distance.Value

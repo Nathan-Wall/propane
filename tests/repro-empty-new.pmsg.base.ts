@@ -41,7 +41,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
     return props as UnionFirstNumber.Data;
   }
   static from(value: UnionFirstNumber.Value): UnionFirstNumber {
-    return value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value);
+    return UnionFirstNumber.isInstance(value) ? value : new UnionFirstNumber(value);
   }
   #validate(data: UnionFirstNumber.Value | undefined) {
     if (data === undefined) return;
@@ -146,7 +146,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
     return props as UnionFirstString.Data;
   }
   static from(value: UnionFirstString.Value): UnionFirstString {
-    return value instanceof UnionFirstString ? value : new UnionFirstString(value);
+    return UnionFirstString.isInstance(value) ? value : new UnionFirstString(value);
   }
   #validate(data: UnionFirstString.Value | undefined) {
     if (data === undefined) return;
@@ -247,7 +247,7 @@ export class OptionalField extends Message<OptionalField.Data> {
     return props as OptionalField.Data;
   }
   static from(value: OptionalField.Value): OptionalField {
-    return value instanceof OptionalField ? value : new OptionalField(value);
+    return OptionalField.isInstance(value) ? value : new OptionalField(value);
   }
   static deserialize<T extends typeof OptionalField>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -319,7 +319,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   }) {
     if (!props && RequiredMessage.EMPTY) return RequiredMessage.EMPTY;
     super(TYPE_TAG_RequiredMessage, "RequiredMessage");
-    this.#sub = props ? props.sub instanceof UnionFirstNumber ? props.sub : new UnionFirstNumber(props.sub, options) : new UnionFirstNumber();
+    this.#sub = props ? UnionFirstNumber.isInstance(props.sub) ? props.sub : new UnionFirstNumber(props.sub, options) : new UnionFirstNumber();
     if (!props) RequiredMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<RequiredMessage.Data>[] {
@@ -356,7 +356,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
             throw new Error("Tagged message type mismatch: expected UnionFirstNumber.");
           }
         } else {
-          if (value instanceof UnionFirstNumber) {
+          if (UnionFirstNumber.isInstance(value)) {
             result = value;
           } else {
             result = new UnionFirstNumber(value as UnionFirstNumber.Value, options);
@@ -369,7 +369,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
     return props as RequiredMessage.Data;
   }
   static from(value: RequiredMessage.Value): RequiredMessage {
-    return value instanceof RequiredMessage ? value : new RequiredMessage(value);
+    return RequiredMessage.isInstance(value) ? value : new RequiredMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -428,7 +428,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
   }
   setSub(value: UnionFirstNumber.Value) {
     return this.$update(new (this.constructor as typeof RequiredMessage)({
-      sub: (value instanceof UnionFirstNumber ? value : new UnionFirstNumber(value)) as UnionFirstNumber.Value
+      sub: (UnionFirstNumber.isInstance(value) ? value : new UnionFirstNumber(value)) as UnionFirstNumber.Value
     }) as this);
   }
 }

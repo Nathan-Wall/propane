@@ -47,7 +47,7 @@ export class Cat extends Message<Cat.Data> {
     return props as Cat.Data;
   }
   static from(value: Cat.Value): Cat {
-    return value instanceof Cat ? value : new Cat(value);
+    return Cat.isInstance(value) ? value : new Cat(value);
   }
   static deserialize<T extends typeof Cat>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -159,7 +159,7 @@ export class Dog extends Message<Dog.Data> {
     return props as Dog.Data;
   }
   static from(value: Dog.Value): Dog {
-    return value instanceof Dog ? value : new Dog(value);
+    return Dog.isInstance(value) ? value : new Dog(value);
   }
   static deserialize<T extends typeof Dog>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -376,7 +376,7 @@ export class PetOwner extends Message<PetOwner.Data> {
     return props as PetOwner.Data;
   }
   static from(value: PetOwner.Value): PetOwner {
-    return value instanceof PetOwner ? value : new PetOwner(value);
+    return PetOwner.isInstance(value) ? value : new PetOwner(value);
   }
   #validate(data: PetOwner.Value | undefined) {
     if (data === undefined) return;

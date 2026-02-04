@@ -99,7 +99,7 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     let precision: number;
     let scale: number;
 
-    if (props instanceof Decimal$Base) {
+    if (Decimal$Base.isInstance(props)) {
       mantissa = props.mantissa;
       precision = props.precision;
       scale = props.scale;

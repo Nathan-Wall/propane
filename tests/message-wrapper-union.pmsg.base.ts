@@ -82,7 +82,7 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
-        if (valueValue as object instanceof Flag) {
+        if (Flag.isInstance(valueValue)) {
           valueUnionValue = valueValue as any;
           valueUnionValueMatched = true;
         } else {
@@ -96,7 +96,7 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
     return props as WrapperUnion.Data;
   }
   static from(value: WrapperUnion.Value): WrapperUnion {
-    return value instanceof WrapperUnion ? value : new WrapperUnion(value);
+    return WrapperUnion.isInstance(value) ? value : new WrapperUnion(value);
   }
   #validate(data: WrapperUnion.Value | undefined) {
     if (data === undefined) return;

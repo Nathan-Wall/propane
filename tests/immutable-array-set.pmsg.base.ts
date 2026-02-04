@@ -51,7 +51,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     return props as ImmutableArraySet.Data;
   }
   static from(value: ImmutableArraySet.Value): ImmutableArraySet {
-    return value instanceof ImmutableArraySet ? value : new ImmutableArraySet(value);
+    return ImmutableArraySet.isInstance(value) ? value : new ImmutableArraySet(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

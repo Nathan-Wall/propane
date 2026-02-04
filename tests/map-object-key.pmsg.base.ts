@@ -47,7 +47,7 @@ export class MapObjectKey_ObjectKeys_Key extends Message<MapObjectKey_ObjectKeys
     return props as MapObjectKey_ObjectKeys_Key.Data;
   }
   static from(value: MapObjectKey_ObjectKeys_Key.Value): MapObjectKey_ObjectKeys_Key {
-    return value instanceof MapObjectKey_ObjectKeys_Key ? value : new MapObjectKey_ObjectKeys_Key(value);
+    return MapObjectKey_ObjectKeys_Key.isInstance(value) ? value : new MapObjectKey_ObjectKeys_Key(value);
   }
   static deserialize<T extends typeof MapObjectKey_ObjectKeys_Key>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -149,7 +149,7 @@ export class MapObjectKey_OptionalObjectMap_Key extends Message<MapObjectKey_Opt
     return props as MapObjectKey_OptionalObjectMap_Key.Data;
   }
   static from(value: MapObjectKey_OptionalObjectMap_Key.Value): MapObjectKey_OptionalObjectMap_Key {
-    return value instanceof MapObjectKey_OptionalObjectMap_Key ? value : new MapObjectKey_OptionalObjectMap_Key(value);
+    return MapObjectKey_OptionalObjectMap_Key.isInstance(value) ? value : new MapObjectKey_OptionalObjectMap_Key(value);
   }
   static deserialize<T extends typeof MapObjectKey_OptionalObjectMap_Key>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -254,7 +254,7 @@ export class MapObjectKey extends Message<MapObjectKey.Data> {
     return props as MapObjectKey.Data;
   }
   static from(value: MapObjectKey.Value): MapObjectKey {
-    return value instanceof MapObjectKey ? value : new MapObjectKey(value);
+    return MapObjectKey.isInstance(value) ? value : new MapObjectKey(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

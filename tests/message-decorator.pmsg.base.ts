@@ -49,7 +49,7 @@ export class TransformedMessage extends Message<TransformedMessage.Data> {
     return props as TransformedMessage.Data;
   }
   static from(value: TransformedMessage.Value): TransformedMessage {
-    return value instanceof TransformedMessage ? value : new TransformedMessage(value);
+    return TransformedMessage.isInstance(value) ? value : new TransformedMessage(value);
   }
   static deserialize<T extends typeof TransformedMessage>(this: T, data: string, options?: {
     skipValidation: boolean;

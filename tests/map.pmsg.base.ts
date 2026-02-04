@@ -37,7 +37,7 @@ export class MapMessage_Metadata_Value extends Message<MapMessage_Metadata_Value
     return props as MapMessage_Metadata_Value.Data;
   }
   static from(value: MapMessage_Metadata_Value.Value): MapMessage_Metadata_Value {
-    return value instanceof MapMessage_Metadata_Value ? value : new MapMessage_Metadata_Value(value);
+    return MapMessage_Metadata_Value.isInstance(value) ? value : new MapMessage_Metadata_Value(value);
   }
   static deserialize<T extends typeof MapMessage_Metadata_Value>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -129,7 +129,7 @@ export class MapMessage_Extras_Value extends Message<MapMessage_Extras_Value.Dat
     return props as MapMessage_Extras_Value.Data;
   }
   static from(value: MapMessage_Extras_Value.Value): MapMessage_Extras_Value {
-    return value instanceof MapMessage_Extras_Value ? value : new MapMessage_Extras_Value(value);
+    return MapMessage_Extras_Value.isInstance(value) ? value : new MapMessage_Extras_Value(value);
   }
   static deserialize<T extends typeof MapMessage_Extras_Value>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -246,7 +246,7 @@ export class MapMessage extends Message<MapMessage.Data> {
     return props as MapMessage.Data;
   }
   static from(value: MapMessage.Value): MapMessage {
-    return value instanceof MapMessage ? value : new MapMessage(value);
+    return MapMessage.isInstance(value) ? value : new MapMessage(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

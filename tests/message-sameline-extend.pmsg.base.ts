@@ -50,7 +50,7 @@ export class SameLineExtend$Base extends Message<SameLineExtend.Data> {
     return props as SameLineExtend.Data;
   }
   static from(value: SameLineExtend.Value): SameLineExtend$Base {
-    return value instanceof SameLineExtend$Base ? value : new SameLineExtend$Base(value);
+    return SameLineExtend$Base.isInstance(value) ? value : new SameLineExtend$Base(value);
   }
   static deserialize<T extends typeof SameLineExtend$Base>(this: T, data: string, options?: {
     skipValidation: boolean;

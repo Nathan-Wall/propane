@@ -63,7 +63,7 @@ export class MapDateKey extends Message<MapDateKey.Data> {
     return props as MapDateKey.Data;
   }
   static from(value: MapDateKey.Value): MapDateKey {
-    return value instanceof MapDateKey ? value : new MapDateKey(value);
+    return MapDateKey.isInstance(value) ? value : new MapDateKey(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {

@@ -61,7 +61,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     return props as ToJson_Nested.Data;
   }
   static from(value: ToJson_Nested.Value): ToJson_Nested {
-    return value instanceof ToJson_Nested ? value : new ToJson_Nested(value);
+    return ToJson_Nested.isInstance(value) ? value : new ToJson_Nested(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -492,10 +492,10 @@ export class ToJson extends Message<ToJson.Data> {
     this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : props.imap as object instanceof ImmutableMap ? props.imap : new ImmutableMap(props.imap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#big = (props ? props.big : 0n) as bigint;
-    this.#date = props ? props.date instanceof ImmutableDate ? props.date : new ImmutableDate(props.date, options) : new ImmutableDate();
+    this.#date = props ? ImmutableDate.isInstance(props.date) ? props.date : new ImmutableDate(props.date, options) : new ImmutableDate();
     this.#optional = (props ? props.optional : undefined) as string;
     this.#nonFinite = (props ? props.nonFinite : 0) as number;
-    this.#nested = props ? props.nested instanceof ToJson_Nested ? props.nested : new ToJson_Nested(props.nested, options) : new ToJson_Nested();
+    this.#nested = props ? ToJson_Nested.isInstance(props.nested) ? props.nested : new ToJson_Nested(props.nested, options) : new ToJson_Nested();
     if (!props) ToJson.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ToJson.Data>[] {
@@ -570,7 +570,7 @@ export class ToJson extends Message<ToJson.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -610,7 +610,7 @@ export class ToJson extends Message<ToJson.Data> {
             throw new Error("Tagged message type mismatch: expected ToJson_Nested.");
           }
         } else {
-          if (value instanceof ToJson_Nested) {
+          if (ToJson_Nested.isInstance(value)) {
             result = value;
           } else {
             result = new ToJson_Nested(value as ToJson_Nested.Value, options);
@@ -623,7 +623,7 @@ export class ToJson extends Message<ToJson.Data> {
     return props as ToJson.Data;
   }
   static from(value: ToJson.Value): ToJson {
-    return value instanceof ToJson ? value : new ToJson(value);
+    return ToJson.isInstance(value) ? value : new ToJson(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -941,7 +941,7 @@ export class ToJson extends Message<ToJson.Data> {
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
       imap: this.#imap as Map<string, number> | Iterable<[string, number]>,
       big: this.#big,
-      date: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      date: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       optional: this.#optional,
       nonFinite: this.#nonFinite,
       nested: this.#nested as ToJson_Nested.Value
@@ -1017,7 +1017,7 @@ export class ToJson extends Message<ToJson.Data> {
       date: this.#date as ImmutableDate | Date,
       optional: this.#optional,
       nonFinite: this.#nonFinite,
-      nested: (value instanceof ToJson_Nested ? value : new ToJson_Nested(value)) as ToJson_Nested.Value
+      nested: (ToJson_Nested.isInstance(value) ? value : new ToJson_Nested(value)) as ToJson_Nested.Value
     }) as this);
   }
   setNonFinite(value: number) {

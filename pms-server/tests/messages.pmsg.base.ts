@@ -38,7 +38,7 @@ export class EchoRequest extends Message<EchoRequest.Data> {
     return props as EchoRequest.Data;
   }
   static from(value: EchoRequest.Value): EchoRequest {
-    return value instanceof EchoRequest ? value : new EchoRequest(value);
+    return EchoRequest.isInstance(value) ? value : new EchoRequest(value);
   }
   static deserialize<T extends typeof EchoRequest>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -140,7 +140,7 @@ export class EchoResponse extends Message<EchoResponse.Data> {
     return props as EchoResponse.Data;
   }
   static from(value: EchoResponse.Value): EchoResponse {
-    return value instanceof EchoResponse ? value : new EchoResponse(value);
+    return EchoResponse.isInstance(value) ? value : new EchoResponse(value);
   }
   static deserialize<T extends typeof EchoResponse>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -252,7 +252,7 @@ export class AddRequest extends Message<AddRequest.Data> {
     return props as AddRequest.Data;
   }
   static from(value: AddRequest.Value): AddRequest {
-    return value instanceof AddRequest ? value : new AddRequest(value);
+    return AddRequest.isInstance(value) ? value : new AddRequest(value);
   }
   static deserialize<T extends typeof AddRequest>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -355,7 +355,7 @@ export class AddResponse extends Message<AddResponse.Data> {
     return props as AddResponse.Data;
   }
   static from(value: AddResponse.Value): AddResponse {
-    return value instanceof AddResponse ? value : new AddResponse(value);
+    return AddResponse.isInstance(value) ? value : new AddResponse(value);
   }
   static deserialize<T extends typeof AddResponse>(this: T, data: string, options?: {
     skipValidation: boolean;

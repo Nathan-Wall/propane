@@ -19,7 +19,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     if (!props && OptionalHole.EMPTY) return OptionalHole.EMPTY;
     super(TYPE_TAG_OptionalHole, "OptionalHole");
     this.#id = (props ? props.id : 0) as number;
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     this.#note = (props ? props.note : undefined) as string;
     this.#name = (props ? props.name : "") as string;
     if (!props) OptionalHole.EMPTY = this;
@@ -74,7 +74,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -95,7 +95,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
     return props as OptionalHole.Data;
   }
   static from(value: OptionalHole.Value): OptionalHole {
-    return value instanceof OptionalHole ? value : new OptionalHole(value);
+    return OptionalHole.isInstance(value) ? value : new OptionalHole(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -167,7 +167,7 @@ export class OptionalHole extends Message<OptionalHole.Data> {
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof OptionalHole)({
       id: this.#id,
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date,
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date,
       note: this.#note,
       name: this.#name
     }) as this);

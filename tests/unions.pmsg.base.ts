@@ -16,7 +16,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
   }) {
     if (!props && Unions_Metadata_Union1.EMPTY) return Unions_Metadata_Union1.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union1, "Unions_Metadata_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_Metadata_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union1.Data>[] {
@@ -53,7 +53,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -66,7 +66,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
     return props as Unions_Metadata_Union1.Data;
   }
   static from(value: Unions_Metadata_Union1.Value): Unions_Metadata_Union1 {
-    return value instanceof Unions_Metadata_Union1 ? value : new Unions_Metadata_Union1(value);
+    return Unions_Metadata_Union1.isInstance(value) ? value : new Unions_Metadata_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -125,7 +125,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Metadata_Union1)({
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -148,7 +148,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
   }) {
     if (!props && Unions_Metadata_Union2.EMPTY) return Unions_Metadata_Union2.EMPTY;
     super(TYPE_TAG_Unions_Metadata_Union2, "Unions_Metadata_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_Metadata_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Metadata_Union2.Data>[] {
@@ -185,7 +185,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -198,7 +198,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
     return props as Unions_Metadata_Union2.Data;
   }
   static from(value: Unions_Metadata_Union2.Value): Unions_Metadata_Union2 {
-    return value instanceof Unions_Metadata_Union2 ? value : new Unions_Metadata_Union2(value);
+    return Unions_Metadata_Union2.isInstance(value) ? value : new Unions_Metadata_Union2(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -257,7 +257,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Metadata_Union2)({
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -280,7 +280,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
   }) {
     if (!props && Unions_Items_Item_Union1.EMPTY) return Unions_Items_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union1, "Unions_Items_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_Items_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union1.Data>[] {
@@ -317,7 +317,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -330,7 +330,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
     return props as Unions_Items_Item_Union1.Data;
   }
   static from(value: Unions_Items_Item_Union1.Value): Unions_Items_Item_Union1 {
-    return value instanceof Unions_Items_Item_Union1 ? value : new Unions_Items_Item_Union1(value);
+    return Unions_Items_Item_Union1.isInstance(value) ? value : new Unions_Items_Item_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -389,7 +389,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Items_Item_Union1)({
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -412,7 +412,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
   }) {
     if (!props && Unions_Items_Item_Union2.EMPTY) return Unions_Items_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_Items_Item_Union2, "Unions_Items_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_Items_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_Items_Item_Union2.Data>[] {
@@ -449,7 +449,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -462,7 +462,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
     return props as Unions_Items_Item_Union2.Data;
   }
   static from(value: Unions_Items_Item_Union2.Value): Unions_Items_Item_Union2 {
-    return value instanceof Unions_Items_Item_Union2 ? value : new Unions_Items_Item_Union2(value);
+    return Unions_Items_Item_Union2.isInstance(value) ? value : new Unions_Items_Item_Union2(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -521,7 +521,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_Items_Item_Union2)({
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -544,7 +544,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union1.EMPTY) return Unions_ItemSet_Item_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union1, "Unions_ItemSet_Item_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_ItemSet_Item_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union1.Data>[] {
@@ -581,7 +581,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -594,7 +594,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
     return props as Unions_ItemSet_Item_Union1.Data;
   }
   static from(value: Unions_ItemSet_Item_Union1.Value): Unions_ItemSet_Item_Union1 {
-    return value instanceof Unions_ItemSet_Item_Union1 ? value : new Unions_ItemSet_Item_Union1(value);
+    return Unions_ItemSet_Item_Union1.isInstance(value) ? value : new Unions_ItemSet_Item_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -653,7 +653,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union1)({
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -676,7 +676,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
   }) {
     if (!props && Unions_ItemSet_Item_Union2.EMPTY) return Unions_ItemSet_Item_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemSet_Item_Union2, "Unions_ItemSet_Item_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_ItemSet_Item_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemSet_Item_Union2.Data>[] {
@@ -713,7 +713,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -726,7 +726,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
     return props as Unions_ItemSet_Item_Union2.Data;
   }
   static from(value: Unions_ItemSet_Item_Union2.Value): Unions_ItemSet_Item_Union2 {
-    return value instanceof Unions_ItemSet_Item_Union2 ? value : new Unions_ItemSet_Item_Union2(value);
+    return Unions_ItemSet_Item_Union2.isInstance(value) ? value : new Unions_ItemSet_Item_Union2(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -785,7 +785,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemSet_Item_Union2)({
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -808,7 +808,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union1.EMPTY) return Unions_ItemMap_Value_Union1.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union1, "Unions_ItemMap_Value_Union1");
-    this.#created = props ? props.created instanceof ImmutableDate ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
+    this.#created = props ? ImmutableDate.isInstance(props.created) ? props.created : new ImmutableDate(props.created, options) : new ImmutableDate();
     if (!props) Unions_ItemMap_Value_Union1.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union1.Data>[] {
@@ -845,7 +845,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -858,7 +858,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
     return props as Unions_ItemMap_Value_Union1.Data;
   }
   static from(value: Unions_ItemMap_Value_Union1.Value): Unions_ItemMap_Value_Union1 {
-    return value instanceof Unions_ItemMap_Value_Union1 ? value : new Unions_ItemMap_Value_Union1(value);
+    return Unions_ItemMap_Value_Union1.isInstance(value) ? value : new Unions_ItemMap_Value_Union1(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -917,7 +917,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
   }
   setCreated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union1)({
-      created: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      created: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -940,7 +940,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
   }) {
     if (!props && Unions_ItemMap_Value_Union2.EMPTY) return Unions_ItemMap_Value_Union2.EMPTY;
     super(TYPE_TAG_Unions_ItemMap_Value_Union2, "Unions_ItemMap_Value_Union2");
-    this.#updated = props ? props.updated instanceof ImmutableDate ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
+    this.#updated = props ? ImmutableDate.isInstance(props.updated) ? props.updated : new ImmutableDate(props.updated, options) : new ImmutableDate();
     if (!props) Unions_ItemMap_Value_Union2.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions_ItemMap_Value_Union2.Data>[] {
@@ -977,7 +977,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (value instanceof ImmutableDate) {
+          if (ImmutableDate.isInstance(value)) {
             result = value;
           } else {
             result = new ImmutableDate(value as ImmutableDate.Value, options);
@@ -990,7 +990,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
     return props as Unions_ItemMap_Value_Union2.Data;
   }
   static from(value: Unions_ItemMap_Value_Union2.Value): Unions_ItemMap_Value_Union2 {
-    return value instanceof Unions_ItemMap_Value_Union2 ? value : new Unions_ItemMap_Value_Union2(value);
+    return Unions_ItemMap_Value_Union2.isInstance(value) ? value : new Unions_ItemMap_Value_Union2(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -1049,7 +1049,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
   }
   setUpdated(value: ImmutableDate | Date) {
     return this.$update(new (this.constructor as typeof Unions_ItemMap_Value_Union2)({
-      updated: (value instanceof ImmutableDate ? value : new ImmutableDate(value)) as ImmutableDate | Date
+      updated: (ImmutableDate.isInstance(value) ? value : new ImmutableDate(value)) as ImmutableDate | Date
     }) as this);
   }
 }
@@ -1335,7 +1335,7 @@ export class Unions extends Message<Unions.Data> {
     return props as Unions.Data;
   }
   static from(value: Unions.Value): Unions {
-    return value instanceof Unions ? value : new Unions(value);
+    return Unions.isInstance(value) ? value : new Unions(value);
   }
   #validate(data: Unions.Value | undefined) {
     if (data === undefined) return;

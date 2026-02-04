@@ -39,7 +39,7 @@ export class Compound_Inline extends Message<Compound_Inline.Data> {
     return props as Compound_Inline.Data;
   }
   static from(value: Compound_Inline.Value): Compound_Inline {
-    return value instanceof Compound_Inline ? value : new Compound_Inline(value);
+    return Compound_Inline.isInstance(value) ? value : new Compound_Inline(value);
   }
   static deserialize<T extends typeof Compound_Inline>(this: T, data: string, options?: {
     skipValidation: boolean;
@@ -110,9 +110,9 @@ export class Compound extends Message<Compound.Data> {
   }) {
     if (!props && Compound.EMPTY) return Compound.EMPTY;
     super(TYPE_TAG_Compound, "Compound");
-    this.#user = props ? props.user instanceof User ? props.user : new User(props.user, options) : new User();
-    this.#indexed = props ? props.indexed instanceof Indexed ? props.indexed : new Indexed(props.indexed, options) : new Indexed();
-    this.#inline = props ? props.inline instanceof Compound_Inline ? props.inline : new Compound_Inline(props.inline, options) : new Compound_Inline();
+    this.#user = props ? User.isInstance(props.user) ? props.user : new User(props.user, options) : new User();
+    this.#indexed = props ? Indexed.isInstance(props.indexed) ? props.indexed : new Indexed(props.indexed, options) : new Indexed();
+    this.#inline = props ? Compound_Inline.isInstance(props.inline) ? props.inline : new Compound_Inline(props.inline, options) : new Compound_Inline();
     if (!props) Compound.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Compound.Data>[] {
@@ -157,7 +157,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected User.");
           }
         } else {
-          if (value instanceof User) {
+          if (User.isInstance(value)) {
             result = value;
           } else {
             result = new User(value as User.Value, options);
@@ -189,7 +189,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected Indexed.");
           }
         } else {
-          if (value instanceof Indexed) {
+          if (Indexed.isInstance(value)) {
             result = value;
           } else {
             result = new Indexed(value as Indexed.Value, options);
@@ -221,7 +221,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected Compound_Inline.");
           }
         } else {
-          if (value instanceof Compound_Inline) {
+          if (Compound_Inline.isInstance(value)) {
             result = value;
           } else {
             result = new Compound_Inline(value as Compound_Inline.Value, options);
@@ -234,7 +234,7 @@ export class Compound extends Message<Compound.Data> {
     return props as Compound.Data;
   }
   static from(value: Compound.Value): Compound {
-    return value instanceof Compound ? value : new Compound(value);
+    return Compound.isInstance(value) ? value : new Compound(value);
   }
   override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
@@ -316,7 +316,7 @@ export class Compound extends Message<Compound.Data> {
   setIndexed(value: Indexed.Value) {
     return this.$update(new (this.constructor as typeof Compound)({
       user: this.#user as User.Value,
-      indexed: (value instanceof Indexed ? value : new Indexed(value)) as Indexed.Value,
+      indexed: (Indexed.isInstance(value) ? value : new Indexed(value)) as Indexed.Value,
       inline: this.#inline as Compound_Inline.Value
     }) as this);
   }
@@ -324,12 +324,12 @@ export class Compound extends Message<Compound.Data> {
     return this.$update(new (this.constructor as typeof Compound)({
       user: this.#user as User.Value,
       indexed: this.#indexed as Indexed.Value,
-      inline: (value instanceof Compound_Inline ? value : new Compound_Inline(value)) as Compound_Inline.Value
+      inline: (Compound_Inline.isInstance(value) ? value : new Compound_Inline(value)) as Compound_Inline.Value
     }) as this);
   }
   setUser(value: User.Value) {
     return this.$update(new (this.constructor as typeof Compound)({
-      user: (value instanceof User ? value : new User(value)) as User.Value,
+      user: (User.isInstance(value) ? value : new User(value)) as User.Value,
       indexed: this.#indexed as Indexed.Value,
       inline: this.#inline as Compound_Inline.Value
     }) as this);

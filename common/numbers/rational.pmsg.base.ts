@@ -52,7 +52,7 @@ export class Rational$Base extends Message<Rational.Data> {
     return props as Rational.Data;
   }
   static from(value: Rational.Value): Rational$Base {
-    return value instanceof Rational$Base ? value : new Rational$Base(value);
+    return Rational$Base.isInstance(value) ? value : new Rational$Base(value);
   }
   static deserialize<T extends typeof Rational$Base>(this: T, data: string, options?: {
     skipValidation: boolean;
