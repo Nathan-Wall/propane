@@ -339,7 +339,7 @@ export abstract class Message<T extends object> {
     this.#fromRoot.set(root, path);
     // Recursively register children
     for (const [key, child] of this[GET_MESSAGE_CHILDREN]()) {
-      if (child instanceof Message) {
+      if (Message.isMessage(child)) {
         child[REGISTER_PATH](root, `${path}.${key}`);
       } else if (child && typeof child === 'object' && REGISTER_PATH in child) {
         (child as { [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void })[REGISTER_PATH](root, `${path}.${key}`);
@@ -416,7 +416,7 @@ export abstract class Message<T extends object> {
 
     // Propagate to children, setting up their parent chains
     for (const [childKey, child] of this[GET_MESSAGE_CHILDREN]()) {
-      if (child instanceof Message) {
+      if (Message.isMessage(child)) {
         // Set up parent chain for this child
         const self = this as unknown as Message<DataObject>;
         child.$setParentChain(key, self, childKey);
@@ -457,7 +457,7 @@ export abstract class Message<T extends object> {
 
     if (chain?.parent.deref()) {
       const parent = chain.parent.deref();
-      if (parent instanceof Message) {
+      if (Message.isMessage(parent)) {
         // Create new parent with replacement at this position
         const newParent = parent[WITH_CHILD](chain.key, replacement);
         parent[PROPAGATE_UPDATE](key, newParent);

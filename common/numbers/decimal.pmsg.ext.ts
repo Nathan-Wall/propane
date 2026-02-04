@@ -85,10 +85,7 @@ export type DivideOptions = {
   round?: RoundingMode;
 };
 
-const DECIMAL_BRAND = Symbol.for('propane.Decimal');
-
 export class Decimal<P extends number, S extends number> extends Decimal$Base<P, S> {
-  readonly [DECIMAL_BRAND] = true;
   #hash?: number;
 
   constructor(

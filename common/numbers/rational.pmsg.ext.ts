@@ -34,8 +34,6 @@ export namespace Rational {
   export type Value = RationalTypes.Value;
 }
 
-const RATIONAL_BRAND = Symbol.for('propane.Rational');
-
 type RationalConstructorOptions = {
   skipValidation?: boolean;
   opCount?: number;
@@ -90,7 +88,6 @@ function normalizeRational(
 }
 
 export class Rational extends Rational$Base {
-  readonly [RATIONAL_BRAND] = true;
   #opCount = 0;
   #hash?: number;
   #reduce = memoize(function (this: Rational): Rational {
