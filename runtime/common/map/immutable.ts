@@ -220,7 +220,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       const source: Iterable<readonly [K, V]> =
         entries instanceof Map
         || ImmutableMap.isInstance(entries)
-          ? entries.entries()
+          ? (entries as ReadonlyMap<K, V>).entries()
           // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(entries)
             ? (entries as Iterable<readonly [K, V]>)

@@ -124,7 +124,7 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     if (values) {
       const source: Iterable<T> =
         values instanceof Set || ImmutableSet.isInstance(values)
-          ? values.values()
+          ? (values as ReadonlySet<T>).values()
           // eslint-disable-next-line unicorn/new-for-builtins
           : Symbol.iterator in Object(values)
             ? (values as Iterable<T>)
