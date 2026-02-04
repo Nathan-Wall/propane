@@ -25,7 +25,7 @@ export type HandlerResult<TResponse extends AnyMessage> =
 export function isResponseWithHeaders<T extends AnyMessage>(
   result: HandlerResult<T>
 ): result is Response<T> {
-  return result instanceof Response;
+  return Response.isInstance(result);
 }
 
 /**
