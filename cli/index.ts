@@ -4,9 +4,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { transformSync } from '@babel/core';
-import propanePlugin from '@/tools/babel/messages/index.js';
 import chokidar from 'chokidar';
+import { compilePmsgFile, getOutputPaths } from '@/tools/pmsg/compiler.js';
+import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,6 +28,7 @@ interface PropaneConfig {
   messageTypeIdPrefix?: string;
   /** Root directory used to compute relative paths for message type IDs. */
   messageTypeIdRoot?: string;
+  typeAliases?: TypeAliasMap;
 }
 
 interface LoadedConfig {
@@ -163,59 +164,18 @@ function collectPropaneFiles(targetPath: string): string[] {
 }
 
 function transpileFile(sourcePath: string) {
-  const sourceCode = fs.readFileSync(sourcePath, 'utf8');
-
   try {
-    type PluginOpts = {
-      runtimeImportPath?: string;
-      runtimeImportBase?: string;
-      messageTypeIdPrefix?: string;
-      messageTypeIdRoot?: string;
-    };
-    const pluginOptions: PluginOpts = {};
-    if (runtimeImportPath) {
-      pluginOptions.runtimeImportPath = runtimeImportPath;
-    }
-    if (runtimeImportBase) {
-      pluginOptions.runtimeImportBase = runtimeImportBase;
-    }
-    if (messageTypeIdPrefix) {
-      pluginOptions.messageTypeIdPrefix = messageTypeIdPrefix;
-    }
-    if (messageTypeIdRoot) {
-      pluginOptions.messageTypeIdRoot = messageTypeIdRoot;
-    }
-    const result = transformSync(sourceCode, {
-      filename: sourcePath,
-      parserOpts: {
-        sourceType: 'module',
-        plugins: ['typescript'],
-      },
-      plugins: [[propanePlugin, pluginOptions]],
+    const { reexportOutputPath } = compilePmsgFile(sourcePath, {
+      outputDir,
+      rootDir: process.cwd(),
+      runtimeImportPath,
+      runtimeImportBase,
+      messageTypeIdPrefix,
+      messageTypeIdRoot,
+      typeAliases: config.typeAliases,
     });
-
-    if (!result || typeof result.code !== 'string') {
-      throw new Error(`Babel transform returned no code`);
-    }
-
-    let outputPath: string;
-    if (outputDir) {
-      const relativePath = path.relative(process.cwd(), sourcePath);
-      outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.pmsg$/, '.pmsg.ts');
-
-      const dir = path.dirname(outputPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    } else {
-      outputPath = sourcePath.replace(/\.pmsg$/, '.pmsg.ts');
-    }
-
-    const code = result.code.endsWith('\n') ? result.code : result.code + '\n';
-    fs.writeFileSync(outputPath, code, 'utf8');
-
     const relSource = path.relative(process.cwd(), sourcePath);
-    const relOutput = path.relative(process.cwd(), outputPath);
+    const relOutput = path.relative(process.cwd(), reexportOutputPath);
     console.log(
       `✓ ${relSource} → `
       + `${relOutput}`
@@ -278,18 +238,17 @@ if (watch) {
     .on('unlink', (filePath) => {
       // Optional: Delete the generated .pmsg.ts file if the original .pmsg file is deleted
       if (filePath.endsWith('.pmsg')) {
-        let outputPath: string;
-        if (outputDir) {
-          const relativePath = path.relative(process.cwd(), filePath);
-          outputPath = path.resolve(process.cwd(), outputDir, relativePath).replace(/\.pmsg$/, '.pmsg.ts');
-        } else {
-          outputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
-        }
-
-        if (fs.existsSync(outputPath)) {
-          fs.unlinkSync(outputPath);
-          const relOutput = path.relative(process.cwd(), outputPath);
-          console.log(`✗ Deleted ${relOutput}`);
+        const { baseOutputPath, reexportOutputPath } = getOutputPaths(
+          filePath,
+          outputDir,
+          process.cwd()
+        );
+        for (const outputPath of [reexportOutputPath, baseOutputPath]) {
+          if (fs.existsSync(outputPath)) {
+            fs.unlinkSync(outputPath);
+            const relOutput = path.relative(process.cwd(), outputPath);
+            console.log(`✗ Deleted ${relOutput}`);
+          }
         }
       }
     });

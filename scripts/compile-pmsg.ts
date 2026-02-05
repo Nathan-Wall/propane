@@ -6,9 +6,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { transformSync } from '@babel/core';
-import propanePlugin from '@/tools/babel/messages/index.js';
 import type { TypeAliasMap } from '@/tools/parser/type-aliases.js';
+import { compilePmsgFile as compilePmsgBase } from '@/tools/pmsg/compiler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -74,57 +73,7 @@ function findPmsgFiles(dir: string): string[] {
   return files;
 }
 
-function toJsPath(value: string): string {
-  if (value.endsWith('.ts')) {
-    return value.slice(0, -3) + '.js';
-  }
-  if (value.endsWith('.tsx')) {
-    return value.slice(0, -4) + '.js';
-  }
-  return value;
-}
-
-function writeIfChanged(outputPath: string, content: string): void {
-  const normalized = content.endsWith('\n') ? content : content + '\n';
-  if (fs.existsSync(outputPath)) {
-    const existing = fs.readFileSync(outputPath, 'utf8');
-    if (existing === normalized) {
-      return;
-    }
-  }
-  fs.writeFileSync(outputPath, normalized, 'utf8');
-}
-
-function generateReexportFile(
-  filePath: string,
-  messageTypes: string[],
-  extendedTypes: Record<string, { path: string }>
-): string {
-  const baseName = path.basename(filePath, '.pmsg');
-  const relative = path
-    .relative(projectRoot, filePath)
-    .replaceAll('\\', '/');
-  const lines: string[] = [];
-  lines.push(`// Generated from ${relative}`);
-
-  for (const typeName of messageTypes) {
-    const extendInfo = extendedTypes[typeName];
-    if (!extendInfo?.path) continue;
-    lines.push(
-      `export { ${typeName} } from '${toJsPath(extendInfo.path)}';`
-    );
-  }
-
-  lines.push(`export * from './${baseName}.pmsg.base.js';`);
-  return lines.join('\n');
-}
-
-function compilePmsgFile(filePath: string): void {
-  const source = fs.readFileSync(filePath, 'utf8');
-  const relativePath = path
-    .relative(projectRoot, filePath)
-    .replaceAll('\\', '/');
-  // Use config if available, otherwise use relative path
+function compileFile(filePath: string): void {
   const pluginOptions: Record<string, unknown> = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
@@ -143,39 +92,14 @@ function compilePmsgFile(filePath: string): void {
     pluginOptions['typeAliases'] = propaneConfig.typeAliases;
   }
 
-  const result = transformSync(source, {
-    filename: filePath,
-    parserOpts: {
-      sourceType: 'module',
-      plugins: ['typescript'],
-    },
-    plugins: [[propanePlugin, pluginOptions]],
+  compilePmsgBase(filePath, {
+    rootDir: projectRoot,
+    runtimeImportPath: pluginOptions['runtimeImportPath'] as string | undefined,
+    runtimeImportBase: pluginOptions['runtimeImportBase'] as string | undefined,
+    messageTypeIdPrefix: pluginOptions['messageTypeIdPrefix'] as string | undefined,
+    messageTypeIdRoot: pluginOptions['messageTypeIdRoot'] as string | undefined,
+    typeAliases: pluginOptions['typeAliases'] as TypeAliasMap | undefined,
   });
-
-  if (!result?.code) {
-    throw new Error(`Failed to compile ${filePath}`);
-  }
-
-  const metadata = (result as {
-    metadata?: {
-      propane?: {
-        messageTypes?: string[];
-        extendedTypes?: Record<string, { path: string }>;
-      };
-    };
-  }).metadata?.propane;
-  const messageTypes = metadata?.messageTypes ?? [];
-  const extendedTypes = metadata?.extendedTypes ?? {};
-
-  // Rewrite .pmsg imports to .pmsg.js for ESM compatibility
-  const baseCode = result.code.replaceAll(/\.pmsg(['"])/g, '.pmsg.js$1');
-
-  const baseOutputPath = filePath.replace(/\.pmsg$/, '.pmsg.base.ts');
-  writeIfChanged(baseOutputPath, baseCode);
-
-  const reexportOutputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
-  const reexportCode = generateReexportFile(filePath, messageTypes, extendedTypes);
-  writeIfChanged(reexportOutputPath, reexportCode);
 
   console.log(`Compiled: ${path.relative(projectRoot, filePath)}`);
 }
@@ -189,7 +113,7 @@ for (const dir of scanDirs) {
 let errorCount = 0;
 for (const file of allFiles) {
   try {
-    compilePmsgFile(file);
+    compileFile(file);
   } catch (err) {
     console.error(`Error compiling ${file}: ${(err as Error).message}`);
     errorCount++;
