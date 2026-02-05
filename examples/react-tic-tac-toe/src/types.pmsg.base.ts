@@ -15,7 +15,7 @@ export class BoardState extends Message<BoardState.Data> {
   constructor(props?: BoardState.Value) {
     if (!props && BoardState.EMPTY) return BoardState.EMPTY;
     super(BoardState.TYPE_TAG, "BoardState");
-    this.#cells = props ? props.cells === undefined || props.cells === null ? new ImmutableArray() : props.cells instanceof ImmutableArray ? props.cells : new ImmutableArray(props.cells) : new ImmutableArray();
+    this.#cells = props ? props.cells === undefined || props.cells === null ? new ImmutableArray() : ImmutableArray.isInstance(props.cells) ? props.cells : new ImmutableArray(props.cells) : new ImmutableArray();
     if (!props) BoardState.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<BoardState.Data>[] {
@@ -29,8 +29,8 @@ export class BoardState extends Message<BoardState.Data> {
     const props = {} as Partial<BoardState.Data>;
     const cellsValue = entries["1"] === undefined ? entries["cells"] : entries["1"];
     if (cellsValue === undefined) throw new Error("Missing required property \"cells\".");
-    const cellsArrayValue = cellsValue === undefined || cellsValue === null ? new ImmutableArray() : cellsValue as object instanceof ImmutableArray ? cellsValue : new ImmutableArray(cellsValue);
-    if (!(cellsArrayValue instanceof ImmutableArray || Array.isArray(cellsArrayValue))) throw new Error("Invalid value for property \"cells\".");
+    const cellsArrayValue = cellsValue === undefined || cellsValue === null ? new ImmutableArray() : ImmutableArray.isInstance(cellsValue) ? cellsValue : new ImmutableArray(cellsValue);
+    if (!(ImmutableArray.isInstance(cellsArrayValue) || Array.isArray(cellsArrayValue))) throw new Error("Invalid value for property \"cells\".");
     props.cells = cellsArrayValue as ImmutableArray<Cell>;
     return props as BoardState.Data;
   }
@@ -165,8 +165,8 @@ export class GameState extends Message<GameState.Data> {
     const props = {} as Partial<GameState.Data>;
     const historyValue = entries["1"] === undefined ? entries["history"] : entries["1"];
     if (historyValue === undefined) throw new Error("Missing required property \"history\".");
-    const historyArrayValue = historyValue === undefined || historyValue === null ? new ImmutableArray() : historyValue as object instanceof ImmutableArray ? historyValue : new ImmutableArray(historyValue);
-    if (!(historyArrayValue instanceof ImmutableArray || Array.isArray(historyArrayValue))) throw new Error("Invalid value for property \"history\".");
+    const historyArrayValue = historyValue === undefined || historyValue === null ? new ImmutableArray() : ImmutableArray.isInstance(historyValue) ? historyValue : new ImmutableArray(historyValue);
+    if (!(ImmutableArray.isInstance(historyArrayValue) || Array.isArray(historyArrayValue))) throw new Error("Invalid value for property \"history\".");
     props.history = historyArrayValue as ImmutableArray<BoardState>;
     const currentMoveValue = entries["2"] === undefined ? entries["currentMove"] : entries["2"];
     if (currentMoveValue === undefined) throw new Error("Missing required property \"currentMove\".");

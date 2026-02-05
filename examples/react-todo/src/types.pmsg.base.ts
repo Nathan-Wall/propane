@@ -116,8 +116,8 @@ export class AppState extends Message<AppState.Data> {
     const props = {} as Partial<AppState.Data>;
     const todosValue = entries["todos"];
     if (todosValue === undefined) throw new Error("Missing required property \"todos\".");
-    const todosArrayValue = todosValue === undefined || todosValue === null ? new ImmutableArray() : todosValue as object instanceof ImmutableArray ? todosValue : new ImmutableArray(todosValue);
-    if (!(todosArrayValue instanceof ImmutableArray || Array.isArray(todosArrayValue))) throw new Error("Invalid value for property \"todos\".");
+    const todosArrayValue = todosValue === undefined || todosValue === null ? new ImmutableArray() : ImmutableArray.isInstance(todosValue) ? todosValue : new ImmutableArray(todosValue);
+    if (!(ImmutableArray.isInstance(todosArrayValue) || Array.isArray(todosArrayValue))) throw new Error("Invalid value for property \"todos\".");
     props.todos = todosArrayValue as ImmutableArray<Todo>;
     const filterValue = entries["filter"];
     if (filterValue === undefined) throw new Error("Missing required property \"filter\".");
