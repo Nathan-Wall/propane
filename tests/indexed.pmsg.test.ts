@@ -39,7 +39,7 @@ export default function runIndexedPropaneTests() {
   assert(instance.alias === 'Ace', 'Instance lost alias.');
 
   const hydrated = Indexed.deserialize(serialized);
-  assert(hydrated instanceof Indexed, 'Deserialize should produce class instance.');
+  assert(Indexed.isInstance(hydrated), 'Deserialize should produce class instance.');
   assert(hydrated.name === 'Alice', 'Roundtrip lost data.');
 
   const rawString = ':{3,"Chris",24,false,"CJ",99,null,"PENDING"}';

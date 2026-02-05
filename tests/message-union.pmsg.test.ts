@@ -43,7 +43,7 @@ export default function runMessageUnionTests() {
     'Deserialized owner name should match'
   );
   assert(
-    catOwnerDeserialized.pet instanceof Cat,
+    Cat.isInstance(catOwnerDeserialized.pet),
     `Deserialized pet should be Cat instance. Got: ${catOwnerDeserialized.pet?.constructor.name}`
   );
   const deserializedCat = catOwnerDeserialized.pet as Cat;
@@ -63,7 +63,7 @@ export default function runMessageUnionTests() {
     'Deserialized owner name should match'
   );
   assert(
-    dogOwnerDeserialized.pet instanceof Dog,
+    Dog.isInstance(dogOwnerDeserialized.pet),
     `Deserialized pet should be Dog instance. Got: ${dogOwnerDeserialized.pet?.constructor.name}`
   );
   const deserializedDog = dogOwnerDeserialized.pet as Dog;
@@ -91,11 +91,11 @@ export default function runMessageUnionTests() {
 
   const ownerDeserialized = PetOwner.deserialize(optionalSerialized);
   assert(
-    ownerDeserialized.pet instanceof Cat,
+    Cat.isInstance(ownerDeserialized.pet),
     'Required pet should be Cat'
   );
   assert(
-    ownerDeserialized.optionalPet instanceof Dog,
+    Dog.isInstance(ownerDeserialized.optionalPet),
     'Optional pet should be Dog'
   );
 
@@ -112,7 +112,7 @@ export default function runMessageUnionTests() {
     'Optional pet should be undefined when not provided'
   );
   assert(
-    noOptionalDeserialized.pet instanceof Dog,
+    Dog.isInstance(noOptionalDeserialized.pet),
     'Required pet should be Dog'
   );
 

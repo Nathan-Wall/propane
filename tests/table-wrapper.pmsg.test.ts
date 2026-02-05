@@ -116,7 +116,7 @@ describe('Table<T> wrapper', () => {
       created: new Date(),
     };
 
-    assert.ok(userInstance instanceof User);
-    assert.ok(!(userData instanceof User));
+    assert.ok(User.isInstance(userInstance));
+    assert.ok(!User.isInstance(userData));
   });
 });

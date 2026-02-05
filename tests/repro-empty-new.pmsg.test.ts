@@ -20,7 +20,7 @@ export default function runReproEmptyNewTests() {
 
   console.log('Testing RequiredMessage...');
   const req = new RequiredMessage();
-  assert.ok(req.sub instanceof UnionFirstNumber, 'RequiredMessage.sub should be instance of UnionFirstNumber');
+  assert.ok(UnionFirstNumber.isInstance(req.sub), 'RequiredMessage.sub should be instance of UnionFirstNumber');
   assert.strictEqual(req.sub.val, 0, 'RequiredMessage.sub.val should default to 0');
   console.log('RequiredMessage passed.');
 

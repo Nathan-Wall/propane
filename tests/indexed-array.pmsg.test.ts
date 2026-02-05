@@ -33,7 +33,7 @@ export default function runIndexedArrayTests() {
     // Cast needed: MapIterator yields plain objects but constructor normalizes them
     labels: labelIter as Iterable<ArrayMessage_Labels_Item>,
   });
-  assert(iterableInstance.names instanceof ImmutableArray, 'iterable names should normalize to ImmutableArray');
+  assert(ImmutableArray.isInstance(iterableInstance.names), 'iterable names should normalize to ImmutableArray');
   assert(iterableInstance.names[0] === 'Iter' && iterableInstance.names[1] === 'Able', 'iterable names normalize and preserve order');
   assert(iterableInstance.scores[0] === 10 && iterableInstance.scores[1] === 20, 'iterable scores normalize');
   assert(iterableInstance.labels[0]!.name === 'MapLabel', 'iterable labels normalize');

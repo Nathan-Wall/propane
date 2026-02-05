@@ -140,7 +140,7 @@ export default function runGenericTypesTests() {
     assert(deserialized.inner.name === 'deserialize-test', 'Deserialized inner.name');
 
     // Inner should be a proper Item instance
-    assert(deserialized.inner instanceof Item, 'Deserialized inner is Item instance');
+    assert(Item.isInstance(deserialized.inner), 'Deserialized inner is Item instance');
     assert(original.equals(deserialized), 'Original equals deserialized');
 
     console.log('[PASS] Deserialization of generic messages via bind()');
@@ -156,7 +156,7 @@ export default function runGenericTypesTests() {
 
     assert(deserialized.inner.id === 99, 'Static deserialize inner.id');
     assert(deserialized.inner.name === 'static-deserialize', 'Static deserialize inner.name');
-    assert(deserialized.inner instanceof Item, 'Static deserialize inner is Item instance');
+    assert(Item.isInstance(deserialized.inner), 'Static deserialize inner is Item instance');
     assert(original.equals(deserialized), 'Static deserialize equals original');
 
     console.log('[PASS] Static Container.deserialize(Item, data)');
@@ -173,9 +173,9 @@ export default function runGenericTypesTests() {
     const deserialized = Pair.deserialize(Item, Parent, serialized);
 
     assert(deserialized.first.id === 1, 'Pair deserialize first.id');
-    assert(deserialized.first instanceof Item, 'Pair deserialize first is Item');
+    assert(Item.isInstance(deserialized.first), 'Pair deserialize first is Item');
     assert(deserialized.second.name === 'second', 'Pair deserialize second.name');
-    assert(deserialized.second instanceof Parent, 'Pair deserialize second is Parent');
+    assert(Parent.isInstance(deserialized.second), 'Pair deserialize second is Parent');
     assert(original.equals(deserialized), 'Pair deserialize equals original');
 
     console.log('[PASS] Static Pair.deserialize(Item, Parent, data)');
@@ -190,7 +190,7 @@ export default function runGenericTypesTests() {
 
     assert(deserialized.value !== undefined, 'Optional deserialize has value');
     assert(deserialized.value?.id === 7, 'Optional deserialize value.id');
-    assert(deserialized.value instanceof Item, 'Optional deserialize value is Item');
+    assert(Item.isInstance(deserialized.value), 'Optional deserialize value is Item');
     assert(original.equals(deserialized), 'Optional deserialize equals original');
 
     console.log('[PASS] Static Optional.deserialize(Item, data) with value');
@@ -217,7 +217,7 @@ export default function runGenericTypesTests() {
 
     assert(container.inner.id === 55, 'Bound constructor raw object inner.id');
     assert(container.inner.name === 'raw-object', 'Bound constructor raw object inner.name');
-    assert(container.inner instanceof Item, 'Bound constructor reconstructs Item from raw object');
+    assert(Item.isInstance(container.inner), 'Bound constructor reconstructs Item from raw object');
 
     console.log('[PASS] Bound constructor with raw object data');
   }
@@ -264,7 +264,7 @@ export default function runGenericTypesTests() {
     const timestamped = new Timestamped(Item, { inner: item, timestamp: now, label: 'test' });
     assert(timestamped.inner.id === 1, 'Timestamped inner.id');
     assert(timestamped.inner.name === 'timestamped-item', 'Timestamped inner.name');
-    assert(timestamped.timestamp instanceof ImmutableDate, 'Timestamped timestamp is ImmutableDate');
+    assert(ImmutableDate.isInstance(timestamped.timestamp), 'Timestamped timestamp is ImmutableDate');
     assert(timestamped.timestamp.getTime() === now.getTime(), 'Timestamped timestamp value');
     assert(timestamped.label === 'test', 'Timestamped label');
     assert(timestamped.$typeName === 'Timestamped<Item>', 'Timestamped $typeName');
@@ -283,8 +283,8 @@ export default function runGenericTypesTests() {
     // Verify all fields were properly deserialized with validation
     assert(deserialized.inner.id === 42, 'Timestamped deserialized inner.id');
     assert(deserialized.inner.name === 'serialize-test', 'Timestamped deserialized inner.name');
-    assert(deserialized.inner instanceof Item, 'Timestamped deserialized inner is Item instance');
-    assert(deserialized.timestamp instanceof ImmutableDate, 'Timestamped deserialized timestamp is ImmutableDate');
+    assert(Item.isInstance(deserialized.inner), 'Timestamped deserialized inner is Item instance');
+    assert(ImmutableDate.isInstance(deserialized.timestamp), 'Timestamped deserialized timestamp is ImmutableDate');
     assert(deserialized.timestamp.getTime() === timestamp.getTime(), 'Timestamped deserialized timestamp value');
     assert(deserialized.label === 'serialized', 'Timestamped deserialized label');
     assert(original.equals(deserialized), 'Timestamped original equals deserialized');
@@ -304,7 +304,7 @@ export default function runGenericTypesTests() {
     const deserialized = BoundTimestamped.deserialize(serialized);
 
     assert(deserialized.inner.id === 99, 'Bound Timestamped deserialized inner.id');
-    assert(deserialized.timestamp instanceof ImmutableDate, 'Bound Timestamped deserialized timestamp is ImmutableDate');
+    assert(ImmutableDate.isInstance(deserialized.timestamp), 'Bound Timestamped deserialized timestamp is ImmutableDate');
     assert(deserialized.label === 'bound', 'Bound Timestamped deserialized label');
     console.log('[PASS] Timestamped.bind(Item).deserialize()');
   }

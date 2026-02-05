@@ -54,7 +54,7 @@ export default function runExtendBasicTests() {
   assert(deserialized.lastName === 'Doe', 'deserialized lastName should match');
   assert(deserialized.age === 25, 'deserialized age should match');
   // Verify deserialize returns the extended Person class, not Person$Base
-  assert(deserialized instanceof Person, 'deserialized should be instanceof Person');
+  assert(Person.isInstance(deserialized), 'deserialized should be instance of Person');
   assert(deserialized.fullName === 'John Doe', 'deserialized should have fullName getter');
   assert(typeof deserialized.greet === 'function', 'deserialized should have greet method');
 
@@ -63,7 +63,7 @@ export default function runExtendBasicTests() {
 
   // Test deserialized instance setters return extended type
   const deserializedModified = deserialized.setFirstName('Modified');
-  assert(deserializedModified instanceof Person, 'setter on deserialized should return Person');
+  assert(Person.isInstance(deserializedModified), 'setter on deserialized should return Person');
   assert(deserializedModified.fullName === 'Modified Doe', 'modified deserialized should have fullName');
   assert(typeof deserializedModified.greet === 'function', 'modified deserialized should have greet');
 
@@ -77,11 +77,11 @@ export default function runExtendBasicTests() {
 
   // Test with skipValidation option
   const deserializedSkipValidation = Person.deserialize(serialized, { skipValidation: true });
-  assert(deserializedSkipValidation instanceof Person, 'skipValidation deserialize should return Person');
+  assert(Person.isInstance(deserializedSkipValidation), 'skipValidation deserialize should return Person');
   assert(deserializedSkipValidation.fullName === 'John Doe', 'skipValidation deserialize should have extension');
 
-  // Test that instanceof works
-  assert(person instanceof Person, 'person should be instanceof Person');
+  // Test that isInstance works
+  assert(Person.isInstance(person), 'person should be instance of Person');
 
   // Test equality
   const samePerson = new Person({

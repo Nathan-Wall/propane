@@ -29,13 +29,13 @@ export default function runUrlUnionTests() {
 
   const roundTrip = UrlUnion.deserialize(directSerialized);
   assert(
-    roundTrip.value instanceof URL || roundTrip.value instanceof ImmutableUrl,
+    roundTrip.value instanceof URL || ImmutableUrl.isInstance(roundTrip.value),
     'Union URL branch should deserialize to URL/ImmutableUrl.'
   );
 
   const wrappedRoundTrip = UrlUnion.deserialize(wrappedSerialized);
   assert(
-    wrappedRoundTrip.value instanceof UrlUnion_Value_Union1,
+    UrlUnion_Value_Union1.isInstance(wrappedRoundTrip.value),
     'Union message branch should deserialize to UrlUnion_Value_Union1.'
   );
 }

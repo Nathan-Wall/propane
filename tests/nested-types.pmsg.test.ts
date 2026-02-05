@@ -18,7 +18,7 @@ export default function runNestedTypesTest() {
     `Union Date branch should serialize with D\"...\". Got: ${w1Serialized}`
   );
   assert(
-    w1.payload instanceof Date || w1.payload instanceof ImmutableDate,
+    w1.payload instanceof Date || ImmutableDate.isInstance(w1.payload),
     'Top-level Date should be preserved as Date/ImmutableDate object'
   );
   assert(
@@ -38,13 +38,13 @@ export default function runNestedTypesTest() {
   );
   const w3 = Wrapper.deserialize(serialized);
   assert(
-    w3.payload instanceof Wrapper_Payload_Union1,
+    Wrapper_Payload_Union1.isInstance(w3.payload),
     `Union payload should deserialize to Wrapper_Payload_Union1. Got: ${w3.payload?.constructor?.name}`
   );
   const p3 = w3.payload as Wrapper_Payload_Union1;
 
   assert(
-    p3.d instanceof Date || p3.d instanceof ImmutableDate,
+    p3.d instanceof Date || ImmutableDate.isInstance(p3.d),
     `Nested Date should be preserved as Date/ImmutableDate after round-trip. Got: ${typeof p3.d} (${p3.d})`
   );
   assert(p3.d.getTime() === date.getTime(), 'Nested Date value matches');

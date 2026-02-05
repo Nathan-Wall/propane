@@ -38,7 +38,7 @@ export default function runUrlPropaneTests() {
 
   const roundTrip = UrlMessage.deserialize(serialized);
 
-  assert(roundTrip.primary instanceof ImmutableUrl, 'Deserialization should restore ImmutableUrl instances.');
+  assert(ImmutableUrl.isInstance(roundTrip.primary), 'Deserialization should restore ImmutableUrl instances.');
   assert(roundTrip.primary.toString() === primary.toString(), 'Primary URL should round-trip.');
   assert(roundTrip.secondary?.toString() === secondary.toString(), 'Optional URL should round-trip.');
 

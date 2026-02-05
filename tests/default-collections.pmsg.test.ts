@@ -11,21 +11,21 @@ export default function runDefaultCollectionsTests() {
 
   // Verify default array is an ImmutableArray, not a frozen array
   assert(
-    instance.arr instanceof ImmutableArray,
+    ImmutableArray.isInstance(instance.arr),
     `Default arr should be ImmutableArray, got ${Object.prototype.toString.call(instance.arr)}`
   );
   assert(instance.arr.length === 0, 'Default arr should be empty');
 
   // Verify default map is an ImmutableMap, not a plain Map
   assert(
-    instance.map instanceof ImmutableMap,
+    ImmutableMap.isInstance(instance.map),
     `Default map should be ImmutableMap, got ${Object.prototype.toString.call(instance.map)}`
   );
   assert(instance.map.size === 0, 'Default map should be empty');
 
   // Verify default set is an ImmutableSet, not a plain Set
   assert(
-    instance.tags instanceof ImmutableSet,
+    ImmutableSet.isInstance(instance.tags),
     `Default tags should be ImmutableSet, got ${Object.prototype.toString.call(instance.tags)}`
   );
   assert(instance.tags.size === 0, 'Default tags should be empty');
@@ -38,9 +38,9 @@ export default function runDefaultCollectionsTests() {
   // Verify serialization/deserialization roundtrip works with defaults
   const serialized = instance.serialize();
   const deserialized = DefaultCollections.deserialize(serialized);
-  assert(deserialized.arr instanceof ImmutableArray, 'Deserialized arr should be ImmutableArray');
-  assert(deserialized.map instanceof ImmutableMap, 'Deserialized map should be ImmutableMap');
-  assert(deserialized.tags instanceof ImmutableSet, 'Deserialized tags should be ImmutableSet');
+  assert(ImmutableArray.isInstance(deserialized.arr), 'Deserialized arr should be ImmutableArray');
+  assert(ImmutableMap.isInstance(deserialized.map), 'Deserialized map should be ImmutableMap');
+  assert(ImmutableSet.isInstance(deserialized.tags), 'Deserialized tags should be ImmutableSet');
   assert(instance.equals(deserialized), 'Deserialized instance should equal original');
 }
 

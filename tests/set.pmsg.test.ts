@@ -9,14 +9,14 @@ export default function runSetTests() {
   const msg: SetMessage = new SetMessage({ tags, ids });
 
   // ctor normalization
-  assert(msg.tags instanceof ImmutableSet, 'tags should be ImmutableSet');
+  assert(ImmutableSet.isInstance(msg.tags), 'tags should be ImmutableSet');
   assert(msg.tags.has('a') && msg.tags.has('b'), 'tags should retain entries');
   assert(msg.ids && msg.ids.has(1), 'ids should retain entries');
 
   // fromEntries / deserialize
   const raw = ':{[a,b]}';
   const hydrated = SetMessage.deserialize(raw);
-  assert(hydrated.tags instanceof ImmutableSet, 'deserialize should yield ImmutableSet');
+  assert(ImmutableSet.isInstance(hydrated.tags), 'deserialize should yield ImmutableSet');
   assert(hydrated.tags.has('a') && hydrated.tags.has('b'), 'deserialize keeps set values');
   assert(!hydrated.ids, 'optional ids can be omitted');
 
@@ -27,7 +27,7 @@ export default function runSetTests() {
   })();
   const iterableIds = [9, 10][Symbol.iterator]();
   const iterableMsg = new SetMessage({ tags: iterableTags, ids: iterableIds });
-  assert(iterableMsg.tags instanceof ImmutableSet, 'iterable tags should normalize to ImmutableSet');
+  assert(ImmutableSet.isInstance(iterableMsg.tags), 'iterable tags should normalize to ImmutableSet');
   assert(iterableMsg.tags.has('x') && iterableMsg.tags.has('y'), 'iterable tags should keep entries');
   assert(iterableMsg.ids?.has(9) && iterableMsg.ids?.has(10), 'iterable ids should normalize to ImmutableSet');
 

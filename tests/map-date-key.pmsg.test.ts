@@ -27,8 +27,8 @@ export default function runMapDateKeyTests() {
   });
 
   // Test property access returns ImmutableMap
-  assert(instance.dateValues instanceof ImmutableMap, 'dateValues should be ImmutableMap');
-  assert(instance.urlValues instanceof ImmutableMap, 'urlValues should be ImmutableMap');
+  assert(ImmutableMap.isInstance(instance.dateValues), 'dateValues should be ImmutableMap');
+  assert(ImmutableMap.isInstance(instance.urlValues), 'urlValues should be ImmutableMap');
 
   // Test serialization
   const serialized = instance.serialize();
@@ -43,7 +43,7 @@ export default function runMapDateKeyTests() {
   const dateKeys = [...deserialized.dateValues.keys()];
   assert(dateKeys.length === 2, 'Should have 2 date keys');
   assert(
-    dateKeys.some(k => k instanceof Date || k instanceof ImmutableDate),
+    dateKeys.some(k => k instanceof Date || ImmutableDate.isInstance(k)),
     'Date keys should be Date or ImmutableDate instances'
   );
 
@@ -51,7 +51,7 @@ export default function runMapDateKeyTests() {
   const urlKeys = [...deserialized.urlValues.keys()];
   assert(urlKeys.length === 2, 'Should have 2 URL keys');
   assert(
-    urlKeys.some(k => k instanceof URL || k instanceof ImmutableUrl),
+    urlKeys.some(k => k instanceof URL || ImmutableUrl.isInstance(k)),
     'URL keys should be URL or ImmutableUrl instances'
   );
 

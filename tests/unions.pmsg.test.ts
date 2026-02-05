@@ -68,38 +68,38 @@ export default function runUnionsImplicitUnionTests() {
 
   const createdDeserialized = Unions.deserialize(createdSerialized);
   assert(
-    createdDeserialized.metadata instanceof Unions_Metadata_Union1,
+    Unions_Metadata_Union1.isInstance(createdDeserialized.metadata),
     `metadata should deserialize to Unions_Metadata_Union1. Got: ${createdDeserialized.metadata?.constructor?.name}`
   );
   const createdOut = createdDeserialized.metadata as Unions_Metadata_Union1;
   assert(
-    createdOut.created instanceof Date || createdOut.created instanceof ImmutableDate,
+    createdOut.created instanceof Date || ImmutableDate.isInstance(createdOut.created),
     'created should be Date/ImmutableDate'
   );
   assert(createdOut.created.getTime() === created.getTime(), 'created value matches');
   assert(
-    createdDeserialized.items?.[0] instanceof Unions_Items_Item_Union1,
+    Unions_Items_Item_Union1.isInstance(createdDeserialized.items?.[0]),
     `items[0] should be Unions_Items_Item_Union1. Got: ${createdDeserialized.items?.[0]?.constructor?.name}`
   );
   assert(
-    createdDeserialized.items?.[1] instanceof Unions_Items_Item_Union2,
+    Unions_Items_Item_Union2.isInstance(createdDeserialized.items?.[1]),
     `items[1] should be Unions_Items_Item_Union2. Got: ${createdDeserialized.items?.[1]?.constructor?.name}`
   );
   const setValues = createdDeserialized.itemSet ? [...createdDeserialized.itemSet.values()] : [];
   assert(
-    setValues.some((value) => value instanceof Unions_ItemSet_Item_Union1),
+    setValues.some((value) => Unions_ItemSet_Item_Union1.isInstance(value)),
     'itemSet should include Unions_ItemSet_Item_Union1'
   );
   assert(
-    setValues.some((value) => value instanceof Unions_ItemSet_Item_Union2),
+    setValues.some((value) => Unions_ItemSet_Item_Union2.isInstance(value)),
     'itemSet should include Unions_ItemSet_Item_Union2'
   );
   assert(
-    createdDeserialized.itemMap?.get('a') instanceof Unions_ItemMap_Value_Union1,
+    Unions_ItemMap_Value_Union1.isInstance(createdDeserialized.itemMap?.get('a')),
     `itemMap['a'] should be Unions_ItemMap_Value_Union1. Got: ${createdDeserialized.itemMap?.get('a')?.constructor?.name}`
   );
   assert(
-    createdDeserialized.itemMap?.get('b') instanceof Unions_ItemMap_Value_Union2,
+    Unions_ItemMap_Value_Union2.isInstance(createdDeserialized.itemMap?.get('b')),
     `itemMap['b'] should be Unions_ItemMap_Value_Union2. Got: ${createdDeserialized.itemMap?.get('b')?.constructor?.name}`
   );
 
@@ -124,12 +124,12 @@ export default function runUnionsImplicitUnionTests() {
 
   const updatedDeserialized = Unions.deserialize(updatedSerialized);
   assert(
-    updatedDeserialized.metadata instanceof Unions_Metadata_Union2,
+    Unions_Metadata_Union2.isInstance(updatedDeserialized.metadata),
     `metadata should deserialize to Unions_Metadata_Union2. Got: ${updatedDeserialized.metadata?.constructor?.name}`
   );
   const updatedOut = updatedDeserialized.metadata as Unions_Metadata_Union2;
   assert(
-    updatedOut.updated instanceof Date || updatedOut.updated instanceof ImmutableDate,
+    updatedOut.updated instanceof Date || ImmutableDate.isInstance(updatedOut.updated),
     'updated should be Date/ImmutableDate'
   );
   assert(updatedOut.updated.getTime() === updated.getTime(), 'updated value matches');

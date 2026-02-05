@@ -13,11 +13,11 @@ export default function runSingleMessageUnionTests() {
   });
 
   assert(
-    direct.dateOrString instanceof Date || direct.dateOrString instanceof ImmutableDate,
+    direct.dateOrString instanceof Date || ImmutableDate.isInstance(direct.dateOrString),
     'dateOrString should accept raw Date when only one message type exists in union.'
   );
   assert(
-    direct.urlOrNumber instanceof URL || direct.urlOrNumber instanceof ImmutableUrl,
+    direct.urlOrNumber instanceof URL || ImmutableUrl.isInstance(direct.urlOrNumber),
     'urlOrNumber should accept raw URL when only one message type exists in union.'
   );
 

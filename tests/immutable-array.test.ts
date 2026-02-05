@@ -94,13 +94,13 @@ describe('ImmutableArray', () => {
 
     it('map() returns ImmutableArray with transformed values', () => {
       const doubled = nums.map((n) => n * 2);
-      assert.ok(doubled instanceof ImmutableArray);
+      assert.ok(ImmutableArray.isInstance(doubled));
       assert.deepStrictEqual([...doubled], [2, 4, 6, 8, 10]);
     });
 
     it('filter() returns ImmutableArray with filtered values', () => {
       const evens = nums.filter((n) => n % 2 === 0);
-      assert.ok(evens instanceof ImmutableArray);
+      assert.ok(ImmutableArray.isInstance(evens));
       assert.deepStrictEqual([...evens], [2, 4]);
     });
 
@@ -183,7 +183,7 @@ describe('ImmutableArray', () => {
 
     it('slice() returns ImmutableArray subset', () => {
       const sliced = nums.slice(1, 4);
-      assert.ok(sliced instanceof ImmutableArray);
+      assert.ok(ImmutableArray.isInstance(sliced));
       assert.deepStrictEqual([...sliced], [2, 3, 4]);
     });
 

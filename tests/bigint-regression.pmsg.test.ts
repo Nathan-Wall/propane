@@ -17,7 +17,7 @@ export default function runBigIntNestedTests() {
   );
   const w3 = Wrapper.deserialize(serialized);
   assert(
-    w3.payload instanceof Wrapper_Payload_Union1,
+    Wrapper_Payload_Union1.isInstance(w3.payload),
     `Union payload should deserialize to Wrapper_Payload_Union1. Got: ${w3.payload?.constructor?.name}`
   );
   const p3 = w3.payload as Wrapper_Payload_Union1;
@@ -27,7 +27,7 @@ export default function runBigIntNestedTests() {
   const untagged = ':{payload:{id:200n}}';
   const w4 = Wrapper.deserialize(untagged);
   assert(
-    w4.payload instanceof Wrapper_Payload_Union1,
+    Wrapper_Payload_Union1.isInstance(w4.payload),
     `Untagged object union should coerce to Wrapper_Payload_Union1. Got: ${w4.payload?.constructor?.name}`
   );
   assert((w4.payload as Wrapper_Payload_Union1).id === 200n, 'Untagged BigInt value matches');
