@@ -15,7 +15,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }) {
     if (!props && MapBigintKey.EMPTY) return MapBigintKey.EMPTY;
     super(TYPE_TAG_MapBigintKey, "MapBigintKey");
-    this.#values = props ? (props.values === undefined || props.values === null ? new ImmutableMap() : props.values as object instanceof ImmutableMap ? props.values : new ImmutableMap(props.values as Iterable<[unknown, unknown]>)) as ImmutableMap<bigint, string> : new ImmutableMap();
+    this.#values = props ? (props.values === undefined || props.values === null ? new ImmutableMap() : ImmutableMap.isInstance(props.values) ? props.values : new ImmutableMap(props.values as Iterable<[unknown, unknown]>)) as ImmutableMap<bigint, string> : new ImmutableMap();
     if (!props) MapBigintKey.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<MapBigintKey.Data>[] {
@@ -32,8 +32,8 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
     const props = {} as Partial<MapBigintKey.Data>;
     const valuesValue = entries["values"];
     if (valuesValue === undefined) throw new Error("Missing required property \"values\".");
-    const valuesMapValue = valuesValue === undefined || valuesValue === null ? new ImmutableMap() : valuesValue as object instanceof ImmutableMap ? valuesValue : new ImmutableMap(valuesValue as Iterable<[unknown, unknown]>);
-    if (!((valuesMapValue as object instanceof ImmutableMap || valuesMapValue as object instanceof Map) && [...(valuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
+    const valuesMapValue = valuesValue === undefined || valuesValue === null ? new ImmutableMap() : ImmutableMap.isInstance(valuesValue) ? valuesValue : new ImmutableMap(valuesValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(valuesMapValue) || valuesMapValue as object instanceof Map) && [...(valuesMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "bigint" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"values\".");
     props.values = valuesMapValue as Map<bigint, string> | Iterable<[bigint, string]>;
     return props as MapBigintKey.Data;
   }
@@ -175,7 +175,7 @@ export class MapBigintKey extends Message<MapBigintKey.Data> {
   }
   setValues(value: Map<bigint, string> | Iterable<[bigint, string]>) {
     return this.$update(new (this.constructor as typeof MapBigintKey)({
-      values: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<bigint, string> | Iterable<[bigint, string]>
+      values: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<bigint, string> | Iterable<[bigint, string]>
     }) as this);
   }
   updateValue(key: bigint, updater: (currentValue: string | undefined) => string) {

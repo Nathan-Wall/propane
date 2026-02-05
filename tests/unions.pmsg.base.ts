@@ -1092,15 +1092,15 @@ export class Unions extends Message<Unions.Data> {
     this.#items = props ? (value => {
       if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableArray || Array.isArray(value)) && [...(value as Iterable<unknown>)].every(element => Unions_Items_Item_Union1.isInstance(element) || Unions_Items_Item_Union2.isInstance(element)))) throw new Error("Invalid value for property \"items\".");
       return value;
-    })(props.items === undefined || props.items === null ? props.items : props.items as object instanceof ImmutableArray ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
+    })(props.items === undefined || props.items === null ? props.items : ImmutableArray.isInstance(props.items) ? props.items : new ImmutableArray(props.items as Iterable<unknown>)) as ImmutableArray<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)> : undefined;
     this.#itemSet = props ? (value => {
       if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableSet || value as object instanceof Set) && [...(value as Iterable<unknown>)].every(setValue => Unions_ItemSet_Item_Union1.isInstance(setValue) || Unions_ItemSet_Item_Union2.isInstance(setValue)))) throw new Error("Invalid value for property \"itemSet\".");
       return value;
-    })(props.itemSet === undefined || props.itemSet === null ? props.itemSet : props.itemSet as object instanceof ImmutableSet ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
+    })(props.itemSet === undefined || props.itemSet === null ? props.itemSet : ImmutableSet.isInstance(props.itemSet) ? props.itemSet : new ImmutableSet(props.itemSet as Iterable<unknown>)) as ImmutableSet<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> : undefined;
     this.#itemMap = props ? (value => {
       if (!options?.skipValidation && value !== undefined && !((value as object instanceof ImmutableMap || value as object instanceof Map) && [...(value as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && (Unions_ItemMap_Value_Union1.isInstance(mapValue) || Unions_ItemMap_Value_Union2.isInstance(mapValue))))) throw new Error("Invalid value for property \"itemMap\".");
       return value;
-    })(props.itemMap === undefined || props.itemMap === null ? props.itemMap : props.itemMap as object instanceof ImmutableMap ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
+    })(props.itemMap === undefined || props.itemMap === null ? props.itemMap : ImmutableMap.isInstance(props.itemMap) ? props.itemMap : new ImmutableMap(props.itemMap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> : undefined;
     if (!props) Unions.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Unions.Data>[] {
@@ -1193,7 +1193,7 @@ export class Unions extends Message<Unions.Data> {
     props.metadata = metadataUnionValue;
     const itemsValue = entries["items"];
     const itemsNormalized = itemsValue === null ? undefined : itemsValue;
-    const itemsArrayValue = itemsNormalized === undefined || itemsNormalized === null ? itemsNormalized : itemsNormalized as object instanceof ImmutableArray ? itemsNormalized : new ImmutableArray(itemsNormalized as Iterable<unknown>);
+    const itemsArrayValue = itemsNormalized === undefined || itemsNormalized === null ? itemsNormalized : ImmutableArray.isInstance(itemsNormalized) ? itemsNormalized : new ImmutableArray(itemsNormalized as Iterable<unknown>);
     const itemsArrayValueConverted = itemsArrayValue === undefined || itemsArrayValue === null ? itemsArrayValue : (itemsArrayValue as ImmutableArray<unknown> | unknown[]).map(element => (value => {
       let unionValue: any = value as any;
       if (isTaggedMessageData(value)) {
@@ -1240,7 +1240,7 @@ export class Unions extends Message<Unions.Data> {
     props.items = itemsArrayValueConverted as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>;
     const itemSetValue = entries["itemSet"];
     const itemSetNormalized = itemSetValue === null ? undefined : itemSetValue;
-    const itemSetSetValue = itemSetNormalized === undefined || itemSetNormalized === null ? itemSetNormalized : itemSetNormalized as object instanceof ImmutableSet ? itemSetNormalized : new ImmutableSet(itemSetNormalized as Iterable<unknown>);
+    const itemSetSetValue = itemSetNormalized === undefined || itemSetNormalized === null ? itemSetNormalized : ImmutableSet.isInstance(itemSetNormalized) ? itemSetNormalized : new ImmutableSet(itemSetNormalized as Iterable<unknown>);
     const itemSetSetValueConverted = itemSetSetValue === undefined || itemSetSetValue === null ? itemSetSetValue : new ImmutableSet(Array.from(itemSetSetValue as Iterable<unknown>, element => (value => {
       let unionValue: any = value as any;
       if (isTaggedMessageData(value)) {
@@ -1287,7 +1287,7 @@ export class Unions extends Message<Unions.Data> {
     props.itemSet = itemSetSetValueConverted as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>;
     const itemMapValue = entries["itemMap"];
     const itemMapNormalized = itemMapValue === null ? undefined : itemMapValue;
-    const itemMapMapValue = itemMapNormalized === undefined || itemMapNormalized === null ? itemMapNormalized : itemMapNormalized as object instanceof ImmutableMap ? itemMapNormalized : new ImmutableMap(itemMapNormalized as Iterable<[unknown, unknown]>);
+    const itemMapMapValue = itemMapNormalized === undefined || itemMapNormalized === null ? itemMapNormalized : ImmutableMap.isInstance(itemMapNormalized) ? itemMapNormalized : new ImmutableMap(itemMapNormalized as Iterable<[unknown, unknown]>);
     const itemMapMapValueConverted = itemMapMapValue === undefined || itemMapMapValue === null ? itemMapMapValue : new ImmutableMap([...(itemMapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, (value => {
       let unionValue: any = value as any;
       if (isTaggedMessageData(value)) {
@@ -1738,7 +1738,7 @@ export class Unions extends Message<Unions.Data> {
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
       itemSet: this.#itemSet as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
-      itemMap: (value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
+      itemMap: (value === undefined || value === null ? value : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
     }) as this);
   }
   setItemMapEntry(key: string, value: Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2) {
@@ -1766,7 +1766,7 @@ export class Unions extends Message<Unions.Data> {
       email: this.#email as Email | null | Email | null,
       metadata: this.#metadata as Unions_Metadata_Union1 | Unions_Metadata_Union2,
       items: this.#items as (Unions_Items_Item_Union1 | Unions_Items_Item_Union2)[] | Iterable<(Unions_Items_Item_Union1 | Unions_Items_Item_Union2)>,
-      itemSet: (value === undefined || value === null ? value : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
+      itemSet: (value === undefined || value === null ? value : ImmutableSet.isInstance(value) ? value : new ImmutableSet(value)) as Set<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2> | Iterable<Unions_ItemSet_Item_Union1 | Unions_ItemSet_Item_Union2>,
       itemMap: this.#itemMap as Map<string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2> | Iterable<[string, Unions_ItemMap_Value_Union1 | Unions_ItemMap_Value_Union2]>
     }) as this);
   }

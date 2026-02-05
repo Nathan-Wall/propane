@@ -18,8 +18,8 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   }) {
     if (!props && ImmutableArraySet.EMPTY) return ImmutableArraySet.EMPTY;
     super(TYPE_TAG_ImmutableArraySet, "ImmutableArraySet");
-    this.#arr = props ? (props.arr === undefined || props.arr === null ? new ImmutableArray() : props.arr as object instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr as Iterable<unknown>)) as ImmutableArray<number> : new ImmutableArray();
-    this.#items = props ? (props.items === undefined || props.items === null ? new ImmutableSet() : props.items as object instanceof ImmutableSet ? props.items : new ImmutableSet(props.items as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
+    this.#arr = props ? (props.arr === undefined || props.arr === null ? new ImmutableArray() : ImmutableArray.isInstance(props.arr) ? props.arr : new ImmutableArray(props.arr as Iterable<unknown>)) as ImmutableArray<number> : new ImmutableArray();
+    this.#items = props ? (props.items === undefined || props.items === null ? new ImmutableSet() : ImmutableSet.isInstance(props.items) ? props.items : new ImmutableSet(props.items as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
     if (!props) ImmutableArraySet.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArraySet.Data>[] {
@@ -40,13 +40,13 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
     const props = {} as Partial<ImmutableArraySet.Data>;
     const arrValue = entries["arr"];
     if (arrValue === undefined) throw new Error("Missing required property \"arr\".");
-    const arrArrayValue = arrValue === undefined || arrValue === null ? new ImmutableArray() : arrValue as object instanceof ImmutableArray ? arrValue : new ImmutableArray(arrValue as Iterable<unknown>);
-    if (!((arrArrayValue as object instanceof ImmutableArray || Array.isArray(arrArrayValue)) && [...(arrArrayValue as Iterable<unknown>)].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
+    const arrArrayValue = arrValue === undefined || arrValue === null ? new ImmutableArray() : ImmutableArray.isInstance(arrValue) ? arrValue : new ImmutableArray(arrValue as Iterable<unknown>);
+    if (!((ImmutableArray.isInstance(arrArrayValue) || Array.isArray(arrArrayValue)) && [...(arrArrayValue as Iterable<unknown>)].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
     props.arr = arrArrayValue as number[] | Iterable<number>;
     const itemsValue = entries["items"];
     if (itemsValue === undefined) throw new Error("Missing required property \"items\".");
-    const itemsSetValue = itemsValue === undefined || itemsValue === null ? new ImmutableSet() : itemsValue as object instanceof ImmutableSet ? itemsValue : new ImmutableSet(itemsValue as Iterable<unknown>);
-    if (!((itemsSetValue as object instanceof ImmutableSet || itemsSetValue as object instanceof Set) && [...(itemsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"items\".");
+    const itemsSetValue = itemsValue === undefined || itemsValue === null ? new ImmutableSet() : ImmutableSet.isInstance(itemsValue) ? itemsValue : new ImmutableSet(itemsValue as Iterable<unknown>);
+    if (!((ImmutableSet.isInstance(itemsSetValue) || itemsSetValue as object instanceof Set) && [...(itemsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"items\".");
     props.items = itemsSetValue as Set<string> | Iterable<string>;
     return props as ImmutableArraySet.Data;
   }
@@ -269,7 +269,7 @@ export class ImmutableArraySet extends Message<ImmutableArraySet.Data> {
   setItems(value: Set<string> | Iterable<string>) {
     return this.$update(new (this.constructor as typeof ImmutableArraySet)({
       arr: this.#arr as number[] | Iterable<number>,
-      items: (value === undefined || value === null ? new ImmutableSet() : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>
+      items: (value === undefined || value === null ? new ImmutableSet() : ImmutableSet.isInstance(value) ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>
     }) as this);
   }
   shiftArr() {

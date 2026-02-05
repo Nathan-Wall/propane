@@ -22,9 +22,9 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
   }) {
     if (!props && DefaultCollections.EMPTY) return DefaultCollections.EMPTY;
     super(TYPE_TAG_DefaultCollections, "DefaultCollections");
-    this.#arr = props ? (props.arr === undefined || props.arr === null ? new ImmutableArray() : props.arr as object instanceof ImmutableArray ? props.arr : new ImmutableArray(props.arr as Iterable<unknown>)) as ImmutableArray<number> : new ImmutableArray();
-    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
-    this.#tags = props ? (props.tags === undefined || props.tags === null ? new ImmutableSet() : props.tags as object instanceof ImmutableSet ? props.tags : new ImmutableSet(props.tags as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
+    this.#arr = props ? (props.arr === undefined || props.arr === null ? new ImmutableArray() : ImmutableArray.isInstance(props.arr) ? props.arr : new ImmutableArray(props.arr as Iterable<unknown>)) as ImmutableArray<number> : new ImmutableArray();
+    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : ImmutableMap.isInstance(props.map) ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
+    this.#tags = props ? (props.tags === undefined || props.tags === null ? new ImmutableSet() : ImmutableSet.isInstance(props.tags) ? props.tags : new ImmutableSet(props.tags as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
     if (!props) DefaultCollections.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<DefaultCollections.Data>[] {
@@ -49,18 +49,18 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
     const props = {} as Partial<DefaultCollections.Data>;
     const arrValue = entries["arr"];
     if (arrValue === undefined) throw new Error("Missing required property \"arr\".");
-    const arrArrayValue = arrValue === undefined || arrValue === null ? new ImmutableArray() : arrValue as object instanceof ImmutableArray ? arrValue : new ImmutableArray(arrValue as Iterable<unknown>);
-    if (!((arrArrayValue as object instanceof ImmutableArray || Array.isArray(arrArrayValue)) && [...(arrArrayValue as Iterable<unknown>)].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
+    const arrArrayValue = arrValue === undefined || arrValue === null ? new ImmutableArray() : ImmutableArray.isInstance(arrValue) ? arrValue : new ImmutableArray(arrValue as Iterable<unknown>);
+    if (!((ImmutableArray.isInstance(arrArrayValue) || Array.isArray(arrArrayValue)) && [...(arrArrayValue as Iterable<unknown>)].every(element => typeof element === "number"))) throw new Error("Invalid value for property \"arr\".");
     props.arr = arrArrayValue as number[] | Iterable<number>;
     const mapValue = entries["map"];
     if (mapValue === undefined) throw new Error("Missing required property \"map\".");
-    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : mapValue as object instanceof ImmutableMap ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
-    if (!((mapMapValue as object instanceof ImmutableMap || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
+    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : ImmutableMap.isInstance(mapValue) ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(mapMapValue) || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
     props.map = mapMapValue as Map<string, number> | Iterable<[string, number]>;
     const tagsValue = entries["tags"];
     if (tagsValue === undefined) throw new Error("Missing required property \"tags\".");
-    const tagsSetValue = tagsValue === undefined || tagsValue === null ? new ImmutableSet() : tagsValue as object instanceof ImmutableSet ? tagsValue : new ImmutableSet(tagsValue as Iterable<unknown>);
-    if (!((tagsSetValue as object instanceof ImmutableSet || tagsSetValue as object instanceof Set) && [...(tagsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"tags\".");
+    const tagsSetValue = tagsValue === undefined || tagsValue === null ? new ImmutableSet() : ImmutableSet.isInstance(tagsValue) ? tagsValue : new ImmutableSet(tagsValue as Iterable<unknown>);
+    if (!((ImmutableSet.isInstance(tagsSetValue) || tagsSetValue as object instanceof Set) && [...(tagsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"tags\".");
     props.tags = tagsSetValue as Set<string> | Iterable<string>;
     return props as DefaultCollections.Data;
   }
@@ -382,7 +382,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
   setMap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
       arr: this.#arr as number[] | Iterable<number>,
-      map: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
+      map: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
       tags: this.#tags as Set<string> | Iterable<string>
     }) as this);
   }
@@ -406,7 +406,7 @@ export class DefaultCollections extends Message<DefaultCollections.Data> {
     return this.$update(new (this.constructor as typeof DefaultCollections)({
       arr: this.#arr as number[] | Iterable<number>,
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
-      tags: (value === undefined || value === null ? new ImmutableSet() : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>
+      tags: (value === undefined || value === null ? new ImmutableSet() : ImmutableSet.isInstance(value) ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>
     }) as this);
   }
   shiftArr() {

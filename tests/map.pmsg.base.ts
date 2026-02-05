@@ -200,7 +200,7 @@ export class MapMessage extends Message<MapMessage.Data> {
   }) {
     if (!props && MapMessage.EMPTY) return MapMessage.EMPTY;
     super(TYPE_TAG_MapMessage, "MapMessage");
-    this.#labels = props ? (props.labels === undefined || props.labels === null ? new ImmutableMap() : props.labels as object instanceof ImmutableMap ? props.labels : new ImmutableMap(props.labels as Iterable<[unknown, unknown]>)) as ImmutableMap<string | number, number> : new ImmutableMap();
+    this.#labels = props ? (props.labels === undefined || props.labels === null ? new ImmutableMap() : ImmutableMap.isInstance(props.labels) ? props.labels : new ImmutableMap(props.labels as Iterable<[unknown, unknown]>)) as ImmutableMap<string | number, number> : new ImmutableMap();
     this.#metadata = props ? (props.metadata === undefined || props.metadata === null ? props.metadata : new ImmutableMap(Array.from(props.metadata as Iterable<[unknown, unknown]>).map(([k, v]) => [k, MapMessage_Metadata_Value.from(v as MapMessage_Metadata_Value.Value)]))) as ImmutableMap<string, MapMessage_Metadata_Value> : undefined;
     this.#extras = props ? (props.extras === undefined || props.extras === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.extras as Iterable<[unknown, unknown]>).map(([k, v]) => [k, MapMessage_Extras_Value.from(v as MapMessage_Extras_Value.Value)]))) as ImmutableMap<string, MapMessage_Extras_Value> : new ImmutableMap();
     if (!props) MapMessage.EMPTY = this;
@@ -228,20 +228,20 @@ export class MapMessage extends Message<MapMessage.Data> {
     const props = {} as Partial<MapMessage.Data>;
     const labelsValue = entries["1"] === undefined ? entries["labels"] : entries["1"];
     if (labelsValue === undefined) throw new Error("Missing required property \"labels\".");
-    const labelsMapValue = labelsValue === undefined || labelsValue === null ? new ImmutableMap() : labelsValue as object instanceof ImmutableMap ? labelsValue : new ImmutableMap(labelsValue as Iterable<[unknown, unknown]>);
-    if (!((labelsMapValue as object instanceof ImmutableMap || labelsMapValue as object instanceof Map) && [...(labelsMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (typeof mapKey === "string" || typeof mapKey === "number") && typeof mapValue === "number"))) throw new Error("Invalid value for property \"labels\".");
+    const labelsMapValue = labelsValue === undefined || labelsValue === null ? new ImmutableMap() : ImmutableMap.isInstance(labelsValue) ? labelsValue : new ImmutableMap(labelsValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(labelsMapValue) || labelsMapValue as object instanceof Map) && [...(labelsMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => (typeof mapKey === "string" || typeof mapKey === "number") && typeof mapValue === "number"))) throw new Error("Invalid value for property \"labels\".");
     props.labels = labelsMapValue as Map<string | number, number> | Iterable<[string | number, number]>;
     const metadataValue = entries["2"] === undefined ? entries["metadata"] : entries["2"];
     const metadataNormalized = metadataValue === null ? undefined : metadataValue;
     const metadataMapValue = metadataNormalized === undefined || metadataNormalized === null ? metadataNormalized : new ImmutableMap(Array.from(metadataNormalized as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && MapMessage_Metadata_Value.$compact === true ? v : MapMessage_Metadata_Value.from(v as MapMessage_Metadata_Value.Value)]));
     const metadataMapValueConverted = metadataMapValue === undefined || metadataMapValue === null ? metadataMapValue : new ImmutableMap([...(metadataMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Metadata_Value.$compact === true ? MapMessage_Metadata_Value.fromCompact(MapMessage_Metadata_Value.$compactTag && v.startsWith(MapMessage_Metadata_Value.$compactTag) ? v.slice(MapMessage_Metadata_Value.$compactTag.length) : v, options) as any : v]));
-    if (metadataMapValueConverted !== undefined && !((metadataMapValueConverted as object instanceof ImmutableMap || metadataMapValueConverted as object instanceof Map) && [...(metadataMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
+    if (metadataMapValueConverted !== undefined && !((ImmutableMap.isInstance(metadataMapValueConverted) || metadataMapValueConverted as object instanceof Map) && [...(metadataMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"metadata\".");
     props.metadata = metadataMapValueConverted as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>;
     const extrasValue = entries["3"] === undefined ? entries["extras"] : entries["3"];
     if (extrasValue === undefined) throw new Error("Missing required property \"extras\".");
     const extrasMapValue = extrasValue === undefined || extrasValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(extrasValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && MapMessage_Extras_Value.$compact === true ? v : MapMessage_Extras_Value.from(v as MapMessage_Extras_Value.Value)]));
     const extrasMapValueConverted = extrasMapValue === undefined || extrasMapValue === null ? extrasMapValue : new ImmutableMap([...(extrasMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && MapMessage_Extras_Value.$compact === true ? MapMessage_Extras_Value.fromCompact(MapMessage_Extras_Value.$compactTag && v.startsWith(MapMessage_Extras_Value.$compactTag) ? v.slice(MapMessage_Extras_Value.$compactTag.length) : v, options) as any : v]));
-    if (!((extrasMapValueConverted as object instanceof ImmutableMap || extrasMapValueConverted as object instanceof Map) && [...(extrasMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
+    if (!((ImmutableMap.isInstance(extrasMapValueConverted) || extrasMapValueConverted as object instanceof Map) && [...(extrasMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"extras\".");
     props.extras = extrasMapValueConverted as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>;
     return props as MapMessage.Data;
   }
@@ -588,7 +588,7 @@ export class MapMessage extends Message<MapMessage.Data> {
   }
   setLabels(value: Map<string | number, number> | Iterable<[string | number, number]>) {
     return this.$update(new (this.constructor as typeof MapMessage)({
-      labels: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string | number, number> | Iterable<[string | number, number]>,
+      labels: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string | number, number> | Iterable<[string | number, number]>,
       metadata: this.#metadata as Map<string, MapMessage_Metadata_Value> | Iterable<[string, MapMessage_Metadata_Value]>,
       extras: this.#extras as Map<string, MapMessage_Extras_Value> | Iterable<[string, MapMessage_Extras_Value]>
     }) as this);

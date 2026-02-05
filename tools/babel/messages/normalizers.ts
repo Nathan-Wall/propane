@@ -17,14 +17,10 @@ export function buildImmutableMapExpression(
   );
 
   // When castToAny is true (in $fromEntries), values are 'unknown' and need
-  // an 'as object' cast for instanceof to work
-  const instanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(valueExpr);
-  const immutableCheck = t.binaryExpression(
-    'instanceof',
-    instanceofLhs,
-    t.identifier('ImmutableMap')
+  // casting for constructor calls.
+  const immutableCheck = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableMap'), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
 
   // When castToAny is true, cast the value to Iterable for the ImmutableMap constructor
@@ -77,14 +73,10 @@ export function buildImmutableArrayExpression(
   );
 
   // When castToAny is true (in $fromEntries), values are 'unknown' and need
-  // an 'as object' cast for instanceof to work
-  const instanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(valueExpr);
-  const immutableCheck = t.binaryExpression(
-    'instanceof',
-    instanceofLhs,
-    t.identifier('ImmutableArray')
+  // casting for constructor calls.
+  const immutableCheck = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableArray'), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
 
   // Cast to Iterable<unknown> for unknown values from $fromEntries
@@ -133,14 +125,10 @@ export function buildImmutableSetExpression(
   );
 
   // When castToAny is true (in $fromEntries), values are 'unknown' and need
-  // an 'as object' cast for instanceof to work
-  const instanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(valueExpr);
-  const immutableCheck = t.binaryExpression(
-    'instanceof',
-    instanceofLhs,
-    t.identifier('ImmutableSet')
+  // casting for constructor calls.
+  const immutableCheck = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableSet'), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
 
   // Cast to Iterable<unknown> for unknown values from $fromEntries
@@ -892,15 +880,9 @@ export function buildImmutableMapWithConversionsExpression(
     t.binaryExpression('===', t.cloneNode(valueExpr), t.nullLiteral())
   );
 
-  // When castToAny is true (in $fromEntries), values are 'unknown' and need
-  // an 'as object' cast for instanceof to work
-  const instanceofLhs = castToAny
-    ? t.tsAsExpression(t.cloneNode(valueExpr), t.tsTypeReference(t.identifier('object')))
-    : t.cloneNode(valueExpr);
-  const immutableCheck = t.binaryExpression(
-    'instanceof',
-    instanceofLhs,
-    t.identifier('ImmutableMap')
+  const immutableCheck = t.callExpression(
+    t.memberExpression(t.identifier('ImmutableMap'), t.identifier('isInstance')),
+    [t.cloneNode(valueExpr)]
   );
 
   // Build the key conversion expression

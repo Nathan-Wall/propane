@@ -28,6 +28,16 @@ function buildInstanceofCheck(
   return t.binaryExpression('instanceof', castValueId, t.identifier(className));
 }
 
+function buildIsInstanceCheck(
+  valueId: t.Expression,
+  className: string
+): t.CallExpression {
+  return t.callExpression(
+    t.memberExpression(t.identifier(className), t.identifier('isInstance')),
+    [t.cloneNode(valueId)]
+  );
+}
+
 export function buildRuntimeTypeCheckExpression(
   typeNode: t.TSType | null,
   valueId: t.Expression
@@ -218,7 +228,7 @@ export function buildMapTypeCheckExpression(
   typeNode: t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableMap');
+  const immutableInstanceCheck = buildIsInstanceCheck(valueId, 'ImmutableMap');
   const mapInstanceCheck = buildInstanceofCheck(valueId, 'Map');
   const baseCheck = t.logicalExpression('||', immutableInstanceCheck, mapInstanceCheck);
 
@@ -294,7 +304,7 @@ export function buildSetTypeCheckExpression(
   typeNode: t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableSet');
+  const immutableInstanceCheck = buildIsInstanceCheck(valueId, 'ImmutableSet');
   const setInstanceCheck = buildInstanceofCheck(valueId, 'Set');
   const baseCheck = t.logicalExpression('||', immutableInstanceCheck, setInstanceCheck);
 
@@ -340,7 +350,7 @@ export function buildArrayTypeCheckExpression(
   typeNode: t.TSArrayType | t.TSTypeReference,
   valueId: t.Expression
 ): t.Expression {
-  const immutableInstanceCheck = buildInstanceofCheck(valueId, 'ImmutableArray');
+  const immutableInstanceCheck = buildIsInstanceCheck(valueId, 'ImmutableArray');
   const arrayInstanceCheck = t.callExpression(
     t.memberExpression(
       t.identifier('Array'),

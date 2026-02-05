@@ -16,8 +16,8 @@ export class SetMessage extends Message<SetMessage.Data> {
   }) {
     if (!props && SetMessage.EMPTY) return SetMessage.EMPTY;
     super(TYPE_TAG_SetMessage, "SetMessage");
-    this.#tags = props ? (props.tags === undefined || props.tags === null ? new ImmutableSet() : props.tags as object instanceof ImmutableSet ? props.tags : new ImmutableSet(props.tags as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
-    this.#ids = props ? (props.ids === undefined || props.ids === null ? props.ids : props.ids as object instanceof ImmutableSet ? props.ids : new ImmutableSet(props.ids as Iterable<unknown>)) as ImmutableSet<number> : undefined;
+    this.#tags = props ? (props.tags === undefined || props.tags === null ? new ImmutableSet() : ImmutableSet.isInstance(props.tags) ? props.tags : new ImmutableSet(props.tags as Iterable<unknown>)) as ImmutableSet<string> : new ImmutableSet();
+    this.#ids = props ? (props.ids === undefined || props.ids === null ? props.ids : ImmutableSet.isInstance(props.ids) ? props.ids : new ImmutableSet(props.ids as Iterable<unknown>)) as ImmutableSet<number> : undefined;
     if (!props) SetMessage.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<SetMessage.Data>[] {
@@ -38,13 +38,13 @@ export class SetMessage extends Message<SetMessage.Data> {
     const props = {} as Partial<SetMessage.Data>;
     const tagsValue = entries["1"] === undefined ? entries["tags"] : entries["1"];
     if (tagsValue === undefined) throw new Error("Missing required property \"tags\".");
-    const tagsSetValue = tagsValue === undefined || tagsValue === null ? new ImmutableSet() : tagsValue as object instanceof ImmutableSet ? tagsValue : new ImmutableSet(tagsValue as Iterable<unknown>);
-    if (!((tagsSetValue as object instanceof ImmutableSet || tagsSetValue as object instanceof Set) && [...(tagsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"tags\".");
+    const tagsSetValue = tagsValue === undefined || tagsValue === null ? new ImmutableSet() : ImmutableSet.isInstance(tagsValue) ? tagsValue : new ImmutableSet(tagsValue as Iterable<unknown>);
+    if (!((ImmutableSet.isInstance(tagsSetValue) || tagsSetValue as object instanceof Set) && [...(tagsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "string"))) throw new Error("Invalid value for property \"tags\".");
     props.tags = tagsSetValue as Set<string> | Iterable<string>;
     const idsValue = entries["2"] === undefined ? entries["ids"] : entries["2"];
     const idsNormalized = idsValue === null ? undefined : idsValue;
-    const idsSetValue = idsNormalized === undefined || idsNormalized === null ? idsNormalized : idsNormalized as object instanceof ImmutableSet ? idsNormalized : new ImmutableSet(idsNormalized as Iterable<unknown>);
-    if (idsSetValue !== undefined && !((idsSetValue as object instanceof ImmutableSet || idsSetValue as object instanceof Set) && [...(idsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "number"))) throw new Error("Invalid value for property \"ids\".");
+    const idsSetValue = idsNormalized === undefined || idsNormalized === null ? idsNormalized : ImmutableSet.isInstance(idsNormalized) ? idsNormalized : new ImmutableSet(idsNormalized as Iterable<unknown>);
+    if (idsSetValue !== undefined && !((ImmutableSet.isInstance(idsSetValue) || idsSetValue as object instanceof Set) && [...(idsSetValue as Iterable<unknown>)].every(setValue => typeof setValue === "number"))) throw new Error("Invalid value for property \"ids\".");
     props.ids = idsSetValue as Set<number> | Iterable<number>;
     return props as SetMessage.Data;
   }
@@ -311,12 +311,12 @@ export class SetMessage extends Message<SetMessage.Data> {
   setIds(value: Set<number> | Iterable<number> | undefined) {
     return this.$update(new (this.constructor as typeof SetMessage)({
       tags: this.#tags as Set<string> | Iterable<string>,
-      ids: (value === undefined || value === null ? value : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<number> | Iterable<number>
+      ids: (value === undefined || value === null ? value : ImmutableSet.isInstance(value) ? value : new ImmutableSet(value)) as Set<number> | Iterable<number>
     }) as this);
   }
   setTags(value: Set<string> | Iterable<string>) {
     return this.$update(new (this.constructor as typeof SetMessage)({
-      tags: (value === undefined || value === null ? new ImmutableSet() : value instanceof ImmutableSet ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>,
+      tags: (value === undefined || value === null ? new ImmutableSet() : ImmutableSet.isInstance(value) ? value : new ImmutableSet(value)) as Set<string> | Iterable<string>,
       ids: this.#ids as Set<number> | Iterable<number>
     }) as this);
   }

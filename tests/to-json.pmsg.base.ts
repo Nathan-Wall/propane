@@ -17,8 +17,8 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   }) {
     if (!props && ToJson_Nested.EMPTY) return ToJson_Nested.EMPTY;
     super(TYPE_TAG_ToJson_Nested, "ToJson_Nested");
-    this.#array = props ? (props.array === undefined || props.array === null ? new ImmutableArray() : props.array as object instanceof ImmutableArray ? props.array : new ImmutableArray(props.array as Iterable<unknown>)) as ImmutableArray<(number | undefined)> : new ImmutableArray();
-    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, bigint> : new ImmutableMap();
+    this.#array = props ? (props.array === undefined || props.array === null ? new ImmutableArray() : ImmutableArray.isInstance(props.array) ? props.array : new ImmutableArray(props.array as Iterable<unknown>)) as ImmutableArray<(number | undefined)> : new ImmutableArray();
+    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : ImmutableMap.isInstance(props.map) ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, bigint> : new ImmutableMap();
     this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : new ImmutableMap(Array.from(props.imap as Iterable<[unknown, unknown]>).map(([k, v]) => [k, ImmutableDate.from(v as ImmutableDate.Value)]))) as ImmutableMap<string, ImmutableDate> : new ImmutableMap();
     if (!props) ToJson_Nested.EMPTY = this;
   }
@@ -44,19 +44,19 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
     const props = {} as Partial<ToJson_Nested.Data>;
     const arrayValue = entries["array"];
     if (arrayValue === undefined) throw new Error("Missing required property \"array\".");
-    const arrayArrayValue = arrayValue === undefined || arrayValue === null ? new ImmutableArray() : arrayValue as object instanceof ImmutableArray ? arrayValue : new ImmutableArray(arrayValue as Iterable<unknown>);
-    if (!((arrayArrayValue as object instanceof ImmutableArray || Array.isArray(arrayArrayValue)) && [...(arrayArrayValue as Iterable<unknown>)].every(element => typeof element === "number" || element === undefined))) throw new Error("Invalid value for property \"array\".");
+    const arrayArrayValue = arrayValue === undefined || arrayValue === null ? new ImmutableArray() : ImmutableArray.isInstance(arrayValue) ? arrayValue : new ImmutableArray(arrayValue as Iterable<unknown>);
+    if (!((ImmutableArray.isInstance(arrayArrayValue) || Array.isArray(arrayArrayValue)) && [...(arrayArrayValue as Iterable<unknown>)].every(element => typeof element === "number" || element === undefined))) throw new Error("Invalid value for property \"array\".");
     props.array = arrayArrayValue as (number | undefined)[] | Iterable<(number | undefined)>;
     const mapValue = entries["map"];
     if (mapValue === undefined) throw new Error("Missing required property \"map\".");
-    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : mapValue as object instanceof ImmutableMap ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
-    if (!((mapMapValue as object instanceof ImmutableMap || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint"))) throw new Error("Invalid value for property \"map\".");
+    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : ImmutableMap.isInstance(mapValue) ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(mapMapValue) || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "bigint"))) throw new Error("Invalid value for property \"map\".");
     props.map = mapMapValue as Map<string, bigint> | Iterable<[string, bigint]>;
     const imapValue = entries["imap"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
     const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : new ImmutableMap(Array.from(imapValue as Iterable<[unknown, unknown]>).map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? v : ImmutableDate.from(v as ImmutableDate.Value)]));
     const imapMapValueConverted = imapMapValue === undefined || imapMapValue === null ? imapMapValue : new ImmutableMap([...(imapMapValue as Iterable<[unknown, unknown]>)].map(([k, v]) => [k, typeof v === "string" && ImmutableDate.$compact === true ? ImmutableDate.fromCompact(ImmutableDate.$compactTag && v.startsWith(ImmutableDate.$compactTag) ? v.slice(ImmutableDate.$compactTag.length) : v, options) as any : v]));
-    if (!((imapMapValueConverted as object instanceof ImmutableMap || imapMapValueConverted as object instanceof Map) && [...(imapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"imap\".");
+    if (!((ImmutableMap.isInstance(imapMapValueConverted) || imapMapValueConverted as object instanceof Map) && [...(imapMapValueConverted as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string"))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValueConverted as Map<string, Date> | Iterable<[string, Date]>;
     return props as ToJson_Nested.Data;
   }
@@ -372,7 +372,7 @@ export class ToJson_Nested extends Message<ToJson_Nested.Data> {
   setMap(value: Map<string, bigint> | Iterable<[string, bigint]>) {
     return this.$update(new (this.constructor as typeof ToJson_Nested)({
       array: this.#array as (number | undefined)[] | Iterable<(number | undefined)>,
-      map: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, bigint> | Iterable<[string, bigint]>,
+      map: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, bigint> | Iterable<[string, bigint]>,
       imap: this.#imap as Map<string, Date> | Iterable<[string, Date]>
     }) as this);
   }
@@ -489,8 +489,8 @@ export class ToJson extends Message<ToJson.Data> {
   }) {
     if (!props && ToJson.EMPTY) return ToJson.EMPTY;
     super(TYPE_TAG_ToJson, "ToJson");
-    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : props.map as object instanceof ImmutableMap ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
-    this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : props.imap as object instanceof ImmutableMap ? props.imap : new ImmutableMap(props.imap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
+    this.#map = props ? (props.map === undefined || props.map === null ? new ImmutableMap() : ImmutableMap.isInstance(props.map) ? props.map : new ImmutableMap(props.map as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
+    this.#imap = props ? (props.imap === undefined || props.imap === null ? new ImmutableMap() : ImmutableMap.isInstance(props.imap) ? props.imap : new ImmutableMap(props.imap as Iterable<[unknown, unknown]>)) as ImmutableMap<string, number> : new ImmutableMap();
     this.#big = (props ? props.big : 0n) as bigint;
     this.#date = props ? ImmutableDate.isInstance(props.date) ? props.date : new ImmutableDate(props.date, options) : new ImmutableDate();
     this.#optional = (props ? props.optional : undefined) as string;
@@ -536,13 +536,13 @@ export class ToJson extends Message<ToJson.Data> {
     const props = {} as Partial<ToJson.Data>;
     const mapValue = entries["1"] === undefined ? entries["map"] : entries["1"];
     if (mapValue === undefined) throw new Error("Missing required property \"map\".");
-    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : mapValue as object instanceof ImmutableMap ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
-    if (!((mapMapValue as object instanceof ImmutableMap || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
+    const mapMapValue = mapValue === undefined || mapValue === null ? new ImmutableMap() : ImmutableMap.isInstance(mapValue) ? mapValue : new ImmutableMap(mapValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(mapMapValue) || mapMapValue as object instanceof Map) && [...(mapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"map\".");
     props.map = mapMapValue as Map<string, number> | Iterable<[string, number]>;
     const imapValue = entries["2"] === undefined ? entries["imap"] : entries["2"];
     if (imapValue === undefined) throw new Error("Missing required property \"imap\".");
-    const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : imapValue as object instanceof ImmutableMap ? imapValue : new ImmutableMap(imapValue as Iterable<[unknown, unknown]>);
-    if (!((imapMapValue as object instanceof ImmutableMap || imapMapValue as object instanceof Map) && [...(imapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"imap\".");
+    const imapMapValue = imapValue === undefined || imapValue === null ? new ImmutableMap() : ImmutableMap.isInstance(imapValue) ? imapValue : new ImmutableMap(imapValue as Iterable<[unknown, unknown]>);
+    if (!((ImmutableMap.isInstance(imapMapValue) || imapMapValue as object instanceof Map) && [...(imapMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "number"))) throw new Error("Invalid value for property \"imap\".");
     props.imap = imapMapValue as Map<string, number> | Iterable<[string, number]>;
     const bigValue = entries["3"] === undefined ? entries["big"] : entries["3"];
     if (bigValue === undefined) throw new Error("Missing required property \"big\".");
@@ -950,7 +950,7 @@ export class ToJson extends Message<ToJson.Data> {
   setImap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof ToJson)({
       map: this.#map as Map<string, number> | Iterable<[string, number]>,
-      imap: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
+      imap: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
       big: this.#big,
       date: this.#date as ImmutableDate | Date,
       optional: this.#optional,
@@ -980,7 +980,7 @@ export class ToJson extends Message<ToJson.Data> {
   }
   setMap(value: Map<string, number> | Iterable<[string, number]>) {
     return this.$update(new (this.constructor as typeof ToJson)({
-      map: (value === undefined || value === null ? new ImmutableMap() : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
+      map: (value === undefined || value === null ? new ImmutableMap() : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, number> | Iterable<[string, number]>,
       imap: this.#imap as Map<string, number> | Iterable<[string, number]>,
       big: this.#big,
       date: this.#date as ImmutableDate | Date,

@@ -133,7 +133,7 @@ export function generateClient(
    * @param request - ${reqType} instance or data to construct one
    */
   async ${methodName}(request: ${reqType}.Value): Promise<${endpoint.responseType}> {
-    const message = request instanceof ${reqType} ? request : new ${reqType}(request);
+    const message = ${reqType}.isInstance(request) ? request : new ${reqType}(request);
     return this.client.request(message, ${endpoint.responseType});
   }`);
   }

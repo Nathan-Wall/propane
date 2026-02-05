@@ -35,7 +35,7 @@ export class Response<T extends {
     super(TYPE_TAG_Response, `Response<${tClass.$typeName}>`);
     this.#tClass = tClass;
     this.#body = (props ? props.body : new this.#tClass(undefined)) as T;
-    this.#headers = props ? (props.headers === undefined || props.headers === null ? props.headers : props.headers as object instanceof ImmutableMap ? props.headers : new ImmutableMap(props.headers as Iterable<[unknown, unknown]>)) as ImmutableMap<string, string> : undefined;
+    this.#headers = props ? (props.headers === undefined || props.headers === null ? props.headers : ImmutableMap.isInstance(props.headers) ? props.headers : new ImmutableMap(props.headers as Iterable<[unknown, unknown]>)) as ImmutableMap<string, string> : undefined;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Response.Data<T>>[] {
     return [{
@@ -58,8 +58,8 @@ export class Response<T extends {
     props.body = bodyValue as T;
     const headersValue = entries["2"] === undefined ? entries["headers"] : entries["2"];
     const headersNormalized = headersValue === null ? undefined : headersValue;
-    const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : headersNormalized as object instanceof ImmutableMap ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
-    if (headersMapValue !== undefined && !((headersMapValue as object instanceof ImmutableMap || headersMapValue as object instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
+    const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : ImmutableMap.isInstance(headersNormalized) ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
+    if (headersMapValue !== undefined && !((ImmutableMap.isInstance(headersMapValue) || headersMapValue as object instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
     props.headers = headersMapValue as Map<string, string> | Iterable<[string, string]>;
     return props as Response.Data<T>;
   }
@@ -94,7 +94,7 @@ export class Response<T extends {
     isInstance: (value: unknown) => value is Response<T>;
   } {
     const boundCtor = function (props: Response.Value<T>) {
-      const body = props.body instanceof tClass ? props.body : new tClass(props.body as any);
+      const body = tClass.isInstance(props.body) ? props.body : new tClass(props.body as any);
       return new Response(tClass, {
         ...props,
         body
@@ -133,8 +133,8 @@ export class Response<T extends {
     const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
     const headersValue = payload["2"] === undefined ? payload["headers"] : payload["2"];
     const headersNormalized = headersValue === null ? undefined : headersValue;
-    const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : headersNormalized as object instanceof ImmutableMap ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
-    if (headersMapValue !== undefined && !((headersMapValue as object instanceof ImmutableMap || headersMapValue as object instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
+    const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : ImmutableMap.isInstance(headersNormalized) ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
+    if (headersMapValue !== undefined && !((ImmutableMap.isInstance(headersMapValue) || headersMapValue as object instanceof Map) && [...(headersMapValue as ReadonlyMap<unknown, unknown>).entries()].every(([mapKey, mapValue]) => typeof mapKey === "string" && typeof mapValue === "string"))) throw new Error("Invalid value for property \"headers\".");
     const headers = headersMapValue as Map<string, string> | Iterable<[string, string]>;
     const body = new tClass((payload["1"] ?? payload["body"]) as any, options);
     return new Response(tClass, {
@@ -250,7 +250,7 @@ export class Response<T extends {
   setHeaders(value: Map<string, string> | Iterable<[string, string]> | undefined) {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
-      headers: (value === undefined || value === null ? value : value instanceof ImmutableMap ? value : new ImmutableMap(value)) as Map<string, string> | Iterable<[string, string]>
+      headers: (value === undefined || value === null ? value : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, string> | Iterable<[string, string]>
     }) as this as this);
   }
   unsetHeaders() {
