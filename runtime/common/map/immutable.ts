@@ -263,9 +263,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       );
       (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
-    // Also call direct callbacks at the root level
-    for (const [, callback] of this.#callbacks) {
-      callback(newMap as unknown as Message<DataObject>);
+    // Only call direct callbacks when this map is a root for that listener key.
+    for (const [key, callback] of this.#callbacks) {
+      if (!this.#parentChains.has(key)) {
+        callback(newMap as unknown as Message<DataObject>);
+      }
     }
   }
 
@@ -342,13 +344,20 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   // ============================================
 
   public [WITH_CHILD](mapKey: string, child: V): ImmutableMap<K, V> {
-    // Find the original key that matches this serialized key
-    for (const [key] of this) {
-      if (this.#serializeKeyForPath(key) === mapKey) {
-        return this.set(key, child);
+    const nextEntries: [K, V][] = [];
+    let replaced = false;
+
+    // Build the replacement map directly to avoid triggering propagation twice.
+    for (const [key, value] of this) {
+      if (!replaced && this.#serializeKeyForPath(key) === mapKey) {
+        nextEntries.push([key, child]);
+        replaced = true;
+      } else {
+        nextEntries.push([key, value]);
       }
     }
-    return this;
+
+    return replaced ? new ImmutableMap(nextEntries) : this;
   }
 
   public [PROPAGATE_UPDATE](

@@ -1,2 +1,2 @@
-// Generated from examples/react-todo/src/types.pmsg
+// Generated from src/types.pmsg
 export * from './types.pmsg.base.js';

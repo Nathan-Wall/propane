@@ -455,14 +455,24 @@ export abstract class Message<T extends object> {
   ): void {
     const chain = this.#parentChains.get(key);
 
+    type ParentUpdater = {
+      [WITH_CHILD]: (childKey: string | number, child: unknown) => unknown;
+      [PROPAGATE_UPDATE]: (listenerKey: symbol, next: unknown) => void;
+    };
+
     if (chain?.parent.deref()) {
       const parent = chain.parent.deref();
-      if (Message.isMessage(parent)) {
-        // Create new parent with replacement at this position
-        const newParent = parent[WITH_CHILD](chain.key, replacement);
-        parent[PROPAGATE_UPDATE](key, newParent);
+      if (
+        parent
+        && typeof parent === 'object'
+        && WITH_CHILD in parent
+        && PROPAGATE_UPDATE in parent
+      ) {
+        // Works for both Message and immutable collections in the parent chain.
+        const parentUpdater = parent as ParentUpdater;
+        const newParent = parentUpdater[WITH_CHILD](chain.key, replacement);
+        parentUpdater[PROPAGATE_UPDATE](key, newParent);
       }
-      // Note: For collections, they handle their own propagation
     } else {
       // Reached root - invoke callback with the replacement
       const callback = this.#callbacks.get(key);

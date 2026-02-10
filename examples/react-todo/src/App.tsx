@@ -1,7 +1,7 @@
 import { usePropaneState, update } from '@propane/react';
 import { Todo, AppState } from './types.pmsg.ts';
 
-const uuid = () => crypto.randomUUID();
+const uuid = () => Math.random().toString(36).slice(2);
 
 const TodoItem = ({ todo, onToggle }: { todo: Todo; onToggle: (id: string) => void }) => {
   return (

@@ -180,9 +180,11 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
       );
       (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
-    // Also call direct callbacks at the root level
-    for (const [, callback] of this.#callbacks) {
-      callback(newSet as unknown as Message<DataObject>);
+    // Only call direct callbacks when this set is a root for that listener key.
+    for (const [key, callback] of this.#callbacks) {
+      if (!this.#parentChains.has(key)) {
+        callback(newSet as unknown as Message<DataObject>);
+      }
     }
   }
 

@@ -1,21 +1,25 @@
 /* eslint-disable @typescript-eslint/no-namespace*/
-// Generated from examples/react-todo/src/types.pmsg
-import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap } from "../../../runtime/index.js";
-import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, ImmutableArray } from "../../../runtime/index.js";
-// @message
+// Generated from src/types.pmsg
+import { Message, WITH_CHILD, GET_MESSAGE_CHILDREN, isTaggedMessageData, parseCerealString, ensure, SKIP, ValidationError, ImmutableArray } from '@propane/runtime';
+import type { MessagePropDescriptor, DataObject, ImmutableSet, ImmutableMap, SetUpdates } from "@propane/runtime";
+const TYPE_TAG_Todo = Symbol("Todo");
 export class Todo extends Message<Todo.Data> {
-  static TYPE_TAG = Symbol("Todo");
+  static $typeId = "src/types.pmsg#Todo";
+  static $typeHash = "sha256:4f04bd4da9f8a6867d93456ca1488a4dbb10df4ee940f3143c405b0c355f7218";
+  static $instanceTag = Symbol.for("propane:message:" + Todo.$typeId);
   static readonly $typeName = "Todo";
   static EMPTY: Todo;
-  #id: string;
-  #text: string;
-  #completed: boolean;
-  constructor(props?: Todo.Value) {
+  #id!: string;
+  #text!: string;
+  #completed!: boolean;
+  constructor(props?: Todo.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && Todo.EMPTY) return Todo.EMPTY;
-    super(Todo.TYPE_TAG, "Todo");
-    this.#id = props ? props.id : "";
-    this.#text = props ? props.text : "";
-    this.#completed = props ? props.completed : false;
+    super(TYPE_TAG_Todo, "Todo");
+    this.#id = (props ? props.id : "") as string;
+    this.#text = (props ? props.text : "") as string;
+    this.#completed = (props ? props.completed : false) as boolean;
     if (!props) Todo.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Todo.Data>[] {
@@ -33,21 +37,57 @@ export class Todo extends Message<Todo.Data> {
       getValue: () => this.#completed
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): Todo.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): Todo.Data {
     const props = {} as Partial<Todo.Data>;
     const idValue = entries["id"];
     if (idValue === undefined) throw new Error("Missing required property \"id\".");
     if (!(typeof idValue === "string")) throw new Error("Invalid value for property \"id\".");
-    props.id = idValue;
+    props.id = idValue as string;
     const textValue = entries["text"];
     if (textValue === undefined) throw new Error("Missing required property \"text\".");
     if (!(typeof textValue === "string")) throw new Error("Invalid value for property \"text\".");
-    props.text = textValue;
+    props.text = textValue as string;
     const completedValue = entries["completed"];
     if (completedValue === undefined) throw new Error("Missing required property \"completed\".");
     if (!(typeof completedValue === "boolean")) throw new Error("Invalid value for property \"completed\".");
-    props.completed = completedValue;
+    props.completed = completedValue as boolean;
     return props as Todo.Data;
+  }
+  static from(value: Todo.Value): Todo {
+    return Todo.isInstance(value) ? value : new Todo(value);
+  }
+  static deserialize<T extends typeof Todo>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for Todo.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected Todo.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get id(): string {
     return this.#id;
@@ -58,26 +98,35 @@ export class Todo extends Message<Todo.Data> {
   get completed(): boolean {
     return this.#completed;
   }
-  setCompleted(value: boolean): Todo {
+  set(updates: Partial<SetUpdates<Todo.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof Todo)(data) as this);
+  }
+  setCompleted(value: boolean) {
     return this.$update(new (this.constructor as typeof Todo)({
       id: this.#id,
       text: this.#text,
       completed: value
-    }));
+    }) as this);
   }
-  setId(value: string): Todo {
+  setId(value: string) {
     return this.$update(new (this.constructor as typeof Todo)({
       id: value,
       text: this.#text,
       completed: this.#completed
-    }));
+    }) as this);
   }
-  setText(value: string): Todo {
+  setText(value: string) {
     return this.$update(new (this.constructor as typeof Todo)({
       id: this.#id,
       text: value,
       completed: this.#completed
-    }));
+    }) as this);
   }
 }
 export namespace Todo {
@@ -87,57 +136,113 @@ export namespace Todo {
     completed: boolean;
   };
   export type Value = Todo | Todo.Data;
-} // @message
+}
+const TYPE_TAG_AppState = Symbol("AppState");
 export class AppState extends Message<AppState.Data> {
-  static TYPE_TAG = Symbol("AppState");
+  static $typeId = "src/types.pmsg#AppState";
+  static $typeHash = "sha256:9dca8c13a7a49a455aa16196feb5a7284b0d7c57f385612c962ff11a181288d2";
+  static $instanceTag = Symbol.for("propane:message:" + AppState.$typeId);
   static readonly $typeName = "AppState";
   static EMPTY: AppState;
-  #todos: ImmutableArray<Todo>;
-  #filter: 'all' | 'active' | 'completed';
-  constructor(props?: AppState.Value) {
+  #todos!: ImmutableArray<Todo>;
+  #filter!: 'all' | 'active' | 'completed';
+  constructor(props?: AppState.Value, options?: {
+    skipValidation?: boolean;
+  }) {
     if (!props && AppState.EMPTY) return AppState.EMPTY;
-    super(AppState.TYPE_TAG, "AppState");
-    this.#todos = props ? props.todos === undefined || props.todos === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.todos).map(v => v instanceof Todo ? v : new Todo(v))) : new ImmutableArray();
-    this.#filter = props ? props.filter : undefined;
+    super(TYPE_TAG_AppState, "AppState");
+    if (!options?.skipValidation) {
+      this.#validate(props);
+    }
+    this.#todos = props ? (props.todos === undefined || props.todos === null ? new ImmutableArray() : new ImmutableArray(Array.from(props.todos as Iterable<unknown>).map(v => Todo.isInstance(v) ? v : new Todo(v as Todo.Value)))) as ImmutableArray<Todo> : new ImmutableArray();
+    this.#filter = (props ? props.filter : "all") as 'all' | 'active' | 'completed';
     if (!props) AppState.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<AppState.Data>[] {
     return [{
       name: "todos",
       fieldNumber: null,
-      getValue: () => this.#todos
+      getValue: () => this.#todos as Todo[] | Iterable<Todo>
     }, {
       name: "filter",
       fieldNumber: null,
-      getValue: () => this.#filter
+      getValue: () => this.#filter as 'all' | 'active' | 'completed',
+      unionHasString: true
     }];
   }
-  protected $fromEntries(entries: Record<string, unknown>): AppState.Data {
+  /** @internal - Do not use directly. Subject to change without notice. */
+  $fromEntries(entries: Record<string, unknown>, options?: {
+    skipValidation: boolean;
+  }): AppState.Data {
     const props = {} as Partial<AppState.Data>;
     const todosValue = entries["todos"];
     if (todosValue === undefined) throw new Error("Missing required property \"todos\".");
-    const todosArrayValue = todosValue === undefined || todosValue === null ? new ImmutableArray() : ImmutableArray.isInstance(todosValue) ? todosValue : new ImmutableArray(todosValue);
-    if (!(ImmutableArray.isInstance(todosArrayValue) || Array.isArray(todosArrayValue))) throw new Error("Invalid value for property \"todos\".");
-    props.todos = todosArrayValue as ImmutableArray<Todo>;
+    const todosArrayValue = todosValue === undefined || todosValue === null ? new ImmutableArray() : ImmutableArray.isInstance(todosValue) ? todosValue : new ImmutableArray(todosValue as Iterable<unknown>);
+    const todosArrayValueConverted = todosArrayValue === undefined || todosArrayValue === null ? todosArrayValue : (todosArrayValue as ImmutableArray<unknown> | unknown[]).map(element => typeof element === "string" && Todo.$compact === true ? Todo.fromCompact(Todo.$compactTag && element.startsWith(Todo.$compactTag) ? element.slice(Todo.$compactTag.length) : element, options) as any : element);
+    if (!(ImmutableArray.isInstance(todosArrayValueConverted) || Array.isArray(todosArrayValueConverted))) throw new Error("Invalid value for property \"todos\".");
+    props.todos = todosArrayValueConverted as Todo[] | Iterable<Todo>;
     const filterValue = entries["filter"];
     if (filterValue === undefined) throw new Error("Missing required property \"filter\".");
     if (!(filterValue === "all" || filterValue === "active" || filterValue === "completed")) throw new Error("Invalid value for property \"filter\".");
-    props.filter = filterValue;
+    props.filter = filterValue as 'all' | 'active' | 'completed';
     return props as AppState.Data;
   }
-  override [WITH_CHILD](key: string | number, child: unknown): AppState {
+  static from(value: AppState.Value): AppState {
+    return AppState.isInstance(value) ? value : new AppState(value);
+  }
+  #validate(data: AppState.Value | undefined) {
+    if (data === undefined) return;
+  }
+  static validateAll(data: AppState.Data): ValidationError[] {
+    const errors = [] as ValidationError[];
+    try {} catch (e) {
+      if (e instanceof ValidationError) errors.push(e);else throw e;
+    }
+    return errors;
+  }
+  override [WITH_CHILD](key: string | number, child: unknown): this {
     switch (key) {
       case "todos":
         return new (this.constructor as typeof AppState)({
-          todos: child as ImmutableArray<Todo>,
-          filter: this.#filter
-        });
+          todos: child as Todo[] | Iterable<Todo>,
+          filter: this.#filter as 'all' | 'active' | 'completed'
+        }) as this;
       default:
         throw new Error(`Unknown key: ${key}`);
     }
   }
   override *[GET_MESSAGE_CHILDREN]() {
-    yield ["todos", this.#todos] as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+    yield ["todos", this.#todos] as unknown as [string, Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>];
+  }
+  static deserialize<T extends typeof AppState>(this: T, data: string, options?: {
+    skipValidation: boolean;
+  }): InstanceType<T> {
+    const parsed = parseCerealString(data);
+    if (typeof parsed === "string") {
+      if (this.$compact === true) {
+        return this.fromCompact(this.$compactTag && parsed.startsWith(this.$compactTag) ? parsed.slice(this.$compactTag.length) : parsed, options) as InstanceType<T>;
+      } else {
+        throw new Error("Invalid compact message payload.");
+      }
+    }
+    if (isTaggedMessageData(parsed)) {
+      if (parsed.$tag === this.$typeName) {
+        if (typeof parsed.$data === "string") {
+          if (this.$compact === true) {
+            return this.fromCompact(this.$compactTag && parsed.$data.startsWith(this.$compactTag) ? parsed.$data.slice(this.$compactTag.length) : parsed.$data, options) as InstanceType<T>;
+          } else {
+            throw new Error("Invalid compact tagged value for AppState.");
+          }
+        } else {
+          return new this(this.prototype.$fromEntries(parsed.$data, options), options) as InstanceType<T>;
+        }
+      } else {
+        throw new Error("Tagged message type mismatch: expected AppState.");
+      }
+    }
+    const payload = ensure.simpleObject(parsed) as DataObject;
+    const props = this.prototype.$fromEntries(payload, options);
+    return new this(props, options) as InstanceType<T>;
   }
   get todos(): ImmutableArray<Todo> {
     return this.#todos;
@@ -145,100 +250,109 @@ export class AppState extends Message<AppState.Data> {
   get filter(): 'all' | 'active' | 'completed' {
     return this.#filter;
   }
-  copyWithinTodos(target: number, start: number, end?: number): AppState {
+  copyWithinTodos(target: number, start: number, end?: number) {
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
     todosNext.copyWithin(target, start, end);
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  fillTodos(value: Todo, start?: number, end?: number): AppState {
+  fillTodo(value: Todo, start?: number, end?: number) {
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
-    todosNext.fill(value, start, end);
+    (todosNext as unknown as Todo[]).fill(value, start, end);
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  popTodos(): AppState {
+  popTodo() {
     if ((this.todos ?? []).length === 0) return this;
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
     todosNext.pop();
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  pushTodos(...values): AppState {
+  pushTodo(...values: Todo[]) {
     if (values.length === 0) return this;
     const todosArray = this.#todos;
     const todosNext = [...todosArray, ...values];
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  reverseTodos(): AppState {
+  reverseTodos() {
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
     todosNext.reverse();
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  setFilter(value: 'all' | 'active' | 'completed'): AppState {
+  set(updates: Partial<SetUpdates<AppState.Data>>) {
+    const data = this.toData();
+    for (const [key, value] of Object.entries(updates)) {
+      if (value !== SKIP) {
+        (data as Record<string, unknown>)[key] = value;
+      }
+    }
+    return this.$update(new (this.constructor as typeof AppState)(data) as this);
+  }
+  setFilter(value: 'all' | 'active' | 'completed') {
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: this.#todos,
-      filter: value
-    }));
+      todos: this.#todos as Todo[] | Iterable<Todo>,
+      filter: value as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  setTodos(value: Todo[] | Iterable<Todo>): AppState {
+  setTodos(value: Todo[] | Iterable<Todo>) {
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: value,
-      filter: this.#filter
-    }));
+      todos: value as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  shiftTodos(): AppState {
+  shiftTodo() {
     if ((this.todos ?? []).length === 0) return this;
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
     todosNext.shift();
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  sortTodos(compareFn?: (a: Todo, b: Todo) => number): AppState {
+  sortTodos(compareFn?: (a: Todo, b: Todo) => number) {
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
-    todosNext.sort(compareFn);
+    (todosNext as unknown as Todo[]).sort(compareFn);
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  spliceTodos(start: number, deleteCount?: number, ...items): AppState {
+  spliceTodo(start: number, deleteCount?: number, ...items: Todo[]) {
     const todosArray = this.#todos;
     const todosNext = [...todosArray];
     todosNext.splice(start, ...(deleteCount !== undefined ? [deleteCount] : []), ...items);
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
-  unshiftTodos(...values): AppState {
+  unshiftTodo(...values: Todo[]) {
     if (values.length === 0) return this;
     const todosArray = this.#todos;
     const todosNext = [...values, ...todosArray];
     return this.$update(new (this.constructor as typeof AppState)({
-      todos: todosNext,
-      filter: this.#filter
-    }));
+      todos: todosNext as Todo[] | Iterable<Todo>,
+      filter: this.#filter as 'all' | 'active' | 'completed'
+    }) as this);
   }
 }
 export namespace AppState {

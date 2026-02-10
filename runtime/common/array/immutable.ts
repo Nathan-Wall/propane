@@ -167,9 +167,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       );
       (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
     }
-    // Also call direct callbacks at the root level
-    for (const [, callback] of this.#callbacks) {
-      callback(newArray as unknown as Message<DataObject>);
+    // Only call direct callbacks when this array is a root for that listener key.
+    for (const [key, callback] of this.#callbacks) {
+      if (!this.#parentChains.has(key)) {
+        callback(newArray as unknown as Message<DataObject>);
+      }
     }
   }
 
