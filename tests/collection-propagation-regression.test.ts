@@ -9,6 +9,8 @@ import {
   GET_MESSAGE_CHILDREN,
   WITH_CHILD,
   REACT_LISTENER_KEY,
+  REGISTER_PATH,
+  EQUALS_FROM_ROOT,
 } from '../runtime/symbols.js';
 import type { ImmutableArray as ImmutableArrayType } from '../runtime/common/array/immutable.js';
 import type { ImmutableMap as ImmutableMapType } from '../runtime/common/map/immutable.js';
@@ -499,5 +501,118 @@ test('set child message update bubbles to root once', () => {
   assert(
     [...(next as SetRoot).items].some((item) => item.value === 'after'),
     'Nested set value update should be applied'
+  );
+});
+
+test('array listener setup should support nested collection children', () => {
+  const state = new ImmutableArray([
+    new ImmutableMap([['one', 1]]),
+  ]);
+
+  let thrown: unknown;
+  try {
+    (state as unknown as {
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+  } catch (error) {
+    thrown = error;
+  }
+
+  assert(
+    thrown === undefined,
+    `Nested collection listener setup should not throw for array children. Received: ${String(thrown)}`
+  );
+});
+
+test('map listener setup should support nested collection children', () => {
+  const state = new ImmutableMap([
+    ['items', new ImmutableArray([1, 2])],
+  ]);
+
+  let thrown: unknown;
+  try {
+    (state as unknown as {
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+  } catch (error) {
+    thrown = error;
+  }
+
+  assert(
+    thrown === undefined,
+    `Nested collection listener setup should not throw for map children. Received: ${String(thrown)}`
+  );
+});
+
+test('set listener setup should support nested collection children', () => {
+  const state = new ImmutableSet([
+    new ImmutableArray([1, 2]),
+  ]);
+
+  let thrown: unknown;
+  try {
+    (state as unknown as {
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+  } catch (error) {
+    thrown = error;
+  }
+
+  assert(
+    thrown === undefined,
+    `Nested collection listener setup should not throw for set children. Received: ${String(thrown)}`
+  );
+});
+
+test('path-aware equality should distinguish map children with colliding hashed key paths', () => {
+  const key1 = {
+    id: 1,
+    equals(other: unknown) {
+      return Boolean(
+        other
+        && typeof other === 'object'
+        && 'id' in other
+        && (other as { id?: unknown }).id === this.id
+      );
+    },
+    hashCode() {
+      return 123;
+    },
+  };
+
+  const key2 = {
+    id: 2,
+    equals(other: unknown) {
+      return Boolean(
+        other
+        && typeof other === 'object'
+        && 'id' in other
+        && (other as { id?: unknown }).id === this.id
+      );
+    },
+    hashCode() {
+      return 123;
+    },
+  };
+
+  const state = new CollisionMapRoot({
+    items: [
+      [key1, new CollectionRegressionItem({ value: 'same' })],
+      [key2, new CollectionRegressionItem({ value: 'same' })],
+    ],
+    revision: 23,
+  });
+
+  const root = state as unknown as Message<DataObject>;
+  state[REGISTER_PATH](root, 'root');
+
+  const first = state.items.get(key1);
+  const second = state.items.get(key2);
+  assert(first !== undefined, 'Expected first map child');
+  assert(second !== undefined, 'Expected second map child');
+  assert(first.equals(second), 'Children must be content-equal for path-aware check');
+  assert(
+    !first[EQUALS_FROM_ROOT](root, second as unknown as Message<DataObject>),
+    'Path-aware equality should return false for distinct map keys even when hashes collide'
   );
 });

@@ -14,10 +14,15 @@ const IMMUTABLE_MAP_TAG = Symbol.for('propane:ImmutableMap');
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
+type ParentType = {
+  [WITH_CHILD](key: unknown, child: unknown): unknown;
+  [PROPAGATE_UPDATE](key: symbol, replacement: unknown): void;
+};
+
 // Type for parent chain entry
 interface ParentChainEntry {
-  parent: WeakRef<Message<DataObject> | ImmutableMap<unknown, unknown>>;
-  key: string | number;
+  parent: WeakRef<ParentType>;
+  key: unknown;
 }
 
 function isMessageLike(value: unknown): value is {
@@ -29,6 +34,28 @@ function isMessageLike(value: unknown): value is {
     value
     && typeof value === 'object'
     && typeof (value as { equals?: unknown }).equals === 'function'
+  );
+}
+
+function isListenable(value: unknown): value is {
+  [SET_UPDATE_LISTENER]: (...args: unknown[]) => void;
+} {
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && SET_UPDATE_LISTENER in value
+    && typeof (value as { [SET_UPDATE_LISTENER]?: unknown })[SET_UPDATE_LISTENER] === 'function'
+  );
+}
+
+function hasParentChainSetter(value: unknown): value is {
+  $setParentChain: (key: symbol, parent: ParentType, parentKey: unknown) => void;
+} {
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && '$setParentChain' in value
+    && typeof (value as { $setParentChain?: unknown }).$setParentChain === 'function'
   );
 }
 
@@ -249,19 +276,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    * Propagate updates through parent chains.
    */
   private $propagateUpdates(newMap: ImmutableMap<K, V>): void {
-    type WithChildFn = {
-      [WITH_CHILD]: (key: unknown, child: unknown) => unknown;
-    };
-    type PropagateFn = {
-      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
-    };
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as WithChildFn)[WITH_CHILD](
-        entry.key, newMap
-      );
-      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
+      const newParent = parent[WITH_CHILD](entry.key, newMap);
+      parent[PROPAGATE_UPDATE](key, newParent);
     }
     // Only call direct callbacks when this map is a root for that listener key.
     for (const [key, callback] of this.#callbacks) {
@@ -285,8 +304,16 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
 
   public [REGISTER_PATH](root: Message<DataObject>, path: string): void {
     this.#fromRoot.set(root, path);
+    const usedSegments = new Set<string>();
     for (const [key, value] of this) {
-      const keyStr = this.#serializeKeyForPath(key);
+      const baseSegment = this.#serializeKeyForPath(key);
+      let keyStr = baseSegment;
+      let suffix = 1;
+      while (usedSegments.has(keyStr)) {
+        keyStr = `${baseSegment}#${suffix}`;
+        suffix += 1;
+      }
+      usedSegments.add(keyStr);
       if (isMessageLike(value) && REGISTER_PATH in value) {
         (value as { [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void })[REGISTER_PATH](root, `${path}[${keyStr}]`);
       }
@@ -310,8 +337,8 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   public [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback,
-    parent?: Message<DataObject>,
-    parentKey?: string | number
+    parent?: ParentType,
+    parentKey?: unknown
   ): void {
     this.#callbacks.set(key, callback);
     if (parent !== undefined && parentKey !== undefined) {
@@ -322,18 +349,23 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     }
 
     for (const [mapKey, value] of this) {
-      if (isMessageLike(value) && SET_UPDATE_LISTENER in value) {
-        type ListenableFn = {
-          $setParentChain: (
-            key: symbol, parent: unknown, parentKey: unknown
-          ) => void;
+      if (!isListenable(value)) {
+        continue;
+      }
+      if (hasParentChainSetter(value)) {
+        value.$setParentChain(key, this, mapKey);
+        value[SET_UPDATE_LISTENER](key, callback);
+      } else {
+        type CollectionListener = {
           [SET_UPDATE_LISTENER]: (
-            key: symbol, callback: UpdateListenerCallback
+            key: symbol,
+            callback: UpdateListenerCallback,
+            parent: ParentType,
+            parentKey: unknown
           ) => void;
         };
-        const msgValue = value as unknown as ListenableFn;
-        msgValue.$setParentChain(key, this, mapKey);
-        msgValue[SET_UPDATE_LISTENER](key, callback);
+        const collection = value as unknown as CollectionListener;
+        collection[SET_UPDATE_LISTENER](key, callback, this, mapKey);
       }
     }
   }
@@ -364,19 +396,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     replacement: ImmutableMap<K, V>
   ): void {
     const chain = this.#parentChains.get(key);
-
-    type WithChildFn = {
-      [WITH_CHILD]: (key: unknown, child: unknown) => unknown;
-    };
-    type PropagateFn = {
-      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
-    };
     if (chain?.parent.deref()) {
       const parent = chain.parent.deref();
-      const newParent = (parent as WithChildFn)[WITH_CHILD](
-        chain.key, replacement
-      );
-      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
+      if (!parent) return;
+      const newParent = parent[WITH_CHILD](chain.key, replacement);
+      parent[PROPAGATE_UPDATE](key, newParent);
     } else {
       const callback = this.#callbacks.get(key);
       if (callback) {

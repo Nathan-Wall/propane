@@ -82,10 +82,37 @@ function hashValue(value: unknown): string {
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 
+type ParentType = {
+  [WITH_CHILD](key: unknown, child: unknown): unknown;
+  [PROPAGATE_UPDATE](key: symbol, replacement: unknown): void;
+};
+
 // Type for parent chain entry
 interface ParentChainEntry {
-  parent: WeakRef<Message<DataObject> | ImmutableArray<unknown>>;
-  key: string | number;
+  parent: WeakRef<ParentType>;
+  key: unknown;
+}
+
+function isListenable(value: unknown): value is {
+  [SET_UPDATE_LISTENER]: (...args: unknown[]) => void;
+} {
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && SET_UPDATE_LISTENER in value
+    && typeof (value as { [SET_UPDATE_LISTENER]?: unknown })[SET_UPDATE_LISTENER] === 'function'
+  );
+}
+
+function hasParentChainSetter(value: unknown): value is {
+  $setParentChain: (key: symbol, parent: ParentType, parentKey: unknown) => void;
+} {
+  return Boolean(
+    value
+    && typeof value === 'object'
+    && '$setParentChain' in value
+    && typeof (value as { $setParentChain?: unknown }).$setParentChain === 'function'
+  );
 }
 
 export class ImmutableArray<T> implements ReadonlyArray<T> {
@@ -153,19 +180,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Propagate updates through parent chains.
    */
   private $propagateUpdates(newArray: ImmutableArray<T>): void {
-    type WithChildFn = {
-      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
-    };
-    type PropagateFn = {
-      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
-    };
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
       if (!parent) continue;
-      const newParent = (parent as WithChildFn)[WITH_CHILD](
-        entry.key, newArray
-      );
-      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
+      const newParent = parent[WITH_CHILD](entry.key, newArray);
+      parent[PROPAGATE_UPDATE](key, newParent);
     }
     // Only call direct callbacks when this array is a root for that listener key.
     for (const [key, callback] of this.#callbacks) {
@@ -220,8 +239,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   public [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback,
-    parent?: Message<DataObject>,
-    parentKey?: string | number
+    parent?: ParentType,
+    parentKey?: unknown
   ): void {
     // Store the callback
     this.#callbacks.set(key, callback);
@@ -237,20 +256,23 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     // Propagate to children
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
-      if (isMessageLike(item) && SET_UPDATE_LISTENER in item) {
-        // For Message children, set up parent chain to point to array
-        type ListenableFn = {
-          $setParentChain: (
-            key: symbol, parent: unknown, parentKey: string | number
-          ) => void;
+      if (!isListenable(item)) {
+        continue;
+      }
+      if (hasParentChainSetter(item)) {
+        item.$setParentChain(key, this, i);
+        item[SET_UPDATE_LISTENER](key, callback);
+      } else {
+        type CollectionListener = {
           [SET_UPDATE_LISTENER]: (
-            key: symbol, callback: UpdateListenerCallback
+            key: symbol,
+            callback: UpdateListenerCallback,
+            parent: ParentType,
+            parentKey: unknown
           ) => void;
         };
-        const msgItem = item as unknown as ListenableFn;
-        msgItem.$setParentChain(key, this, i);
-        // Recursively set up listener
-        msgItem[SET_UPDATE_LISTENER](key, callback);
+        const collection = item as unknown as CollectionListener;
+        collection[SET_UPDATE_LISTENER](key, callback, this, i);
       }
     }
   }
@@ -276,21 +298,13 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     replacement: ImmutableArray<T>
   ): void {
     const chain = this.#parentChains.get(key);
-
-    type WithChildFn = {
-      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
-    };
-    type PropagateFn = {
-      [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
-    };
     if (chain?.parent.deref()) {
       const parent = chain.parent.deref();
+      if (!parent) return;
       // Create new parent with replacement at this position
-      const newParent = (parent as WithChildFn)[WITH_CHILD](
-        chain.key, replacement
-      );
+      const newParent = parent[WITH_CHILD](chain.key, replacement);
       // Continue propagation
-      (parent as PropagateFn)[PROPAGATE_UPDATE](key, newParent);
+      parent[PROPAGATE_UPDATE](key, newParent);
     } else {
       // Reached root - invoke callback
       const callback = this.#callbacks.get(key);
