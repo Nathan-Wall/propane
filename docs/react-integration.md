@@ -62,6 +62,26 @@ await update(async () => {
 });
 ```
 
+## Listener Lifecycle Guarantees
+
+`usePropaneState` and `usePropaneSelector` manage listener ownership with
+runtime "handoff and retire" semantics:
+
+- Each hook instance uses its own listener key.
+- On every state replacement, listener ownership is handed off to the new root
+before callbacks run.
+- Listener ownership is retired from the previous root after a successful
+handoff.
+- Updates from removed historical branches are ignored.
+- When a hook unmounts, its listener key is retired from the latest subscribed
+root.
+
+Practical result:
+
+- Stale references to nodes that are still present continue to work.
+- Stale references to removed nodes cannot resurrect removed data into live
+state.
+
 ## Deep Updates
 
 Changes to nested objects automatically propagate through the state tree.

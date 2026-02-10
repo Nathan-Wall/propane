@@ -447,6 +447,131 @@ test('retire update listener key stops callbacks on latest root after handoff', 
   assert(callbackCount === 1, `Expected callbacks to stop after retiring key, got ${callbackCount}`);
 });
 
+test('stale ref for still-present child continues to update latest root', () => {
+  const state = new ArrayRoot({
+    items: [
+      new CollectionRegressionItem({ value: 'one' }),
+      new CollectionRegressionItem({ value: 'two' }),
+    ],
+    revision: 36,
+  });
+  const key = Symbol('still-present-stale-ref');
+  let callbackCount = 0;
+  let currentState = state;
+
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, (next) => {
+    callbackCount += 1;
+    currentState = next as ArrayRoot;
+  });
+
+  const staleFirstRef = state.items.get(0)!;
+
+  currentState.items.get(1)!.setValue('two-updated');
+  assert(currentState.items.get(1)?.value === 'two-updated', 'Second item should update first');
+
+  staleFirstRef.setValue('one-updated');
+  assert(currentState.items.get(0)?.value === 'one-updated', 'Still-present stale ref should update latest root');
+  assert(currentState.items.get(1)?.value === 'two-updated', 'Unrelated sibling updates should be preserved');
+  assert(Number(callbackCount) === 2, `Expected 2 callbacks, got ${callbackCount}`);
+});
+
+test('key-specific handoff and retirement do not affect other active listener keys', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 39,
+  });
+  const keyA = Symbol('key-a');
+  const keyB = Symbol('key-b');
+
+  let callbacksA = 0;
+  let callbacksB = 0;
+
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](keyA, () => {
+    callbacksA += 1;
+  });
+
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](keyB, () => {
+    callbacksB += 1;
+  });
+
+  const replacementForA = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'replacement-a' })],
+    revision: 40,
+  });
+
+  (state as unknown as {
+    [PROPAGATE_UPDATE]: (listenerKey: symbol, replacement: Message<any>) => void;
+  })[PROPAGATE_UPDATE](keyA, replacementForA as unknown as Message<any>);
+
+  assert(Number(callbacksA) === 1, `Expected key A handoff to dispatch once, got ${callbacksA}`);
+  assert(Number(callbacksB) === 0, `Key B should remain untouched by key A handoff, got ${callbacksB}`);
+
+  state.items.get(0)!.setValue('after-a-handoff');
+  assert(Number(callbacksA) === 1, `Expected key A to stay retired on old root, got ${callbacksA}`);
+  assert(Number(callbacksB) === 1, `Expected key B to remain active on old root, got ${callbacksB}`);
+});
+
+test('shared initial node with distinct keys remains isolated across roots', () => {
+  const sharedItem = new CollectionRegressionItem({ value: 'one' });
+  const rootA = new ArrayRoot({
+    items: [sharedItem],
+    revision: 44,
+  });
+  const rootB = new ArrayRoot({
+    items: [sharedItem],
+    revision: 45,
+  });
+
+  const keyA = Symbol('root-a');
+  const keyB = Symbol('root-b');
+
+  let callbacksA = 0;
+  let callbacksB = 0;
+  let currentA = rootA;
+  let currentB = rootB;
+
+  (rootA as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](keyA, (next) => {
+    callbacksA += 1;
+    currentA = next as ArrayRoot;
+  });
+
+  (rootB as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](keyB, (next) => {
+    callbacksB += 1;
+    currentB = next as ArrayRoot;
+  });
+
+  sharedItem.setValue('two');
+  assert(Number(callbacksA) === 1, `Expected root A to receive first shared-node update, got ${callbacksA}`);
+  assert(Number(callbacksB) === 1, `Expected root B to receive first shared-node update, got ${callbacksB}`);
+
+  // Replace root B's child through B's root chain only. This breaks shared-node identity.
+  currentB.items.set(0, new CollectionRegressionItem({ value: 'two-b-only' }));
+  assert(Number(callbacksA) === 1, `Root A should not receive root B root-only replacement, got ${callbacksA}`);
+  assert(Number(callbacksB) === 2, `Root B should receive root-only replacement, got ${callbacksB}`);
+
+  currentB.items.get(0)!.setValue('three-b-only');
+  assert(Number(callbacksA) === 1, `Root A should not receive root B isolated child updates, got ${callbacksA}`);
+  assert(Number(callbacksB) === 3, `Root B should continue receiving isolated keyed updates, got ${callbacksB}`);
+
+  (currentA as unknown as {
+    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+  })[RETIRE_UPDATE_LISTENER](keyA);
+
+  currentB.items.get(0)!.setValue('four-b-only');
+  assert(Number(callbacksA) === 1, `Retired root A key should remain silent, got ${callbacksA}`);
+  assert(Number(callbacksB) === 4, `Retiring root A key must not silence root B key, got ${callbacksB}`);
+});
+
 test('root handoff binds replacement before callback dispatch', () => {
   const state = new ArrayRoot({
     items: [new CollectionRegressionItem({ value: 'one' })],
