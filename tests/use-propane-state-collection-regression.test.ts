@@ -426,3 +426,189 @@ test('usePropaneSelector unmount retires listener while mounted selectors remain
     cleanup();
   }
 });
+
+let latestMultiRootLeftState: TodoState | null = null;
+let latestMultiRootRightState: TodoState | null = null;
+let runMultiRootTransaction: (() => void) | null = null;
+
+function resetMultiRootHarnessState() {
+  latestMultiRootLeftState = null;
+  latestMultiRootRightState = null;
+  runMultiRootTransaction = null;
+}
+
+function MultiRootTransactionApp() {
+  const [left] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Left', completed: false })],
+      filter: 'all',
+    })
+  );
+  const [right] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Right', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestMultiRootLeftState = left;
+  latestMultiRootRightState = right;
+
+  runMultiRootTransaction = () => {
+    update(() => {
+      left.todos.push(new TodoItem({ text: 'Left+1', completed: false }));
+      right.todos.push(new TodoItem({ text: 'Right+1', completed: false }));
+    });
+  };
+
+  return React.createElement(
+    'div',
+    null,
+    React.createElement('span', { 'data-testid': 'multi-root-left-count' }, String(left.todos.length)),
+    React.createElement('span', { 'data-testid': 'multi-root-right-count' }, String(right.todos.length))
+  );
+}
+
+test('update applies pending state updates for every root in a multi-root transaction', () => {
+  resetMultiRootHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(MultiRootTransactionApp));
+
+  try {
+    assert(runMultiRootTransaction !== null, 'Expected multi-root transaction handler');
+    assert(latestMultiRootLeftState instanceof TodoState, 'Expected left state to initialize');
+    assert(latestMultiRootRightState instanceof TodoState, 'Expected right state to initialize');
+
+    assert(getByTestId('multi-root-left-count').textContent === '1', 'Left count should start at 1');
+    assert(getByTestId('multi-root-right-count').textContent === '1', 'Right count should start at 1');
+
+    act(() => {
+      runMultiRootTransaction!();
+    });
+
+    assert(latestMultiRootLeftState instanceof TodoState, 'Expected left state after transaction');
+    assert(latestMultiRootRightState instanceof TodoState, 'Expected right state after transaction');
+    assert(latestMultiRootLeftState.todos.length === 2, 'Left root should apply the transaction update');
+    assert(latestMultiRootRightState.todos.length === 2, 'Right root should apply the transaction update');
+    assert(getByTestId('multi-root-left-count').textContent === '2', 'Rendered left count should update');
+    assert(getByTestId('multi-root-right-count').textContent === '2', 'Rendered right count should update');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+let latestSyncFailureState: TodoState | null = null;
+let runSyncFailureTransaction: (() => void) | null = null;
+
+function resetSyncFailureHarnessState() {
+  latestSyncFailureState = null;
+  runSyncFailureTransaction = null;
+}
+
+function SyncFailureRollbackApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestSyncFailureState = state;
+  runSyncFailureTransaction = () => {
+    try {
+      update(() => {
+        state.todos.push(new TodoItem({ text: 'Should-Rollback-Sync', completed: false }));
+        throw new Error('sync transaction failure');
+      });
+    } catch {
+      // Expected in regression harness.
+    }
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'sync-failure-count' },
+    String(state.todos.length)
+  );
+}
+
+test('update rolls back pending state updates on sync failure', () => {
+  resetSyncFailureHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(SyncFailureRollbackApp));
+
+  try {
+    assert(runSyncFailureTransaction !== null, 'Expected sync failure transaction handler');
+    assert(latestSyncFailureState instanceof TodoState, 'Expected sync failure state to initialize');
+    assert(latestSyncFailureState.todos.length === 1, 'Initial sync failure state should have one todo');
+    assert(getByTestId('sync-failure-count').textContent === '1', 'Rendered count should start at 1');
+
+    act(() => {
+      runSyncFailureTransaction!();
+    });
+
+    assert(latestSyncFailureState instanceof TodoState, 'Expected sync failure state after transaction');
+    assert(latestSyncFailureState.todos.length === 1, 'Sync failure should not commit pending updates');
+    assert(getByTestId('sync-failure-count').textContent === '1', 'Rendered count should remain unchanged after sync failure');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+let latestAsyncFailureState: TodoState | null = null;
+let runAsyncFailureTransaction: (() => Promise<void>) | null = null;
+
+function resetAsyncFailureHarnessState() {
+  latestAsyncFailureState = null;
+  runAsyncFailureTransaction = null;
+}
+
+function AsyncFailureRollbackApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestAsyncFailureState = state;
+  runAsyncFailureTransaction = async () => {
+    try {
+      await update(async () => {
+        state.todos.push(new TodoItem({ text: 'Should-Rollback-Async', completed: false }));
+        throw new Error('async transaction failure');
+      });
+    } catch {
+      // Expected in regression harness.
+    }
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'async-failure-count' },
+    String(state.todos.length)
+  );
+}
+
+test('update rolls back pending state updates on async failure', async () => {
+  resetAsyncFailureHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(AsyncFailureRollbackApp));
+
+  try {
+    assert(runAsyncFailureTransaction !== null, 'Expected async failure transaction handler');
+    assert(latestAsyncFailureState instanceof TodoState, 'Expected async failure state to initialize');
+    assert(latestAsyncFailureState.todos.length === 1, 'Initial async failure state should have one todo');
+    assert(getByTestId('async-failure-count').textContent === '1', 'Rendered count should start at 1');
+
+    await act(async () => {
+      await runAsyncFailureTransaction!();
+    });
+
+    assert(latestAsyncFailureState instanceof TodoState, 'Expected async failure state after transaction');
+    assert(latestAsyncFailureState.todos.length === 1, 'Async failure should not commit pending updates');
+    assert(getByTestId('async-failure-count').textContent === '1', 'Rendered count should remain unchanged after async failure');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});

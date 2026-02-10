@@ -20,28 +20,49 @@ import {
 
 // Tracks whether we're inside an update() callback
 let updateDepth = 0;
-let pendingStateUpdate: (() => void) | null = null;
+const pendingStateUpdates = new Map<symbol, () => void>();
 
 function beginUpdate(): void {
   updateDepth++;
   if (updateDepth === 1) {
-    pendingStateUpdate = null;
+    pendingStateUpdates.clear();
   }
+}
+
+function flushPendingStateUpdates(): void {
+  if (pendingStateUpdates.size === 0) {
+    return;
+  }
+
+  const updates = [...pendingStateUpdates.values()];
+  pendingStateUpdates.clear();
+  for (const applyStateUpdate of updates) {
+    applyStateUpdate();
+  }
+}
+
+function clearPendingStateUpdates(): void {
+  pendingStateUpdates.clear();
 }
 
 function endUpdate(): void {
   updateDepth--;
-  if (updateDepth === 0 && pendingStateUpdate) {
-    const stateUpdate = pendingStateUpdate;
-    pendingStateUpdate = null;
-    stateUpdate();
+  if (updateDepth === 0) {
+    flushPendingStateUpdates();
   }
 }
 
-function scheduleStateUpdate(updateFn: () => void): void {
+function abortUpdate(): void {
+  updateDepth--;
+  if (updateDepth === 0) {
+    clearPendingStateUpdates();
+  }
+}
+
+function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
   if (updateDepth > 0) {
-    // Inside update(): record the state change (last one wins)
-    pendingStateUpdate = updateFn;
+    // Inside update(): record the state change (last one wins per root key)
+    pendingStateUpdates.set(listenerKey, updateFn);
   }
   // Outside update(): ignore - React state only changes within update()
 }
@@ -53,8 +74,8 @@ function scheduleStateUpdate(updateFn: () => void): void {
  * update() callback. Setters called outside update() still return new
  * Propane instances but won't update React state.
  *
- * When multiple setters are called, only the final state is applied to React
- * (avoiding unnecessary intermediate renders).
+ * When multiple setters are called, only the final state per subscribed root
+ * is applied to React (avoiding unnecessary intermediate renders).
  *
  * Supports both sync and async callbacks.
  *
@@ -79,31 +100,27 @@ function scheduleStateUpdate(updateFn: () => void): void {
 export function update<T>(callback: () => T): T {
   beginUpdate();
 
-  let isAsync = false;
-
   try {
     const result = callback();
 
     if (result instanceof Promise) {
-      isAsync = true;
       return result.then(
         (value: Awaited<T>) => {
           endUpdate();
           return value;
         },
         (error: unknown) => {
-          updateDepth--;
-          pendingStateUpdate = null;
+          abortUpdate();
           throw error;
         }
       ) as T;
     }
 
+    endUpdate();
     return result;
-  } finally {
-    if (!isAsync) {
-      endUpdate();
-    }
+  } catch (error) {
+    abortUpdate();
+    throw error;
   }
 }
 
@@ -197,7 +214,7 @@ export function usePropaneState<S>(
         const nextTyped = next as unknown as S;
         activeRootRef.current = nextTyped;
         registerPaths(nextTyped);
-        scheduleStateUpdate(() => {
+        scheduleStateUpdate(listenerKeyRef.current, () => {
           setStateRef.current?.(nextTyped);
         });
       }

@@ -62,6 +62,9 @@ await update(async () => {
 });
 ```
 
+If an `update()` callback throws (sync or async), pending React state updates
+from that transaction are discarded.
+
 ## Listener Lifecycle Guarantees
 
 `usePropaneState` and `usePropaneSelector` manage listener ownership with
