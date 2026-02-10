@@ -6,20 +6,7 @@
  * and verify the bug occurs in a real React environment.
  */
 
-// Set up DOM globals before importing React/testing-library
-import { Window } from 'happy-dom';
-const happyDomWindow = new Window();
-
-// Use defineProperty to avoid "has only a getter" errors
-Object.defineProperty(globalThis, 'document', { value: happyDomWindow.document, configurable: true });
-Object.defineProperty(globalThis, 'window', { value: happyDomWindow, configurable: true });
-Object.defineProperty(globalThis, 'navigator', { value: happyDomWindow.navigator, configurable: true });
-Object.defineProperty(globalThis, 'HTMLElement', { value: happyDomWindow.HTMLElement, configurable: true });
-Object.defineProperty(globalThis, 'Element', { value: happyDomWindow.Element, configurable: true });
-Object.defineProperty(globalThis, 'Node', { value: happyDomWindow.Node, configurable: true });
-Object.defineProperty(globalThis, 'Text', { value: happyDomWindow.Text, configurable: true });
-Object.defineProperty(globalThis, 'DocumentFragment', { value: happyDomWindow.DocumentFragment, configurable: true });
-Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', { value: true, configurable: true, writable: true });
+import './react-dom-test-setup.js';
 
 import React, { useRef, useEffect, act } from 'react';
 import { render, cleanup } from '@testing-library/react';
