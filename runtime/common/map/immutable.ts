@@ -283,7 +283,11 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   private $propagateUpdates(newMap: ImmutableMap<K, V>): void {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
-      if (!parent) continue;
+      if (!parent) {
+        // Dead parent-chain entry: eagerly prune local metadata for this key.
+        this.$retireListenerKeyLocal(key);
+        continue;
+      }
       const newParent = parent[WITH_CHILD](entry.key, newMap);
       parent[PROPAGATE_UPDATE](key, newParent);
     }
@@ -405,9 +409,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    * Cleanup is key-scoped and idempotent.
    */
   public [RETIRE_UPDATE_LISTENER](key: symbol): void {
-    this.#listenerTokens.delete(key);
-    this.#callbacks.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     for (const [, value] of this) {
       if (
@@ -453,11 +455,19 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     // Transactional handoff: do not retire current root if bind fails.
     replacement[SET_UPDATE_LISTENER](key, callback);
 
-    this.#callbacks.delete(key);
-    this.#listenerTokens.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     callback(replacement as unknown as Message<DataObject>);
+  }
+
+  /**
+   * Retire listener metadata for a key on this node only.
+   * This does not recurse into descendants.
+   */
+  private $retireListenerKeyLocal(key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
   }
 
   public [WITH_CHILD](mapKey: unknown, child: V): ImmutableMap<K, V> {
@@ -485,7 +495,8 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     if (chain) {
       const parent = chain.parent.deref();
       if (!parent) {
-        // A dead parent-chain entry should drop updates for this key.
+        // Dead parent-chain entry: eagerly prune local metadata for this key.
+        this.$retireListenerKeyLocal(key);
         return;
       }
       const newParent = parent[WITH_CHILD](chain.key, replacement);

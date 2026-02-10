@@ -472,9 +472,7 @@ export abstract class Message<T extends object> {
    * Cleanup is key-scoped and idempotent.
    */
   public [RETIRE_UPDATE_LISTENER](key: symbol): void {
-    this.#listenerTokens.delete(key);
-    this.#callbacks.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     for (const [, child] of this[GET_MESSAGE_CHILDREN]()) {
       if (Message.isMessage(child)) {
@@ -523,11 +521,19 @@ export abstract class Message<T extends object> {
     // Transactional handoff: do not retire current root if bind fails.
     replacement[SET_UPDATE_LISTENER](key, callback);
 
-    this.#callbacks.delete(key);
-    this.#listenerTokens.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     callback(replacement);
+  }
+
+  /**
+   * Retire listener metadata for a key on this node only.
+   * This does not recurse into descendants.
+   */
+  private $retireListenerKeyLocal(key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
   }
 
   /**
@@ -548,7 +554,8 @@ export abstract class Message<T extends object> {
     if (chain) {
       const parent = chain.parent.deref();
       if (!parent) {
-        // A dead parent-chain entry should drop updates for this key.
+        // Dead parent-chain entry: eagerly prune local metadata for this key.
+        this.$retireListenerKeyLocal(key);
         return;
       }
       if (

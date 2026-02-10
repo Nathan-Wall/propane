@@ -187,7 +187,11 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   private $propagateUpdates(newArray: ImmutableArray<T>): void {
     for (const [key, entry] of this.#parentChains) {
       const parent = entry.parent.deref();
-      if (!parent) continue;
+      if (!parent) {
+        // Dead parent-chain entry: eagerly prune local metadata for this key.
+        this.$retireListenerKeyLocal(key);
+        continue;
+      }
       const newParent = parent[WITH_CHILD](entry.key, newArray);
       parent[PROPAGATE_UPDATE](key, newParent);
     }
@@ -312,9 +316,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Cleanup is key-scoped and idempotent.
    */
   public [RETIRE_UPDATE_LISTENER](key: symbol): void {
-    this.#listenerTokens.delete(key);
-    this.#callbacks.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     for (const item of this.#items) {
       if (
@@ -360,11 +362,19 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     // Transactional handoff: do not retire current root if bind fails.
     replacement[SET_UPDATE_LISTENER](key, callback);
 
-    this.#callbacks.delete(key);
-    this.#listenerTokens.delete(key);
-    this.#parentChains.delete(key);
+    this.$retireListenerKeyLocal(key);
 
     callback(replacement as unknown as Message<DataObject>);
+  }
+
+  /**
+   * Retire listener metadata for a key on this node only.
+   * This does not recurse into descendants.
+   */
+  private $retireListenerKeyLocal(key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
   }
 
   /**
@@ -387,7 +397,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     if (chain) {
       const parent = chain.parent.deref();
       if (!parent) {
-        // A dead parent-chain entry should drop updates for this key.
+        // Dead parent-chain entry: eagerly prune local metadata for this key.
+        this.$retireListenerKeyLocal(key);
         return;
       }
       // Create new parent with replacement at this position
