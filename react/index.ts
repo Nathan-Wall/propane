@@ -18,53 +18,82 @@ import {
   EQUALS_FROM_ROOT,
 } from '@/runtime/index.js';
 
-// Tracks whether we're inside an update() callback
-let updateDepth = 0;
-const pendingStateUpdates = new Map<symbol, () => void>();
+interface UpdateTransaction {
+  parent: UpdateTransaction | null;
+  pendingStateUpdates: Map<symbol, () => void>;
+}
 
-function beginUpdate(): void {
-  updateDepth++;
-  if (updateDepth === 1) {
-    pendingStateUpdates.clear();
+const updateTransactions: UpdateTransaction[] = [];
+let executingCallbackDepth = 0;
+
+function getCurrentUpdateTransaction(): UpdateTransaction | null {
+  if (updateTransactions.length === 0) {
+    return null;
+  }
+  return updateTransactions[updateTransactions.length - 1] ?? null;
+}
+
+function beginUpdate(): UpdateTransaction {
+  const parent = executingCallbackDepth > 0
+    ? getCurrentUpdateTransaction()
+    : null;
+  const transaction: UpdateTransaction = {
+    parent,
+    pendingStateUpdates: new Map<symbol, () => void>(),
+  };
+  updateTransactions.push(transaction);
+  return transaction;
+}
+
+function removeUpdateTransaction(transaction: UpdateTransaction): void {
+  const index = updateTransactions.lastIndexOf(transaction);
+  if (index >= 0) {
+    updateTransactions.splice(index, 1);
   }
 }
 
-function flushPendingStateUpdates(): void {
-  if (pendingStateUpdates.size === 0) {
+function flushPendingStateUpdates(transaction: UpdateTransaction): void {
+  if (transaction.pendingStateUpdates.size === 0) {
     return;
   }
 
-  const updates = [...pendingStateUpdates.values()];
-  pendingStateUpdates.clear();
+  const updates = [...transaction.pendingStateUpdates.values()];
+  transaction.pendingStateUpdates.clear();
   for (const applyStateUpdate of updates) {
     applyStateUpdate();
   }
 }
 
-function clearPendingStateUpdates(): void {
-  pendingStateUpdates.clear();
+function endUpdate(transaction: UpdateTransaction): void {
+  removeUpdateTransaction(transaction);
+
+  const parent = transaction.parent;
+  if (parent && updateTransactions.includes(parent)) {
+    // Nested transaction: merge updates into parent (last one wins per root key).
+    for (const [listenerKey, updateFn] of transaction.pendingStateUpdates) {
+      parent.pendingStateUpdates.set(listenerKey, updateFn);
+    }
+    transaction.pendingStateUpdates.clear();
+    return;
+  }
+
+  // Top-level transaction (or detached nested edge-case): apply now.
+  flushPendingStateUpdates(transaction);
 }
 
-function endUpdate(): void {
-  updateDepth--;
-  if (updateDepth === 0) {
-    flushPendingStateUpdates();
-  }
-}
-
-function abortUpdate(): void {
-  updateDepth--;
-  if (updateDepth === 0) {
-    clearPendingStateUpdates();
-  }
+function abortUpdate(transaction: UpdateTransaction): void {
+  removeUpdateTransaction(transaction);
+  transaction.pendingStateUpdates.clear();
 }
 
 function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
-  if (updateDepth > 0) {
-    // Inside update(): record the state change (last one wins per root key)
-    pendingStateUpdates.set(listenerKey, updateFn);
+  const transaction = getCurrentUpdateTransaction();
+  if (!transaction) {
+    // Outside update(): ignore - React state only changes within update()
+    return;
   }
-  // Outside update(): ignore - React state only changes within update()
+  // Inside update(): record the state change (last one wins per root key)
+  transaction.pendingStateUpdates.set(listenerKey, updateFn);
 }
 
 /**
@@ -98,30 +127,35 @@ function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
  * game.setCurrentMove(0); // Returns new instance, but React state unchanged
  */
 export function update<T>(callback: () => T): T {
-  beginUpdate();
+  const transaction = beginUpdate();
+
+  let result: T;
 
   try {
-    const result = callback();
-
-    if (result instanceof Promise) {
-      return result.then(
-        (value: Awaited<T>) => {
-          endUpdate();
-          return value;
-        },
-        (error: unknown) => {
-          abortUpdate();
-          throw error;
-        }
-      ) as T;
-    }
-
-    endUpdate();
-    return result;
+    executingCallbackDepth += 1;
+    result = callback();
   } catch (error) {
-    abortUpdate();
+    abortUpdate(transaction);
     throw error;
+  } finally {
+    executingCallbackDepth -= 1;
   }
+
+  if (result instanceof Promise) {
+    return result.then(
+      (value: Awaited<T>) => {
+        endUpdate(transaction);
+        return value;
+      },
+      (error: unknown) => {
+        abortUpdate(transaction);
+        throw error;
+      }
+    ) as T;
+  }
+
+  endUpdate(transaction);
+  return result;
 }
 
 // Type for messages with hybrid approach support

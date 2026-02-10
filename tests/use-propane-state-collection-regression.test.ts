@@ -612,3 +612,125 @@ test('update rolls back pending state updates on async failure', async () => {
     cleanup();
   }
 });
+
+let latestOverlapState: TodoState | null = null;
+let runOverlappingAsyncAndSyncTransactions: (() => Promise<void>) | null = null;
+
+function resetOverlapHarnessState() {
+  latestOverlapState = null;
+  runOverlappingAsyncAndSyncTransactions = null;
+}
+
+function OverlapIsolationApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestOverlapState = state;
+  runOverlappingAsyncAndSyncTransactions = async () => {
+    const pendingAsyncFailure = update(async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 0);
+      });
+      throw new Error('outer async failure');
+    }).catch(() => undefined);
+
+    update(() => {
+      state.todos.push(new TodoItem({ text: 'Sync-Commit', completed: false }));
+    });
+
+    await pendingAsyncFailure;
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'overlap-count' },
+    String(state.todos.length)
+  );
+}
+
+test('overlapping top-level transactions isolate rollback from async failure', async () => {
+  resetOverlapHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(OverlapIsolationApp));
+
+  try {
+    assert(runOverlappingAsyncAndSyncTransactions !== null, 'Expected overlap transaction runner');
+    assert(latestOverlapState instanceof TodoState, 'Expected overlap state to initialize');
+    assert(latestOverlapState.todos.length === 1, 'Initial overlap state should have one todo');
+    assert(getByTestId('overlap-count').textContent === '1', 'Rendered overlap count should start at 1');
+
+    await act(async () => {
+      await runOverlappingAsyncAndSyncTransactions!();
+    });
+
+    assert(latestOverlapState instanceof TodoState, 'Expected overlap state after transactions');
+    assert(Number(latestOverlapState.todos.length) === 2, 'Sync transaction should commit even if overlapping async transaction fails');
+    assert(getByTestId('overlap-count').textContent === '2', 'Rendered overlap count should reflect committed sync transaction');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+let latestNestedRollbackState: TodoState | null = null;
+let runNestedFailureWithCatch: (() => void) | null = null;
+
+function resetNestedRollbackHarnessState() {
+  latestNestedRollbackState = null;
+  runNestedFailureWithCatch = null;
+}
+
+function NestedRollbackIsolationApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestNestedRollbackState = state;
+  runNestedFailureWithCatch = () => {
+    update(() => {
+      try {
+        update(() => {
+          state.todos.push(new TodoItem({ text: 'Nested-Should-Rollback', completed: false }));
+          throw new Error('nested sync failure');
+        });
+      } catch {
+        // Expected in regression harness.
+      }
+    });
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'nested-rollback-count' },
+    String(state.todos.length)
+  );
+}
+
+test('nested update failure rolls back inner transaction even when caught by outer transaction', () => {
+  resetNestedRollbackHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(NestedRollbackIsolationApp));
+
+  try {
+    assert(runNestedFailureWithCatch !== null, 'Expected nested rollback runner');
+    assert(latestNestedRollbackState instanceof TodoState, 'Expected nested rollback state to initialize');
+    assert(latestNestedRollbackState.todos.length === 1, 'Initial nested rollback state should have one todo');
+    assert(getByTestId('nested-rollback-count').textContent === '1', 'Rendered nested rollback count should start at 1');
+
+    act(() => {
+      runNestedFailureWithCatch!();
+    });
+
+    assert(latestNestedRollbackState instanceof TodoState, 'Expected nested rollback state after nested transaction');
+    assert(latestNestedRollbackState.todos.length === 1, 'Caught nested failure should not commit inner pending updates');
+    assert(getByTestId('nested-rollback-count').textContent === '1', 'Rendered nested rollback count should remain unchanged');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
