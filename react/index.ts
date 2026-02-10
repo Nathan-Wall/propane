@@ -24,7 +24,23 @@ interface UpdateTransaction {
 }
 
 const updateTransactions: UpdateTransaction[] = [];
+const activeAsyncTopLevelTransactions = new Set<UpdateTransaction>();
 let executingCallbackDepth = 0;
+
+const OVERLAPPING_ASYNC_UPDATE_ERROR =
+  'Cannot start a new async update() while another async update() is still in progress. '
+  + 'Await the previous update() before starting another async update().';
+
+function isAsyncFunction(
+  callback: unknown
+): callback is (...args: unknown[]) => Promise<unknown> {
+  if (typeof callback !== 'function') {
+    return false;
+  }
+  // Works for native async functions. For sync functions returning a Promise,
+  // we still guard after callback execution below.
+  return callback.constructor.name === 'AsyncFunction';
+}
 
 function getCurrentUpdateTransaction(): UpdateTransaction | null {
   if (updateTransactions.length === 0) {
@@ -127,7 +143,16 @@ function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
  * game.setCurrentMove(0); // Returns new instance, but React state unchanged
  */
 export function update<T>(callback: () => T): T {
+  if (
+    executingCallbackDepth === 0
+    && activeAsyncTopLevelTransactions.size > 0
+    && isAsyncFunction(callback)
+  ) {
+    throw new Error(OVERLAPPING_ASYNC_UPDATE_ERROR);
+  }
+
   const transaction = beginUpdate();
+  const isTopLevelTransaction = transaction.parent === null;
 
   let result: T;
 
@@ -142,12 +167,30 @@ export function update<T>(callback: () => T): T {
   }
 
   if (result instanceof Promise) {
+    if (
+      isTopLevelTransaction
+      && activeAsyncTopLevelTransactions.size > 0
+    ) {
+      abortUpdate(transaction);
+      throw new Error(OVERLAPPING_ASYNC_UPDATE_ERROR);
+    }
+
+    if (isTopLevelTransaction) {
+      activeAsyncTopLevelTransactions.add(transaction);
+    }
+
     return result.then(
       (value: Awaited<T>) => {
+        if (isTopLevelTransaction) {
+          activeAsyncTopLevelTransactions.delete(transaction);
+        }
         endUpdate(transaction);
         return value;
       },
       (error: unknown) => {
+        if (isTopLevelTransaction) {
+          activeAsyncTopLevelTransactions.delete(transaction);
+        }
         abortUpdate(transaction);
         throw error;
       }

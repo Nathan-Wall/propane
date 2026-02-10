@@ -65,6 +65,9 @@ await update(async () => {
 If an `update()` callback throws (sync or async), pending React state updates
 from that transaction are discarded.
 
+Only one top-level async `update()` can be active at a time. Start the next
+async `update()` after awaiting the previous one.
+
 ## Listener Lifecycle Guarantees
 
 `usePropaneState` and `usePropaneSelector` manage listener ownership with

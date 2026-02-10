@@ -734,3 +734,89 @@ test('nested update failure rolls back inner transaction even when caught by out
     cleanup();
   }
 });
+
+let latestAsyncOverlapGuardState: TodoState | null = null;
+let runAsyncOverlapGuardFlow: (() => Promise<void>) | null = null;
+let caughtAsyncOverlapErrorMessage: string | null = null;
+
+function resetAsyncOverlapGuardHarnessState() {
+  latestAsyncOverlapGuardState = null;
+  runAsyncOverlapGuardFlow = null;
+  caughtAsyncOverlapErrorMessage = null;
+}
+
+function createDeferred() {
+  let resolve: (() => void) | null = null;
+  const promise = new Promise<void>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+  return {
+    promise,
+    resolve: () => resolve?.(),
+  };
+}
+
+function AsyncOverlapGuardApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestAsyncOverlapGuardState = state;
+  runAsyncOverlapGuardFlow = async () => {
+    const gate = createDeferred();
+
+    const firstAsync = update(async () => {
+      await gate.promise;
+      state.todos.push(new TodoItem({ text: 'From-First-Async', completed: false }));
+    });
+
+    try {
+      await update(async () => {
+        state.todos.push(new TodoItem({ text: 'From-Second-Async', completed: false }));
+      });
+    } catch (error) {
+      caughtAsyncOverlapErrorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+    }
+
+    gate.resolve();
+    await firstAsync;
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'async-overlap-guard-count' },
+    String(state.todos.length)
+  );
+}
+
+test('overlapping top-level async update calls are rejected and do not drop first transaction updates', async () => {
+  resetAsyncOverlapGuardHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(AsyncOverlapGuardApp));
+
+  try {
+    assert(runAsyncOverlapGuardFlow !== null, 'Expected async overlap guard runner');
+    assert(latestAsyncOverlapGuardState instanceof TodoState, 'Expected async overlap guard state to initialize');
+    assert(latestAsyncOverlapGuardState.todos.length === 1, 'Initial async overlap guard state should have one todo');
+    assert(getByTestId('async-overlap-guard-count').textContent === '1', 'Rendered async overlap guard count should start at 1');
+
+    await act(async () => {
+      await runAsyncOverlapGuardFlow!();
+    });
+
+    assert(
+      caughtAsyncOverlapErrorMessage === 'Cannot start a new async update() while another async update() is still in progress. Await the previous update() before starting another async update().',
+      `Expected overlapping async update guard error, got: ${String(caughtAsyncOverlapErrorMessage)}`
+    );
+    assert(latestAsyncOverlapGuardState instanceof TodoState, 'Expected async overlap guard state after flow');
+    assert(Number(latestAsyncOverlapGuardState.todos.length) === 2, 'First async transaction update should still commit');
+    assert(getByTestId('async-overlap-guard-count').textContent === '2', 'Rendered count should reflect first async transaction commit');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
