@@ -10,6 +10,7 @@ Object.defineProperty(globalThis, 'Element', { value: happyDomWindow.Element, co
 Object.defineProperty(globalThis, 'Node', { value: happyDomWindow.Node, configurable: true });
 Object.defineProperty(globalThis, 'Text', { value: happyDomWindow.Text, configurable: true });
 Object.defineProperty(globalThis, 'DocumentFragment', { value: happyDomWindow.DocumentFragment, configurable: true });
+Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', { value: true, configurable: true, writable: true });
 
 import React, { act } from 'react';
 import { render, cleanup } from '@testing-library/react';
