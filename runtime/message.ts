@@ -186,7 +186,7 @@ type ParentType =
 
 interface ParentChainEntry {
   parent: WeakRef<ParentType>;
-  key: string | number;
+  key: unknown;
 }
 
 // Type for update listener callback
@@ -394,7 +394,7 @@ export abstract class Message<T extends object> {
   public $setParentChain(
     key: symbol,
     parent: ParentType,
-    parentKey: string | number
+    parentKey: unknown
   ): void {
     this.#parentChains.set(key, {
       parent: new WeakRef(parent),
@@ -456,7 +456,7 @@ export abstract class Message<T extends object> {
     const chain = this.#parentChains.get(key);
 
     type ParentUpdater = {
-      [WITH_CHILD]: (childKey: string | number, child: unknown) => unknown;
+      [WITH_CHILD]: (childKey: unknown, child: unknown) => unknown;
       [PROPAGATE_UPDATE]: (listenerKey: symbol, next: unknown) => void;
     };
 

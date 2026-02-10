@@ -250,7 +250,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
    */
   private $propagateUpdates(newMap: ImmutableMap<K, V>): void {
     type WithChildFn = {
-      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+      [WITH_CHILD]: (key: unknown, child: unknown) => unknown;
     };
     type PropagateFn = {
       [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;
@@ -325,15 +325,14 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       if (isMessageLike(value) && SET_UPDATE_LISTENER in value) {
         type ListenableFn = {
           $setParentChain: (
-            key: symbol, parent: unknown, parentKey: string | number
+            key: symbol, parent: unknown, parentKey: unknown
           ) => void;
           [SET_UPDATE_LISTENER]: (
             key: symbol, callback: UpdateListenerCallback
           ) => void;
         };
         const msgValue = value as unknown as ListenableFn;
-        const keyStr = this.#serializeKeyForPath(mapKey);
-        msgValue.$setParentChain(key, this, keyStr);
+        msgValue.$setParentChain(key, this, mapKey);
         msgValue[SET_UPDATE_LISTENER](key, callback);
       }
     }
@@ -343,13 +342,13 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   // HYBRID APPROACH: Update Propagation
   // ============================================
 
-  public [WITH_CHILD](mapKey: string, child: V): ImmutableMap<K, V> {
+  public [WITH_CHILD](mapKey: unknown, child: V): ImmutableMap<K, V> {
     const nextEntries: [K, V][] = [];
     let replaced = false;
 
     // Build the replacement map directly to avoid triggering propagation twice.
     for (const [key, value] of this) {
-      if (!replaced && this.#serializeKeyForPath(key) === mapKey) {
+      if (!replaced && equalKeys(key, mapKey)) {
         nextEntries.push([key, child]);
         replaced = true;
       } else {
@@ -367,7 +366,7 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     const chain = this.#parentChains.get(key);
 
     type WithChildFn = {
-      [WITH_CHILD]: (key: string | number, child: unknown) => unknown;
+      [WITH_CHILD]: (key: unknown, child: unknown) => unknown;
     };
     type PropagateFn = {
       [PROPAGATE_UPDATE]: (key: symbol, replacement: unknown) => void;

@@ -194,6 +194,78 @@ class MapRoot extends Message<{
   }
 }
 
+class CollisionMapRoot extends Message<{
+  items: Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>;
+  revision: number;
+}> {
+  static readonly $typeId = 'tests/collection-propagation-regression#CollisionMapRoot';
+  static readonly $typeHash = 'tests/collection-propagation-regression#CollisionMapRoot@v1';
+
+  #items: ImmutableMapType<unknown, CollectionRegressionItem>;
+  #revision: number;
+
+  constructor(props: {
+    items: Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>;
+    revision: number;
+  }) {
+    super(MAP_ROOT_TAG, 'CollisionMapRoot');
+    this.#items = new ImmutableMap(props.items);
+    this.#revision = props.revision;
+  }
+
+  protected $getPropDescriptors() {
+    return [
+      {
+        name: 'items' as const,
+        fieldNumber: 1,
+        getValue: () => this.#items as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+      },
+      {
+        name: 'revision' as const,
+        fieldNumber: 2,
+        getValue: () => this.#revision,
+      },
+    ];
+  }
+
+  protected $fromEntries(entries: Record<string, unknown>) {
+    return {
+      items: entries['items'] as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+      revision: entries['revision'] as number,
+    };
+  }
+
+  override [WITH_CHILD](key: string | number, child: unknown): this {
+    switch (key) {
+      case 'items':
+        return new CollisionMapRoot({
+          items: child as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+          revision: this.#revision,
+        }) as this;
+      default:
+        throw new Error(`Unknown key: ${String(key)}`);
+    }
+  }
+
+  override *[GET_MESSAGE_CHILDREN]() {
+    yield ['items', this.#items] as unknown as [
+      string,
+      Message<DataObject>
+      | ImmutableArrayType<unknown>
+      | ImmutableMapType<unknown, unknown>
+      | ImmutableSetType<unknown>,
+    ];
+  }
+
+  get items() {
+    return this.#items;
+  }
+
+  get revision() {
+    return this.#revision;
+  }
+}
+
 class SetRoot extends Message<{
   items: Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>;
   revision: number;
@@ -340,6 +412,57 @@ test('map child message update bubbles to root once', () => {
   assert(next instanceof MapRoot, 'Map child update payload should be MapRoot');
   assert((next as MapRoot).revision === 11, 'Sibling fields should be preserved');
   assert((next as MapRoot).items.get('one')?.value === 'after', 'Nested map value update should be applied');
+});
+
+test('map child update targets correct key when map keys share a hash code', () => {
+  const key1 = {
+    id: 1,
+    equals(other: unknown) {
+      return Boolean(
+        other
+        && typeof other === 'object'
+        && 'id' in other
+        && (other as { id?: unknown }).id === this.id
+      );
+    },
+    hashCode() {
+      return 123;
+    },
+  };
+
+  const key2 = {
+    id: 2,
+    equals(other: unknown) {
+      return Boolean(
+        other
+        && typeof other === 'object'
+        && 'id' in other
+        && (other as { id?: unknown }).id === this.id
+      );
+    },
+    hashCode() {
+      return 123;
+    },
+  };
+
+  const state = new CollisionMapRoot({
+    items: [
+      [key1, new CollectionRegressionItem({ value: 'one' })],
+      [key2, new CollectionRegressionItem({ value: 'two' })],
+    ],
+    revision: 19,
+  });
+  const updates = collectUpdates(state);
+
+  const second = state.items.get(key2);
+  assert(second !== undefined, 'Expected a map item for nested update');
+  second.setValue('two-updated');
+
+  assert(updates.length === 1, `Expected exactly 1 update, got ${updates.length}`);
+  const next = updates[0];
+  assert(next instanceof CollisionMapRoot, 'Collision map child update payload should be CollisionMapRoot');
+  assert((next as CollisionMapRoot).items.get(key1)?.value === 'one', 'First key should remain unchanged');
+  assert((next as CollisionMapRoot).items.get(key2)?.value === 'two-updated', 'Updated key should receive nested value change');
 });
 
 test('set mutation emits one root update payload', () => {
