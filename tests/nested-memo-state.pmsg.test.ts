@@ -13,12 +13,14 @@ import { SET_UPDATE_LISTENER, REACT_LISTENER_KEY } from '../runtime/symbols.js';
 import type { Message, DataObject } from '../runtime/message.js';
 import { test } from 'node:test';
 
+type Unsubscribe = () => void;
+
 // Type for state objects that support the hybrid listener approach
 interface HybridListenable {
   [SET_UPDATE_LISTENER]: (
     key: symbol,
     callback: (val: Message<DataObject>) => void
-  ) => void;
+  ) => Unsubscribe;
 }
 
 function hasHybridListener<S>(value: S): value is S & HybridListenable {
@@ -38,14 +40,18 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
 } {
   let currentState = initialState;
   let renderCount = 0;
+  let currentUnsubscribe: Unsubscribe | null = null;
 
   const setupListener = (root: S) => {
     if (hasHybridListener(root)) {
-      root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+      const nextUnsubscribe = root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
         currentState = next as unknown as S;
         renderCount++;
         setupListener(currentState);
       });
+      const previousUnsubscribe = currentUnsubscribe;
+      currentUnsubscribe = nextUnsubscribe;
+      previousUnsubscribe?.();
     }
   };
 

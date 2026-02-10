@@ -17,6 +17,8 @@ import type { ImmutableMap as ImmutableMapType } from '../runtime/common/map/imm
 import type { ImmutableSet as ImmutableSetType } from '../runtime/common/set/immutable.js';
 import { test } from 'node:test';
 
+type Unsubscribe = () => void;
+
 const ITEM_TAG = Symbol('CollectionRegressionItem');
 const ARRAY_ROOT_TAG = Symbol('CollectionRegressionArrayRoot');
 const MAP_ROOT_TAG = Symbol('CollectionRegressionMapRoot');
@@ -343,7 +345,7 @@ class SetRoot extends Message<{
 function collectUpdates<T extends Message<any>>(state: T): Message<any>[] {
   const updates: Message<any>[] = [];
   type Listenable = {
-    [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+    [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
   };
   (state as unknown as Listenable)[SET_UPDATE_LISTENER](
     REACT_LISTENER_KEY,
@@ -351,6 +353,58 @@ function collectUpdates<T extends Message<any>>(state: T): Message<any>[] {
   );
   return updates;
 }
+
+test('set update listener returns unsubscribe and stops updates after cleanup', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 29,
+  });
+
+  const updates: Message<any>[] = [];
+  const unsubscribe = (state as unknown as {
+    [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](Symbol('unsubscribe-test'), (next) => updates.push(next));
+
+  state.items.get(0)!.setValue('first');
+  assert(updates.length === 1, `Expected 1 update before unsubscribe, got ${updates.length}`);
+
+  unsubscribe();
+  unsubscribe();
+
+  state.items.get(0)!.setValue('second');
+  assert(updates.length === 1, `Expected updates to stop after unsubscribe, got ${updates.length}`);
+});
+
+test('stale unsubscribe does not retire newer listener registration for same key', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 31,
+  });
+
+  const key = Symbol('shared-key');
+  const updatesA: Message<any>[] = [];
+  const updatesB: Message<any>[] = [];
+
+  const unsubscribeA = (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, (next) => updatesA.push(next));
+
+  const unsubscribeB = (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, (next) => updatesB.push(next));
+
+  state.items.get(0)!.setValue('first');
+  assert(updatesA.length === 0, `Expected replaced listener A to receive 0 updates, got ${updatesA.length}`);
+  assert(Number(updatesB.length) === 1, `Expected active listener B to receive 1 update, got ${updatesB.length}`);
+
+  unsubscribeA();
+  state.items.get(0)!.setValue('second');
+  assert(Number(updatesB.length) === 2, `Expected listener B to remain active after stale unsubscribe, got ${updatesB.length}`);
+
+  unsubscribeB();
+  state.items.get(0)!.setValue('third');
+  assert(Number(updatesB.length) === 2, `Expected listener B updates to stop after unsubscribe, got ${updatesB.length}`);
+});
 
 test('array mutation emits one root update payload', () => {
   const state = new ArrayRoot({
@@ -512,7 +566,7 @@ test('array listener setup should support nested collection children', () => {
   let thrown: unknown;
   try {
     (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
     })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
   } catch (error) {
     thrown = error;
@@ -532,7 +586,7 @@ test('map listener setup should support nested collection children', () => {
   let thrown: unknown;
   try {
     (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
     })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
   } catch (error) {
     thrown = error;
@@ -552,7 +606,7 @@ test('set listener setup should support nested collection children', () => {
   let thrown: unknown;
   try {
     (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => void;
+      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
     })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
   } catch (error) {
     thrown = error;

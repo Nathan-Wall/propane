@@ -11,6 +11,7 @@ import { test } from 'node:test';
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 // Type for parent chain entry (parent can be Message or ImmutableArray)
 interface ParentChainEntry {
@@ -25,6 +26,7 @@ class TestMessage {
   // Hybrid approach: parent chains and callbacks
   readonly #parentChains = new Map<symbol, ParentChainEntry>();
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
+  readonly #listenerTokens = new Map<symbol, symbol>();
 
   constructor(props: { value: string }) {
     this.#value = props.value;
@@ -58,8 +60,18 @@ class TestMessage {
   // Hybrid approach: set listener callback
   public [SET_UPDATE_LISTENER](
     key: symbol, callback: UpdateListenerCallback
-  ): void {
+  ): Unsubscribe {
+    const token = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, token);
     this.#callbacks.set(key, callback);
+    return () => {
+      if (this.#listenerTokens.get(key) !== token) {
+        return;
+      }
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+    };
   }
 
   // Hybrid approach: propagate updates through parent chains
@@ -114,9 +126,9 @@ function testArrayDeepUpdate() {
     interface Listenable {
       [SET_UPDATE_LISTENER]: (
         key: symbol, cb: (val: unknown) => void
-      ) => void;
+      ) => Unsubscribe;
     }
-    (arr as unknown as Listenable)[SET_UPDATE_LISTENER](
+    const nextUnsubscribe = (arr as unknown as Listenable)[SET_UPDATE_LISTENER](
       REACT_LISTENER_KEY,
       (newArray) => {
         currentArray = newArray as ImmutableArray<TestMessage>;
@@ -124,8 +136,12 @@ function testArrayDeepUpdate() {
         setupListener(currentArray);
       }
     );
+    const previousUnsubscribe = currentUnsubscribe;
+    currentUnsubscribe = nextUnsubscribe;
+    previousUnsubscribe?.();
   };
 
+  let currentUnsubscribe: Unsubscribe | null = null;
   setupListener(array);
 
   // Trigger update 1

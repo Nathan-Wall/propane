@@ -2,6 +2,7 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useEffect,
   useSyncExternalStore,
   memo,
   createContext,
@@ -14,7 +15,6 @@ import {
   SET_UPDATE_LISTENER,
   REGISTER_PATH,
   EQUALS_FROM_ROOT,
-  REACT_LISTENER_KEY,
 } from '@/runtime/index.js';
 
 // Tracks whether we're inside an update() callback
@@ -107,11 +107,13 @@ export function update<T>(callback: () => T): T {
 }
 
 // Type for messages with hybrid approach support
+type Unsubscribe = () => void;
+
 interface HybridListenable {
   [SET_UPDATE_LISTENER]: (
     key: symbol,
     callback: (val: Message<DataObject>) => void
-  ) => void;
+  ) => Unsubscribe;
   [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
 }
 
@@ -145,41 +147,59 @@ function registerPaths<S>(root: S): void {
 export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
-  // Use ref to hold the current state setter for use in callbacks
+  const listenerKeyRef = useRef(Symbol('propane:react:state-listener'));
+  const unsubscribeRef = useRef<Unsubscribe | null>(null);
+
+  // Use ref to hold the current state setter for use in callbacks.
   type SetStateFn = React.Dispatch<React.SetStateAction<S>> | null;
   const setStateRef = useRef<SetStateFn>(null);
+
+  const bindListener = useCallback((root: S): void => {
+    if (!hasHybridListener(root)) {
+      return;
+    }
+
+    registerPaths(root);
+    const nextUnsubscribe = root[SET_UPDATE_LISTENER](
+      listenerKeyRef.current,
+      (next) => {
+        scheduleStateUpdate(() => {
+          const nextTyped = next as unknown as S;
+          bindListener(nextTyped);
+          setStateRef.current?.(nextTyped);
+        });
+      }
+    );
+
+    const previousUnsubscribe = unsubscribeRef.current;
+    unsubscribeRef.current = nextUnsubscribe;
+    previousUnsubscribe?.();
+  }, []);
 
   const [state, setState] = useState<S>(() => {
     const initial = typeof initialState === 'function'
       ? (initialState as () => S)()
       : initialState;
 
-    // Hybrid approach: use SET_UPDATE_LISTENER if available
     if (hasHybridListener(initial)) {
-      // Set up the listener recursively - each time state changes,
-      // we set up listeners on the new state and register paths
-      const setupListener = (root: S) => {
-        if (hasHybridListener(root)) {
-          // Register paths for path-aware equality (distinguishes identical siblings)
-          registerPaths(root);
-
-          root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
-            scheduleStateUpdate(() => {
-              const nextTyped = next as unknown as S;
-              setupListener(nextTyped);
-              setStateRef.current?.(nextTyped);
-            });
-          });
-        }
-      };
-      setupListener(initial);
-      return initial;
+      bindListener(initial);
+    } else {
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
     }
 
     return initial;
   });
 
-  // Keep setStateRef up to date
+  // Ensure listeners are retired when the hook unmounts.
+  useEffect(() => {
+    return () => {
+      unsubscribeRef.current?.();
+      unsubscribeRef.current = null;
+    };
+  }, []);
+
+  // Keep setStateRef up to date.
   setStateRef.current = setState;
 
   const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
@@ -191,29 +211,16 @@ export function usePropaneState<S>(
         return prev;
       }
 
-      // Hybrid approach: set up listener on new state
       if (hasHybridListener(next)) {
-        const setupListener = (root: S) => {
-          if (hasHybridListener(root)) {
-            // Register paths for path-aware equality (distinguishes identical siblings)
-            registerPaths(root);
-
-            root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (updated) => {
-              scheduleStateUpdate(() => {
-                const updatedTyped = updated as unknown as S;
-                setupListener(updatedTyped);
-                setStateRef.current?.(updatedTyped);
-              });
-            });
-          }
-        };
-        setupListener(next);
-        return next;
+        bindListener(next);
+      } else {
+        unsubscribeRef.current?.();
+        unsubscribeRef.current = null;
       }
 
       return next;
     });
-  }, []);
+  }, [bindListener]);
 
   return [state, setPropaneState];
 }
@@ -243,6 +250,7 @@ export function usePropaneSelector<S extends object, R>(
   state: S,
   selector: (state: S) => R
 ): R {
+  const listenerKeyRef = useRef(Symbol('propane:react:selector-listener'));
   const selectorRef = useRef(selector);
   selectorRef.current = selector;
 
@@ -256,31 +264,51 @@ export function usePropaneSelector<S extends object, R>(
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      if (hasHybridListener(state)) {
-        // Set up listener using hybrid approach
-        const setupListener = (root: S) => {
-          if (hasHybridListener(root)) {
-            registerPaths(root);
-            root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
-              const nextTyped = next as unknown as S;
-              stateRef.current = nextTyped;
-              const nextSelected = selectorRef.current(nextTyped);
-              // Use path-aware equality to distinguish siblings
-              const prev = selectedRef.current;
-              if (!equalsFromRoot(nextTyped, prev, nextSelected)) {
-                selectedRef.current = nextSelected;
-                setupListener(nextTyped);
-                onStoreChange();
-              }
-            });
-          }
-        };
-        setupListener(state);
-        return () => {
-          // Cleanup handled by Propane internally via weak refs
-        };
+      if (!hasHybridListener(state)) {
+        return () => undefined;
       }
-      return () => undefined;
+
+      let active = true;
+      let currentUnsubscribe: Unsubscribe | null = null;
+
+      const bindListener = (root: S): void => {
+        if (!active || !hasHybridListener(root)) {
+          return;
+        }
+
+        registerPaths(root);
+        const nextUnsubscribe = root[SET_UPDATE_LISTENER](
+          listenerKeyRef.current,
+          (next) => {
+            if (!active) {
+              return;
+            }
+
+            const nextTyped = next as unknown as S;
+            stateRef.current = nextTyped;
+            bindListener(nextTyped);
+
+            const nextSelected = selectorRef.current(nextTyped);
+            const prev = selectedRef.current;
+            if (!equalsFromRoot(nextTyped, prev, nextSelected)) {
+              selectedRef.current = nextSelected;
+              onStoreChange();
+            }
+          }
+        );
+
+        const previousUnsubscribe = currentUnsubscribe;
+        currentUnsubscribe = nextUnsubscribe;
+        previousUnsubscribe?.();
+      };
+
+      bindListener(state);
+
+      return () => {
+        active = false;
+        currentUnsubscribe?.();
+        currentUnsubscribe = null;
+      };
     },
     [state]
   );

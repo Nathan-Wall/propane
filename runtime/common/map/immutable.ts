@@ -13,6 +13,7 @@ const IMMUTABLE_MAP_TAG = Symbol.for('propane:ImmutableMap');
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 type ParentType = {
   [WITH_CHILD](key: unknown, child: unknown): unknown;
@@ -38,7 +39,7 @@ function isMessageLike(value: unknown): value is {
 }
 
 function isListenable(value: unknown): value is {
-  [SET_UPDATE_LISTENER]: (...args: unknown[]) => void;
+  [SET_UPDATE_LISTENER]: (...args: unknown[]) => Unsubscribe;
 } {
   return Boolean(
     value
@@ -215,6 +216,9 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
 
+  // Tracks the most recent listener registration token for each key.
+  readonly #listenerTokens = new Map<symbol, symbol>();
+
   /**
    * Returns an ImmutableMap from the input.
    * If the input is already an ImmutableMap, returns it as-is.
@@ -339,7 +343,10 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     callback: UpdateListenerCallback,
     parent?: ParentType,
     parentKey?: unknown
-  ): void {
+  ): Unsubscribe {
+    const registrationToken = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, registrationToken);
+
     this.#callbacks.set(key, callback);
     if (parent !== undefined && parentKey !== undefined) {
       this.#parentChains.set(key, {
@@ -348,13 +355,15 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       });
     }
 
+    const childUnsubscribes: Unsubscribe[] = [];
+
     for (const [mapKey, value] of this) {
       if (!isListenable(value)) {
         continue;
       }
       if (hasParentChainSetter(value)) {
         value.$setParentChain(key, this, mapKey);
-        value[SET_UPDATE_LISTENER](key, callback);
+        childUnsubscribes.push(value[SET_UPDATE_LISTENER](key, callback));
       } else {
         type CollectionListener = {
           [SET_UPDATE_LISTENER]: (
@@ -362,12 +371,28 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
             callback: UpdateListenerCallback,
             parent: ParentType,
             parentKey: unknown
-          ) => void;
+          ) => Unsubscribe;
         };
         const collection = value as unknown as CollectionListener;
-        collection[SET_UPDATE_LISTENER](key, callback, this, mapKey);
+        childUnsubscribes.push(
+          collection[SET_UPDATE_LISTENER](key, callback, this, mapKey)
+        );
       }
     }
+
+    return () => {
+      if (this.#listenerTokens.get(key) !== registrationToken) {
+        return;
+      }
+
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+
+      for (const unsubscribe of childUnsubscribes) {
+        unsubscribe();
+      }
+    };
   }
 
   // ============================================

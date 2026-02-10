@@ -191,6 +191,7 @@ interface ParentChainEntry {
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 /**
  * Structural type that matches any Message instance.
@@ -223,6 +224,9 @@ export abstract class Message<T extends object> {
 
   // Callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
+
+  // Tracks the most recent listener registration token for each key.
+  readonly #listenerTokens = new Map<symbol, symbol>();
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
   protected abstract $fromEntries(entries: Record<string, unknown>, options?: { skipValidation?: boolean }): T;
@@ -410,9 +414,14 @@ export abstract class Message<T extends object> {
   public [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback
-  ): void {
+  ): Unsubscribe {
+    const registrationToken = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, registrationToken);
+
     // Store the callback at this level
     this.#callbacks.set(key, callback);
+
+    const childUnsubscribes: Unsubscribe[] = [];
 
     // Propagate to children, setting up their parent chains
     for (const [childKey, child] of this[GET_MESSAGE_CHILDREN]()) {
@@ -421,7 +430,7 @@ export abstract class Message<T extends object> {
         const self = this as unknown as Message<DataObject>;
         child.$setParentChain(key, self, childKey);
         // Recursively set up listener on child
-        child[SET_UPDATE_LISTENER](key, callback);
+        childUnsubscribes.push(child[SET_UPDATE_LISTENER](key, callback));
       } else if (
         child && typeof child === 'object' && SET_UPDATE_LISTENER in child
       ) {
@@ -432,13 +441,29 @@ export abstract class Message<T extends object> {
             callback: UpdateListenerCallback,
             parent: Message<DataObject>,
             parentKey: string | number
-          ) => void;
+          ) => Unsubscribe;
         };
         const collection = child as CollectionListener;
         const self = this as unknown as Message<DataObject>;
-        collection[SET_UPDATE_LISTENER](key, callback, self, childKey);
+        childUnsubscribes.push(
+          collection[SET_UPDATE_LISTENER](key, callback, self, childKey)
+        );
       }
     }
+
+    return () => {
+      if (this.#listenerTokens.get(key) !== registrationToken) {
+        return;
+      }
+
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+
+      for (const unsubscribe of childUnsubscribes) {
+        unsubscribe();
+      }
+    };
   }
 
   // ============================================

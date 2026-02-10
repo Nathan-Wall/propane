@@ -34,6 +34,7 @@ const OUTER_STATE_TAG = Symbol('OuterState');
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 // Type for parent chain entry
 interface ParentChainEntry {
@@ -50,6 +51,7 @@ class InnerState extends Message<{ value: string }> {
   // Hybrid approach: parent chains and callbacks
   readonly #parentChains = new Map<symbol, ParentChainEntry>();
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
+  readonly #listenerTokens = new Map<symbol, symbol>();
 
   constructor(props: { value: string }) {
     super(INNER_STATE_TAG, 'InnerState');
@@ -92,8 +94,20 @@ class InnerState extends Message<{ value: string }> {
   public override [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback
-  ): void {
+  ): Unsubscribe {
+    const token = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, token);
     this.#callbacks.set(key, callback);
+
+    return () => {
+      if (this.#listenerTokens.get(key) !== token) {
+        return;
+      }
+
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+    };
   }
 
   // Hybrid approach: propagate updates through parent chains
@@ -129,6 +143,7 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   // Hybrid approach: parent chains and callbacks
   readonly #parentChains = new Map<symbol, ParentChainEntry>();
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
+  readonly #listenerTokens = new Map<symbol, symbol>();
 
   constructor(props: { counter: number; inner: InnerState }) {
     super(OUTER_STATE_TAG, 'OuterState');
@@ -217,7 +232,9 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   public override [SET_UPDATE_LISTENER](
     key: symbol,
     callback: UpdateListenerCallback
-  ): void {
+  ): Unsubscribe {
+    const token = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, token);
     this.#callbacks.set(key, callback);
     // Set up parent chain for inner (no callback, only parent chain)
     this.#inner.$setParentChain(
@@ -225,6 +242,18 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
       this as unknown as Message<DataObject>,
       'inner'
     );
+
+    const unsubscribeInner = this.#inner[SET_UPDATE_LISTENER](key, callback);
+    return () => {
+      if (this.#listenerTokens.get(key) !== token) {
+        return;
+      }
+
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+      unsubscribeInner();
+    };
   }
 
   // Hybrid approach: propagate update
@@ -291,7 +320,7 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
     [SET_UPDATE_LISTENER]: (
       key: symbol,
       callback: (val: Message<DataObject>) => void
-    ) => void;
+    ) => Unsubscribe;
   }
 
   const hasHybridListener = (value: S): value is S & HybridListenable => {
@@ -305,15 +334,19 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
   // Setup listener recursively using hybrid approach
   const setupListener = (root: S) => {
     if (hasHybridListener(root)) {
-      root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+      const unsubscribeNext = root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
         const nextTyped = next as unknown as S;
         setupListener(nextTyped);
         currentState = nextTyped;
         renderCount++; // Simulates React re-render
       });
+      const previous = currentUnsubscribe;
+      currentUnsubscribe = unsubscribeNext;
+      previous?.();
     }
   };
 
+  let currentUnsubscribe: Unsubscribe | null = null;
   setupListener(initialState);
 
   return {

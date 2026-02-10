@@ -15,6 +15,8 @@ import {
 import type { Message, DataObject } from '../runtime/message.js';
 import { test } from 'node:test';
 
+type Unsubscribe = () => void;
+
 export default function runListenerAccumulationTests() {
   testStaleInnerReferenceFromMemo();
   console.log('All stale closure tests passed!');
@@ -51,14 +53,15 @@ function testStaleInnerReferenceFromMemo() {
     [SET_UPDATE_LISTENER]: (
       key: symbol,
       callback: (val: Message<DataObject>) => void
-    ) => void;
+    ) => Unsubscribe;
   }
 
   let currentState = outer;
+  let currentUnsubscribe: Unsubscribe | null = null;
 
   // Setup listener recursively using hybrid approach
   const setupListener = (root: OuterMessage) => {
-    (root as unknown as HybridListenable)[SET_UPDATE_LISTENER](
+    const nextUnsubscribe = (root as unknown as HybridListenable)[SET_UPDATE_LISTENER](
       REACT_LISTENER_KEY,
       (next) => {
         const nextTyped = next as unknown as OuterMessage;
@@ -70,6 +73,9 @@ function testStaleInnerReferenceFromMemo() {
         });
       }
     );
+    const previousUnsubscribe = currentUnsubscribe;
+    currentUnsubscribe = nextUnsubscribe;
+    previousUnsubscribe?.();
   };
 
   setupListener(currentState);

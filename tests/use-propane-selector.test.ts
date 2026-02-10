@@ -9,6 +9,7 @@ const USER_STATE_TAG = Symbol('UserState');
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 // Test message class using hybrid approach
 class UserState extends Message<{ name: string; age: number }> {
@@ -58,7 +59,7 @@ interface HybridListenable {
   [SET_UPDATE_LISTENER]: (
     key: symbol,
     callback: UpdateListenerCallback
-  ) => void;
+  ) => Unsubscribe;
 }
 
 function hasHybridListener<S>(value: S): value is S & HybridListenable {
@@ -84,13 +85,14 @@ function simulateSelector<S extends object, R>(
   let currentState = initialState;
   let selectedValue = selector(initialState);
   let updateCount = 0;
+  let currentUnsubscribe: Unsubscribe | null = null;
 
   // Subscribe if state is listenable using hybrid approach
   const setupListener = (state: S) => {
     if (hasHybridListener(state)) {
-      state[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+      const nextUnsubscribe = state[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
         currentState = next as unknown as S;
-        setupListener(currentState); // Re-setup on new state
+        setupListener(currentState);
         const nextSelected = selector(currentState);
         // Only trigger update if selected value changed (using structural equality)
         if (!equals(selectedValue, nextSelected)) {
@@ -98,6 +100,9 @@ function simulateSelector<S extends object, R>(
           updateCount++;
         }
       });
+      const previousUnsubscribe = currentUnsubscribe;
+      currentUnsubscribe = nextUnsubscribe;
+      previousUnsubscribe?.();
     }
   };
 

@@ -81,6 +81,7 @@ function hashValue(value: unknown): string {
 
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
+type Unsubscribe = () => void;
 
 type ParentType = {
   [WITH_CHILD](key: unknown, child: unknown): unknown;
@@ -94,7 +95,7 @@ interface ParentChainEntry {
 }
 
 function isListenable(value: unknown): value is {
-  [SET_UPDATE_LISTENER]: (...args: unknown[]) => void;
+  [SET_UPDATE_LISTENER]: (...args: unknown[]) => Unsubscribe;
 } {
   return Boolean(
     value
@@ -128,6 +129,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
 
   // Hybrid approach: callbacks for update propagation (keyed by listener symbol)
   readonly #callbacks = new Map<symbol, UpdateListenerCallback>();
+
+  // Tracks the most recent listener registration token for each key.
+  readonly #listenerTokens = new Map<symbol, symbol>();
 
   /**
    * Returns an ImmutableArray from the input.
@@ -241,7 +245,10 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
     callback: UpdateListenerCallback,
     parent?: ParentType,
     parentKey?: unknown
-  ): void {
+  ): Unsubscribe {
+    const registrationToken = Symbol('listenerRegistration');
+    this.#listenerTokens.set(key, registrationToken);
+
     // Store the callback
     this.#callbacks.set(key, callback);
 
@@ -253,6 +260,8 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       });
     }
 
+    const childUnsubscribes: Unsubscribe[] = [];
+
     // Propagate to children
     for (let i = 0; i < this.#items.length; i++) {
       const item = this.#items[i];
@@ -261,7 +270,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
       }
       if (hasParentChainSetter(item)) {
         item.$setParentChain(key, this, i);
-        item[SET_UPDATE_LISTENER](key, callback);
+        childUnsubscribes.push(item[SET_UPDATE_LISTENER](key, callback));
       } else {
         type CollectionListener = {
           [SET_UPDATE_LISTENER]: (
@@ -269,12 +278,28 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
             callback: UpdateListenerCallback,
             parent: ParentType,
             parentKey: unknown
-          ) => void;
+          ) => Unsubscribe;
         };
         const collection = item as unknown as CollectionListener;
-        collection[SET_UPDATE_LISTENER](key, callback, this, i);
+        childUnsubscribes.push(
+          collection[SET_UPDATE_LISTENER](key, callback, this, i)
+        );
       }
     }
+
+    return () => {
+      if (this.#listenerTokens.get(key) !== registrationToken) {
+        return;
+      }
+
+      this.#listenerTokens.delete(key);
+      this.#callbacks.delete(key);
+      this.#parentChains.delete(key);
+
+      for (const unsubscribe of childUnsubscribes) {
+        unsubscribe();
+      }
+    };
   }
 
   // ============================================
