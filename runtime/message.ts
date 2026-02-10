@@ -10,6 +10,7 @@ import type { ImmutableUrl } from '@/common/web/url.js';
 import type { Decimal, Rational } from '@/common/numbers/decimal.js';
 import {
   SET_UPDATE_LISTENER,
+  RETIRE_UPDATE_LISTENER,
   FROM_ROOT,
   REGISTER_PATH,
   PROPAGATE_UPDATE,
@@ -466,9 +467,68 @@ export abstract class Message<T extends object> {
     };
   }
 
+  /**
+   * Retire listener ownership for a key from this subtree.
+   * Cleanup is key-scoped and idempotent.
+   */
+  public [RETIRE_UPDATE_LISTENER](key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
+
+    for (const [, child] of this[GET_MESSAGE_CHILDREN]()) {
+      if (Message.isMessage(child)) {
+        child[RETIRE_UPDATE_LISTENER](key);
+      } else if (
+        child
+        && typeof child === 'object'
+        && RETIRE_UPDATE_LISTENER in child
+        && typeof (child as { [RETIRE_UPDATE_LISTENER]?: unknown })[RETIRE_UPDATE_LISTENER] === 'function'
+      ) {
+        (
+          child as {
+            [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+          }
+        )[RETIRE_UPDATE_LISTENER](key);
+      }
+    }
+  }
+
   // ============================================
   // HYBRID APPROACH: Update Propagation
   // ============================================
+
+  /**
+   * Dispatch an update for a root-owned listener key.
+   *
+   * Ordering is intentional:
+   * 1) Bind callback to replacement root.
+   * 2) Retire callback ownership on current root.
+   * 3) Invoke callback with replacement.
+   */
+  private $dispatchRootUpdate(
+    key: symbol,
+    replacement: Message<DataObject>
+  ): void {
+    const self = this as unknown as Message<DataObject>;
+    if (replacement === self) {
+      return;
+    }
+
+    const callback = this.#callbacks.get(key);
+    if (!callback) {
+      return;
+    }
+
+    // Transactional handoff: do not retire current root if bind fails.
+    replacement[SET_UPDATE_LISTENER](key, callback);
+
+    this.#callbacks.delete(key);
+    this.#listenerTokens.delete(key);
+    this.#parentChains.delete(key);
+
+    callback(replacement);
+  }
 
   /**
    * Propagate an update from a child to the root.
@@ -485,11 +545,14 @@ export abstract class Message<T extends object> {
       [PROPAGATE_UPDATE]: (listenerKey: symbol, next: unknown) => void;
     };
 
-    if (chain?.parent.deref()) {
+    if (chain) {
       const parent = chain.parent.deref();
+      if (!parent) {
+        // A dead parent-chain entry should drop updates for this key.
+        return;
+      }
       if (
-        parent
-        && typeof parent === 'object'
+        typeof parent === 'object'
         && WITH_CHILD in parent
         && PROPAGATE_UPDATE in parent
       ) {
@@ -498,13 +561,11 @@ export abstract class Message<T extends object> {
         const newParent = parentUpdater[WITH_CHILD](chain.key, replacement);
         parentUpdater[PROPAGATE_UPDATE](key, newParent);
       }
-    } else {
-      // Reached root - invoke callback with the replacement
-      const callback = this.#callbacks.get(key);
-      if (callback) {
-        callback(replacement);
-      }
+      return;
     }
+
+    // Reached root for this key.
+    this.$dispatchRootUpdate(key, replacement);
   }
 
   /**
@@ -516,14 +577,18 @@ export abstract class Message<T extends object> {
       const r = replacement as unknown as Message<DataObject>;
       this[PROPAGATE_UPDATE](key, r);
     }
-    // Also invoke callbacks at root level if this is a root
+    // Dispatch root-owned listener keys (keys without parent chains).
+    const rootKeys: symbol[] = [];
     for (const key of this.#callbacks.keys()) {
       if (!this.#parentChains.has(key)) {
-        const callback = this.#callbacks.get(key);
-        if (callback) {
-          callback(replacement as unknown as Message<DataObject>);
-        }
+        rootKeys.push(key);
       }
+    }
+    for (const key of rootKeys) {
+      this.$dispatchRootUpdate(
+        key,
+        replacement as unknown as Message<DataObject>
+      );
     }
   }
 
@@ -1580,4 +1645,4 @@ function serializeObjectKey(key: string): string {
   return JSON.stringify(key);
 }
 
-export {REACT_LISTENER_KEY, SET_UPDATE_LISTENER, FROM_ROOT, REGISTER_PATH, PROPAGATE_UPDATE, WITH_CHILD, GET_MESSAGE_CHILDREN, EQUALS_FROM_ROOT} from './symbols.js';
+export {REACT_LISTENER_KEY, SET_UPDATE_LISTENER, RETIRE_UPDATE_LISTENER, FROM_ROOT, REGISTER_PATH, PROPAGATE_UPDATE, WITH_CHILD, GET_MESSAGE_CHILDREN, EQUALS_FROM_ROOT} from './symbols.js';

@@ -13,6 +13,7 @@ import type { Message, DataObject } from '@/runtime/index.js';
 import {
   equals,
   SET_UPDATE_LISTENER,
+  RETIRE_UPDATE_LISTENER,
   REGISTER_PATH,
   EQUALS_FROM_ROOT,
 } from '@/runtime/index.js';
@@ -117,6 +118,10 @@ interface HybridListenable {
   [REGISTER_PATH]: (root: Message<DataObject>, path: string) => void;
 }
 
+interface RetirableListenable {
+  [RETIRE_UPDATE_LISTENER]: (key: symbol) => void;
+}
+
 function hasHybridListener<S>(value: S): value is S & HybridListenable {
   return (
     value !== null
@@ -130,6 +135,14 @@ function canRegisterPath<S>(value: S): value is S & HybridListenable {
     value !== null
     && typeof value === 'object'
     && REGISTER_PATH in value
+  );
+}
+
+function canRetireListener<S>(value: S): value is S & RetirableListenable {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && RETIRE_UPDATE_LISTENER in value
   );
 }
 
@@ -148,33 +161,51 @@ export function usePropaneState<S>(
   initialState: S | (() => S)
 ): [S, Dispatch<SetStateAction<S>>] {
   const listenerKeyRef = useRef(Symbol('propane:react:state-listener'));
-  const unsubscribeRef = useRef<Unsubscribe | null>(null);
+  const activeRootRef = useRef<S | null>(null);
+  const fallbackUnsubscribeRef = useRef<Unsubscribe | null>(null);
 
   // Use ref to hold the current state setter for use in callbacks.
   type SetStateFn = React.Dispatch<React.SetStateAction<S>> | null;
   const setStateRef = useRef<SetStateFn>(null);
 
+  const retireActiveListener = useCallback((): void => {
+    const activeRoot = activeRootRef.current;
+    if (activeRoot && canRetireListener(activeRoot)) {
+      activeRoot[RETIRE_UPDATE_LISTENER](listenerKeyRef.current);
+    } else {
+      fallbackUnsubscribeRef.current?.();
+    }
+    activeRootRef.current = null;
+    fallbackUnsubscribeRef.current = null;
+  }, []);
+
   const bindListener = useCallback((root: S): void => {
     if (!hasHybridListener(root)) {
+      retireActiveListener();
       return;
     }
 
+    if (activeRootRef.current === root) {
+      return;
+    }
+
+    retireActiveListener();
     registerPaths(root);
     const nextUnsubscribe = root[SET_UPDATE_LISTENER](
       listenerKeyRef.current,
       (next) => {
+        const nextTyped = next as unknown as S;
+        activeRootRef.current = nextTyped;
+        registerPaths(nextTyped);
         scheduleStateUpdate(() => {
-          const nextTyped = next as unknown as S;
-          bindListener(nextTyped);
           setStateRef.current?.(nextTyped);
         });
       }
     );
 
-    const previousUnsubscribe = unsubscribeRef.current;
-    unsubscribeRef.current = nextUnsubscribe;
-    previousUnsubscribe?.();
-  }, []);
+    activeRootRef.current = root;
+    fallbackUnsubscribeRef.current = nextUnsubscribe;
+  }, [retireActiveListener]);
 
   const [state, setState] = useState<S>(() => {
     const initial = typeof initialState === 'function'
@@ -184,8 +215,7 @@ export function usePropaneState<S>(
     if (hasHybridListener(initial)) {
       bindListener(initial);
     } else {
-      unsubscribeRef.current?.();
-      unsubscribeRef.current = null;
+      retireActiveListener();
     }
 
     return initial;
@@ -193,11 +223,8 @@ export function usePropaneState<S>(
 
   // Ensure listeners are retired when the hook unmounts.
   useEffect(() => {
-    return () => {
-      unsubscribeRef.current?.();
-      unsubscribeRef.current = null;
-    };
-  }, []);
+    return () => retireActiveListener();
+  }, [retireActiveListener]);
 
   // Keep setStateRef up to date.
   setStateRef.current = setState;
@@ -214,13 +241,12 @@ export function usePropaneState<S>(
       if (hasHybridListener(next)) {
         bindListener(next);
       } else {
-        unsubscribeRef.current?.();
-        unsubscribeRef.current = null;
+        retireActiveListener();
       }
 
       return next;
     });
-  }, [bindListener]);
+  }, [bindListener, retireActiveListener]);
 
   return [state, setPropaneState];
 }
@@ -257,9 +283,13 @@ export function usePropaneSelector<S extends object, R>(
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  const selectedFromState = selector(state);
   const selectedRef = useRef<R | undefined>(undefined);
-  if (selectedRef.current === undefined) {
-    selectedRef.current = selector(state);
+  if (
+    selectedRef.current === undefined
+    || !equalsFromRoot(state, selectedRef.current, selectedFromState)
+  ) {
+    selectedRef.current = selectedFromState;
   }
 
   const subscribe = useCallback(
@@ -269,45 +299,37 @@ export function usePropaneSelector<S extends object, R>(
       }
 
       let active = true;
-      let currentUnsubscribe: Unsubscribe | null = null;
-
-      const bindListener = (root: S): void => {
-        if (!active || !hasHybridListener(root)) {
-          return;
-        }
-
-        registerPaths(root);
-        const nextUnsubscribe = root[SET_UPDATE_LISTENER](
-          listenerKeyRef.current,
-          (next) => {
-            if (!active) {
-              return;
-            }
-
-            const nextTyped = next as unknown as S;
-            stateRef.current = nextTyped;
-            bindListener(nextTyped);
-
-            const nextSelected = selectorRef.current(nextTyped);
-            const prev = selectedRef.current;
-            if (!equalsFromRoot(nextTyped, prev, nextSelected)) {
-              selectedRef.current = nextSelected;
-              onStoreChange();
-            }
+      let activeRoot: S | null = state;
+      registerPaths(state);
+      const fallbackUnsubscribe = state[SET_UPDATE_LISTENER](
+        listenerKeyRef.current,
+        (next) => {
+          if (!active) {
+            return;
           }
-        );
 
-        const previousUnsubscribe = currentUnsubscribe;
-        currentUnsubscribe = nextUnsubscribe;
-        previousUnsubscribe?.();
-      };
+          const nextTyped = next as unknown as S;
+          activeRoot = nextTyped;
+          stateRef.current = nextTyped;
+          registerPaths(nextTyped);
 
-      bindListener(state);
+          const nextSelected = selectorRef.current(nextTyped);
+          const prev = selectedRef.current;
+          if (!equalsFromRoot(nextTyped, prev, nextSelected)) {
+            selectedRef.current = nextSelected;
+            onStoreChange();
+          }
+        }
+      );
 
       return () => {
         active = false;
-        currentUnsubscribe?.();
-        currentUnsubscribe = null;
+        if (activeRoot && canRetireListener(activeRoot)) {
+          activeRoot[RETIRE_UPDATE_LISTENER](listenerKeyRef.current);
+        } else {
+          fallbackUnsubscribe();
+        }
+        activeRoot = null;
       };
     },
     [state]

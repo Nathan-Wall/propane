@@ -1,6 +1,7 @@
 import { normalizeForJson } from '../json/stringify.js';
 import {
   SET_UPDATE_LISTENER,
+  RETIRE_UPDATE_LISTENER,
   REGISTER_PATH,
   PROPAGATE_UPDATE,
   WITH_CHILD,
@@ -203,11 +204,15 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
       const newParent = parent[WITH_CHILD](entry.key, newSet);
       parent[PROPAGATE_UPDATE](key, newParent);
     }
-    // Only call direct callbacks when this set is a root for that listener key.
-    for (const [key, callback] of this.#callbacks) {
+    // Dispatch root-owned listener keys (keys without parent chains).
+    const rootKeys: symbol[] = [];
+    for (const key of this.#callbacks.keys()) {
       if (!this.#parentChains.has(key)) {
-        callback(newSet as unknown as Message<DataObject>);
+        rootKeys.push(key);
       }
+    }
+    for (const key of rootKeys) {
+      this.$dispatchRootUpdate(key, newSet);
     }
   }
 
@@ -302,9 +307,65 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     };
   }
 
+  /**
+   * Retire listener ownership for a key from this subtree.
+   * Cleanup is key-scoped and idempotent.
+   */
+  public [RETIRE_UPDATE_LISTENER](key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
+
+    for (const value of this) {
+      if (
+        value
+        && typeof value === 'object'
+        && RETIRE_UPDATE_LISTENER in value
+        && typeof (value as { [RETIRE_UPDATE_LISTENER]?: unknown })[RETIRE_UPDATE_LISTENER] === 'function'
+      ) {
+        (
+          value as {
+            [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+          }
+        )[RETIRE_UPDATE_LISTENER](key);
+      }
+    }
+  }
+
   // ============================================
   // HYBRID APPROACH: Update Propagation
   // ============================================
+
+  /**
+   * Dispatch an update for a root-owned listener key.
+   *
+   * Ordering is intentional:
+   * 1) Bind callback to replacement root.
+   * 2) Retire callback ownership on current root.
+   * 3) Invoke callback with replacement.
+   */
+  private $dispatchRootUpdate(
+    key: symbol,
+    replacement: ImmutableSet<T>
+  ): void {
+    if (replacement === this) {
+      return;
+    }
+
+    const callback = this.#callbacks.get(key);
+    if (!callback) {
+      return;
+    }
+
+    // Transactional handoff: do not retire current root if bind fails.
+    replacement[SET_UPDATE_LISTENER](key, callback);
+
+    this.#callbacks.delete(key);
+    this.#listenerTokens.delete(key);
+    this.#parentChains.delete(key);
+
+    callback(replacement as unknown as Message<DataObject>);
+  }
 
   public [WITH_CHILD](index: number, child: T): ImmutableSet<T> {
     const values: T[] = [];
@@ -325,17 +386,19 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
     replacement: ImmutableSet<T>
   ): void {
     const chain = this.#parentChains.get(key);
-    if (chain?.parent.deref()) {
+    if (chain) {
       const parent = chain.parent.deref();
-      if (!parent) return;
+      if (!parent) {
+        // A dead parent-chain entry should drop updates for this key.
+        return;
+      }
       const newParent = parent[WITH_CHILD](chain.key, replacement);
       parent[PROPAGATE_UPDATE](key, newParent);
-    } else {
-      const callback = this.#callbacks.get(key);
-      if (callback) {
-        callback(replacement as unknown as Message<DataObject>);
-      }
+      return;
     }
+
+    // Reached root for this key.
+    this.$dispatchRootUpdate(key, replacement);
   }
 
   /**

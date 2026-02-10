@@ -6,8 +6,10 @@ import { ImmutableMap } from '../runtime/common/map/immutable.js';
 import { ImmutableSet } from '../runtime/common/set/immutable.js';
 import {
   SET_UPDATE_LISTENER,
+  RETIRE_UPDATE_LISTENER,
   GET_MESSAGE_CHILDREN,
   WITH_CHILD,
+  PROPAGATE_UPDATE,
   REACT_LISTENER_KEY,
   REGISTER_PATH,
   EQUALS_FROM_ROOT,
@@ -384,6 +386,7 @@ test('stale unsubscribe does not retire newer listener registration for same key
   const key = Symbol('shared-key');
   const updatesA: Message<any>[] = [];
   const updatesB: Message<any>[] = [];
+  let currentState = state;
 
   const unsubscribeA = (state as unknown as {
     [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
@@ -391,19 +394,184 @@ test('stale unsubscribe does not retire newer listener registration for same key
 
   const unsubscribeB = (state as unknown as {
     [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => updatesB.push(next));
+  })[SET_UPDATE_LISTENER](key, (next) => {
+    updatesB.push(next);
+    currentState = next as ArrayRoot;
+  });
 
-  state.items.get(0)!.setValue('first');
+  // Stale unsubscribe should not affect active registration for this key.
+  unsubscribeA();
+
+  currentState.items.get(0)!.setValue('first');
   assert(updatesA.length === 0, `Expected replaced listener A to receive 0 updates, got ${updatesA.length}`);
   assert(Number(updatesB.length) === 1, `Expected active listener B to receive 1 update, got ${updatesB.length}`);
 
   unsubscribeA();
-  state.items.get(0)!.setValue('second');
+  currentState.items.get(0)!.setValue('second');
   assert(Number(updatesB.length) === 2, `Expected listener B to remain active after stale unsubscribe, got ${updatesB.length}`);
 
-  unsubscribeB();
-  state.items.get(0)!.setValue('third');
+  (currentState as unknown as {
+    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+  })[RETIRE_UPDATE_LISTENER](key);
+  currentState.items.get(0)!.setValue('third');
   assert(Number(updatesB.length) === 2, `Expected listener B updates to stop after unsubscribe, got ${updatesB.length}`);
+
+  // No-op after retirement should not throw.
+  unsubscribeB();
+});
+
+test('retire update listener key stops callbacks on latest root after handoff', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 35,
+  });
+  const key = Symbol('retire-active-root');
+  let callbackCount = 0;
+  let currentState = state;
+
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, (next) => {
+    callbackCount += 1;
+    currentState = next as ArrayRoot;
+  });
+
+  currentState.items.get(0)!.setValue('first');
+  assert(callbackCount === 1, `Expected callback after first mutation, got ${callbackCount}`);
+
+  (currentState as unknown as {
+    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+  })[RETIRE_UPDATE_LISTENER](key);
+
+  currentState.items.get(0)!.setValue('second');
+  assert(callbackCount === 1, `Expected callbacks to stop after retiring key, got ${callbackCount}`);
+});
+
+test('root handoff binds replacement before callback dispatch', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 37,
+  });
+  const key = Symbol('handoff-order');
+
+  let currentState = state;
+  let callbackCount = 0;
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, (next) => {
+    callbackCount += 1;
+    currentState = next as ArrayRoot;
+    if (callbackCount === 1) {
+      currentState.items.get(0)!.setValue('two');
+    }
+  });
+
+  currentState.items.get(0)!.setValue('one-updated');
+
+  assert(callbackCount === 2, `Expected 2 callbacks, got ${callbackCount}`);
+  assert(currentState.items.get(0)?.value === 'two', 'Nested mutation during callback should publish via replacement root');
+});
+
+test('propagate update ignores no-op replacement and keeps listener active', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 41,
+  });
+  const key = Symbol('noop-replacement');
+  let callbackCount = 0;
+  (state as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, () => {
+    callbackCount += 1;
+  });
+
+  (state as unknown as {
+    [PROPAGATE_UPDATE]: (listenerKey: symbol, replacement: Message<any>) => void;
+  })[PROPAGATE_UPDATE](key, state as unknown as Message<any>);
+  const callbacksAfterNoop = callbackCount;
+  assert(callbacksAfterNoop === 0, `No-op replacement should not dispatch callback, got ${callbacksAfterNoop}`);
+
+  state.items.get(0)!.setValue('after-noop');
+  assert(callbackCount === 1, `Listener should remain active after no-op replacement, got ${callbackCount}`);
+});
+
+test('parent-chain entry suppresses callback fallback when propagation cannot continue', () => {
+  const item = new CollectionRegressionItem({ value: 'one' });
+  const key = Symbol('parent-chain-fallback');
+  let callbackCount = 0;
+
+  (item as unknown as {
+    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
+  })[SET_UPDATE_LISTENER](key, () => {
+    callbackCount += 1;
+  });
+
+  // Intentionally provide a non-propagating parent placeholder to ensure that
+  // chain presence suppresses root callback fallback.
+  item.$setParentChain(key, {} as unknown as Message<DataObject>, 'value');
+  item.setValue('two');
+
+  assert(callbackCount === 0, `Expected callback fallback to be suppressed, got ${callbackCount}`);
+});
+
+test('array stale child ref cannot resurrect removed item', () => {
+  const state = new ArrayRoot({
+    items: [new CollectionRegressionItem({ value: 'one' })],
+    revision: 43,
+  });
+  const updates = collectUpdates(state);
+  const staleRef = state.items.get(0)!;
+
+  state.items.pop();
+  const updatesAfterRemoval = updates.length;
+  assert(updatesAfterRemoval === 1, `Expected 1 update after removal, got ${updatesAfterRemoval}`);
+
+  staleRef.setValue('ghost');
+  assert(updates.length === updatesAfterRemoval, `Removed stale ref should not publish updates. Got ${updates.length}`);
+
+  const latest = updates.at(-1) as ArrayRoot;
+  assert(latest.items.length === 0, 'Removed item should not reappear in the latest root');
+});
+
+test('map stale child ref cannot resurrect deleted entry', () => {
+  const state = new MapRoot({
+    items: [['one', new CollectionRegressionItem({ value: 'one' })]],
+    revision: 47,
+  });
+  const updates = collectUpdates(state);
+  const staleRef = state.items.get('one');
+  assert(staleRef !== undefined, 'Expected map entry before deletion');
+
+  state.items.delete('one');
+  const updatesAfterDelete = updates.length;
+  assert(updatesAfterDelete === 1, `Expected 1 update after delete, got ${updatesAfterDelete}`);
+
+  staleRef.setValue('ghost');
+  assert(updates.length === updatesAfterDelete, `Deleted stale ref should not publish updates. Got ${updates.length}`);
+
+  const latest = updates.at(-1) as MapRoot;
+  assert(latest.items.get('one') === undefined, 'Deleted entry should not reappear in latest root');
+});
+
+test('set stale child ref cannot resurrect deleted value', () => {
+  const value = new CollectionRegressionItem({ value: 'one' });
+  const state = new SetRoot({
+    items: [value],
+    revision: 53,
+  });
+  const updates = collectUpdates(state);
+  const staleRef = [...state.items][0];
+  assert(staleRef !== undefined, 'Expected set value before deletion');
+
+  state.items.delete(staleRef);
+  const updatesAfterDelete = updates.length;
+  assert(updatesAfterDelete === 1, `Expected 1 update after set delete, got ${updatesAfterDelete}`);
+
+  staleRef.setValue('ghost');
+  assert(updates.length === updatesAfterDelete, `Deleted set stale ref should not publish updates. Got ${updates.length}`);
+
+  const latest = updates.at(-1) as SetRoot;
+  assert(latest.items.size === 0, 'Deleted set value should not reappear in latest root');
 });
 
 test('array mutation emits one root update payload', () => {

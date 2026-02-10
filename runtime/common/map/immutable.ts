@@ -1,6 +1,7 @@
 import { normalizeForJson } from '../json/stringify.js';
 import {
   SET_UPDATE_LISTENER,
+  RETIRE_UPDATE_LISTENER,
   REGISTER_PATH,
   PROPAGATE_UPDATE,
   WITH_CHILD,
@@ -286,11 +287,15 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
       const newParent = parent[WITH_CHILD](entry.key, newMap);
       parent[PROPAGATE_UPDATE](key, newParent);
     }
-    // Only call direct callbacks when this map is a root for that listener key.
-    for (const [key, callback] of this.#callbacks) {
+    // Dispatch root-owned listener keys (keys without parent chains).
+    const rootKeys: symbol[] = [];
+    for (const key of this.#callbacks.keys()) {
       if (!this.#parentChains.has(key)) {
-        callback(newMap as unknown as Message<DataObject>);
+        rootKeys.push(key);
       }
+    }
+    for (const key of rootKeys) {
+      this.$dispatchRootUpdate(key, newMap);
     }
   }
 
@@ -395,9 +400,65 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     };
   }
 
+  /**
+   * Retire listener ownership for a key from this subtree.
+   * Cleanup is key-scoped and idempotent.
+   */
+  public [RETIRE_UPDATE_LISTENER](key: symbol): void {
+    this.#listenerTokens.delete(key);
+    this.#callbacks.delete(key);
+    this.#parentChains.delete(key);
+
+    for (const [, value] of this) {
+      if (
+        value
+        && typeof value === 'object'
+        && RETIRE_UPDATE_LISTENER in value
+        && typeof (value as { [RETIRE_UPDATE_LISTENER]?: unknown })[RETIRE_UPDATE_LISTENER] === 'function'
+      ) {
+        (
+          value as {
+            [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+          }
+        )[RETIRE_UPDATE_LISTENER](key);
+      }
+    }
+  }
+
   // ============================================
   // HYBRID APPROACH: Update Propagation
   // ============================================
+
+  /**
+   * Dispatch an update for a root-owned listener key.
+   *
+   * Ordering is intentional:
+   * 1) Bind callback to replacement root.
+   * 2) Retire callback ownership on current root.
+   * 3) Invoke callback with replacement.
+   */
+  private $dispatchRootUpdate(
+    key: symbol,
+    replacement: ImmutableMap<K, V>
+  ): void {
+    if (replacement === this) {
+      return;
+    }
+
+    const callback = this.#callbacks.get(key);
+    if (!callback) {
+      return;
+    }
+
+    // Transactional handoff: do not retire current root if bind fails.
+    replacement[SET_UPDATE_LISTENER](key, callback);
+
+    this.#callbacks.delete(key);
+    this.#listenerTokens.delete(key);
+    this.#parentChains.delete(key);
+
+    callback(replacement as unknown as Message<DataObject>);
+  }
 
   public [WITH_CHILD](mapKey: unknown, child: V): ImmutableMap<K, V> {
     const nextEntries: [K, V][] = [];
@@ -421,17 +482,19 @@ export class ImmutableMap<K, V> implements ReadonlyMap<K, V> {
     replacement: ImmutableMap<K, V>
   ): void {
     const chain = this.#parentChains.get(key);
-    if (chain?.parent.deref()) {
+    if (chain) {
       const parent = chain.parent.deref();
-      if (!parent) return;
+      if (!parent) {
+        // A dead parent-chain entry should drop updates for this key.
+        return;
+      }
       const newParent = parent[WITH_CHILD](chain.key, replacement);
       parent[PROPAGATE_UPDATE](key, newParent);
-    } else {
-      const callback = this.#callbacks.get(key);
-      if (callback) {
-        callback(replacement as unknown as Message<DataObject>);
-      }
+      return;
     }
+
+    // Reached root for this key.
+    this.$dispatchRootUpdate(key, replacement);
   }
 
   /**
