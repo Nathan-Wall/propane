@@ -115,17 +115,25 @@ function App() {
     const newBoard = new BoardState({ cells: newCells });
 
     // update() enables React state changes from Propane setters
-    update(() => game.setHistory(newHistory.push(newBoard)).setCurrentMove(game.currentMove + 1));
+    update(game, g =>
+      g
+        .setHistory(newHistory.push(newBoard))
+        .setCurrentMove(g.currentMove + 1)
+    );
   };
 
   // Jump to a specific move in history
   const jumpTo = (move: number) => {
-    update(() => game.setCurrentMove(move));
+    update(game, g => g.setCurrentMove(move));
   };
 
   // Reset the game
   const resetGame = () => {
-    update(() => game.setHistory([createEmptyBoard()]).setCurrentMove(0));
+    update(game, g =>
+      g
+        .setHistory([createEmptyBoard()])
+        .setCurrentMove(0)
+    );
   };
 
   // Render move history buttons

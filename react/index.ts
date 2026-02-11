@@ -19,43 +19,57 @@ import {
 } from '@/runtime/index.js';
 
 interface UpdateTransaction {
+  id: symbol;
   parent: UpdateTransaction | null;
   pendingStateUpdates: Map<symbol, () => void>;
+  abortRecoveryByListenerKey: Map<symbol, () => void>;
+  status: 'active' | 'committed' | 'aborted';
 }
 
 const updateTransactions: UpdateTransaction[] = [];
 const activeAsyncTopLevelTransactions = new Set<UpdateTransaction>();
-let executingCallbackDepth = 0;
+const transactionExecutionStack: UpdateTransaction[] = [];
+const BOUND_VALUE_TO_RAW = new WeakMap<object, object>();
 
 const OVERLAPPING_ASYNC_UPDATE_ERROR =
   'Cannot start a new async update() while another async update() is still in progress. '
   + 'Await the previous update() before starting another async update().';
 
-function isAsyncFunction(
-  callback: unknown
-): callback is (...args: unknown[]) => Promise<unknown> {
-  if (typeof callback !== 'function') {
-    return false;
-  }
-  // Works for native async functions. For sync functions returning a Promise,
-  // we still guard after callback execution below.
-  return callback.constructor.name === 'AsyncFunction';
+interface TransactionBindingContext {
+  transaction: UpdateTransaction;
+  rawToBound: WeakMap<object, object>;
 }
 
-function getCurrentUpdateTransaction(): UpdateTransaction | null {
-  if (updateTransactions.length === 0) {
+function getCurrentExecutionTransaction(): UpdateTransaction | null {
+  if (transactionExecutionStack.length === 0) {
     return null;
   }
-  return updateTransactions[updateTransactions.length - 1] ?? null;
+  return transactionExecutionStack[transactionExecutionStack.length - 1] ?? null;
+}
+
+function withTransaction<T>(
+  transaction: UpdateTransaction,
+  callback: () => T
+): T {
+  transactionExecutionStack.push(transaction);
+  try {
+    return callback();
+  } finally {
+    const popped = transactionExecutionStack.pop();
+    if (popped !== transaction) {
+      throw new Error('Transaction execution stack corruption detected.');
+    }
+  }
 }
 
 function beginUpdate(): UpdateTransaction {
-  const parent = executingCallbackDepth > 0
-    ? getCurrentUpdateTransaction()
-    : null;
+  const parent = getCurrentExecutionTransaction();
   const transaction: UpdateTransaction = {
+    id: Symbol('propane:react:update-transaction'),
     parent,
     pendingStateUpdates: new Map<symbol, () => void>(),
+    abortRecoveryByListenerKey: new Map<symbol, () => void>(),
+    status: 'active',
   };
   updateTransactions.push(transaction);
   return transaction;
@@ -81,35 +95,173 @@ function flushPendingStateUpdates(transaction: UpdateTransaction): void {
 }
 
 function endUpdate(transaction: UpdateTransaction): void {
+  if (transaction.status !== 'active') {
+    return;
+  }
   removeUpdateTransaction(transaction);
 
   const parent = transaction.parent;
-  if (parent && updateTransactions.includes(parent)) {
+  if (
+    parent
+    && parent.status === 'active'
+    && updateTransactions.includes(parent)
+  ) {
     // Nested transaction: merge updates into parent (last one wins per root key).
     for (const [listenerKey, updateFn] of transaction.pendingStateUpdates) {
       parent.pendingStateUpdates.set(listenerKey, updateFn);
     }
+    for (
+      const [listenerKey, abortRecovery]
+      of transaction.abortRecoveryByListenerKey
+    ) {
+      parent.abortRecoveryByListenerKey.set(listenerKey, abortRecovery);
+    }
     transaction.pendingStateUpdates.clear();
+    transaction.abortRecoveryByListenerKey.clear();
+    transaction.status = 'committed';
     return;
   }
 
   // Top-level transaction (or detached nested edge-case): apply now.
   flushPendingStateUpdates(transaction);
+  transaction.abortRecoveryByListenerKey.clear();
+  transaction.status = 'committed';
 }
 
 function abortUpdate(transaction: UpdateTransaction): void {
+  if (transaction.status !== 'active') {
+    return;
+  }
+  const abortRecoveries = [...transaction.abortRecoveryByListenerKey.values()];
   removeUpdateTransaction(transaction);
   transaction.pendingStateUpdates.clear();
+  transaction.abortRecoveryByListenerKey.clear();
+  transaction.status = 'aborted';
+
+  for (const recoverFromAbort of abortRecoveries) {
+    try {
+      recoverFromAbort();
+    } catch {
+      // Best-effort recovery path; preserve original abort error semantics.
+    }
+  }
 }
 
-function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
-  const transaction = getCurrentUpdateTransaction();
+function scheduleStateUpdate(
+  listenerKey: symbol,
+  updateFn: () => void,
+  recoverFromAbort?: () => void
+): void {
+  const transaction = getCurrentExecutionTransaction();
   if (!transaction) {
     // Outside update(): ignore - React state only changes within update()
     return;
   }
+  if (transaction.status !== 'active') {
+    return;
+  }
   // Inside update(): record the state change (last one wins per root key)
   transaction.pendingStateUpdates.set(listenerKey, updateFn);
+  if (recoverFromAbort) {
+    transaction.abortRecoveryByListenerKey.set(listenerKey, recoverFromAbort);
+  }
+}
+
+function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
+  return (
+    value !== null
+    && typeof value === 'object'
+    && 'then' in value
+    && typeof (value as { then?: unknown }).then === 'function'
+  );
+}
+
+function unwrapBoundValue<T>(value: T): T {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (typeof value !== 'object' && typeof value !== 'function') {
+    return value;
+  }
+  const raw = BOUND_VALUE_TO_RAW.get(value as unknown as object);
+  return (raw ?? value) as T;
+}
+
+function shouldBindValue(value: unknown): value is object {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  if (isPromiseLike(value)) {
+    return false;
+  }
+  const valueType = typeof value;
+  return valueType === 'object' || valueType === 'function';
+}
+
+function createBoundProxy(
+  target: object,
+  bindingContext: TransactionBindingContext
+): object {
+  return new Proxy(target, {
+    get(innerTarget, property) {
+      const value = Reflect.get(innerTarget, property, innerTarget);
+      if (typeof value === 'function') {
+        return (...args: unknown[]) => {
+          if (bindingContext.transaction.status !== 'active') {
+            return undefined;
+          }
+          const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
+          return withTransaction(bindingContext.transaction, () => {
+            const result = Reflect.apply(value, innerTarget, unwrappedArgs);
+            return bindValueToTransaction(result, bindingContext);
+          });
+        };
+      }
+      return bindValueToTransaction(value, bindingContext);
+    },
+    set(innerTarget, property, value) {
+      if (bindingContext.transaction.status !== 'active') {
+        return true;
+      }
+      const unwrappedValue = unwrapBoundValue(value);
+      return withTransaction(
+        bindingContext.transaction,
+        () => Reflect.set(innerTarget, property, unwrappedValue, innerTarget)
+      );
+    },
+    apply(innerTarget, thisArg, args) {
+      if (bindingContext.transaction.status !== 'active') {
+        return undefined;
+      }
+      const unwrappedThis = unwrapBoundValue(thisArg);
+      const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
+      return withTransaction(bindingContext.transaction, () => {
+        const callable = innerTarget as (...callArgs: unknown[]) => unknown;
+        const result = Reflect.apply(callable, unwrappedThis, unwrappedArgs);
+        return bindValueToTransaction(result, bindingContext);
+      });
+    },
+  });
+}
+
+function bindValueToTransaction<T>(
+  value: T,
+  bindingContext: TransactionBindingContext
+): T {
+  const unwrappedValue = unwrapBoundValue(value);
+  if (!shouldBindValue(unwrappedValue)) {
+    return unwrappedValue as T;
+  }
+
+  const existing = bindingContext.rawToBound.get(unwrappedValue);
+  if (existing) {
+    return existing as T;
+  }
+
+  const bound = createBoundProxy(unwrappedValue, bindingContext);
+  bindingContext.rawToBound.set(unwrappedValue, bound);
+  BOUND_VALUE_TO_RAW.set(bound, unwrappedValue);
+  return bound as T;
 }
 
 /**
@@ -126,47 +278,52 @@ function scheduleStateUpdate(listenerKey: symbol, updateFn: () => void): void {
  *
  * @example
  * // Sync: updates React state after callback completes
- * update(() => {
- *   game.setCurrentMove(0);
- *   game.setHistory([initialBoard]);
+ * update(game, g => {
+ *   g.setCurrentMove(0);
+ *   g.setHistory([initialBoard]);
  * });
  *
  * @example
  * // Async: updates React state after promise resolves
- * await update(async () => {
+ * await update(state, async s => {
  *   const data = await fetchData();
- *   state.setData(data);
+ *   s.setData(data);
  * });
  *
  * @example
  * // Outside update(): no React re-render
  * game.setCurrentMove(0); // Returns new instance, but React state unchanged
  */
-export function update<T>(callback: () => T): T {
-  if (
-    executingCallbackDepth === 0
-    && activeAsyncTopLevelTransactions.size > 0
-    && isAsyncFunction(callback)
-  ) {
-    throw new Error(OVERLAPPING_ASYNC_UPDATE_ERROR);
-  }
+export function update<S, T>(root: S, callback: (state: S) => T): T;
+export function update<S extends readonly unknown[], T>(
+  roots: [...S],
+  callback: (states: { [K in keyof S]: S[K] }) => T
+): T;
+export function update<T>(
+  rootOrRoots: unknown,
+  callback: (value: any) => T
+): T {
 
   const transaction = beginUpdate();
   const isTopLevelTransaction = transaction.parent === null;
+  const bindingContext: TransactionBindingContext = {
+    transaction,
+    rawToBound: new WeakMap<object, object>(),
+  };
 
   let result: T;
 
   try {
-    executingCallbackDepth += 1;
-    result = callback();
+    const boundInput = Array.isArray(rootOrRoots)
+      ? rootOrRoots.map((root) => bindValueToTransaction(root, bindingContext))
+      : bindValueToTransaction(rootOrRoots, bindingContext);
+    result = withTransaction(transaction, () => callback(boundInput));
   } catch (error) {
     abortUpdate(transaction);
     throw error;
-  } finally {
-    executingCallbackDepth -= 1;
   }
 
-  if (result instanceof Promise) {
+  if (isPromiseLike(result)) {
     if (
       isTopLevelTransaction
       && activeAsyncTopLevelTransactions.size > 0
@@ -180,12 +337,12 @@ export function update<T>(callback: () => T): T {
     }
 
     return result.then(
-      (value: Awaited<T>) => {
+      (value) => {
         if (isTopLevelTransaction) {
           activeAsyncTopLevelTransactions.delete(transaction);
         }
         endUpdate(transaction);
-        return value;
+        return value as Awaited<T>;
       },
       (error: unknown) => {
         if (isTopLevelTransaction) {
@@ -256,6 +413,7 @@ export function usePropaneState<S>(
 ): [S, Dispatch<SetStateAction<S>>] {
   const listenerKeyRef = useRef(Symbol('propane:react:state-listener'));
   const activeRootRef = useRef<S | null>(null);
+  const committedRootRef = useRef<S | null>(null);
   const fallbackUnsubscribeRef = useRef<Unsubscribe | null>(null);
 
   // Use ref to hold the current state setter for use in callbacks.
@@ -291,9 +449,20 @@ export function usePropaneState<S>(
         const nextTyped = next as unknown as S;
         activeRootRef.current = nextTyped;
         registerPaths(nextTyped);
-        scheduleStateUpdate(listenerKeyRef.current, () => {
-          setStateRef.current?.(nextTyped);
-        });
+        scheduleStateUpdate(
+          listenerKeyRef.current,
+          () => {
+            setStateRef.current?.(nextTyped);
+          },
+          () => {
+            const committedRoot = committedRootRef.current;
+            if (committedRoot && hasHybridListener(committedRoot)) {
+              bindListener(committedRoot);
+              return;
+            }
+            retireActiveListener();
+          }
+        );
       }
     );
 
@@ -322,6 +491,7 @@ export function usePropaneState<S>(
 
   // Keep setStateRef up to date.
   setStateRef.current = setState;
+  committedRootRef.current = state;
 
   const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
     setState((prev) => {

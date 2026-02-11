@@ -57,10 +57,10 @@ const InnerComponent = memoPropane(({ inner }: { inner: InnerMessage }) => {
   // Expose a way to trigger setValue on the HELD reference
   // This simulates a user clicking a button that was rendered with old props
   triggerInnerChange = (value: string) => {
-    update(() => {
+    update(innerRef.current, s => {
       // Use the ref that was captured when component last rendered
       // If memoPropane skipped re-render, this is STALE
-      innerRef.current.setValue(value);
+      s.setValue(value);
     });
   };
 
@@ -85,8 +85,8 @@ function OuterComponent() {
 
   // Expose a way to change counter
   triggerCounterChange = () => {
-    update(() => {
-      state.setCounter(state.counter + 10);
+    update(state, s => {
+      s.setCounter(s.counter + 10);
     });
   };
 

@@ -155,14 +155,14 @@ function TestApp() {
   latestState = state;
 
   addTodo = (text: string) => {
-    update(() => {
-      state.todos.push(new TodoItem({ text, completed: false }));
+    update(state, s => {
+      s.todos.push(new TodoItem({ text, completed: false }));
     });
   };
 
   toggleFirstTodo = () => {
-    update(() => {
-      const first = state.todos.get(0);
+    update(state, s => {
+      const first = s.todos.get(0);
       if (first) {
         first.setCompleted(!first.completed);
       }
@@ -241,15 +241,15 @@ function AsyncClosureRemovalApp() {
       if (!staleRef) {
         return;
       }
-      update(() => {
+      update(state, () => {
         staleRef.setCompleted(true);
       });
     };
   };
 
   removeFirstTodoFromAsyncState = () => {
-    update(() => {
-      state.todos.pop();
+    update(state, s => {
+      s.todos.pop();
     });
   };
 
@@ -345,8 +345,8 @@ function SelectorLifecycleApp({ showPrimary }: { showPrimary: boolean }) {
   );
 
   lifecycleToggleFirstTodo = () => {
-    update(() => {
-      const first = state.todos.get(0);
+    update(state, s => {
+      const first = s.todos.get(0);
       if (first) {
         first.setCompleted(!first.completed);
       }
@@ -444,9 +444,9 @@ function MultiRootTransactionApp() {
   latestMultiRootRightState = right;
 
   runMultiRootTransaction = () => {
-    update(() => {
-      left.todos.push(new TodoItem({ text: 'Left+1', completed: false }));
-      right.todos.push(new TodoItem({ text: 'Right+1', completed: false }));
+    update([left, right] as const, ([l, r]) => {
+      l.todos.push(new TodoItem({ text: 'Left+1', completed: false }));
+      r.todos.push(new TodoItem({ text: 'Right+1', completed: false }));
     });
   };
 
@@ -505,8 +505,8 @@ function SyncFailureRollbackApp() {
   latestSyncFailureState = state;
   runSyncFailureTransaction = () => {
     try {
-      update(() => {
-        state.todos.push(new TodoItem({ text: 'Should-Rollback-Sync', completed: false }));
+      update(state, s => {
+        s.todos.push(new TodoItem({ text: 'Should-Rollback-Sync', completed: false }));
         throw new Error('sync transaction failure');
       });
     } catch {
@@ -563,8 +563,8 @@ function AsyncFailureRollbackApp() {
   latestAsyncFailureState = state;
   runAsyncFailureTransaction = async () => {
     try {
-      await update(async () => {
-        state.todos.push(new TodoItem({ text: 'Should-Rollback-Async', completed: false }));
+      await update(state, async s => {
+        s.todos.push(new TodoItem({ text: 'Should-Rollback-Async', completed: false }));
         throw new Error('async transaction failure');
       });
     } catch {
@@ -620,15 +620,15 @@ function OverlapIsolationApp() {
 
   latestOverlapState = state;
   runOverlappingAsyncAndSyncTransactions = async () => {
-    const pendingAsyncFailure = update(async () => {
+    const pendingAsyncFailure = update(state, async () => {
       await new Promise<void>((resolve) => {
         setTimeout(resolve, 0);
       });
       throw new Error('outer async failure');
     }).catch(() => undefined);
 
-    update(() => {
-      state.todos.push(new TodoItem({ text: 'Sync-Commit', completed: false }));
+    update(state, s => {
+      s.todos.push(new TodoItem({ text: 'Sync-Commit', completed: false }));
     });
 
     await pendingAsyncFailure;
@@ -682,10 +682,10 @@ function NestedRollbackIsolationApp() {
 
   latestNestedRollbackState = state;
   runNestedFailureWithCatch = () => {
-    update(() => {
+    update(state, s => {
       try {
-        update(() => {
-          state.todos.push(new TodoItem({ text: 'Nested-Should-Rollback', completed: false }));
+        update(s, t => {
+          t.todos.push(new TodoItem({ text: 'Nested-Should-Rollback', completed: false }));
           throw new Error('nested sync failure');
         });
       } catch {
@@ -757,14 +757,14 @@ function AsyncOverlapGuardApp() {
   runAsyncOverlapGuardFlow = async () => {
     const gate = createDeferred();
 
-    const firstAsync = update(async () => {
+    const firstAsync = update(state, async s => {
       await gate.promise;
-      state.todos.push(new TodoItem({ text: 'From-First-Async', completed: false }));
+      s.todos.push(new TodoItem({ text: 'From-First-Async', completed: false }));
     });
 
     try {
-      await update(async () => {
-        state.todos.push(new TodoItem({ text: 'From-Second-Async', completed: false }));
+      await update(state, async s => {
+        s.todos.push(new TodoItem({ text: 'From-Second-Async', completed: false }));
       });
     } catch (error) {
       caughtAsyncOverlapErrorMessage = error instanceof Error
@@ -804,6 +804,93 @@ test('overlapping top-level async update calls are rejected and do not drop firs
     assert(latestAsyncOverlapGuardState instanceof TodoState, 'Expected async overlap guard state after flow');
     assert(Number(latestAsyncOverlapGuardState.todos.length) === 2, 'First async transaction update should still commit');
     assert(getByTestId('async-overlap-guard-count').textContent === '2', 'Rendered count should reflect first async transaction commit');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+let latestPromiseOverlapLeakState: TodoState | null = null;
+let runPromiseOverlapLeakFlow: (() => Promise<void>) | null = null;
+let caughtPromiseOverlapLeakErrorMessage: string | null = null;
+
+function resetPromiseOverlapLeakHarnessState() {
+  latestPromiseOverlapLeakState = null;
+  runPromiseOverlapLeakFlow = null;
+  caughtPromiseOverlapLeakErrorMessage = null;
+}
+
+function PromiseOverlapLeakApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestPromiseOverlapLeakState = state;
+  runPromiseOverlapLeakFlow = async () => {
+    const firstGate = createDeferred();
+    const secondGate = createDeferred();
+
+    const firstAsync = update(state, async s => {
+      await firstGate.promise;
+      s.todos.push(new TodoItem({ text: 'From-First-Async', completed: false }));
+    });
+
+    try {
+      update(state, s =>
+        secondGate.promise.then(() => {
+          s.todos.push(new TodoItem({ text: 'From-Second-Promise', completed: false }));
+        })
+      );
+    } catch (error) {
+      caughtPromiseOverlapLeakErrorMessage = error instanceof Error
+        ? error.message
+        : String(error);
+    }
+
+    secondGate.resolve();
+    await Promise.resolve();
+    firstGate.resolve();
+    await firstAsync;
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'promise-overlap-leak-count' },
+    String(state.todos.length)
+  );
+}
+
+test('overlapping Promise-returning top-level update should not leak updates into active async transaction', async () => {
+  resetPromiseOverlapLeakHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(PromiseOverlapLeakApp));
+
+  try {
+    assert(runPromiseOverlapLeakFlow !== null, 'Expected Promise overlap leak runner');
+    assert(latestPromiseOverlapLeakState instanceof TodoState, 'Expected Promise overlap leak state to initialize');
+    assert(latestPromiseOverlapLeakState.todos.length === 1, 'Initial Promise overlap leak state should have one todo');
+    assert(getByTestId('promise-overlap-leak-count').textContent === '1', 'Rendered Promise overlap leak count should start at 1');
+
+    await act(async () => {
+      await runPromiseOverlapLeakFlow!();
+    });
+
+    assert(
+      caughtPromiseOverlapLeakErrorMessage === 'Cannot start a new async update() while another async update() is still in progress. Await the previous update() before starting another async update().',
+      `Expected overlapping async update guard error, got: ${String(caughtPromiseOverlapLeakErrorMessage)}`
+    );
+    assert(latestPromiseOverlapLeakState instanceof TodoState, 'Expected Promise overlap leak state after flow');
+    assert(Number(latestPromiseOverlapLeakState.todos.length) === 2, 'Promise overlap leak state should have exactly two todos');
+    assert(
+      latestPromiseOverlapLeakState.todos.get(1)?.text === 'From-First-Async',
+      'Promise-returning overlapping update should not overwrite first async transaction update'
+    );
+    assert(
+      getByTestId('promise-overlap-leak-count').textContent === '2',
+      'Rendered Promise overlap leak count should end at 2'
+    );
   } finally {
     unmount();
     cleanup();

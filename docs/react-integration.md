@@ -25,7 +25,7 @@ function App() {
   );
 
   const increment = () => {
-    update(() => state.setCount(state.count + 1));
+    update(state, s => s.setCount(s.count + 1));
   };
 
   return <button onClick={increment}>{state.count}</button>;
@@ -34,20 +34,20 @@ function App() {
 
 ## The `update()` Function
 
-Propane setters only trigger React re-renders when called inside `update()`:
+Propane setters only trigger React re-renders when called inside `update(...)`:
 
 ```typescript
 // Triggers React re-render
-update(() => state.setName('Alice'));
+update(state, s => s.setName('Alice'));
 
 // Multiple setters are batched into a single render
-update(() => {
-  state.setName('Alice');
-  state.setEmail('alice@example.com');
+update(state, s => {
+  s.setName('Alice');
+  s.setEmail('alice@example.com');
 });
 
 // Chained setters work too
-update(() => state.setName('Alice').setEmail('alice@example.com'));
+update(state, s => s.setName('Alice').setEmail('alice@example.com'));
 
 // Outside update(): returns new instance but NO re-render
 state.setName('Bob'); // React state unchanged
@@ -56,17 +56,17 @@ state.setName('Bob'); // React state unchanged
 Async callbacks are also supported:
 
 ```typescript
-await update(async () => {
+await update(state, async s => {
   const data = await fetchData();
-  state.setData(data);
+  s.setData(data);
 });
 ```
 
 If an `update()` callback throws (sync or async), pending React state updates
 from that transaction are discarded.
 
-Only one top-level async `update()` can be active at a time. Start the next
-async `update()` after awaiting the previous one.
+Only one top-level async `update(...)` can be active at a time. Start the next
+async call after awaiting the previous one.
 
 ## Listener Lifecycle Guarantees
 
@@ -109,13 +109,13 @@ export type BoardState = Message<{
 
 ```typescript
 // Updating nested array triggers re-render
-update(() => {
+update(game, g => {
   // Modifying a deeply nested array works directly
   // currentBoard.cells is an ImmutableArray
   currentBoard.cells.set(index, 'X');
 
   // Pushing to an array also works directly
-  game.history.push(newBoard);
+  g.history.push(newBoard);
 });
 ```
 
@@ -362,13 +362,13 @@ const [state] = usePropaneState<State>(initialState);
 // Update deeply nested field - just call the setter
 const toggleTheme = () => {
   const current = state.user.profile.settings.theme;
-  update(() => state.user.profile.settings.setTheme(current === 'light' ? 'dark' : 'light'));
+  update(state, s => s.user.profile.settings.setTheme(current === 'light' ? 'dark' : 'light'));
 };
 
 // Update item in nested array - update the item directly
 const likePost = (postId: number) => {
   const post = state.user.posts.find(p => p.id === postId);
-  if (post) update(() => post.setLikes(post.likes + 1));
+  if (post) update(post, p => p.setLikes(p.likes + 1));
 };
 ```
 
@@ -401,7 +401,7 @@ function PostEditor({ postId }: { postId: number }) {
 
   const handleLike = () => {
     // Update post directly - changes propagate to root automatically
-    if (post) update(() => post.setLikes(post.likes + 1));
+    if (post) update(post, p => p.setLikes(p.likes + 1));
   };
 }
 ```
@@ -482,10 +482,10 @@ function PostCard({ post }: { post: Post }) {
   return (
     <div>
       <h2>{post.title}</h2>
-      <button onClick={() => update(() => post.setLikes(post.likes + 1))}>
+      <button onClick={() => update(post, p => p.setLikes(p.likes + 1))}>
         Like ({post.likes})
       </button>
-      <button onClick={() => update(() => post.delete())}>
+      <button onClick={() => update(post, p => p.delete())}>
         Delete
       </button>
     </div>
@@ -532,14 +532,14 @@ function Game() {
     const newCells = currentBoard.cells.set(index, 'X');
     const newBoard = new BoardState({ cells: newCells });
 
-    update(() => {
-      game.history.push(newBoard);
-      game.setCurrentMove(game.currentMove + 1);
+    update(game, g => {
+      g.history.push(newBoard);
+      g.setCurrentMove(g.currentMove + 1);
     });
   };
 
   const jumpTo = (move: number) => {
-    update(() => game.setCurrentMove(move));
+    update(game, g => g.setCurrentMove(move));
   };
 
   return (

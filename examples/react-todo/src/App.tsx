@@ -35,8 +35,8 @@ function App() {
     const text = input.value.trim();
     if (!text) return;
 
-    update(() => {
-      state.todos.push(new Todo({
+    update(state, s => {
+      s.todos.push(new Todo({
         id: uuid(),
         text,
         completed: false,
@@ -49,12 +49,12 @@ function App() {
   const handleToggle = (id: string) => {
     const todo = state.todos.find(t => t.id === id);
     if (todo) {
-      update(() => todo.setCompleted(!todo.completed));
+      update(todo, t => t.setCompleted(!t.completed));
     }
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    update(() => state.setFilter(e.target.value as AppState['filter']));
+    update(state, s => s.setFilter(e.target.value as AppState['filter']));
   };
 
   const filteredTodos = state.todos.filter(todo => {
