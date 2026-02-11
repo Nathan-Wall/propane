@@ -481,30 +481,32 @@ export class Decimal<P extends number, S extends number>
 
   compare(other: Decimal<number, number> | Rational): -1 | 0 | 1 {
     if (Decimal.isInstance(other)) {
-      if (this.scale === other.scale) {
-        return this.mantissa < other.mantissa ? -1
-          : this.mantissa > other.mantissa ? 1 : 0;
+      const decimalOther = other as Decimal<number, number>;
+      if (this.scale === decimalOther.scale) {
+        return this.mantissa < decimalOther.mantissa ? -1
+          : this.mantissa > decimalOther.mantissa ? 1 : 0;
       }
-      const scaleDiff = other.scale - this.scale;
+      const scaleDiff = decimalOther.scale - this.scale;
       let left: bigint;
       let right: bigint;
       if (scaleDiff > 0) {
         left = this.mantissa * pow10(scaleDiff);
-        right = other.mantissa;
+        right = decimalOther.mantissa;
       } else {
         left = this.mantissa;
-        right = other.mantissa * pow10(-scaleDiff);
+        right = decimalOther.mantissa * pow10(-scaleDiff);
       }
       return left < right ? -1 : left > right ? 1 : 0;
     }
 
+    const rationalOther = other as Rational;
     if (this.scale >= 0) {
-      const left = this.mantissa * other.denominator;
-      const right = other.numerator * pow10(this.scale);
+      const left = this.mantissa * rationalOther.denominator;
+      const right = rationalOther.numerator * pow10(this.scale);
       return left < right ? -1 : left > right ? 1 : 0;
     }
-    const left = this.mantissa * pow10(-this.scale) * other.denominator;
-    const right = other.numerator;
+    const left = this.mantissa * pow10(-this.scale) * rationalOther.denominator;
+    const right = rationalOther.numerator;
     return left < right ? -1 : left > right ? 1 : 0;
   }
 

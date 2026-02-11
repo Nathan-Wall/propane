@@ -245,7 +245,7 @@ function createBoundProxy(
       }
       return bindValueToTransaction(value, bindingContext);
     },
-    set(innerTarget, property, value) {
+    set(innerTarget, property, value: unknown) {
       ensureTransactionActive(bindingContext.transaction);
       const unwrappedValue = unwrapBoundValue(value);
       return withTransaction(

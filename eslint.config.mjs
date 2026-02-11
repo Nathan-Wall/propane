@@ -114,16 +114,15 @@ export default defineConfig(
         },
       ],
 
-      // TODO: Temporarily disabled. Remove these lines, check affected code,
-      // and assess whether to fix code or re-enable the rule.
-      '@typescript-eslint/no-unsafe-assignment': 'off',
-      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
 
       // Allow || for boolean expressions (the rule is meant for null/undefined coalescing)
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
 
       // Allow type aliases instead of interfaces
       '@typescript-eslint/consistent-type-definitions': 'off',
+      'unicorn/prefer-string-replace-all': 'off',
     },
   },
 

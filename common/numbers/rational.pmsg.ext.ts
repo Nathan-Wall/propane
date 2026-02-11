@@ -136,16 +136,31 @@ export class Rational extends Rational$Base {
     other: Rational | Decimal<number, number>
   ): RationalOperand {
     if (Decimal.isInstance(other)) {
-      const rational = (other as Decimal<number, number>).toRational();
-      if (!(rational instanceof Rational)) {
+      const rationalValue: unknown = (
+        other as Decimal<number, number>
+      ).toRational();
+      if (!(rationalValue instanceof Rational)) {
+        const foreignRational = rationalValue as {
+          numerator?: unknown;
+          denominator?: unknown;
+        };
+        if (
+          typeof foreignRational.numerator !== 'bigint'
+          || typeof foreignRational.denominator !== 'bigint'
+        ) {
+          throw new TypeError(
+            'Rational operations require Rational or Decimal operands'
+          );
+        }
         // Cross-copy messages can satisfy Decimal.isInstance but do not share
         // this class's private-field brand.
         return {
-          numerator: rational.numerator,
-          denominator: rational.denominator,
+          numerator: foreignRational.numerator,
+          denominator: foreignRational.denominator,
           opCount: 0,
         };
       }
+      const rational = rationalValue;
       return {
         numerator: rational.#n,
         denominator: rational.#d,

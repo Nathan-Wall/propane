@@ -198,6 +198,11 @@ const defaultRegistry = buildRegistry([propaneTypes]);
 let cachedRegistry: TypeRegistry | null = null;
 let cachedRegistryOptions: string[] | null = null;
 
+function isObjectOrFunction(value: unknown): value is Record<string, unknown> {
+  return value !== null
+    && (typeof value === 'object' || typeof value === 'function');
+}
+
 /**
  * Load the type registry.
  *
@@ -238,13 +243,22 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
     }
 
     try {
-       
-      const module = requireModule(typePath);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (module.propaneTypes) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        allRegistrations.push(module.propaneTypes as AnyTypeRegistration[]);
+      const loadedModule: unknown = requireModule(typePath);
+      const moduleRecord = isObjectOrFunction(loadedModule)
+        ? loadedModule
+        : null;
+      const defaultExport = moduleRecord?.['default'];
+      const defaultRecord = isObjectOrFunction(defaultExport)
+        ? defaultExport
+        : null;
+      const propaneTypesValue = moduleRecord?.['propaneTypes']
+        ?? defaultRecord?.['propaneTypes'];
+      if (!Array.isArray(propaneTypesValue)) {
+        throw new TypeError(
+          `Module '${typePath}' must export a 'propaneTypes' array`
+        );
       }
+      allRegistrations.push(propaneTypesValue as AnyTypeRegistration[]);
     } catch (err) {
       // For custom type modules, throw an error
       throw new Error(

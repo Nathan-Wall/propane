@@ -402,9 +402,25 @@ const same = <T, U>(a: T, b: U): a is T&U =>
   || a == null && b == null
   || a as unknown === 0 && b as unknown === 0;
 
-const equals = <T, U>(a: T, b: U): a is T&U =>
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-  same(a, b) || !!(a as any)?.equals?.(b);
+function hasEqualsMethod(
+  value: unknown
+): value is { equals: (other: unknown) => unknown } {
+  return (
+    !!value
+    && (typeof value === 'object' || typeof value === 'function')
+    && typeof (value as { equals?: unknown }).equals === 'function'
+  );
+}
+
+const equals = <T, U>(a: T, b: U): a is T&U => {
+  if (same(a, b)) {
+    return true;
+  }
+  if (!hasEqualsMethod(a)) {
+    return false;
+  }
+  return !!a.equals(b);
+};
 
 // Note: This won't currently work for situations where two different protos
 // containing the same data are compared in a container that can't compare them,

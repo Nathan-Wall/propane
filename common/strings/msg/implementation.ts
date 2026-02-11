@@ -23,7 +23,7 @@ export function msg(
     // Whitespace following a forced new line wtih \n should be ignored.
     string = string.replaceAll(/\\n\s+/g, String.raw`\n`);
     // Process the raw strings to convert escapes sequences.
-    string = JSON.parse(
+    const parsed: unknown = JSON.parse(
       '"'
       + string
         // Double quotes should always be escaped.
@@ -32,6 +32,10 @@ export function msg(
         .replaceAll(/((?:^|[^\\])(?:\\{2})*)\\(['`])/g, '$1$2')
       + '"',
     );
+    if (typeof parsed !== 'string') {
+      throw new TypeError('msg template parse produced non-string output');
+    }
+    string = parsed;
     out.push(string);
     const arg = args[i];
     if (arg !== undefined) {

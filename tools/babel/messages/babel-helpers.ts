@@ -9,8 +9,6 @@
 import type { NodePath } from '@babel/traverse';
 import type * as t from '@babel/types';
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
-
 /**
  * Find the parent TSTypeAliasDeclaration of a node path.
  * Returns null if no such parent exists.
@@ -18,8 +16,13 @@ import type * as t from '@babel/types';
 export function findParentTypeAlias(
   nodePath: NodePath<t.Node>
 ): NodePath<t.TSTypeAliasDeclaration> | null {
-  return (nodePath as any).findParent(
-    (p: any) => p.isTSTypeAliasDeclaration()
+  const findParentPath = nodePath as NodePath<t.Node> & {
+    findParent(
+      callback: (path: NodePath<t.Node>) => boolean
+    ): NodePath<t.Node> | null;
+  };
+  return findParentPath.findParent(
+    path => path.isTSTypeAliasDeclaration()
   ) as NodePath<t.TSTypeAliasDeclaration> | null;
 }
 
@@ -28,7 +31,10 @@ export function findParentTypeAlias(
  * Returns empty string if not available.
  */
 export function getSourceFilename(nodePath: NodePath<t.Node>): string {
-  return ((nodePath.hub as any)?.file?.opts?.filename ?? '') as string;
+  const hub = nodePath.hub as
+    | { file?: { opts?: { filename?: string } } }
+    | undefined;
+  return hub?.file?.opts?.filename ?? '';
 }
 
 /**
@@ -39,7 +45,10 @@ export function isTSTypeParameterInstantiation(
   path: NodePath<t.Node | null | undefined> | null | undefined
 ): path is NodePath<t.TSTypeParameterInstantiation> {
   if (!path) return false;
-  return (path as any).isTSTypeParameterInstantiation?.() ?? false;
+  const candidatePath = path as {
+    isTSTypeParameterInstantiation?: () => boolean;
+  };
+  return candidatePath.isTSTypeParameterInstantiation?.() ?? false;
 }
 
 /**
@@ -49,7 +58,10 @@ export function isTSTypeParameterInstantiation(
 export function getTypeParams(
   path: NodePath<t.TSTypeParameterInstantiation>
 ): NodePath<t.TSType>[] {
-  return (path as any).get('params') as NodePath<t.TSType>[];
+  const parameterPath = path as NodePath<t.TSTypeParameterInstantiation> & {
+    get(key: 'params'): NodePath<t.TSType>[];
+  };
+  return parameterPath.get('params');
 }
 
 /**
@@ -57,10 +69,13 @@ export function getTypeParams(
  * Babel's types don't always include this method.
  */
 export function isTSTypeAnnotation(
-  path: NodePath | null | undefined
+  path: NodePath<t.Node> | null | undefined
 ): path is NodePath<t.TSTypeAnnotation> {
   if (!path) return false;
-  return (path as any).isTSTypeAnnotation?.() ?? false;
+  const candidatePath = path as {
+    isTSTypeAnnotation?: () => boolean;
+  };
+  return candidatePath.isTSTypeAnnotation?.() ?? false;
 }
 
 /**
@@ -69,7 +84,8 @@ export function isTSTypeAnnotation(
 export function getTypeAnnotation(
   path: NodePath<t.TSTypeAnnotation>
 ): NodePath<t.TSType> {
-  return (path as any).get('typeAnnotation') as NodePath<t.TSType>;
+  const annotationPath = path as NodePath<t.TSTypeAnnotation> & {
+    get(key: 'typeAnnotation'): NodePath<t.TSType>;
+  };
+  return annotationPath.get('typeAnnotation');
 }
-
-/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */

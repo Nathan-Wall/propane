@@ -129,14 +129,18 @@ function validateRationalBound(value: string, context: string): void {
     }
   }
 
-  const cleanedInt: string = intPart.replaceAll(/[ _]/g, '');
-  const cleanedFrac: string = fracPart.replaceAll(/[ _]/g, '');
+  const cleanedInt = stripSeparatorChars(intPart);
+  const cleanedFrac = stripSeparatorChars(fracPart);
   const hasValidInt = /^\d+$/.test(cleanedInt);
   const hasValidFrac =
     cleanedFrac.length === 0 || /^\d+$/.test(cleanedFrac);
   if (!hasValidInt || !hasValidFrac) {
     throw new SyntaxError(`Invalid rational bound in ${context}`);
   }
+}
+
+function stripSeparatorChars(value: string): string {
+  return value.replace(/[ _]/gu, '');
 }
 
 export function formatNumericBound(

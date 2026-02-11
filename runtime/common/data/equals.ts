@@ -1,8 +1,8 @@
-// @ts-nocheck
 import { ImmutableMap } from '../map/immutable.js';
 import { ImmutableSet } from '../set/immutable.js';
 import { ImmutableArray } from '../array/immutable.js';
 
+type EqualsFn = (a: unknown, b: unknown) => boolean;
 
 function supportsEquals(
   value: unknown
@@ -22,7 +22,9 @@ function isSetLike(value: unknown): value is ReadonlySet<unknown> {
   return value instanceof Set || ImmutableSet.isInstance(value);
 }
 
-function isArrayLike(value: unknown): value is ArrayLike<unknown> {
+function isArrayLike(
+  value: unknown
+): value is readonly unknown[] | ImmutableArray<unknown> {
   return Array.isArray(value) || ImmutableArray.isInstance(value);
 }
 

@@ -226,11 +226,11 @@ export async function loadConfig(configPath?: string): Promise<CliConfig> {
     const fullPath = path.resolve(process.cwd(), searchPath);
     if (fs.existsSync(fullPath)) {
       if (fullPath.endsWith('.json')) {
-        const content = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+        const content: unknown = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
         return validateCliConfig(content, fullPath);
       }
       // For TS/JS files, use dynamic import
-      const importedModule = await import(fullPath);
+      const importedModule: unknown = await import(fullPath);
       const moduleRecord = importedModule as Record<string, unknown>;
       const content = 'default' in moduleRecord
         ? moduleRecord['default']
