@@ -145,6 +145,7 @@ export default defineConfig(
     },
     rules: {
       'eol-last': ['error', 'always'],
+      'arrow-parens': ['error', 'as-needed'],
       '@stylistic/no-extra-parens': ['error', 'all', {}],
       'operator-linebreak': [
         'error',
@@ -247,4 +248,3 @@ export default defineConfig(
     },
   },
 );
-

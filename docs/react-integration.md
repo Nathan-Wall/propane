@@ -68,6 +68,99 @@ from that transaction are discarded.
 Only one top-level async `update(...)` can be active at a time. Start the next
 async call after awaiting the previous one.
 
+## Transaction Semantics and Async Patterns
+
+`update(...)` is transactional:
+
+- Calling `update(root, callback)` starts a transaction.
+- Setters called through the callback argument (`root`) are tracked in that
+transaction.
+- If the callback completes successfully, tracked updates are committed.
+- If the callback throws or rejects, tracked updates are rolled back.
+- Multi-root form (`update([a, b], ...)`) commits or rolls back both roots
+together.
+
+### Async Transactions
+
+When you pass an async callback (or any callback that returns a Promise), the
+transaction stays open until that Promise settles.
+
+```typescript
+await update(profile, async p => {
+  const remote = await api.getProfile(p.id);
+  if (!remote.enabled) {
+    throw new Error('Profile is disabled');
+  }
+
+  p.setName(remote.name);
+  p.setStatus('ready');
+});
+```
+
+In this example, both setters are part of one transaction. If anything throws
+before resolve, neither update is committed.
+Captured callback refs are transaction-bound, so late writes after the
+transaction settles are ignored.
+
+### When to Fetch Outside `update(...)`
+
+If you do not need a transaction across `await` boundaries, fetch first and
+keep `update(...)` short:
+
+```typescript
+const remote = await api.getProfile(profileId);
+update(profile, p => {
+  p.setName(remote.name);
+  p.setStatus('ready');
+});
+```
+
+This is often simpler and avoids holding an async transaction open longer than
+necessary.
+
+### Async Overlap Rule
+
+Only one top-level async `update(...)` can be active at a time.
+
+```typescript
+const pending = update(state, async s => {
+  await slowIO();
+  s.setStep(1);
+});
+
+// Throws because pending async update is still active.
+await update(state, async s => {
+  s.setStep(2);
+});
+
+await pending;
+```
+
+Use sequential flow instead:
+
+```typescript
+await update(state, async s => {
+  await slowIO();
+  s.setStep(1);
+});
+
+await update(state, async s => {
+  s.setStep(2);
+});
+```
+
+### Promise-Returning Callbacks
+
+`async` and Promise-returning callbacks are treated the same:
+
+```typescript
+await update(state, s =>
+  fetchData().then(data => {
+    s.setData(data);
+  })
+);
+```
+
 ## Listener Lifecycle Guarantees
 
 `usePropaneState` and `usePropaneSelector` manage listener ownership with
