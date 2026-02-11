@@ -25,6 +25,6 @@ const child = spawn('node', ['--test', ...testFiles], {
   stdio: 'inherit',
 });
 
-child.on('close', (code) => {
+child.on('close', code => {
   process.exit(code ?? 0);
 });

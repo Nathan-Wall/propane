@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { singularize, pluralize } from '@/common/strings/pluralize.js';
 
-export { singularize, pluralize };
+
 
 export function capitalize(name: string): string {
   if (!name) {
@@ -41,7 +41,9 @@ export function computeRelativePath(fromFile: string, toFile: string): string {
  * For plural names (e.g., "tags"), returns { singular: "tag", plural: "tags" }.
  * For singular names (e.g., "tag"), returns { singular: "tag", plural: "tags" }.
  */
-export function getSingularPlural(name: string): { singular: string; plural: string } {
+export function getSingularPlural(
+  name: string
+): { singular: string; plural: string } {
   const singular = singularize(name);
   if (singular !== name) {
     // Name is already plural (e.g., "tags" → singular "tag")
@@ -50,3 +52,5 @@ export function getSingularPlural(name: string): { singular: string; plural: str
   // Name is singular (e.g., "tag" → plural "tags")
   return { singular: name, plural: pluralize(name) };
 }
+
+export {singularize, pluralize} from '@/common/strings/pluralize.js';

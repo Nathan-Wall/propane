@@ -50,8 +50,14 @@ function isListenable(value: unknown): value is {
   );
 }
 
-function hasParentChainSetter(value: unknown): value is {
-  $setParentChain: (key: symbol, parent: ParentType, parentKey: unknown) => void;
+function hasParentChainSetter(
+  value: unknown
+): value is {
+  $setParentChain: (
+    key: symbol,
+    parent: ParentType,
+    parentKey: unknown
+  ) => void;
 } {
   return Boolean(
     value

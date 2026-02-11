@@ -91,7 +91,7 @@ export class MigrationRunner {
   ): Promise<MigrationToRun[]> {
     const applied = await this.getAppliedMigrations();
     const appliedSet = new Set(applied);
-    return allMigrations.filter((m) => !appliedSet.has(m.version));
+    return allMigrations.filter(m => !appliedSet.has(m.version));
   }
 
   /**
@@ -124,7 +124,7 @@ export class MigrationRunner {
     }
 
     const lastVersion = applied.at(-1)!;
-    const migration = migrations.find((m) => m.version === lastVersion);
+    const migration = migrations.find(m => m.version === lastVersion);
 
     if (!migration) {
       return {
@@ -133,8 +133,8 @@ export class MigrationRunner {
         failed: [{
           version: lastVersion,
           error: new Error(
-            `Migration version "${lastVersion}" not found. ` +
-            `Available versions: ${migrations.map(m => m.version).join(', ') || 'none'}`
+            `Migration version "${lastVersion}" not found. `
+            + `Available versions: ${migrations.map(m => m.version).join(', ') || 'none'}`
           ),
         }],
         success: false,
@@ -155,7 +155,7 @@ export class MigrationRunner {
     const toRevert = applied.slice(-count).toReversed();
 
     const migrationsToRevert = toRevert
-      .map((version) => migrations.find((m) => m.version === version))
+      .map(version => migrations.find(m => m.version === version))
       .filter((m): m is MigrationToRun => m !== undefined);
 
     return this.runMigrations(migrationsToRevert, 'down');
@@ -169,7 +169,7 @@ export class MigrationRunner {
     const toRevert = applied.toReversed();
 
     const migrationsToRevert = toRevert
-      .map((version) => migrations.find((m) => m.version === version))
+      .map(version => migrations.find(m => m.version === version))
       .filter((m): m is MigrationToRun => m !== undefined);
 
     return this.runMigrations(migrationsToRevert, 'down');

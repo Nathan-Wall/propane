@@ -10,11 +10,14 @@ export const RangeDefinition: ValidatorDefinition = {
   name: 'Range',
 
   generateJs({ valueExpr, type, params, imports }) {
-    const [min, max] = params as [number | bigint | string, number | bigint | string];
+    const [min, max] = params as [
+      number | bigint | string,
+      number | bigint | string,
+    ];
 
     if (type.kind === 'number') {
       if (typeof min === 'string' || typeof min === 'bigint' || typeof max === 'string' || typeof max === 'bigint') {
-        throw new Error('Range<number> requires numeric bounds.');
+        throw new TypeError('Range<number> requires numeric bounds.');
       }
       return { condition: `${valueExpr} >= ${min} && ${valueExpr} <= ${max}` };
     }
@@ -31,13 +34,19 @@ export const RangeDefinition: ValidatorDefinition = {
   },
 
   generateSql({ columnName, params }) {
-    const [min, max] = params as [number | bigint | string, number | bigint | string];
+    const [min, max] = params as [
+      number | bigint | string,
+      number | bigint | string,
+    ];
     return `${columnName} >= ${min} AND ${columnName} <= ${max}`;
   },
 
   generateMessage({ params, customMessage }) {
     if (customMessage) return customMessage;
-    const [min, max] = params as [number | bigint | string, number | bigint | string];
+    const [min, max] = params as [
+      number | bigint | string,
+      number | bigint | string,
+    ];
     return `must be between ${min} and ${max}`;
   },
 

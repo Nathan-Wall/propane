@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+
 /**
  * Decimal and Rational numeric types with exact arithmetic and explicit rounding.
  */
@@ -6,15 +8,9 @@ import { Decimal$Base } from './decimal.pmsg.base.js';
 import type { Decimal as DecimalTypes } from './decimal.pmsg.base.js';
 import { Rational } from './rational.pmsg.ext.js';
 import {
-  ABSOLUTE_MAX_PRECISION,
-  ABSOLUTE_MAX_SCALE,
-  ABSOLUTE_MAX_SCALE_DIFF,
   ABSOLUTE_MIN_PRECISION,
   DecimalDivisionByZeroError,
   DecimalInexactError,
-  DecimalOverflowError,
-  RoundingMode,
-  absBigInt,
   ensureMantissaFitsPrecision,
   ensureValidPrecisionScale,
   hashCombine,
@@ -22,31 +18,18 @@ import {
   parseDecimalInput,
   pow10,
   roundBigInt,
-  scaleByPow10,
   toBigIntSafeInteger,
 } from './decimal-shared.js';
-import type { FromStringOptions } from './decimal-shared.js';
+import type { FromStringOptions, RoundingMode } from './decimal-shared.js';
 
-export {
-  ABSOLUTE_MAX_PRECISION,
-  ABSOLUTE_MAX_SCALE,
-  ABSOLUTE_MAX_SCALE_DIFF,
-  ABSOLUTE_MIN_PRECISION,
-  DecimalDivisionByZeroError,
-  DecimalInexactError,
-  DecimalOverflowError,
-  RoundingMode,
-  ensureValidPrecisionScale,
-  pow10,
-  roundBigInt,
-  scaleByPow10,
-};
 export type { FromStringOptions } from './decimal-shared.js';
 export { Rational, RationalOverflowError } from './rational.pmsg.ext.js';
 
 export namespace Decimal {
-  export type Data<P extends number, S extends number> = DecimalTypes.Data<P, S>;
-  export type Value<P extends number, S extends number> = DecimalTypes.Value<P, S>;
+  export type Data<P extends number, S extends number> =
+    DecimalTypes.Data<P, S>;
+  export type Value<P extends number, S extends number> =
+    DecimalTypes.Value<P, S>;
 }
 
 export interface DecimalFactoryOptions {
@@ -85,7 +68,8 @@ export type DivideOptions = {
   round?: RoundingMode;
 };
 
-export class Decimal<P extends number, S extends number> extends Decimal$Base<P, S> {
+export class Decimal<P extends number, S extends number>
+  extends Decimal$Base<P, S> {
   #hash?: number;
 
   constructor(
@@ -229,15 +213,21 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     });
   }
 
-  static zero<P extends number, S extends number>(precision: P, scale: S): Decimal<P, S> {
+  static zero<P extends number, S extends number>(
+    precision: P,
+    scale: S
+  ): Decimal<P, S> {
     return Decimal.fromMantissa(precision, scale, 0n);
   }
 
-  static one<P extends number, S extends number>(precision: P, scale: S): Decimal<P, S> {
+  static one<P extends number, S extends number>(
+    precision: P,
+    scale: S
+  ): Decimal<P, S> {
     if (scale < 0) {
       throw new RangeError(
-        `one() is not defined for negative scale ${scale}. ` +
-        `Use unit() for the smallest representable increment, or fromMantissa(1n) for mantissa=1.`
+        `one() is not defined for negative scale ${scale}. `
+        + `Use unit() for the smallest representable increment, or fromMantissa(1n) for mantissa=1.`
       );
     }
     return Decimal.fromMantissa(precision, scale, pow10(scale));
@@ -255,15 +245,15 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
       scale,
       defaultRounding,
       fromString: (v, opts) => Decimal.fromString(precision, scale, v, opts),
-      fromStrictString: (v) => Decimal.fromStrictString(precision, scale, v),
-      fromInt: (v) => Decimal.fromInt(precision, scale, v),
-      fromMantissa: (v) => Decimal.fromMantissa(precision, scale, v),
+      fromStrictString: v => Decimal.fromStrictString(precision, scale, v),
+      fromInt: v => Decimal.fromInt(precision, scale, v),
+      fromMantissa: v => Decimal.fromMantissa(precision, scale, v),
       zero: () => Decimal.fromMantissa(precision, scale, 0n),
       one: () => {
         if (scale < 0) {
           throw new RangeError(
-            `one() is not defined for negative scale ${scale}. ` +
-            `Use unit() for the smallest representable increment, or fromMantissa(1n) for mantissa=1.`
+            `one() is not defined for negative scale ${scale}. `
+            + `Use unit() for the smallest representable increment, or fromMantissa(1n) for mantissa=1.`
           );
         }
         return Decimal.fromMantissa(precision, scale, pow10(scale));
@@ -302,17 +292,17 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
   }
 
   multiply(
-    other: Decimal<any, any> | Rational | number | bigint,
+    other: Decimal<number, number> | Rational | number | bigint,
     options?: MultiplyOptions
   ): Decimal<P, S>;
   multiply<P2 extends number, S2 extends number>(
-    other: Decimal<any, any> | Rational | number | bigint,
+    other: Decimal<number, number> | Rational | number | bigint,
     options: MultiplyTargetOptions<P2, S2>
   ): Decimal<P2, S2>;
   multiply(
-    other: Decimal<any, any> | Rational | number | bigint,
-    options?: MultiplyOptions | MultiplyTargetOptions<any, any>
-  ): Decimal<any, any> {
+    other: Decimal<number, number> | Rational | number | bigint,
+    options?: MultiplyOptions | MultiplyTargetOptions<number, number>
+  ): Decimal<number, number> {
     let targetPrecision: number = this.precision;
     let targetScale: number = this.scale;
     const round = options?.round;
@@ -328,38 +318,39 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     if (typeof other === 'number' || typeof other === 'bigint') {
       const otherInt = toBigIntSafeInteger(other, { context: 'multiply' });
       resultMantissa = this.mantissa * otherInt;
-    } else if (Rational.isInstance(other)) {
-      const numerator = this.mantissa * other.numerator;
-      const denominator = other.denominator;
-      const remainder = numerator % denominator;
-      if (remainder !== 0n) {
-        if (round === undefined) {
-          throw new DecimalInexactError('multiply');
-        }
-        resultMantissa = roundBigInt(numerator, denominator, round);
-      } else {
-        resultMantissa = numerator / denominator;
-      }
-    } else {
-      const product = this.mantissa * other.mantissa;
-      if (other.scale > 0) {
-        const denominator = pow10(other.scale);
+    } else if (Decimal.isInstance(other)) {
+      const decimalOther = other as Decimal<number, number>;
+      const product = this.mantissa * decimalOther.mantissa;
+      if (decimalOther.scale > 0) {
+        const denominator = pow10(decimalOther.scale);
         const remainder = product % denominator;
-        if (remainder !== 0n) {
+        if (remainder === 0n) {
+          resultMantissa = product / denominator;
+        } else {
           if (round === undefined) {
             throw new DecimalInexactError('multiply');
           }
           resultMantissa = roundBigInt(product, denominator, round);
-        } else {
-          resultMantissa = product / denominator;
         }
-      } else if (other.scale < 0) {
-        resultMantissa = product * pow10(-other.scale);
+      } else if (decimalOther.scale < 0) {
+        resultMantissa = product * pow10(-decimalOther.scale);
       } else {
         resultMantissa = product;
       }
+    } else {
+      const rationalOther = other as Rational;
+      const numerator = this.mantissa * rationalOther.numerator;
+      const denominator = rationalOther.denominator;
+      const remainder = numerator % denominator;
+      if (remainder === 0n) {
+        resultMantissa = numerator / denominator;
+      } else {
+        if (round === undefined) {
+          throw new DecimalInexactError('multiply');
+        }
+        resultMantissa = roundBigInt(numerator, denominator, round);
+      }
     }
-
     if (targetScale !== this.scale) {
       const scaleDiff = targetScale - this.scale;
       if (scaleDiff > 0) {
@@ -367,13 +358,13 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
       } else {
         const divisor = pow10(-scaleDiff);
         const remainder = resultMantissa % divisor;
-        if (remainder !== 0n) {
+        if (remainder === 0n) {
+          resultMantissa = resultMantissa / divisor;
+        } else {
           if (round === undefined) {
             throw new DecimalInexactError('multiply');
           }
           resultMantissa = roundBigInt(resultMantissa, divisor, round);
-        } else {
-          resultMantissa = resultMantissa / divisor;
         }
       }
     }
@@ -383,11 +374,11 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     return Decimal.fromMantissa(targetPrecision, targetScale, resultMantissa);
   }
 
-  divide(other: Decimal<any, any>): Rational;
+  divide(other: Decimal<number, number>): Rational;
   divide(other: number | bigint, options?: DivideOptions): Decimal<P, S>;
   divide(other: Rational, options?: DivideOptions): Decimal<P, S>;
   divide(
-    other: Decimal<any, any> | Rational | number | bigint,
+    other: Decimal<number, number> | Rational | number | bigint,
     options?: DivideOptions | RoundingMode
   ): Rational | Decimal<P, S> {
     const round = typeof options === 'object' ? options?.round : options;
@@ -396,8 +387,8 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
         throw new TypeError(
           Number.isInteger(other)
             ? `divide() requires safe integers, got ${other}. Use bigint for large values.`
-            : `divide() only accepts integers, got ${other}. ` +
-              `Use Rational.fromInts() for fractions, e.g., Rational.fromInts(5, 2) for 2.5`
+            : `divide() only accepts integers, got ${other}. `
+              + `Use Rational.fromInts() for fractions, e.g., Rational.fromInts(5, 2) for 2.5`
         );
       }
       other = Rational.fromInt(other);
@@ -406,29 +397,31 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     }
 
     if (Rational.isInstance(other)) {
-      if (other.numerator === 0n) {
+      const rationalOther = other as Rational;
+      if (rationalOther.numerator === 0n) {
         throw new DecimalDivisionByZeroError();
       }
-      return this.multiply(other.reciprocal(), { round });
+      return this.multiply(rationalOther.reciprocal(), { round });
     }
 
-    if (other.mantissa === 0n) {
+    const decimalOther = other as Decimal<number, number>;
+    if (decimalOther.mantissa === 0n) {
       throw new DecimalDivisionByZeroError();
     }
 
-    const scaleDiff = other.scale - this.scale;
+    const scaleDiff = decimalOther.scale - this.scale;
     let numerator: bigint;
     let denominator: bigint;
 
     if (scaleDiff > 0) {
       numerator = this.mantissa * pow10(scaleDiff);
-      denominator = other.mantissa;
+      denominator = decimalOther.mantissa;
     } else if (scaleDiff < 0) {
       numerator = this.mantissa;
-      denominator = other.mantissa * pow10(-scaleDiff);
+      denominator = decimalOther.mantissa * pow10(-scaleDiff);
     } else {
       numerator = this.mantissa;
-      denominator = other.mantissa;
+      denominator = decimalOther.mantissa;
     }
 
     return Rational.fromInts(numerator, denominator);
@@ -444,7 +437,10 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
       : this;
   }
 
-  rescale<NewS extends number>(newScale: NewS, round?: RoundingMode): Decimal<P, NewS> {
+  rescale<NewS extends number>(
+    newScale: NewS,
+    round?: RoundingMode
+  ): Decimal<P, NewS> {
     const scaleDiff = newScale - this.scale;
 
     if (scaleDiff === 0) {
@@ -464,9 +460,9 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
       throw new DecimalInexactError('rescale');
     }
 
-    const newMantissa = round !== undefined
-      ? roundBigInt(this.mantissa, factor, round)
-      : this.mantissa / factor;
+    const newMantissa = round === undefined
+      ? this.mantissa / factor
+      : roundBigInt(this.mantissa, factor, round);
 
     return Decimal.fromMantissa(this.precision, newScale, newMantissa);
   }
@@ -483,7 +479,7 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     return Rational.fromInts(this.mantissa * pow10(-this.scale), 1n);
   }
 
-  compare(other: Decimal<any, any> | Rational): -1 | 0 | 1 {
+  compare(other: Decimal<number, number> | Rational): -1 | 0 | 1 {
     if (Decimal.isInstance(other)) {
       if (this.scale === other.scale) {
         return this.mantissa < other.mantissa ? -1
@@ -512,23 +508,23 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     return left < right ? -1 : left > right ? 1 : 0;
   }
 
-  lessThan(other: Decimal<any, any> | Rational): boolean {
+  lessThan(other: Decimal<number, number> | Rational): boolean {
     return this.compare(other) < 0;
   }
 
-  greaterThan(other: Decimal<any, any> | Rational): boolean {
+  greaterThan(other: Decimal<number, number> | Rational): boolean {
     return this.compare(other) > 0;
   }
 
-  lessThanOrEqual(other: Decimal<any, any> | Rational): boolean {
+  lessThanOrEqual(other: Decimal<number, number> | Rational): boolean {
     return this.compare(other) <= 0;
   }
 
-  greaterThanOrEqual(other: Decimal<any, any> | Rational): boolean {
+  greaterThanOrEqual(other: Decimal<number, number> | Rational): boolean {
     return this.compare(other) >= 0;
   }
 
-  valueEquals(other: Decimal<any, any> | Rational): boolean {
+  valueEquals(other: Decimal<number, number> | Rational): boolean {
     return this.compare(other) === 0;
   }
 
@@ -545,7 +541,7 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     if (weights.length === 0) {
       throw new RangeError('Cannot allocate to zero recipients');
     }
-    if (weights.some((w) => w < 0 || !Number.isSafeInteger(w))) {
+    if (weights.some(w => w < 0 || !Number.isSafeInteger(w))) {
       throw new RangeError('Weights must be non-negative safe integers');
     }
 
@@ -563,8 +559,8 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
 
     for (const weight of weights) {
       const weightBig = BigInt(weight);
-      const share = (absMantissa * weightBig) / totalWeight;
-      const remainder = (absMantissa * weightBig) % totalWeight;
+      const share = absMantissa * weightBig / totalWeight;
+      const remainder = absMantissa * weightBig % totalWeight;
       results.push(share);
       remainders.push(remainder);
       allocated += share;
@@ -575,8 +571,8 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
     if (strategy === 'largestRemainder') {
       const indices = weights
         .map((_, i) => i)
-        .filter((i) => (weights[i] ?? 0) > 0)
-        .sort((a, b) => {
+        .filter(i => (weights[i] ?? 0) > 0)
+        .toSorted((a, b) => {
           const diff = (remainders[b] ?? 0n) - (remainders[a] ?? 0n);
           if (diff !== 0n) return diff > 0n ? 1 : -1;
           return a - b;
@@ -602,8 +598,10 @@ export class Decimal<P extends number, S extends number> extends Decimal$Base<P,
       }
     }
 
-    const finalResults = isNegative ? results.map((m) => -m) : results;
-    return finalResults.map((m) => Decimal.fromMantissa(this.precision, this.scale, m));
+    const finalResults = isNegative ? results.map(m => -m) : results;
+    return finalResults.map(
+      m => Decimal.fromMantissa(this.precision, this.scale, m)
+    );
   }
 
   override toString(): string {
@@ -637,7 +635,7 @@ export function isDecimalOf(
   value: unknown,
   precision: number,
   scale: number
-): value is Decimal<any, any> {
+): value is Decimal<number, number> {
   return Decimal.isInstance(value)
     && value.precision === precision
     && value.scale === scale;
@@ -646,3 +644,18 @@ export function isDecimalOf(
 export function isRational(value: unknown): value is Rational {
   return Rational.isInstance(value);
 }
+
+export {
+  ABSOLUTE_MAX_PRECISION,
+  ABSOLUTE_MAX_SCALE,
+  ABSOLUTE_MAX_SCALE_DIFF,
+  ABSOLUTE_MIN_PRECISION,
+  DecimalDivisionByZeroError,
+  DecimalInexactError,
+  DecimalOverflowError,
+  RoundingMode,
+  ensureValidPrecisionScale,
+  pow10,
+  roundBigInt,
+  scaleByPow10,
+} from './decimal-shared.js';

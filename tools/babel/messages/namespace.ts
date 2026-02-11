@@ -46,7 +46,7 @@ function fixTypeParameterConstraints(
 ): t.TSTypeParameterDeclaration | null {
   if (!typeParams) return null;
 
-  const fixedParams = typeParams.params.map((param) => {
+  const fixedParams = typeParams.params.map(param => {
     const clonedParam = t.cloneNode(param);
     // Check if constraint is just 'Message' (without type arguments) or Message<any>
     if (
@@ -77,7 +77,7 @@ export function buildTypeNamespace(
   const classRef = className ?? typeAlias.id.name;
   const typeId = t.identifier('Data');
 
-  const literalMembers = properties.map((prop) => {
+  const literalMembers = properties.map(prop => {
     const key = t.identifier(prop.name);
     let typeAnnotation = prop.displayType
       ? t.cloneNode(prop.displayType)
@@ -114,7 +114,7 @@ export function buildTypeNamespace(
   // Build type arguments from type parameters (e.g., <T> becomes <T>)
   const typeArgs = typeAlias.typeParameters
     ? t.tsTypeParameterInstantiation(
-        typeAlias.typeParameters.params.map((param) =>
+        typeAlias.typeParameters.params.map(param =>
           t.tsTypeReference(t.identifier(param.name))
         )
       )
@@ -131,17 +131,21 @@ export function buildTypeNamespace(
         t.tsQualifiedName(t.identifier(typeAlias.id.name), t.identifier('Data')),
         typeArgs ? t.cloneNode(typeArgs) : null
       ),
-      ...(properties.some((prop) => prop.isWrapperValue)
-        ? [t.cloneNode(properties.find((prop) => prop.isWrapperValue)!.typeAnnotation)]
-        : []),
+      ...properties.some(prop => prop.isWrapperValue)
+        ? [
+            t.cloneNode(
+              properties.find(prop => prop.isWrapperValue)!.typeAnnotation
+            ),
+          ]
+        : [],
     ])
   );
   const exportedUnionDecl = t.exportNamedDeclaration(typeUnionDecl, []);
   exportedUnionDecl.exportKind = 'type';
 
   const aliasDecls = generatedTypeNames
-    .filter((name) => typeof name === 'string' && name.startsWith(`${typeAlias.id.name}_`))
-    .map((name) => {
+    .filter(name => typeof name === 'string' && name.startsWith(`${typeAlias.id.name}_`))
+    .map(name => {
       const aliasName = name.slice(typeAlias.id.name.length + 1);
       const importEquals = t.tsImportEqualsDeclaration(
         t.identifier(aliasName),

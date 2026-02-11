@@ -34,7 +34,7 @@ export class Response<T extends {
   }) {
     super(TYPE_TAG_Response, `Response<${tClass.$typeName}>`);
     this.#tClass = tClass;
-    this.#body = (props ? props.body : new this.#tClass(undefined)) as T;
+    this.#body = (props ? props.body : new this.#tClass(undefined));
     this.#headers = props ? (props.headers === undefined || props.headers === null ? props.headers : ImmutableMap.isInstance(props.headers) ? props.headers : new ImmutableMap(props.headers as Iterable<[unknown, unknown]>)) as ImmutableMap<string, string> : undefined;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Response.Data<T>>[] {
@@ -130,7 +130,7 @@ export class Response<T extends {
   }>(tClass: MessageConstructor<T>, data: string, options?: {
     skipValidation: boolean;
   }): Response<T> {
-    const payload = ensure.simpleObject(parseCerealString(data)) as DataObject;
+    const payload = ensure.simpleObject(parseCerealString(data));
     const headersValue = payload["2"] === undefined ? payload["headers"] : payload["2"];
     const headersNormalized = headersValue === null ? undefined : headersValue;
     const headersMapValue = headersNormalized === undefined || headersNormalized === null ? headersNormalized : ImmutableMap.isInstance(headersNormalized) ? headersNormalized : new ImmutableMap(headersNormalized as Iterable<[unknown, unknown]>);
@@ -158,7 +158,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   deleteHeader(key: string) {
     const headersCurrent = this.headers;
@@ -170,7 +170,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   filterHeaders(predicate: (value: string, key: string) => boolean) {
     const headersMapSource = this.#headers;
@@ -183,7 +183,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   mapHeaders(mapper: (value: string, key: string) => [string, string]) {
     const headersMapSource = this.#headers;
@@ -202,7 +202,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   mergeHeaders(entries: ImmutableMap<string, string> | ReadonlyMap<string, string> | Iterable<[string, string]>) {
     const headersMapSource = this.#headers;
@@ -215,7 +215,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   set(updates: Partial<SetUpdates<Response.Data<T>>>) {
     const data = this.toData();
@@ -224,13 +224,13 @@ export class Response<T extends {
         (data as Record<string, unknown>)[key] = value;
       }
     }
-    return this.$update(new Response(this.#tClass, data) as this as this);
+    return this.$update(new Response(this.#tClass, data) as this);
   }
   setBody(value: T) {
     return this.$update(new Response(this.#tClass, {
       body: value,
       headers: this.#headers as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   setHeader(key: string, value: string) {
     const headersCurrent = this.headers;
@@ -245,18 +245,18 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   setHeaders(value: Map<string, string> | Iterable<[string, string]> | undefined) {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: (value === undefined || value === null ? value : ImmutableMap.isInstance(value) ? value : new ImmutableMap(value)) as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
   unsetHeaders() {
     return this.$update(new Response(this.#tClass, {
       body: this.#body
-    }) as this as this);
+    }) as this);
   }
   updateHeader(key: string, updater: (currentValue: string | undefined) => string) {
     const headersMapSource = this.#headers;
@@ -269,7 +269,7 @@ export class Response<T extends {
     return this.$update(new Response(this.#tClass, {
       body: this.#body,
       headers: headersMapNext as Map<string, string> | Iterable<[string, string]>
-    }) as this as this);
+    }) as this);
   }
 }
 export namespace Response {

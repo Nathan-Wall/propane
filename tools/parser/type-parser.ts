@@ -50,7 +50,7 @@ function resolveAliasConfig(
   ctx: TypeParserContext
 ): TypeAliasConfig | null {
   if (!ctx.typeAliases) return null;
-  if (ctx.localTypeNames && ctx.localTypeNames.has(name)) {
+  if (ctx.localTypeNames?.has(name)) {
     return null;
   }
   return ctx.typeAliases[name] ?? null;
@@ -140,7 +140,7 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
   if (t.isTSUnionType(node)) {
     return {
       kind: 'union',
-      types: node.types.map((member) => parseType(member, ctx)),
+      types: node.types.map(member => parseType(member, ctx)),
     };
   }
 
@@ -153,7 +153,7 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
   if (t.isTSTypeReference(node)) {
     const name = getTypeName(node.typeName);
     const typeArgs = node.typeParameters?.params ?? [];
-    const parsedArgs = typeArgs.map((arg) => parseType(arg, ctx));
+    const parsedArgs = typeArgs.map(arg => parseType(arg, ctx));
 
     if (t.isIdentifier(node.typeName)) {
       const alias = resolveAliasConfig(node.typeName.name, ctx);
@@ -165,8 +165,7 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
     // Handle built-in collection types
     if (name === 'Array' || name === 'ReadonlyArray' || name === 'ImmutableArray') {
       const elementType: PmtType = parsedArgs[0]
-        ? parsedArgs[0]
-        : { kind: 'primitive', primitive: 'string' };
+        ?? { kind: 'primitive', primitive: 'string' };
       return { kind: 'array', elementType };
     }
 
@@ -196,7 +195,7 @@ export function parseType(node: t.TSType, ctx: TypeParserContext): PmtType {
   // Tuple types - treat as array for simplicity
   if (t.isTSTupleType(node)) {
     // Use union of element types
-    const elementTypes = node.elementTypes.map((elem) => {
+    const elementTypes = node.elementTypes.map(elem => {
       if (t.isTSNamedTupleMember(elem)) {
         return parseType(elem.elementType, ctx);
       }
@@ -279,7 +278,7 @@ export function parseTypeParameters(
     return [];
   }
 
-  return params.params.map((param) => ({
+  return params.params.map(param => ({
     name: param.name,
     constraint: param.constraint ? parseType(param.constraint, ctx) : null,
   }));

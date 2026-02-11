@@ -181,8 +181,8 @@ function planSchemaOnlyMigration(
         description: `Make column ${col} NOT NULL`,
       });
       warnings.push(
-        `Setting ${col} to NOT NULL will fail if any NULL values exist. ` +
-        `Run: SELECT COUNT(*) FROM ${tableName} WHERE ${col} IS NULL;`
+        `Setting ${col} to NOT NULL will fail if any NULL values exist. `
+        + `Run: SELECT COUNT(*) FROM ${tableName} WHERE ${col} IS NULL;`
       );
     }
   }
@@ -231,27 +231,18 @@ function planNativeToJsonbMigration(
     sql: `ALTER TABLE ${tableName} ADD COLUMN ${colNew} JSONB;`,
     reverseSql: `ALTER TABLE ${tableName} DROP COLUMN ${colNew};`,
     description: `Add temporary JSONB column ${columnName}_new`,
-  });
-
-  // Step 2: Migrate data
-  steps.push({
+  }, {
     type: 'migrate_data',
     sql: `UPDATE ${tableName} SET ${colNew} = CASE
   WHEN ${col} IS NULL THEN ${nullConversion}
   ELSE ${valueWrap}
 END;`,
     description: `Migrate data from ${columnName} to ${columnName}_new`,
-  });
-
-  // Step 3: Drop old column
-  steps.push({
+  }, {
     type: 'drop_column',
     sql: `ALTER TABLE ${tableName} DROP COLUMN ${col};`,
     description: `Drop old column ${columnName}`,
-  });
-
-  // Step 4: Rename new column
-  steps.push({
+  }, {
     type: 'rename_column',
     sql: `ALTER TABLE ${tableName} RENAME COLUMN ${colNew} TO ${col};`,
     reverseSql: `ALTER TABLE ${tableName} RENAME COLUMN ${col} TO ${colNew};`,
@@ -259,8 +250,8 @@ END;`,
   });
 
   warnings.push(
-    `Migrating ${columnName} from native type to JSONB. ` +
-    `This is a data migration that converts all existing values to JSONB format.`
+    `Migrating ${columnName} from native type to JSONB. `
+    + `This is a data migration that converts all existing values to JSONB format.`
   );
 
   return {
@@ -297,8 +288,8 @@ function planJsonbToNativeMigration(
       sql: `SELECT COUNT(*) FROM ${tableName} WHERE ${col} = '{}'::jsonb;`,
       failCondition: 'count > 0',
       errorMessage:
-        `Column ${columnName} contains undefined values ({}) which cannot be ` +
-        `represented in T | null type. Convert to null or update values first.`,
+        `Column ${columnName} contains undefined values ({}) which cannot be `
+        + `represented in T | null type. Convert to null or update values first.`,
     });
   } else if (toAnalysis.hasUndefined && !toAnalysis.hasNull) {
     // T | undefined - check for null values ({"$v": null})
@@ -307,8 +298,8 @@ function planJsonbToNativeMigration(
       sql: `SELECT COUNT(*) FROM ${tableName} WHERE ${col} = '{"$v": null}'::jsonb;`,
       failCondition: 'count > 0',
       errorMessage:
-        `Column ${columnName} contains explicit null values ({"$v": null}) which cannot be ` +
-        `represented in T | undefined type. Remove these values or update to undefined first.`,
+        `Column ${columnName} contains explicit null values ({"$v": null}) which cannot be `
+        + `represented in T | undefined type. Remove these values or update to undefined first.`,
     });
   } else if (!toAnalysis.hasNull && !toAnalysis.hasUndefined) {
     // T only - check for both null and undefined values
@@ -317,8 +308,8 @@ function planJsonbToNativeMigration(
       sql: `SELECT COUNT(*) FROM ${tableName} WHERE ${col} = '{}'::jsonb OR ${col} = '{"$v": null}'::jsonb OR ${col} IS NULL;`,
       failCondition: 'count > 0',
       errorMessage:
-        `Column ${columnName} contains null or undefined values which cannot be ` +
-        `represented in non-nullable type. Update or remove these values first.`,
+        `Column ${columnName} contains null or undefined values which cannot be `
+        + `represented in non-nullable type. Update or remove these values first.`,
     });
   }
 
@@ -351,27 +342,18 @@ function planJsonbToNativeMigration(
     sql: `ALTER TABLE ${tableName} ADD COLUMN ${colNew} ${targetType}${nullableSuffix};`,
     reverseSql: `ALTER TABLE ${tableName} DROP COLUMN ${colNew};`,
     description: `Add temporary native column ${columnName}_new`,
-  });
-
-  // Step 2: Migrate data
-  steps.push({
+  }, {
     type: 'migrate_data',
     sql: `UPDATE ${tableName} SET ${colNew} = CASE
   WHEN ${nullCheck} THEN NULL
   ELSE ${valueExtract}
 END;`,
     description: `Migrate data from ${columnName} to ${columnName}_new`,
-  });
-
-  // Step 3: Drop old column
-  steps.push({
+  }, {
     type: 'drop_column',
     sql: `ALTER TABLE ${tableName} DROP COLUMN ${col};`,
     description: `Drop old JSONB column ${columnName}`,
-  });
-
-  // Step 4: Rename new column
-  steps.push({
+  }, {
     type: 'rename_column',
     sql: `ALTER TABLE ${tableName} RENAME COLUMN ${colNew} TO ${col};`,
     reverseSql: `ALTER TABLE ${tableName} RENAME COLUMN ${col} TO ${colNew};`,
@@ -379,8 +361,8 @@ END;`,
   });
 
   warnings.push(
-    `Migrating ${columnName} from JSONB to native type. ` +
-    `This may fail if data contains values that cannot be converted to the target type.`
+    `Migrating ${columnName} from JSONB to native type. `
+    + `This may fail if data contains values that cannot be converted to the target type.`
   );
 
   return {
@@ -401,9 +383,9 @@ function buildValueWrapExpression(
 ): string {
   // If the target union has multiple types, we need to include the type tag
   const needsTypeTag =
-    toAnalysis.unionMembers &&
-    toAnalysis.unionMembers.length > 1 &&
-    !toAnalysis.hasMessages;
+    toAnalysis.unionMembers
+    && toAnalysis.unionMembers.length > 1
+    && !toAnalysis.hasMessages;
 
   if (needsTypeTag) {
     // Wrap with type discriminator: {"$t": "string", "$v": value}
@@ -471,12 +453,9 @@ export function formatMigrationPlan(
   plan: ColumnMigrationPlan,
   columnName: string
 ): string {
-  const lines: string[] = [];
+  const lines: string[] = [ `-- Migration for column: ${columnName}`, `-- Type: ${plan.type}`, ''];
 
   // Header
-  lines.push(`-- Migration for column: ${columnName}`);
-  lines.push(`-- Type: ${plan.type}`);
-  lines.push('');
 
   // Warnings
   if (plan.warnings.length > 0) {
@@ -491,10 +470,7 @@ export function formatMigrationPlan(
   if (plan.preChecks.length > 0) {
     lines.push('-- Pre-migration checks (run these queries first):');
     for (const check of plan.preChecks) {
-      lines.push(`-- ${check.description}`);
-      lines.push(`-- ${check.sql}`);
-      lines.push(`-- Expected: ${check.failCondition} means migration will fail`);
-      lines.push('');
+      lines.push(`-- ${check.description}`, `-- ${check.sql}`, `-- Expected: ${check.failCondition} means migration will fail`, '');
     }
   }
 
@@ -502,9 +478,7 @@ export function formatMigrationPlan(
   lines.push('-- Migration steps:');
   for (let i = 0; i < plan.steps.length; i++) {
     const step = plan.steps[i]!;
-    lines.push(`-- Step ${i + 1}: ${step.description}`);
-    lines.push(step.sql);
-    lines.push('');
+    lines.push(`-- Step ${i + 1}: ${step.description}`, step.sql, '');
   }
 
   return lines.join('\n');

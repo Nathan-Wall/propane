@@ -97,21 +97,33 @@ export function validateCliConfig(value: unknown, source: string): CliConfig {
   }
 
   // Helper to check field types
-  const checkString = (obj: Record<string, unknown>, field: string, path: string) => {
+  const checkString = (
+    obj: Record<string, unknown>,
+    field: string,
+    path: string
+  ) => {
     if (obj[field] !== undefined && typeof obj[field] !== 'string') {
       throw new ConfigValidationError(
         `Config ${path} must be a string, got ${typeof obj[field]}`
       );
     }
   };
-  const checkNumber = (obj: Record<string, unknown>, field: string, path: string) => {
+  const checkNumber = (
+    obj: Record<string, unknown>,
+    field: string,
+    path: string
+  ) => {
     if (obj[field] !== undefined && typeof obj[field] !== 'number') {
       throw new ConfigValidationError(
         `Config ${path} must be a number, got ${typeof obj[field]}`
       );
     }
   };
-  const checkBoolean = (obj: Record<string, unknown>, field: string, path: string) => {
+  const checkBoolean = (
+    obj: Record<string, unknown>,
+    field: string,
+    path: string
+  ) => {
     if (obj[field] !== undefined && typeof obj[field] !== 'boolean') {
       throw new ConfigValidationError(
         `Config ${path} must be a boolean, got ${typeof obj[field]}`
@@ -218,8 +230,11 @@ export async function loadConfig(configPath?: string): Promise<CliConfig> {
         return validateCliConfig(content, fullPath);
       }
       // For TS/JS files, use dynamic import
-      const module = await import(fullPath);
-      const content = module.default ?? module;
+      const importedModule = await import(fullPath);
+      const moduleRecord = importedModule as Record<string, unknown>;
+      const content = 'default' in moduleRecord
+        ? moduleRecord['default']
+        : moduleRecord;
       return validateCliConfig(content, fullPath);
     }
   }
@@ -322,7 +337,8 @@ export function generateCommand(
   console.log('\nSchema generated successfully.');
 
   // 6. Generate repositories if requested
-  const shouldGenerateRepos = options.repositories ?? config.codegen?.generateRepositories;
+  const shouldGenerateRepos = options.repositories
+    ?? config.codegen?.generateRepositories;
   if (shouldGenerateRepos) {
     const outputDir = options.outputDir ?? config.codegen?.outputDir ?? './generated';
 
@@ -674,16 +690,7 @@ export async function migrateCreateCommand(
         || diff.tablesToDrop.length > 0
         || diff.tablesToAlter.length > 0;
 
-      if (!hasChanges) {
-        console.log('No schema changes detected. Creating empty migration.');
-        migration = {
-          version,
-          description,
-          up: '-- No changes detected',
-          down: '-- No changes to revert',
-          hasBreakingChanges: false,
-        };
-      } else {
+      if (hasChanges) {
         // Generate migration SQL from diff
         // Wrap in transaction by default (unless --no-transaction is specified)
         migration = generateMigration(diff, {
@@ -706,6 +713,15 @@ export async function migrateCreateCommand(
         if (migration.hasBreakingChanges) {
           console.log('\n  WARNING: This migration contains breaking changes!');
         }
+      } else {
+        console.log('No schema changes detected. Creating empty migration.');
+        migration = {
+          version,
+          description,
+          up: '-- No changes detected',
+          down: '-- No changes to revert',
+          hasBreakingChanges: false,
+        };
       }
     }
 
@@ -909,7 +925,7 @@ function loadMigrations(directory: string): Promise<MigrationToRun[]> {
     return Promise.resolve(migrations);
   }
 
-  const files = fs.readdirSync(directory).filter((f) => f.endsWith('.sql')).toSorted();
+  const files = fs.readdirSync(directory).filter(f => f.endsWith('.sql')).toSorted();
 
   for (const file of files) {
     const content = fs.readFileSync(path.join(directory, file), 'utf8');

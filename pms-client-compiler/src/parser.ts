@@ -22,7 +22,10 @@ export class ParseError extends Error {
     public readonly diagnostics: PmtDiagnostic[],
   ) {
     const messages = diagnostics
-      .map((d) => `[${d.code}] ${d.message} (${d.location.start.line}:${d.location.start.column})`)
+      .map(
+        d => `[${d.code}] ${d.message}`
+          + ` (${d.location.start.line}:${d.location.start.column})`
+      )
       .join('\n');
     super(`Failed to parse ${filePath}:\n${messages}`);
     this.name = 'ParseError';
@@ -71,11 +74,14 @@ export interface ParseResult {
  *
  * @throws {ParseError} If the file contains syntax or validation errors
  */
-export function parseFile(filePath: string, options?: ParseOptions): RpcEndpoint[] {
+export function parseFile(
+  filePath: string,
+  options?: ParseOptions
+): RpcEndpoint[] {
   const { file, diagnostics } = pmtParseFile(filePath, options);
 
   // Check for errors
-  const errors = diagnostics.filter((d) => d.severity === 'error');
+  const errors = diagnostics.filter(d => d.severity === 'error');
   if (errors.length > 0) {
     throw new ParseError(filePath, errors);
   }
@@ -88,7 +94,10 @@ export function parseFile(filePath: string, options?: ParseOptions): RpcEndpoint
 /**
  * Parse multiple .pmsg files and aggregate results.
  */
-export function parseFiles(filePaths: string[], options?: ParseOptions): ParseResult {
+export function parseFiles(
+  filePaths: string[],
+  options?: ParseOptions
+): ParseResult {
   const endpoints: RpcEndpoint[] = [];
   const fileEndpoints = new Map<string, RpcEndpoint[]>();
 

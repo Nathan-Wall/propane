@@ -61,13 +61,13 @@ function testStaleInnerReferenceFromMemo() {
 
   // Setup listener recursively using hybrid approach
   const setupListener = (root: OuterMessage) => {
-    const nextUnsubscribe = (root as unknown as HybridListenable)[SET_UPDATE_LISTENER](
-      REACT_LISTENER_KEY,
-      (next) => {
-        const nextTyped = next as unknown as OuterMessage;
-        setupListener(nextTyped);
-        currentState = nextTyped;
-        stateHistory.push({
+    const nextUnsubscribe = (
+      root as unknown as HybridListenable
+    )[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, next => {
+      const nextTyped = next as unknown as OuterMessage;
+      setupListener(nextTyped);
+      currentState = nextTyped;
+      stateHistory.push({
           counter: nextTyped.counter,
           innerValue: nextTyped.inner.value,
         });

@@ -101,9 +101,9 @@ describe('Migration Integration', { skip: !isDatabaseAvailable() }, () => {
         ORDER BY table_name
       `, [schemaName]);
 
-      const tableNames = tables.map(t => t.table_name);
-      assert.ok(tableNames.includes('users'));
-      assert.ok(tableNames.includes('posts'));
+      const tableNames = new Set(tables.map(t => t.table_name));
+      assert.ok(tableNames.has('users'));
+      assert.ok(tableNames.has('posts'));
     } finally {
       await teardownTestSchema(pool, schemaName);
     }

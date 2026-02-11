@@ -16,7 +16,9 @@
  * }>;
  * ```
  */
-export type Message<T extends object> = T & { readonly __message: unique symbol };
+export type Message<T extends object> = T & {
+  readonly __message: unique symbol;
+};
 
 /**
  * Wrapper type for MessageWrapper definitions in .pmsg files.

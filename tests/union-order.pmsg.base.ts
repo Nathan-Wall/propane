@@ -48,7 +48,7 @@ export class StringFirst extends Message<StringFirst.Data> {
   }
   static validateAll(data: StringFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
@@ -153,7 +153,7 @@ export class NumberFirst extends Message<NumberFirst.Data> {
   }
   static validateAll(data: NumberFirst.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

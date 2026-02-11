@@ -61,8 +61,8 @@ export type CreateUserResponse = Message<{
       const endpoints = parseFile(standardFile);
       assert.strictEqual(endpoints.length, 2, 'Should find 2 RPC endpoints');
 
-      const getUser = endpoints.find((e) => e.requestType === 'GetUserRequest');
-      const createUser = endpoints.find((e) => e.requestType === 'CreateUserRequest');
+      const getUser = endpoints.find(e => e.requestType === 'GetUserRequest');
+      const createUser = endpoints.find(e => e.requestType === 'CreateUserRequest');
 
       assert.ok(getUser, 'GetUserRequest should be found');
       assert.ok(createUser, 'CreateUserRequest should be found');

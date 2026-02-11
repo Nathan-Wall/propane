@@ -321,7 +321,7 @@ export function buildMessageNormalizationExpression(
             t.tsQualifiedName(t.identifier(className), t.identifier('Value')),
             valueTypeArgs.length > 0
               ? t.tsTypeParameterInstantiation(
-                valueTypeArgs.map((arg) => t.cloneNode(arg))
+                valueTypeArgs.map(arg => t.cloneNode(arg))
               )
               : undefined
           )
@@ -337,7 +337,7 @@ export function buildMessageNormalizationExpression(
 
   const buildFromCompact = (inputExpr: t.Expression) => {
     const fromCompactArgs: t.Expression[] = [
-      ...compactArgs.map((arg) => t.cloneNode(arg)),
+      ...compactArgs.map(arg => t.cloneNode(arg)),
       inputExpr,
     ];
     if (optionsExpr) {
@@ -570,7 +570,10 @@ export function buildMessageNormalizationExpression(
     );
     const payloadExpr = buildCompactPayload(t.cloneNode(valueId));
     const fromCompactCall = buildFromCompact(payloadExpr);
-    const typedFromCompact = t.tsAsExpression(fromCompactCall, t.tsAnyKeyword());
+    const typedFromCompact = t.tsAsExpression(
+      fromCompactCall,
+      t.tsAnyKeyword()
+    );
     statements.push(
       t.ifStatement(
         t.logicalExpression('&&', stringCheck, compactCheck),
@@ -866,9 +869,17 @@ export interface MapConversionInfo {
 export function buildImmutableMapWithConversionsExpression(
   valueExpr: t.Expression,
   conversions: MapConversionInfo,
-  options: { castToAny?: boolean; allowUndefined?: boolean; allowCompact?: boolean } = {}
+  options: {
+    castToAny?: boolean;
+    allowUndefined?: boolean;
+    allowCompact?: boolean;
+  } = {}
 ): t.Expression {
-  const { castToAny = false, allowUndefined = true, allowCompact = true } = options;
+  const {
+    castToAny = false,
+    allowUndefined = true,
+    allowCompact = true,
+  } = options;
 
   const nilCheck = t.logicalExpression(
     '||',

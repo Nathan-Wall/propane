@@ -93,9 +93,9 @@ export function compareSchemas(
   const hasBreakingChanges =
     tablesToDrop.length > 0
     || tablesToAlter.some(
-      (a) =>
+      a =>
         a.columnsToDrop.length > 0
-        || a.columnsToAlter.some((c) => c.typeChange !== undefined)
+        || a.columnsToAlter.some(c => c.typeChange !== undefined)
     );
 
   return {
@@ -394,46 +394,46 @@ function findNewIndexes(
   from: IndexDefinition[],
   to: IndexDefinition[]
 ): IndexDefinition[] {
-  const fromNames = new Set(from.map((i) => i.name));
-  return to.filter((i) => !fromNames.has(i.name));
+  const fromNames = new Set(from.map(i => i.name));
+  return to.filter(i => !fromNames.has(i.name));
 }
 
 function findDroppedIndexes(
   from: IndexDefinition[],
   to: IndexDefinition[]
 ): string[] {
-  const toNames = new Set(to.map((i) => i.name));
-  return from.filter((i) => !toNames.has(i.name)).map((i) => i.name);
+  const toNames = new Set(to.map(i => i.name));
+  return from.filter(i => !toNames.has(i.name)).map(i => i.name);
 }
 
 function findNewForeignKeys(
   from: ForeignKeyDefinition[],
   to: ForeignKeyDefinition[]
 ): ForeignKeyDefinition[] {
-  const fromNames = new Set(from.map((f) => f.name));
-  return to.filter((f) => !fromNames.has(f.name));
+  const fromNames = new Set(from.map(f => f.name));
+  return to.filter(f => !fromNames.has(f.name));
 }
 
 function findDroppedForeignKeys(
   from: ForeignKeyDefinition[],
   to: ForeignKeyDefinition[]
 ): string[] {
-  const toNames = new Set(to.map((f) => f.name));
-  return from.filter((f) => !toNames.has(f.name)).map((f) => f.name);
+  const toNames = new Set(to.map(f => f.name));
+  return from.filter(f => !toNames.has(f.name)).map(f => f.name);
 }
 
 function findNewChecks(
   from: CheckConstraint[],
   to: CheckConstraint[]
 ): CheckConstraint[] {
-  const fromNames = new Set(from.map((c) => c.name));
-  return to.filter((c) => !fromNames.has(c.name));
+  const fromNames = new Set(from.map(c => c.name));
+  return to.filter(c => !fromNames.has(c.name));
 }
 
 function findDroppedChecks(
   from: CheckConstraint[],
   to: CheckConstraint[]
 ): string[] {
-  const toNames = new Set(to.map((c) => c.name));
-  return from.filter((c) => !toNames.has(c.name)).map((c) => c.name);
+  const toNames = new Set(to.map(c => c.name));
+  return from.filter(c => !toNames.has(c.name)).map(c => c.name);
 }

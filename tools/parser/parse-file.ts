@@ -184,11 +184,11 @@ export async function parseFilesAsync(
   options?: ParseOptions
 ): Promise<ParseFilesResult> {
   const results = await Promise.all(
-    filePaths.map((filePath) => parseFileAsync(filePath, options))
+    filePaths.map(filePath => parseFileAsync(filePath, options))
   );
 
-  const files = results.map((r) => r.file);
-  const allDiagnostics = results.flatMap((r) => r.diagnostics);
+  const files = results.map(r => r.file);
+  const allDiagnostics = results.flatMap(r => r.diagnostics);
 
   return {
     files,

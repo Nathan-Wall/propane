@@ -85,18 +85,18 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       active: true,
     });
 
-    assert.ok(created['id']);
-    assert.strictEqual(created['email'], 'test@example.com');
-    assert.strictEqual(created['name'], 'Test User');
-    assert.strictEqual(created['active'], true);
+    assert.ok(created.id);
+    assert.strictEqual(created.email, 'test@example.com');
+    assert.strictEqual(created.name, 'Test User');
+    assert.strictEqual(created.active, true);
 
-    const found = await userRepo.findById(created['id']);
+    const found = await userRepo.findById(created.id);
     assert.ok(found);
     assert.strictEqual(found['email'], 'test@example.com');
   });
 
   it('should return null for non-existent id', async () => {
-    const found = await userRepo.findById(999999);
+    const found = await userRepo.findById(999_999);
     assert.strictEqual(found, null);
   });
 
@@ -107,11 +107,11 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       { email: 'c@example.com', name: 'Charlie', active: true },
     ]);
 
-    const ids = [users[0]!['id'], users[2]!['id']];
+    const ids = [users[0]!.id, users[2]!.id];
     const found = await userRepo.findByIds(ids);
 
     assert.strictEqual(found.length, 2);
-    const names = found.map(u => u['name']).sort();
+    const names = found.map(u => u['name']).toSorted();
     assert.deepStrictEqual(names, ['Alice', 'Charlie']);
   });
 
@@ -122,17 +122,17 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       active: true,
     });
 
-    const updated = await userRepo.update(created['id'], {
+    const updated = await userRepo.update(created.id, {
       name: 'Updated Name',
     });
 
     assert.ok(updated);
-    assert.strictEqual(updated['name'], 'Updated Name');
-    assert.strictEqual(updated['email'], 'update@example.com');
+    assert.strictEqual(updated.name, 'Updated Name');
+    assert.strictEqual(updated.email, 'update@example.com');
   });
 
   it('should return null when updating non-existent record', async () => {
-    const updated = await userRepo.update(999999, { name: 'New Name' });
+    const updated = await userRepo.update(999_999, { name: 'New Name' });
     assert.strictEqual(updated, null);
   });
 
@@ -143,15 +143,15 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       active: true,
     });
 
-    const deleted = await userRepo.delete(created['id']);
+    const deleted = await userRepo.delete(created.id);
     assert.strictEqual(deleted, true);
 
-    const found = await userRepo.findById(created['id']);
+    const found = await userRepo.findById(created.id);
     assert.strictEqual(found, null);
   });
 
   it('should return false when deleting non-existent record', async () => {
-    const deleted = await userRepo.delete(999999);
+    const deleted = await userRepo.delete(999_999);
     assert.strictEqual(deleted, false);
   });
 
@@ -259,7 +259,7 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       { email: 'upsert@example.com', name: 'Original', active: true },
       ['email']
     );
-    assert.strictEqual(created['name'], 'Original');
+    assert.strictEqual(created.name, 'Original');
 
     const count = await userRepo.count();
     assert.strictEqual(count, 1);
@@ -276,8 +276,8 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       { email: 'upsert@example.com', name: 'Updated', active: false },
       ['email']
     );
-    assert.strictEqual(updated['name'], 'Updated');
-    assert.strictEqual(updated['active'], false);
+    assert.strictEqual(updated.name, 'Updated');
+    assert.strictEqual(updated.active, false);
 
     // Should only have one record
     const count = await userRepo.count();
@@ -357,7 +357,7 @@ describe('Repository Integration', { skip: !isDatabaseAvailable() }, () => {
       active: true,
     });
 
-    const found = await userRepo.findById(created['id'], ['name', 'email']);
+    const found = await userRepo.findById(created.id, ['name', 'email']);
     assert.ok(found);
     assert.strictEqual(found['name'], 'Select Test');
     assert.strictEqual(found['email'], 'select@example.com');

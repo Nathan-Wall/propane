@@ -274,7 +274,7 @@ function findClosestDecorator(unknown: string): string | null {
 }
 
 function isValidCompactTag(tag: string): boolean {
-  return (tag.length === 1 && /[A-Za-z]/.test(tag)) || tag === '#';
+  return tag.length === 1 && /[A-Za-z]/.test(tag) || tag === '#';
 }
 
 /**

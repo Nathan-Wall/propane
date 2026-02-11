@@ -44,11 +44,14 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
 
   const setupListener = (root: S) => {
     if (hasHybridListener(root)) {
-      const nextUnsubscribe = root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
-        currentState = next as unknown as S;
-        renderCount++;
-        setupListener(currentState);
-      });
+      const nextUnsubscribe = root[SET_UPDATE_LISTENER](
+        REACT_LISTENER_KEY,
+        next => {
+          currentState = next as unknown as S;
+          renderCount++;
+          setupListener(currentState);
+        }
+      );
       const previousUnsubscribe = currentUnsubscribe;
       currentUnsubscribe = nextUnsubscribe;
       previousUnsubscribe?.();

@@ -8,8 +8,8 @@
  * 3. Removes `// @message` from Endpoint<{...}, R> types (they're already wrappers)
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 // Find all .pmsg files
 function findPmsgFiles(dir, files = []) {
@@ -32,8 +32,13 @@ function migrateFile(filePath) {
   let modified = false;
 
   // Check if already has Message import from @propane/runtime
-  const hasMessageImport = /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@propanejs\/runtime['"]/.test(content)
-    || /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@\/runtime/.test(content);
+  const hasPropaneRuntimeImport =
+    /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@propanejs\/runtime['"]/
+      .test(content);
+  const hasInternalRuntimeImport =
+    /import\s+\{[^}]*\bMessage\b[^}]*\}\s+from\s+['"]@\/runtime/
+      .test(content);
+  const hasMessageImport = hasPropaneRuntimeImport || hasInternalRuntimeImport;
 
   // Check if file uses @message decorator
   const hasMessageDecorator = /\/\/\s*@message/.test(content);
@@ -48,43 +53,87 @@ function migrateFile(filePath) {
 
   // Pattern 1: // @message on its own line followed by export type Foo = { ... };
   // Convert to: export type Foo = Message<{ ... }>;
-  const objectLiteralPattern = /\/\/\s*@message\s*\n(\s*)(export\s+type\s+(\w+)(?:<[^>]+>)?\s*=\s*)(\{[\s\S]*?\});/g;
+  const objectLiteralPattern = new RegExp(
+    String.raw`\/\/\s*@message\s*\n`
+      + String.raw`(\s*)`
+      + String.raw`(export\s+type\s+(\w+)(?:<[^>]+>)?\s*=\s*)`
+      + String.raw`(\{[\s\S]*?\});`,
+    'g',
+  );
 
-  content = content.replace(objectLiteralPattern, (match, indent, prefix, typeName, objectLiteral) => {
-    modified = true;
-    needsMessageImport = true;
-    return `${indent}${prefix}Message<${objectLiteral}>;`;
-  });
+  content = content.replaceAll(
+    objectLiteralPattern,
+    (unused_match, indent, prefix, unused_typeName, objectLiteral) => {
+      modified = true;
+      needsMessageImport = true;
+      return `${indent}${prefix}Message<${objectLiteral}>;`;
+    },
+  );
 
   // Pattern 2: // @message @extend('./path') on same line followed by export type
-  const extendPattern = /\/\/\s*@message\s+(@extend\([^)]+\))\s*\n(\s*)(export\s+type\s+(\w+)(?:<[^>]+>)?\s*=\s*)(\{[\s\S]*?\});/g;
+  const extendPattern = new RegExp(
+    String.raw`\/\/\s*@message\s+(@extend\([^)]+\))\s*\n`
+      + String.raw`(\s*)`
+      + String.raw`(export\s+type\s+(\w+)(?:<[^>]+>)?\s*=\s*)`
+      + String.raw`(\{[\s\S]*?\});`,
+    'g',
+  );
 
-  content = content.replace(extendPattern, (match, extendDecorator, indent, prefix, typeName, objectLiteral) => {
-    modified = true;
-    needsMessageImport = true;
-    return `// ${extendDecorator}\n${indent}${prefix}Message<${objectLiteral}>;`;
-  });
+  content = content.replaceAll(
+    extendPattern,
+    (
+      unused_match,
+      extendDecorator,
+      indent,
+      prefix,
+      unused_typeName,
+      objectLiteral,
+    ) => {
+      modified = true;
+      needsMessageImport = true;
+      return `// ${extendDecorator}\n${indent}${prefix}Message<${objectLiteral}>;`;
+    },
+  );
 
   // Pattern 3: // @message with Endpoint<{...}, R> - just remove @message
-  const endpointPattern = /\/\/\s*@message\s*\n(\s*export\s+type\s+\w+(?:<[^>]+>)?\s*=\s*(?:Endpoint|PmsRequest)<)/g;
+  const endpointPattern = new RegExp(
+    String.raw`\/\/\s*@message\s*\n`
+      + String.raw`(\s*export\s+type\s+\w+(?:<[^>]+>)?\s*=\s*`
+      + String.raw`(?:Endpoint|PmsRequest)<)`,
+    'g',
+  );
 
-  content = content.replace(endpointPattern, (match, afterMessage) => {
-    modified = true;
-    return afterMessage;
-  });
+  content = content.replaceAll(
+    endpointPattern,
+    (unused_match, afterMessage) => {
+      modified = true;
+      return afterMessage;
+    },
+  );
 
   // Pattern 4: // @message @extend on same line with Endpoint
-  const endpointExtendPattern = /\/\/\s*@message\s+(@extend\([^)]+\))\s*\n(\s*export\s+type\s+\w+(?:<[^>]+>)?\s*=\s*(?:Endpoint|PmsRequest)<)/g;
+  const endpointExtendPattern = new RegExp(
+    String.raw`\/\/\s*@message\s+(@extend\([^)]+\))\s*\n`
+      + String.raw`(\s*export\s+type\s+\w+(?:<[^>]+>)?\s*=\s*`
+      + String.raw`(?:Endpoint|PmsRequest)<)`,
+    'g',
+  );
 
-  content = content.replace(endpointExtendPattern, (match, extendDecorator, afterMessage) => {
-    modified = true;
-    return `// ${extendDecorator}\n${afterMessage}`;
-  });
+  content = content.replaceAll(
+    endpointExtendPattern,
+    (unused_match, extendDecorator, afterMessage) => {
+      modified = true;
+      return `// ${extendDecorator}\n${afterMessage}`;
+    },
+  );
 
   // Add Message import if needed and not already present
   if (needsMessageImport && !hasMessageImport) {
     // Check for existing runtime imports to add Message to
-    const runtimeImportPattern = /import\s+\{([^}]+)\}\s+from\s+(['"]@(?:propanejs\/)?runtime[^'"]*['"])/;
+    const runtimeImportPattern = new RegExp(
+      String.raw`import\s+\{([^}]+)\}\s+from\s+`
+        + String.raw`(['"]@(?:propanejs\/)?runtime[^'"]*['"])`,
+    );
     const runtimeMatch = content.match(runtimeImportPattern);
 
     if (runtimeMatch) {
@@ -101,16 +150,13 @@ function migrateFile(filePath) {
       const importPattern = /^(import\s+.+\n)+/m;
       const importMatch = content.match(importPattern);
 
-      if (importMatch) {
-        // Add after existing imports
-        content = content.replace(
+      // Add after existing imports, or at top when no imports exist.
+      content = importMatch
+        ? content.replace(
           importPattern,
-          `${importMatch[0]}import { Message } from '@propane/runtime';\n`
-        );
-      } else {
-        // Add at the very top
-        content = `import { Message } from '@propane/runtime';\n\n${content}`;
-      }
+          `${importMatch[0]}import { Message } from '@propane/runtime';\n`,
+        )
+        : `import { Message } from '@propane/runtime';\n\n${content}`;
     }
     modified = true;
   }

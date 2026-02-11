@@ -121,11 +121,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -153,11 +149,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -193,11 +185,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected Distance.");
           }
         } else {
-          if (Distance.isInstance(value)) {
-            result = value;
-          } else {
-            result = new Distance(value as Distance.Value, options);
-          }
+          result = Distance.isInstance(value) ? value : new Distance(value as Distance.Value, options);
         }
       }
       return result;
@@ -213,7 +201,7 @@ export class User extends Message<User.Data> {
   }
   static validateAll(data: User.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

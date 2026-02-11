@@ -36,6 +36,7 @@ import {
   hasAnyValidation,
   type ValidationBuildContext,
 } from './validation-builder.js';
+import type { FieldValidation } from './validator-extraction.js';
 
 type UnionMessageTypeRef = {
   name: string;
@@ -86,7 +87,7 @@ function buildUnionMessageInstanceCheck(
     return null;
   }
   return messageTypes
-    .map((messageType) =>
+    .map(messageType =>
       t.callExpression(
         t.memberExpression(t.identifier(messageType), t.identifier('isInstance')),
         [t.cloneNode(valueExpr)]
@@ -108,7 +109,7 @@ function stripMessageTypesFromUnion(
   }
   if (t.isTSUnionType(unwrapped)) {
     const filtered = unwrapped.types
-      .map((member) => stripMessageTypesFromUnion(member, messageTypeNames))
+      .map(member => stripMessageTypesFromUnion(member, messageTypeNames))
       .filter((member): member is t.TSType => !!member);
     if (filtered.length === 0) {
       return null;
@@ -121,12 +122,12 @@ function stripMessageTypesFromUnion(
   if (t.isTSTypeLiteral(unwrapped)) {
     return null;
   }
-  if (t.isTSTypeReference(unwrapped)) {
-    if (t.isIdentifier(unwrapped.typeName)) {
-      if (messageTypeNames.includes(unwrapped.typeName.name)) {
-        return null;
-      }
-    }
+  if (
+    t.isTSTypeReference(unwrapped)
+    && t.isIdentifier(unwrapped.typeName)
+    && messageTypeNames.includes(unwrapped.typeName.name)
+  ) {
+    return null;
   }
   return unwrapped;
 }
@@ -146,8 +147,14 @@ function buildUnionMessageValueCheck(
   typeNode: t.TSType | null,
   unionMessageTypes: string[]
 ): t.Expression | null {
-  const messageCheck = buildUnionMessageInstanceCheck(valueExpr, unionMessageTypes);
-  const nonMessageType = stripMessageTypesFromUnion(typeNode, unionMessageTypes);
+  const messageCheck = buildUnionMessageInstanceCheck(
+    valueExpr,
+    unionMessageTypes
+  );
+  const nonMessageType = stripMessageTypesFromUnion(
+    typeNode,
+    unionMessageTypes
+  );
   const nonMessageCheck = nonMessageType
     ? buildRuntimeTypeCheckExpression(nonMessageType, valueExpr)
     : null;
@@ -327,9 +334,10 @@ function buildWrapperRuntimeTypeCheckExpression(
     return null;
   }
   if (t.isTSParenthesizedType(typeNode)) {
-    return buildWrapperRuntimeTypeCheckExpression(typeNode.typeAnnotation, valueId);
-  }
-  if (t.isTSTypeReference(typeNode)) {
+    return buildWrapperRuntimeTypeCheckExpression(
+      typeNode.typeAnnotation,
+      valueId
+    );
   }
   return buildRuntimeTypeCheckExpression(typeNode, valueId);
 }
@@ -366,29 +374,42 @@ function buildTypeArgExpression(typeNode: t.TSType): t.Expression | null {
       && t.isNumericLiteral(literal.argument)
       && (literal.operator === '-' || literal.operator === '+')
     ) {
-      return t.unaryExpression(literal.operator, t.numericLiteral(literal.argument.value));
+      return t.unaryExpression(
+        literal.operator,
+        t.numericLiteral(literal.argument.value)
+      );
     }
   }
 
   return null;
 }
 
-function buildTypeArgumentExpressions(typeNode: t.TSType | null): t.Expression[] {
+function buildTypeArgumentExpressions(
+  typeNode: t.TSType | null
+): t.Expression[] {
   const unwrapped = unwrapParenthesizedType(typeNode);
-  if (!unwrapped || !t.isTSTypeReference(unwrapped) || !unwrapped.typeParameters) {
+  if (
+    !unwrapped
+    || !t.isTSTypeReference(unwrapped)
+    || !unwrapped.typeParameters
+  ) {
     return [];
   }
-  return unwrapped.typeParameters.params.map((param) =>
+  return unwrapped.typeParameters.params.map(param =>
     buildTypeArgExpression(param) ?? t.identifier('undefined')
   );
 }
 
 function buildTypeArgumentTypes(typeNode: t.TSType | null): t.TSType[] {
   const unwrapped = unwrapParenthesizedType(typeNode);
-  if (!unwrapped || !t.isTSTypeReference(unwrapped) || !unwrapped.typeParameters) {
+  if (
+    !unwrapped
+    || !t.isTSTypeReference(unwrapped)
+    || !unwrapped.typeParameters
+  ) {
     return [];
   }
-  return unwrapped.typeParameters.params.map((param) => t.cloneNode(param));
+  return unwrapped.typeParameters.params.map(param => t.cloneNode(param));
 }
 
 function buildFromCompactCall(
@@ -398,7 +419,7 @@ function buildFromCompactCall(
   optionsExpr?: t.Expression
 ): t.Expression {
   const args: t.Expression[] = [
-    ...typeArgs.map((arg) => t.cloneNode(arg)),
+    ...typeArgs.map(arg => t.cloneNode(arg)),
     t.cloneNode(valueExpr),
   ];
   if (optionsExpr) {
@@ -488,12 +509,12 @@ function typesAreEquivalent(a: t.TSType | null, b: t.TSType | null): boolean {
 
   // Primitive keywords - if types match, they're equivalent
   if (
-    t.isTSStringKeyword(unwrappedA) ||
-    t.isTSNumberKeyword(unwrappedA) ||
-    t.isTSBooleanKeyword(unwrappedA) ||
-    t.isTSNullKeyword(unwrappedA) ||
-    t.isTSUndefinedKeyword(unwrappedA) ||
-    t.isTSBigIntKeyword(unwrappedA)
+    t.isTSStringKeyword(unwrappedA)
+    || t.isTSNumberKeyword(unwrappedA)
+    || t.isTSBooleanKeyword(unwrappedA)
+    || t.isTSNullKeyword(unwrappedA)
+    || t.isTSUndefinedKeyword(unwrappedA)
+    || t.isTSBigIntKeyword(unwrappedA)
   ) {
     return true;
   }
@@ -509,8 +530,8 @@ function typesAreEquivalent(a: t.TSType | null, b: t.TSType | null): boolean {
     // Only consider equivalent if both are simple identifiers with same name
     // and neither has type parameters
     if (
-      nameA && nameB && nameA === nameB &&
-      !unwrappedA.typeParameters && !unwrappedB.typeParameters
+      nameA && nameB && nameA === nameB
+      && !unwrappedA.typeParameters && !unwrappedB.typeParameters
     ) {
       return true;
     }
@@ -555,9 +576,12 @@ function getMapConversionInfo(
         conversions.keyIsMap = true;
       } else {
         const keyTypeName = prop.mapKeyMessageTypeName
-          ?? (getTypeName(prop.mapKeyType) && declaredMessageTypeNames.has(getTypeName(prop.mapKeyType)!) 
-            ? getTypeName(prop.mapKeyType)
-            : null);
+          ?? (
+            getTypeName(prop.mapKeyType)
+            && declaredMessageTypeNames.has(getTypeName(prop.mapKeyType)!)
+              ? getTypeName(prop.mapKeyType)
+              : null
+          );
         if (keyTypeName) {
           conversions.keyIsMessage = keyTypeName;
         }
@@ -568,9 +592,12 @@ function getMapConversionInfo(
   // Check value type
   if (prop.mapValueType && t.isTSTypeReference(prop.mapValueType)) {
     const valueTypeName = prop.mapValueMessageTypeName
-      ?? (getTypeName(prop.mapValueType) && declaredMessageTypeNames.has(getTypeName(prop.mapValueType)!)
-        ? getTypeName(prop.mapValueType)
-        : null);
+      ?? (
+        getTypeName(prop.mapValueType)
+        && declaredMessageTypeNames.has(getTypeName(prop.mapValueType)!)
+          ? getTypeName(prop.mapValueType)
+          : null
+      );
     if (valueTypeName) {
       conversions.valueIsMessage = valueTypeName;
     }
@@ -651,26 +678,7 @@ function getConstructorFieldName(paramName: string): string {
 function getMessageTypeParameters(
   typeParameters: TypeParameter[]
 ): TypeParameter[] {
-  return typeParameters.filter((param) => param.requiresConstructor);
-}
-
-/**
- * Build a type reference that includes type parameters if the type is generic.
- * E.g., for Response<T>, returns TSTypeReference to "Response<T>" not just "Response"
- */
-function buildGenericTypeReference(
-  typeName: string,
-  typeParameters: TypeParameter[]
-): t.TSTypeReference {
-  if (typeParameters.length === 0) {
-    return t.tsTypeReference(t.identifier(typeName));
-  }
-
-  const typeArgs = t.tsTypeParameterInstantiation(
-    typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
-  );
-
-  return t.tsTypeReference(t.identifier(typeName), typeArgs);
+  return typeParameters.filter(param => param.requiresConstructor);
 }
 
 /**
@@ -691,7 +699,7 @@ function buildGenericQualifiedTypeReference(
   }
 
   const typeArgs = t.tsTypeParameterInstantiation(
-    typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
+    typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
   );
 
   return t.tsTypeReference(qualifiedName, typeArgs);
@@ -755,7 +763,7 @@ function buildClassTypeParameters(
     return null;
   }
 
-  const params = typeParameters.map((param) => {
+  const params = typeParameters.map(param => {
     const constraint = param.constraint
       ? isMessageConstraintTypeNode(param.constraint)
         ? buildMessageConstraint()
@@ -777,7 +785,7 @@ function buildConstructorRefFields(
   typeParameters: TypeParameter[]
 ): t.ClassPrivateProperty[] {
   const messageTypeParameters = getMessageTypeParameters(typeParameters);
-  return messageTypeParameters.map((param) => {
+  return messageTypeParameters.map(param => {
     const fieldName = getConstructorFieldName(param.name);
     const field = t.classPrivateProperty(
       t.privateName(t.identifier(fieldName))
@@ -807,7 +815,7 @@ function buildConstructorClassParams(
   typeParameters: TypeParameter[]
 ): t.Identifier[] {
   const messageTypeParameters = getMessageTypeParameters(typeParameters);
-  return messageTypeParameters.map((param) => {
+  return messageTypeParameters.map(param => {
     const paramName = getConstructorFieldName(param.name);
     const paramId = t.identifier(paramName);
 
@@ -833,7 +841,7 @@ function buildConstructorRefAssignments(
   typeParameters: TypeParameter[]
 ): t.ExpressionStatement[] {
   const messageTypeParameters = getMessageTypeParameters(typeParameters);
-  return messageTypeParameters.map((param) => {
+  return messageTypeParameters.map(param => {
     const fieldName = getConstructorFieldName(param.name);
     return t.expressionStatement(
       t.assignmentExpression(
@@ -936,7 +944,7 @@ function buildBindMethod(
 
   // Return type: callable factory function with deserialize and $typeName
   // ((props: TypeName.Value<T>) => TypeName<T>) & { deserialize: (data: string) => TypeName<T>; $typeName: string; }
-  const returnTypeParams = typeParameters.map((param) =>
+  const returnTypeParams = typeParameters.map(param =>
     t.tsTypeReference(t.identifier(param.name))
   );
   const instanceType = t.tsTypeReference(
@@ -1063,7 +1071,7 @@ function buildBindMethod(
 
   // Find properties that are generic type parameters
   const genericProps = properties.filter(
-    (prop) =>
+    prop =>
       prop.isGenericParam
       && prop.genericParamName
       && prop.genericParamRequiresConstructor
@@ -1122,15 +1130,15 @@ function buildBindMethod(
   // Build the constructor call with reconstructed props
   const constructorArgs: t.Expression[] =
     messageTypeParameters.map(
-      (param) => t.identifier(getConstructorFieldName(param.name))
+      param => t.identifier(getConstructorFieldName(param.name))
     );
 
   let propsArg: t.Expression;
-  // eslint-disable-next-line unicorn/prefer-ternary -- complex expression
+   
   if (reconstructedPropNames.length > 0) {
     // { ...props, propName1, propName2, ... }
     // Cast to Value<T, ...> to satisfy TypeScript when there are non-generic required fields
-    const valueTypeParams = typeParameters.map((param) =>
+    const valueTypeParams = typeParameters.map(param =>
       t.tsTypeReference(t.identifier(param.name))
     );
     const valueType = t.tsTypeReference(
@@ -1140,7 +1148,7 @@ function buildBindMethod(
     propsArg = t.tsAsExpression(
       t.objectExpression([
         t.spreadElement(t.identifier('props')),
-        ...reconstructedPropNames.map((name) => t.objectProperty(
+        ...reconstructedPropNames.map(name => t.objectProperty(
           t.identifier(name),
           t.identifier(name),
           false,
@@ -1189,7 +1197,7 @@ function buildBindMethod(
 
   // return TypeName.deserialize(tClass, uClass, ..., data, options);
   const deserializeArgs = [
-    ...messageTypeParameters.map((param) =>
+    ...messageTypeParameters.map(param =>
       t.identifier(getConstructorFieldName(param.name))
     ),
     t.identifier('data'),
@@ -1206,7 +1214,10 @@ function buildBindMethod(
     t.assignmentExpression(
       '=',
       t.memberExpression(t.identifier('boundCtor'), t.identifier('deserialize')),
-      t.arrowFunctionExpression([dataParam, optionsParam], t.blockStatement([deserializeReturn]))
+      t.arrowFunctionExpression(
+        [dataParam, optionsParam],
+        t.blockStatement([deserializeReturn])
+      )
     )
   );
 
@@ -1359,7 +1370,7 @@ function buildGenericDeserializeMethod(
   const params = [...typeClassParams, dataParam, optionsParam];
 
   // Return type: TypeName<T, U, ...>
-  const returnTypeParams = typeParameters.map((param) =>
+  const returnTypeParams = typeParameters.map(param =>
     t.tsTypeReference(t.identifier(param.name))
   );
   const returnType = t.tsTypeReference(
@@ -1414,7 +1425,11 @@ function buildGenericDeserializeMethod(
     t.blockStatement([
       t.ifStatement(
         compactCheck,
-        t.blockStatement([t.returnStatement(t.tsAsExpression(fromCompactCall, t.tsAnyKeyword()))]),
+        t.blockStatement([
+          t.returnStatement(
+            t.tsAsExpression(fromCompactCall, t.tsAnyKeyword())
+          ),
+        ]),
         t.blockStatement([invalidCompactThrow])
       ),
     ])
@@ -1466,7 +1481,9 @@ function buildGenericDeserializeMethod(
               t.ifStatement(
                 compactCheck,
                 t.blockStatement([
-                  t.returnStatement(t.tsAsExpression(taggedFromCompact, t.tsAnyKeyword())),
+                  t.returnStatement(
+                    t.tsAsExpression(taggedFromCompact, t.tsAnyKeyword())
+                  ),
                 ]),
                 t.blockStatement([invalidTaggedCompact])
               ),
@@ -1474,7 +1491,7 @@ function buildGenericDeserializeMethod(
             t.blockStatement([
               t.returnStatement(
                 t.newExpression(t.identifier(className), [
-                  ...typeClassParams.map((param) => t.cloneNode(param)),
+                  ...typeClassParams.map(param => t.cloneNode(param)),
                   taggedPropsExpr,
                   t.identifier('options'),
                 ])
@@ -1502,13 +1519,13 @@ function buildGenericDeserializeMethod(
 
   // Separate generic properties (need tClass reconstruction) from non-generic (use helper for validation)
   const genericProps = properties.filter(
-    (prop) =>
+    prop =>
       prop.isGenericParam
       && prop.genericParamName
       && prop.genericParamRequiresConstructor
   );
   const nonGenericProps = properties.filter(
-    (prop) =>
+    prop =>
       !prop.isGenericParam
       || !prop.genericParamName
       || !prop.genericParamRequiresConstructor
@@ -1520,18 +1537,21 @@ function buildGenericDeserializeMethod(
 
   // Validate and convert non-generic fields using the helper
   for (const prop of nonGenericProps) {
-    const { statements: fieldStatements, finalValueId } = buildFieldValidationStatements(
+    const {
+      statements: fieldStatements,
+      finalValueId,
+    } = buildFieldValidationStatements(
       prop,
       payloadId,
       declaredMessageTypeNames,
       state,
       { optionsExpr: t.identifier('options') }
     );
-    reconstructionStatements.push(...fieldStatements);
-    // Store final value in a variable with the property name
+    // Store final value in a variable with the property name.
     reconstructionStatements.push(
+      ...fieldStatements,
       t.variableDeclaration('const', [
-        t.variableDeclarator(t.identifier(prop.name), finalValueId)
+        t.variableDeclarator(t.identifier(prop.name), finalValueId),
       ])
     );
     allPropNames.push(prop.name);
@@ -1612,21 +1632,20 @@ function buildGenericDeserializeMethod(
   // Build the constructor call
   // return new TypeName(tClass, uClass, { id, name, inner, other }, options);
   const constructorArgs: t.Expression[] = messageTypeParameters.map(
-    (param) => t.identifier(getConstructorFieldName(param.name))
+    param => t.identifier(getConstructorFieldName(param.name))
   );
 
   // Build props object with ALL validated property values (no spread of raw payload)
   const propsArg = t.objectExpression(
-    allPropNames.map((name) => t.objectProperty(
+    allPropNames.map(name => t.objectProperty(
       t.identifier(name),
       t.identifier(name),
       false,
       true // shorthand
     ))
   );
-  constructorArgs.push(propsArg);
-  // Pass options to the constructor for skipValidation propagation
-  constructorArgs.push(t.identifier('options'));
+  // Pass options to the constructor for skipValidation propagation.
+  constructorArgs.push(propsArg, t.identifier('options'));
 
   const returnStmt = t.returnStatement(
     t.newExpression(t.identifier(className), constructorArgs)
@@ -1700,14 +1719,14 @@ function buildNonGenericDeserializeMethod(
   );
   optionsParam.optional = true;
 
-  const typeArgParams: t.Identifier[] = typeParameters.map((param) => {
+  const typeArgParams: t.Identifier[] = typeParameters.map(param => {
     const id = t.identifier(param.name);
     id.typeAnnotation = t.tsTypeAnnotation(
       param.constraint ? t.cloneNode(param.constraint) : t.tsUnknownKeyword()
     );
     return id;
   });
-  const typeArgExprs: t.Identifier[] = typeArgParams.map((param) =>
+  const typeArgExprs: t.Identifier[] = typeArgParams.map(param =>
     t.identifier(param.name)
   );
   const params = [thisParam, ...typeArgParams, dataParam, optionsParam];
@@ -1755,7 +1774,7 @@ function buildNonGenericDeserializeMethod(
   );
   const compactPayload = buildCompactPayload(t.cloneNode(parsedId));
   const fromCompactArgs = [
-    ...typeArgExprs.map((param) => t.cloneNode(param)),
+    ...typeArgExprs.map(param => t.cloneNode(param)),
     compactPayload,
     t.identifier('options'),
   ];
@@ -1802,7 +1821,7 @@ function buildNonGenericDeserializeMethod(
   const taggedFromCompact = t.callExpression(
     t.memberExpression(t.thisExpression(), t.identifier('fromCompact')),
     [
-      ...typeArgExprs.map((param) => t.cloneNode(param)),
+      ...typeArgExprs.map(param => t.cloneNode(param)),
       taggedPayload,
       t.identifier('options'),
     ]
@@ -2491,7 +2510,7 @@ export function buildClassFromProperties(
   }
   const backingFields: t.ClassPrivateProperty[] = [];
   const getters: t.ClassMethod[] = [];
-  const propDescriptors = properties.map((prop) => ({
+  const propDescriptors = properties.map(prop => ({
     ...prop,
     privateName: t.privateName(t.identifier(prop.name)),
   }));
@@ -2499,29 +2518,38 @@ export function buildClassFromProperties(
   const valueTypeRef = buildGenericQualifiedTypeReference(typeName, 'Value', typeParameters);
 
   // Extract validation information if validation context is provided
-  const validationBuildContext: ValidationBuildContext | null = validationContext
-    ? { state, registry: validationContext.registry, tracker: validationContext.tracker, typeName }
+  const validationBuildContext: ValidationBuildContext | null =
+    validationContext
+    ? {
+        state,
+        registry: validationContext.registry,
+        tracker: validationContext.tracker,
+        typeName,
+      }
     : null;
-  const propertyValidations = validationBuildContext
+  const propertyValidations: Map<string, FieldValidation> =
+    validationBuildContext
     ? extractPropertyValidations(propDescriptors, validationBuildContext)
-    : new Map();
+    : new Map<string, FieldValidation>();
   const needsValidation = hasAnyValidation(propertyValidations);
 
-  // Check if any nested message types exist that might need validation propagation
-  // This ensures skipValidation can be passed to nested message constructors
-  const hasNestedMessageTypes = propDescriptors.some(prop => prop.isMessageType);
-  const wrapperValueProp = propDescriptors.find((prop) => prop.isWrapperValue);
+  const wrapperValueProp = propDescriptors.find(prop => prop.isWrapperValue);
   const wrapperSerializeMethods = wrapperValueProp
-    ? buildWrapperSerializerMethods(typeName, wrapperValueProp.typeAnnotation, isGeneric)
+    ? buildWrapperSerializerMethods(
+        typeName,
+        wrapperValueProp.typeAnnotation,
+        isGeneric
+      )
     : null;
   const wrapperCompactMethods = wrapperValueProp
     ? buildWrapperCompactMethods(wrapperValueProp.name, typeName)
     : null;
-  const autoCompactProp = !wrapperValueProp && compact && propDescriptors.length === 1
+  const autoCompactProp = !wrapperValueProp
+    && compact
+    && propDescriptors.length === 1
     ? propDescriptors[0]!
     : null;
-  const autoCompactMethods = autoCompactProp
-    && autoCompactProp.fieldNumber === 1
+  const autoCompactMethods = autoCompactProp?.fieldNumber === 1
     && !autoCompactProp.optional
     && isStringTypeNode(autoCompactProp.typeAnnotation)
     ? buildAutoCompactMethods(autoCompactProp.name)
@@ -2607,14 +2635,14 @@ export function buildClassFromProperties(
         t.identifier('skipValidation'),
         t.tsTypeAnnotation(t.tsBooleanKeyword())
       ),
-    ].map((sig) => {
+    ].map(sig => {
       sig.optional = true;
       return sig;
     }))
   );
   optionsParam.optional = true;
 
-  const constructorAssignments = propDescriptors.map((prop) => {
+  const constructorAssignments = propDescriptors.map(prop => {
     const propsId = t.identifier('props');
     const propsBase = prop.isWrapperValue
       ? t.conditionalExpression(
@@ -2678,7 +2706,11 @@ export function buildClassFromProperties(
         ? buildImmutableMapWithConversionsExpression(
           propsAccess,
           conversions,
-          { allowUndefined: Boolean(prop.optional), castToAny: true, allowCompact: false }
+          {
+            allowUndefined: Boolean(prop.optional),
+            castToAny: true,
+            allowCompact: false,
+          }
         )
         : buildImmutableMapExpression(
           propsAccess,
@@ -2751,7 +2783,11 @@ export function buildClassFromProperties(
       );
     }
 
-    if (!prop.isWrapperValue && prop.isArray && prop.arrayElementUnionMessageTypes.length > 1) {
+    if (
+      !prop.isWrapperValue
+      && prop.isArray
+      && prop.arrayElementUnionMessageTypes.length > 1
+    ) {
       const elementCheck = buildUnionMessageValueCheck(
         t.identifier('element'),
         prop.arrayElementType ?? t.tsUnknownKeyword(),
@@ -2769,7 +2805,11 @@ export function buildClassFromProperties(
       );
     }
 
-    if (!prop.isWrapperValue && prop.isSet && prop.setElementUnionMessageTypes.length > 1) {
+    if (
+      !prop.isWrapperValue
+      && prop.isSet
+      && prop.setElementUnionMessageTypes.length > 1
+    ) {
       const elementCheck = buildUnionMessageValueCheck(
         t.identifier('setValue'),
         prop.setElementType ?? t.tsUnknownKeyword(),
@@ -2789,7 +2829,10 @@ export function buildClassFromProperties(
 
     if (!prop.isWrapperValue
       && prop.isMap
-      && (prop.mapKeyUnionMessageTypes.length > 1 || prop.mapValueUnionMessageTypes.length > 1)
+      && (
+        prop.mapKeyUnionMessageTypes.length > 1
+        || prop.mapValueUnionMessageTypes.length > 1
+      )
     ) {
       const keyCheck = prop.mapKeyUnionMessageTypes.length > 1
         ? buildUnionMessageValueCheck(
@@ -2826,7 +2869,10 @@ export function buildClassFromProperties(
 
     // Add type cast for immutable collection types to match field type
     // This is needed because TypeScript can't infer the element type through instanceof checks
-    if (!prop.isWrapperValue && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType)) {
+    if (
+      !prop.isWrapperValue
+      && (prop.isArray || prop.isMap || prop.isSet || prop.isArrayBufferType)
+    ) {
       const fieldType = wrapImmutableType(t.cloneNode(prop.typeAnnotation));
       valueExpr = t.tsAsExpression(valueExpr, fieldType);
     }
@@ -2924,7 +2970,11 @@ export function buildClassFromProperties(
     : [];
   // Always include options parameter since any message could be used as a nested type
   // in another message. The options parameter is used to propagate skipValidation.
-  const allConstructorParams = [...constructorClassParams, constructorParam, optionsParam];
+  const allConstructorParams = [
+    ...constructorClassParams,
+    constructorParam,
+    optionsParam,
+  ];
 
   // Build constructor body
   const constructorBody: t.Statement[] = [];
@@ -3074,7 +3124,7 @@ export function buildClassFromProperties(
     // Add EMPTY memoization field (only for non-generic)
     // Use className (not typeName) for the type annotation - when extended,
     // the class is TypeName$Base but the namespace is TypeName
-    // eslint-disable-next-line unicorn/prefer-single-call -- conditional pushes
+     
     const emptyType = typeParameters.length > 0
       ? t.tsTypeReference(
         t.identifier(className),
@@ -3096,7 +3146,7 @@ export function buildClassFromProperties(
   }
 
   // Build static from() method for non-generic messages
-  const fromMethod = !isGeneric ? buildFromMethod(typeName, className) : null;
+  const fromMethod = isGeneric ? null : buildFromMethod(typeName, className);
 
   const fromEntriesMethod = buildFromEntriesMethod(
     propDescriptors,
@@ -3106,7 +3156,7 @@ export function buildClassFromProperties(
   );
   const descriptorMethod = buildDescriptorMethod(propDescriptors, propsTypeRef);
 
-  const setterMethods = propDescriptors.map((prop) =>
+  const setterMethods = propDescriptors.map(prop =>
     buildSetterMethod(
       typeName,
       className,
@@ -3117,8 +3167,8 @@ export function buildClassFromProperties(
     )
   );
   const deleteMethods = propDescriptors
-    .filter((prop) => prop.optional)
-    .map((prop) => buildDeleteMethod(
+    .filter(prop => prop.optional)
+    .map(prop => buildDeleteMethod(
       typeName, className, propDescriptors, prop, typeParameters
     ));
   const arrayMethods = buildArrayMutatorMethods(
@@ -3142,7 +3192,11 @@ export function buildClassFromProperties(
   );
 
   // Build batch set() method for updating multiple fields at once
-  const batchSetMethod = buildBatchSetMethod(typeName, className, typeParameters);
+  const batchSetMethod = buildBatchSetMethod(
+    typeName,
+    className,
+    typeParameters
+  );
   state.usesSkip = true;
   state.needsSetUpdatesType = true;
 
@@ -3166,7 +3220,11 @@ export function buildClassFromProperties(
 
   // Build static validateAll() method if needed
   const validateAllMethod = needsValidation && validationBuildContext
-    ? buildValidateAllMethod(typeName, propertyValidations, validationBuildContext)
+    ? buildValidateAllMethod(
+        typeName,
+        propertyValidations,
+        validationBuildContext
+      )
     : null;
 
   const classBodyMembers: (
@@ -3190,9 +3248,15 @@ export function buildClassFromProperties(
   }
 
   if (wrapperCompactMethods) {
-    classBodyMembers.push(wrapperCompactMethods.toCompact, wrapperCompactMethods.fromCompact);
+    classBodyMembers.push(
+      wrapperCompactMethods.toCompact,
+      wrapperCompactMethods.fromCompact
+    );
   } else if (autoCompactMethods) {
-    classBodyMembers.push(autoCompactMethods.toCompact, autoCompactMethods.fromCompact);
+    classBodyMembers.push(
+      autoCompactMethods.toCompact,
+      autoCompactMethods.fromCompact
+    );
   }
 
   // Add static from() method for non-generic messages
@@ -3312,7 +3376,7 @@ export function buildClassFromProperties(
     ? t.tsTypeReference(
         t.tsQualifiedName(t.identifier(typeName), t.identifier('Data')),
         t.tsTypeParameterInstantiation(
-          typeParameters.map((p) => t.tsTypeReference(t.identifier(p.name)))
+          typeParameters.map(p => t.tsTypeReference(t.identifier(p.name)))
         )
       )
     : t.cloneNode(propsTypeRef);
@@ -3332,15 +3396,21 @@ function buildPropsObjectExpression(
 ): t.ObjectExpression {
   return t.objectExpression(
     propDescriptors
-      .filter((prop) => !(omitTarget && prop === targetProp))
-      .map((prop) => {
+      .filter(prop => !(omitTarget && prop === targetProp))
+      .map(prop => {
         if (prop === targetProp) {
           // Only cast if displayType differs from inputTypeAnnotation
           // (avoids redundant casts like `value as string` when value is already string)
-          const needsCast = targetProp.displayType &&
-            !typesAreEquivalent(targetProp.displayType, targetProp.inputTypeAnnotation);
+          const needsCast = targetProp.displayType
+            && !typesAreEquivalent(
+              targetProp.displayType,
+              targetProp.inputTypeAnnotation
+            );
           const value = needsCast
-            ? t.tsAsExpression(t.cloneNode(valueExpr), t.cloneNode(targetProp.displayType!))
+            ? t.tsAsExpression(
+                t.cloneNode(valueExpr),
+                t.cloneNode(targetProp.displayType)
+              )
             : t.cloneNode(valueExpr);
           return t.objectProperty(
             t.identifier(prop.name),
@@ -3354,10 +3424,10 @@ function buildPropsObjectExpression(
           t.thisExpression(),
           t.cloneNode(prop.privateName)
         );
-        const needsCast = prop.displayType &&
-          !typesAreEquivalent(prop.displayType, prop.inputTypeAnnotation);
+        const needsCast = prop.displayType
+          && !typesAreEquivalent(prop.displayType, prop.inputTypeAnnotation);
         const value = needsCast
-          ? t.tsAsExpression(privateAccess, t.cloneNode(prop.displayType!))
+          ? t.tsAsExpression(privateAccess, t.cloneNode(prop.displayType))
           : privateAccess;
         return t.objectProperty(t.identifier(prop.name), value);
       })
@@ -3368,7 +3438,7 @@ function buildDescriptorMethod(
   propDescriptors: (PropDescriptor & { privateName: t.PrivateName })[],
   propsTypeRef: t.TSTypeReference
 ): t.ClassMethod {
-  const descriptorEntries = propDescriptors.map((prop) => {
+  const descriptorEntries = propDescriptors.map(prop => {
     const properties: t.ObjectProperty[] = [
       t.objectProperty(t.identifier('name'), t.stringLiteral(prop.name)),
       t.objectProperty(
@@ -3385,11 +3455,17 @@ function buildDescriptorMethod(
           // Internal storage uses immutable types but Data interface uses mutable types
           // Only cast if types differ (avoids redundant casts for primitives)
           (() => {
-            const needsCast = prop.displayType &&
-              !typesAreEquivalent(prop.displayType, prop.inputTypeAnnotation);
-            const access = t.memberExpression(t.thisExpression(), t.cloneNode(prop.privateName));
+            const needsCast = prop.displayType
+              && !typesAreEquivalent(
+                prop.displayType,
+                prop.inputTypeAnnotation
+              );
+            const access = t.memberExpression(
+              t.thisExpression(),
+              t.cloneNode(prop.privateName)
+            );
             return needsCast
-              ? t.tsAsExpression(access, t.cloneNode(prop.displayType!))
+              ? t.tsAsExpression(access, t.cloneNode(prop.displayType))
               : access;
           })()
         )
@@ -3402,7 +3478,7 @@ function buildDescriptorMethod(
         t.objectProperty(
           t.identifier('unionMessageTypes'),
           t.arrayExpression(
-            prop.unionMessageTypes.map((name) => t.stringLiteral(name))
+            prop.unionMessageTypes.map(name => t.stringLiteral(name))
           )
         )
       );
@@ -3421,7 +3497,9 @@ function buildDescriptorMethod(
         t.objectProperty(
           t.identifier('arrayElementUnionMessageTypes'),
           t.arrayExpression(
-            prop.arrayElementUnionMessageTypes.map((name) => t.stringLiteral(name))
+            prop.arrayElementUnionMessageTypes.map(
+              name => t.stringLiteral(name)
+            )
           )
         )
       );
@@ -3440,7 +3518,7 @@ function buildDescriptorMethod(
         t.objectProperty(
           t.identifier('setElementUnionMessageTypes'),
           t.arrayExpression(
-            prop.setElementUnionMessageTypes.map((name) => t.stringLiteral(name))
+            prop.setElementUnionMessageTypes.map(name => t.stringLiteral(name))
           )
         )
       );
@@ -3459,7 +3537,7 @@ function buildDescriptorMethod(
         t.objectProperty(
           t.identifier('mapKeyUnionMessageTypes'),
           t.arrayExpression(
-            prop.mapKeyUnionMessageTypes.map((name) => t.stringLiteral(name))
+            prop.mapKeyUnionMessageTypes.map(name => t.stringLiteral(name))
           )
         )
       );
@@ -3478,7 +3556,7 @@ function buildDescriptorMethod(
         t.objectProperty(
           t.identifier('mapValueUnionMessageTypes'),
           t.arrayExpression(
-            prop.mapValueUnionMessageTypes.map((name) => t.stringLiteral(name))
+            prop.mapValueUnionMessageTypes.map(name => t.stringLiteral(name))
           )
         )
       );
@@ -3764,7 +3842,9 @@ function buildFieldValidationStatements(
       );
       checkedValueId = arrayValueId;
     } else if (elementMessageTypeName) {
-      const elementTypeArgs = buildTypeArgumentExpressions(prop.arrayElementType);
+      const elementTypeArgs = buildTypeArgumentExpressions(
+        prop.arrayElementType
+      );
       const arrayValueId = t.identifier(`${prop.name}ArrayValueConverted`);
       const elementId = t.identifier('element');
       const convertExpr = buildCompactCoercionExpression(
@@ -3993,7 +4073,12 @@ function buildFieldValidationStatements(
       ]);
       const mappedEntries = t.callExpression(
         t.memberExpression(entriesArray, t.identifier('map')),
-        [t.arrowFunctionExpression([entryParam], t.arrayExpression([keyConv, valueConv]))]
+        [
+          t.arrowFunctionExpression(
+            [entryParam],
+            t.arrayExpression([keyConv, valueConv])
+          ),
+        ]
       );
       const newMapExpr = t.newExpression(t.identifier('ImmutableMap'), [mappedEntries]);
       statements.push(
@@ -4059,7 +4144,12 @@ function buildFieldValidationStatements(
       ]);
       const mappedEntries = t.callExpression(
         t.memberExpression(entriesArray, t.identifier('map')),
-        [t.arrowFunctionExpression([entryParam], t.arrayExpression([keyConv, valueConv]))]
+        [
+          t.arrowFunctionExpression(
+            [entryParam],
+            t.arrayExpression([keyConv, valueConv])
+          ),
+        ]
       );
       const newMapExpr = t.newExpression(t.identifier('ImmutableMap'), [mappedEntries]);
       statements.push(
@@ -4100,7 +4190,10 @@ function buildFieldValidationStatements(
         prop.unionMessageTypes
       );
       const nonMessageCheck = nonMessageType
-        ? buildRuntimeTypeCheckExpression(nonMessageType, checkedValueId as t.Expression)
+        ? buildRuntimeTypeCheckExpression(
+            nonMessageType,
+            checkedValueId as t.Expression
+          )
         : null;
       typeCheckExpr = combineChecks(nonMessageCheck, messageCheckExpr);
     } else if (messageCheckExpr) {
@@ -4134,7 +4227,13 @@ function buildFieldValidationStatements(
     );
   }
 
-  if (prop.isMap && (prop.mapKeyUnionMessageTypes.length > 1 || prop.mapValueUnionMessageTypes.length > 1)) {
+  if (
+    prop.isMap
+    && (
+      prop.mapKeyUnionMessageTypes.length > 1
+      || prop.mapValueUnionMessageTypes.length > 1
+    )
+  ) {
     const keyCheck = prop.mapKeyUnionMessageTypes.length > 1
       ? buildUnionMessageValueCheck(
         t.identifier('mapKey'),
@@ -4200,7 +4299,9 @@ function buildFieldValidationStatements(
   ) {
     finalValue = t.tsAsExpression(
       checkedValueId as t.Expression,
-      prop.displayType ? t.cloneNode(prop.displayType) : wrapImmutableType(t.cloneNode(prop.typeAnnotation))
+      prop.displayType
+        ? t.cloneNode(prop.displayType)
+        : wrapImmutableType(t.cloneNode(prop.typeAnnotation))
     );
   } else if (!prop.isMessageType && prop.unionMessageTypes.length === 0) {
     finalValue = t.tsAsExpression(
@@ -4246,16 +4347,18 @@ function buildFromEntriesMethod(
   ];
 
   for (const prop of propDescriptors) {
-    const { statements: fieldStatements, finalValueId } = buildFieldValidationStatements(
+    const {
+      statements: fieldStatements,
+      finalValueId,
+    } = buildFieldValidationStatements(
       prop,
       argsId,
       declaredMessageTypeNames,
       state,
       { optionsExpr: t.identifier('options') }
     );
-    statements.push(...fieldStatements);
-
     statements.push(
+      ...fieldStatements,
       t.expressionStatement(
         t.assignmentExpression(
           '=',
@@ -4346,13 +4449,16 @@ function getUnionMessageTypeRefs(
 ): UnionMessageTypeRef[] {
   const unwrapped = unwrapParenthesizedType(typeNode);
   if (!unwrapped || !t.isTSUnionType(unwrapped)) {
-    return unionMessageTypes.map((name) => ({ name, typeArgs: [] }));
+    return unionMessageTypes.map(name => ({ name, typeArgs: [] }));
   }
 
   const typeArgsByName = new Map<string, t.Expression[]>();
   for (const member of unwrapped.types) {
     const memberUnwrapped = unwrapParenthesizedType(member) ?? member;
-    if (t.isTSTypeReference(memberUnwrapped) && t.isIdentifier(memberUnwrapped.typeName)) {
+    if (
+      t.isTSTypeReference(memberUnwrapped)
+      && t.isIdentifier(memberUnwrapped.typeName)
+    ) {
       const name = memberUnwrapped.typeName.name;
       if (unionMessageTypes.includes(name)) {
         typeArgsByName.set(name, buildTypeArgumentExpressions(memberUnwrapped));
@@ -4360,7 +4466,7 @@ function getUnionMessageTypeRefs(
     }
   }
 
-  return unionMessageTypes.map((name) => ({
+  return unionMessageTypes.map(name => ({
     name,
     typeArgs: typeArgsByName.get(name) ?? [],
   }));
@@ -4710,7 +4816,10 @@ function buildTaggedMessageUnionCoercionExpression(
     optionsExpr
   );
   statements.push(t.returnStatement(t.cloneNode(targetId)));
-  const func = t.arrowFunctionExpression([valueId], t.blockStatement(statements));
+  const func = t.arrowFunctionExpression(
+    [valueId],
+    t.blockStatement(statements)
+  );
   return t.callExpression(func, [t.cloneNode(sourceExpr)]);
 }
 
@@ -4826,7 +4935,10 @@ function buildMessageUnionValueNormalizationExpression(
   }
   statements.push(t.returnStatement(t.cloneNode(resultId)));
 
-  const func = t.arrowFunctionExpression([valueId], t.blockStatement(statements));
+  const func = t.arrowFunctionExpression(
+    [valueId],
+    t.blockStatement(statements)
+  );
   return t.callExpression(func, [t.cloneNode(sourceExpr)]);
 }
 
@@ -4839,7 +4951,9 @@ function buildSetterMethod(
   typeParameters: TypeParameter[] = []
 ): t.ClassMethod {
   const valueId = t.identifier('value');
-  let valueType = t.cloneNode(targetProp.displayType ?? targetProp.inputTypeAnnotation);
+  let valueType = t.cloneNode(
+    targetProp.displayType ?? targetProp.inputTypeAnnotation
+  );
   // If the property is optional, setter should also accept undefined
   if (targetProp.optional) {
     valueType = t.tsUnionType([valueType, t.tsUndefinedKeyword()]);
@@ -4871,8 +4985,12 @@ function buildSetterMethod(
   }
 
   if (targetProp.isMessageType && targetProp.messageTypeName) {
-    const setterMessageTypeArgs = buildTypeArgumentExpressions(targetProp.typeAnnotation);
-    const setterMessageTypeArgTypes = buildTypeArgumentTypes(targetProp.typeAnnotation);
+    const setterMessageTypeArgs = buildTypeArgumentExpressions(
+      targetProp.typeAnnotation
+    );
+    const setterMessageTypeArgTypes = buildTypeArgumentTypes(
+      targetProp.typeAnnotation
+    );
     setterValueExpr = buildMessageNormalizationExpression(
       setterValueExpr,
       targetProp.messageTypeName,
@@ -5151,7 +5269,7 @@ function buildArrayMutatorMethods(
         prop,
         `pop${capitalize(singleName)}`,
         [],
-        (nextRef) => [
+        nextRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(nextRef(), t.identifier('pop')),
@@ -5169,7 +5287,7 @@ function buildArrayMutatorMethods(
         prop,
         `shift${capitalize(singleName)}`,
         [],
-        (nextRef) => [
+        nextRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(nextRef(), t.identifier('shift')),
@@ -5193,7 +5311,14 @@ function buildArrayMutatorMethods(
         },
         typeParameters
       ),
-      buildSpliceMethod(typeName, className, propDescriptors, prop, singleName, typeParameters),
+      buildSpliceMethod(
+        typeName,
+        className,
+        propDescriptors,
+        prop,
+        singleName,
+        typeParameters
+      ),
       buildArrayMutationMethod(
         typeName,
         className,
@@ -5201,7 +5326,7 @@ function buildArrayMutatorMethods(
         prop,
         `reverse${capitalize(prop.name)}`,
         [],
-        (nextRef) => [
+        nextRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(nextRef(), t.identifier('reverse')),
@@ -5212,7 +5337,14 @@ function buildArrayMutatorMethods(
         {},
         typeParameters
       ),
-      buildSortMethod(typeName, className, propDescriptors, prop, prop.name, typeParameters),
+      buildSortMethod(
+        typeName,
+        className,
+        propDescriptors,
+        prop,
+        prop.name,
+        typeParameters
+      ),
       buildArrayMutationMethod(
         typeName,
         className,
@@ -5220,7 +5352,7 @@ function buildArrayMutatorMethods(
         prop,
         `fill${capitalize(singleName)}`,
         buildFillParams(prop),
-        (nextRef) => {
+        nextRef => {
           // Cast the array to allow element type from Data (e.g. ArrayBuffer | ImmutableArrayBuffer)
           // since the spread array has the narrower internal type (e.g. ImmutableArrayBuffer)
           // Use double cast (as unknown as Type[]) to satisfy TypeScript
@@ -5254,7 +5386,7 @@ function buildArrayMutatorMethods(
         prop,
         `copyWithin${capitalize(prop.name)}`,
         buildCopyWithinParams(),
-        (nextRef) => [
+        nextRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(nextRef(), t.identifier('copyWithin')),
@@ -5352,7 +5484,7 @@ function buildSortMethod(
     prop,
     `sort${capitalize(plural)}`,
     [compareId],
-    (nextRef) => {
+    nextRef => {
       // Cast the array to allow element type from Data (e.g. ArrayBuffer | ImmutableArrayBuffer)
       // since the spread array has the narrower internal type (e.g. ImmutableArrayBuffer)
       // Use double cast (as unknown as Type[]) to satisfy TypeScript
@@ -5406,7 +5538,7 @@ function buildSpliceMethod(
     prop,
     `splice${capitalize(singular)}`,
     [startId, deleteCountId, itemsParam],
-    (nextRef) => {
+    nextRef => {
       const allArgs: (t.Expression | t.SpreadElement)[] = [
         t.identifier('start'),
         t.spreadElement(
@@ -5518,7 +5650,11 @@ function buildArrayMutationMethod(
       );
     }
   }
-  const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
+  const propsObject = buildPropsObjectExpression(
+    propDescriptors,
+    prop,
+    nextRef()
+  );
   constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
@@ -5636,7 +5772,7 @@ function buildMapMutatorMethods(
         prop,
         `set${capitalize(singleName)}`,
         buildMapSetParams(prop),
-        (mapRef) => {
+        mapRef => {
           // Use 'k' if prelude defined it, otherwise convert key inline
           const keyExpr = setEntryOptions.needsKeyConversion
             ? t.identifier('k')
@@ -5665,7 +5801,7 @@ function buildMapMutatorMethods(
         prop,
         `delete${capitalize(singleName)}`,
         buildMapDeleteParams(prop),
-        (mapRef) => {
+        mapRef => {
           // Use 'k' if prelude defined it, otherwise use 'key'
           const keyExpr = deleteEntryOptions.needsKeyConversion
             ? t.identifier('k')
@@ -5689,7 +5825,7 @@ function buildMapMutatorMethods(
         prop,
         `clear${capitalize(prop.name)}`,
         [],
-        (mapRef) => [
+        mapRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(mapRef(), t.identifier('clear')),
@@ -5707,7 +5843,7 @@ function buildMapMutatorMethods(
         prop,
         `merge${capitalize(multiName)}`,
         buildMapMergeParams(prop),
-        (mapRef) => {
+        mapRef => {
           const mergeKeyId = t.identifier('mergeKey');
           const mergeValueId = t.identifier('mergeValue');
           // Convert key and value to internal types for set() - handles alias wrappers/message types
@@ -5742,7 +5878,7 @@ function buildMapMutatorMethods(
         prop,
         `update${capitalize(singleName)}`,
         buildMapUpdateParams(prop),
-        (mapRef) => {
+        mapRef => {
           const currentId = t.identifier('currentValue');
           const updatedId = t.identifier('updatedValue');
 
@@ -5804,7 +5940,7 @@ function buildMapMutatorMethods(
         prop,
         `map${capitalize(multiName)}`,
         buildMapMapperParams(prop),
-        (mapRef) => {
+        mapRef => {
           const mappedEntriesId = t.identifier(`${prop.name}MappedEntries`);
           const keyId = t.identifier('entryKey');
           const valueId = t.identifier('entryValue');
@@ -5884,7 +6020,7 @@ function buildMapMutatorMethods(
         prop,
         `filter${capitalize(multiName)}`,
         buildMapPredicateParams(prop),
-        (mapRef) => {
+        mapRef => {
           const keyId = t.identifier('entryKey');
           const valueId = t.identifier('entryValue');
           return [
@@ -5950,7 +6086,7 @@ function buildSetMutatorMethods(
         prop,
         `add${capitalize(singleName)}`,
         buildSetAddParams(prop),
-        (setRef) => [
+        setRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(setRef(), t.identifier('add')),
@@ -5967,7 +6103,7 @@ function buildSetMutatorMethods(
         prop,
         `add${capitalize(multiName)}`,
         buildSetAddAllParams(prop),
-        (setRef) => {
+        setRef => {
           const toAddId = t.identifier('toAdd');
           return [
             t.forOfStatement(
@@ -5995,7 +6131,7 @@ function buildSetMutatorMethods(
         prop,
         `delete${capitalize(singleName)}`,
         buildSetDeleteParams(prop),
-        (setRef) => [
+        setRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(setRef(), t.identifier('delete')),
@@ -6012,7 +6148,7 @@ function buildSetMutatorMethods(
         prop,
         `delete${capitalize(multiName)}`,
         buildSetDeleteAllParams(prop),
-        (setRef) => {
+        setRef => {
           const delId = t.identifier('del');
           return [
               t.forOfStatement(
@@ -6040,7 +6176,7 @@ function buildSetMutatorMethods(
         prop,
         `clear${capitalize(prop.name)}`,
         [],
-        (setRef) => [
+        setRef => [
           t.expressionStatement(
             t.callExpression(
               t.memberExpression(setRef(), t.identifier('clear')),
@@ -6057,7 +6193,7 @@ function buildSetMutatorMethods(
         prop,
         `filter${capitalize(prop.name)}`,
         buildSetFilterParams(prop),
-        (setRef) => {
+        setRef => {
           const filteredId = t.identifier(`${prop.name}Filtered`);
           const valueId = t.identifier('value');
           return [
@@ -6112,7 +6248,7 @@ function buildSetMutatorMethods(
         prop,
         `map${capitalize(prop.name)}`,
         buildSetMapParams(prop),
-        (setRef) => {
+        setRef => {
           const mappedId = t.identifier(`${prop.name}Mapped`);
           const valueId = t.identifier('value');
           const mappedValueId = t.identifier('mappedValue');
@@ -6171,7 +6307,7 @@ function buildSetMutatorMethods(
         prop,
         `update${capitalize(prop.name)}`,
         buildSetUpdateParams(prop),
-        (setRef) => {
+        setRef => {
           const updatedId = t.identifier('updated');
           return [
             t.variableDeclaration('const', [
@@ -6247,7 +6383,11 @@ function buildMapMutationMethod(
       );
     }
   }
-  const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
+  const propsObject = buildPropsObjectExpression(
+    propDescriptors,
+    prop,
+    nextRef()
+  );
   constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
@@ -6375,7 +6515,11 @@ function buildSetMutationMethod(
       );
     }
   }
-  const propsObject = buildPropsObjectExpression(propDescriptors, prop, nextRef());
+  const propsObject = buildPropsObjectExpression(
+    propDescriptors,
+    prop,
+    nextRef()
+  );
   constructorArgs.push(propsObject);
 
   // For generic messages, use direct construction: new ClassName(...)
@@ -6481,7 +6625,10 @@ function buildNoopGuard(
   );
 }
 
-function buildSetEntryOptions(prop: PropDescriptor, conversions: MapConversionInfo) {
+function buildSetEntryOptions(
+  prop: PropDescriptor,
+  conversions: MapConversionInfo
+) {
   const currentId = t.identifier(`${prop.name}Current`);
   const existingId = t.identifier('existing');
   const valueId = t.identifier('value');
@@ -6545,7 +6692,10 @@ function buildSetEntryOptions(prop: PropDescriptor, conversions: MapConversionIn
   return { prelude, skipNoopGuard: true, needsKeyConversion };
 }
 
-function buildDeleteEntryOptions(prop: PropDescriptor, conversions: MapConversionInfo) {
+function buildDeleteEntryOptions(
+  prop: PropDescriptor,
+  conversions: MapConversionInfo
+) {
   const currentId = t.identifier(`${prop.name}Current`);
 
   // Check if key needs conversion (Array, Map, or Message)
@@ -6729,11 +6879,9 @@ function buildSetFilterParams(prop: PropDescriptor): t.Identifier[] {
   const predicateId = t.identifier('predicate');
   const valueId = t.identifier('value');
   // Add type annotation to the value parameter
-  if (prop.setElementType) {
-    valueId.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.setElementType));
-  } else {
-    valueId.typeAnnotation = t.tsTypeAnnotation(t.tsUnknownKeyword());
-  }
+  valueId.typeAnnotation = prop.setElementType
+    ? t.tsTypeAnnotation(t.cloneNode(prop.setElementType))
+    : t.tsTypeAnnotation(t.tsUnknownKeyword());
   predicateId.typeAnnotation = t.tsTypeAnnotation(
     t.tsFunctionType(
       null,
@@ -6749,7 +6897,9 @@ function buildSetMapParams(prop: PropDescriptor): t.Identifier[] {
   const valueId = t.identifier('value');
   // Add type annotation to the value parameter
   if (prop.setElementType) {
-    valueId.typeAnnotation = t.tsTypeAnnotation(t.cloneNode(prop.setElementType));
+    valueId.typeAnnotation = t.tsTypeAnnotation(
+      t.cloneNode(prop.setElementType)
+    );
     mapperId.typeAnnotation = t.tsTypeAnnotation(
       t.tsFunctionType(
         null,
@@ -6846,7 +6996,7 @@ function buildWithChildMethod(
 ): t.ClassMethod | null {
   // Find all message-type children (including collections with messages)
   const messageChildren = propDescriptors.filter(
-    (prop) =>
+    prop =>
       prop.isMessageType
       || prop.isArray
       || prop.isMap
@@ -6866,11 +7016,11 @@ function buildWithChildMethod(
   childId.typeAnnotation = t.tsTypeAnnotation(t.tsUnknownKeyword());
 
   // Build switch cases for each child property
-  const switchCases: t.SwitchCase[] = messageChildren.map((prop) => {
+  const switchCases: t.SwitchCase[] = messageChildren.map(prop => {
     // Create new instance with this property replaced
     // Use displayType casts to match the Data interface expected by constructor
     const propsObject = t.objectExpression(
-      propDescriptors.map((p) => {
+      propDescriptors.map(p => {
         if (p === prop) {
           // Cast child to the property's displayType (or inputTypeAnnotation if no displayType)
           const castType = p.displayType ?? p.inputTypeAnnotation;
@@ -6883,10 +7033,10 @@ function buildWithChildMethod(
         const privateAccess = t.memberExpression(
           t.thisExpression(), t.cloneNode(p.privateName)
         );
-        const needsCast = p.displayType &&
-          !typesAreEquivalent(p.displayType, p.inputTypeAnnotation);
+        const needsCast = p.displayType
+          && !typesAreEquivalent(p.displayType, p.inputTypeAnnotation);
         const value = needsCast
-          ? t.tsAsExpression(privateAccess, t.cloneNode(p.displayType!))
+          ? t.tsAsExpression(privateAccess, t.cloneNode(p.displayType))
           : privateAccess;
         return t.objectProperty(t.identifier(p.name), value);
       })
@@ -6968,7 +7118,7 @@ function buildGetMessageChildrenMethod(
 ): t.ClassMethod | null {
   // Find all message-type children (including collections with messages)
   const messageChildren = propDescriptors.filter(
-    (prop) =>
+    prop =>
       prop.isMessageType
       || prop.isArray
       || prop.isMap
@@ -7017,7 +7167,7 @@ function buildGetMessageChildrenMethod(
     childValueType
   ]);
 
-  const yieldStatements = messageChildren.map((prop) =>
+  const yieldStatements = messageChildren.map(prop =>
     t.expressionStatement(
       t.yieldExpression(
         t.tsAsExpression(

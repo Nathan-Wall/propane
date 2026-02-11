@@ -97,7 +97,7 @@ function resolveRuntimeType(pmtType: PmtType): PmtType {
   if (pmtType.kind === 'union') {
     return {
       kind: 'union',
-      types: pmtType.types.map((member) => resolveRuntimeType(member)),
+      types: pmtType.types.map(member => resolveRuntimeType(member)),
     };
   }
 
@@ -105,7 +105,7 @@ function resolveRuntimeType(pmtType: PmtType): PmtType {
     return {
       kind: 'reference',
       name: pmtType.name,
-      typeArguments: pmtType.typeArguments.map((arg) => resolveRuntimeType(arg)),
+      typeArguments: pmtType.typeArguments.map(arg => resolveRuntimeType(arg)),
     };
   }
 
@@ -297,7 +297,7 @@ export function buildDisplayType(
       : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableDate')),
-      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+      ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
@@ -307,7 +307,7 @@ export function buildDisplayType(
       : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableUrl')),
-      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+      ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
@@ -317,7 +317,7 @@ export function buildDisplayType(
       : [];
     return t.tsUnionType([
       t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
-      ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+      ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
     ]);
   }
 
@@ -364,7 +364,7 @@ export function buildDisplayType(
         : [];
       elementType = t.tsUnionType([
         t.tsTypeReference(t.identifier('ImmutableArrayBuffer')),
-        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+        ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
       ]);
     } else if (isDateType(pmtType.elementType)) {
       const aliasSources = aliases
@@ -372,7 +372,7 @@ export function buildDisplayType(
         : [];
       elementType = t.tsUnionType([
         t.tsTypeReference(t.identifier('ImmutableDate')),
-        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+        ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
       ]);
     } else if (isUrlType(pmtType.elementType)) {
       const aliasSources = aliases
@@ -380,7 +380,7 @@ export function buildDisplayType(
         : [];
       elementType = t.tsUnionType([
         t.tsTypeReference(t.identifier('ImmutableUrl')),
-        ...aliasSources.map((source) => t.tsTypeReference(t.identifier(source))),
+        ...aliasSources.map(source => t.tsTypeReference(t.identifier(source))),
       ]);
     }
     return t.tsUnionType([
@@ -448,7 +448,7 @@ function getGenericParamInfo(
     return null;
   }
 
-  const paramIndex = typeParameters.findIndex((p) => p.name === pmtType.name);
+  const paramIndex = typeParameters.findIndex(p => p.name === pmtType.name);
   if (paramIndex !== -1) {
     return {
       name: pmtType.name,
@@ -498,7 +498,10 @@ function getMessageTypeName(
     return null;
   }
   if (resolved.kind === 'reference'
-    && (knownMessages.has(resolved.name) || isWrapperMessageTypeName(resolved.name))
+    && (
+      knownMessages.has(resolved.name)
+      || isWrapperMessageTypeName(resolved.name)
+    )
   ) {
     return resolved.name;
   }
@@ -538,14 +541,15 @@ export function pmtTypeParametersToTypeParameters(
   declaredMessageTypeNames: Set<string>,
   isValueWrapper = false
 ): TypeParameter[] {
-  return pmtTypeParams.map((param) => {
+  return pmtTypeParams.map(param => {
     if (!param.constraint) {
       throw new Error(
         `Generic type parameter "${param.name}" must have an "extends" constraint. `
         + `Example: ${param.name} extends Message`
       );
     }
-    const resolvedConstraint = resolveAliasTypeForMessage(param.constraint) ?? param.constraint;
+    const resolvedConstraint = resolveAliasTypeForMessage(param.constraint)
+      ?? param.constraint;
     const constraintType = pmtTypeToBabelType(param.constraint);
     const requiresConstructor =
       !isValueWrapper
@@ -577,7 +581,7 @@ export function pmtPropertyToDescriptor(
   const isDate = isDateType(resolvedType);
   const isUrl = isUrlType(resolvedType);
   const isArrayBuffer = isArrayBufferType(resolvedType);
-  const effectiveMessageTypeName = (isDate || isUrl) ? null : messageTypeName;
+  const effectiveMessageTypeName = isDate || isUrl ? null : messageTypeName;
   const arrayElementMessageTypeName = resolvedType.kind === 'array'
     ? getMessageTypeName(resolvedType.elementType, knownMessages)
     : null;
@@ -620,10 +624,17 @@ export function pmtPropertyToDescriptor(
 
   // Detect generic type parameters
   const genericInfo = getGenericParamInfo(prop.type, typeParameters);
-  const unionGenericParams = extractUnionGenericParams(prop.type, typeParameters);
+  const unionGenericParams = extractUnionGenericParams(
+    prop.type,
+    typeParameters
+  );
 
   let inputTypeAnnotation = pmtTypeToInputType(resolvedType, aliases);
-  let displayType = buildDisplayType(resolvedType, effectiveMessageTypeName, aliases);
+  let displayType = buildDisplayType(
+    resolvedType,
+    effectiveMessageTypeName,
+    aliases
+  );
 
   if (isDate || isUrl) {
     inputTypeAnnotation = displayType;
@@ -643,7 +654,7 @@ export function pmtPropertyToDescriptor(
     const typeArgs = resolvedType.kind === 'reference'
       && resolvedType.typeArguments.length > 0
       ? t.tsTypeParameterInstantiation(
-        resolvedType.typeArguments.map((arg) => pmtTypeToBabelType(arg))
+        resolvedType.typeArguments.map(arg => pmtTypeToBabelType(arg))
       )
       : null;
     inputTypeAnnotation = t.tsTypeReference(
@@ -731,17 +742,17 @@ export function pmtPropertyToDescriptor(
 
 function extractUnionHasString(type: PmtType): boolean {
   if (type.kind !== 'union') return false;
-  return type.types.some((member) => isStringType(member));
+  return type.types.some(member => isStringType(member));
 }
 
 function extractUnionHasDate(type: PmtType): boolean {
   if (type.kind !== 'union') return false;
-  return type.types.some((member) => isDateType(member));
+  return type.types.some(member => isDateType(member));
 }
 
 function extractUnionHasUrl(type: PmtType): boolean {
   if (type.kind !== 'union') return false;
-  return type.types.some((member) => isUrlType(member));
+  return type.types.some(member => isUrlType(member));
 }
 
 function isStringType(type: PmtType): boolean {
@@ -752,14 +763,14 @@ function isStringType(type: PmtType): boolean {
     return typeof type.value === 'string';
   }
   if (type.kind === 'union') {
-    return type.types.some((member) => isStringType(member));
+    return type.types.some(member => isStringType(member));
   }
   return false;
 }
 
 function isDateType(type: PmtType): boolean {
   if (type.kind === 'union') {
-    return type.types.some((member) => isDateType(member));
+    return type.types.some(member => isDateType(member));
   }
   const resolved = resolveAliasTypeForMessage(type);
   if (!resolved) {
@@ -770,7 +781,7 @@ function isDateType(type: PmtType): boolean {
 
 function isUrlType(type: PmtType): boolean {
   if (type.kind === 'union') {
-    return type.types.some((member) => isUrlType(member));
+    return type.types.some(member => isUrlType(member));
   }
   const resolved = resolveAliasTypeForMessage(type);
   if (!resolved) {
@@ -781,7 +792,7 @@ function isUrlType(type: PmtType): boolean {
 
 function isArrayBufferType(type: PmtType): boolean {
   if (type.kind === 'union') {
-    return type.types.some((member) => isArrayBufferType(member));
+    return type.types.some(member => isArrayBufferType(member));
   }
   const resolved = resolveAliasTypeForMessage(type);
   if (!resolved) {

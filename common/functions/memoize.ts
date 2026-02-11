@@ -25,7 +25,7 @@ export function memoize<This, T, A extends unknown[]>(
     if (cacheSize <= 0) {
       return fn.apply(this, args);
     }
-    const target = (typeof this === 'object' && this !== null)
+    const target = typeof this === 'object' && this !== null
       || typeof this === 'function'
       ? (this as object)
       : null;
@@ -72,6 +72,6 @@ export function memoize<This, T, A extends unknown[]>(
       }
       return value;
     }
-    return <Exclude<typeof r.value, typeof UNSET>> r.value;
+    return r.value as Exclude<typeof r.value, typeof UNSET>;
   };
 }

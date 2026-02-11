@@ -13,26 +13,19 @@ import {
   LiteralValue,
   RawSql,
   type FragmentPart,
-  type PartHandlers,
 } from './fragment.js';
-
-// Re-export types
-export {
-  SqlFragment,
-  ColumnRef,
-  TableRef,
-  IdentifierRef,
-  LiteralValue,
-  RawSql,
-  type FragmentPart,
-  type PartHandlers,
-};
 
 /**
  * Values that can be interpolated into a fragment.
  * Markers return SqlFragment, primitives are wrapped in LiteralValue internally.
  */
-export type FragmentValue = SqlFragment | string | number | bigint | boolean | null;
+export type FragmentValue =
+  | SqlFragment
+  | string
+  | number
+  | bigint
+  | boolean
+  | null;
 
 /**
  * Helper to wrap a primitive value in LiteralValue.
@@ -45,7 +38,9 @@ function wrapValue(val: unknown): LiteralValue {
   if (val !== null && !['string', 'number', 'bigint', 'boolean'].includes(typeof val)) {
     throw new Error(`Unsupported value type: ${typeof val}`);
   }
-  return new LiteralValue({ value: val as string | number | bigint | boolean | null });
+  return new LiteralValue({
+    value: val as string | number | bigint | boolean | null,
+  });
 }
 
 /**
@@ -58,11 +53,15 @@ function wrapValue(val: unknown): LiteralValue {
  */
 export function column(name: string): SqlFragment;
 export function column(table: string, name: string): SqlFragment;
-export function column(schema: string, table: string, name: string): SqlFragment;
+export function column(
+  schema: string,
+  table: string,
+  name: string
+): SqlFragment;
 export function column(a: string, b?: string, c?: string): SqlFragment {
   const ref = new ColumnRef({
-    schema: c !== undefined ? a : null,
-    table: c !== undefined ? b! : b !== undefined ? a : null,
+    schema: c === undefined ? null : a,
+    table: c === undefined ? b === undefined ? null : a : b!,
     name: c ?? b ?? a,
   });
   return new SqlFragment({ parts: [ref] });
@@ -79,7 +78,7 @@ export function table(name: string): SqlFragment;
 export function table(schema: string, name: string): SqlFragment;
 export function table(schemaOrName: string, maybeName?: string): SqlFragment {
   const ref = new TableRef({
-    schema: maybeName !== undefined ? schemaOrName : null,
+    schema: maybeName === undefined ? null : schemaOrName,
     name: maybeName ?? schemaOrName,
   });
   return new SqlFragment({ parts: [ref] });
@@ -106,7 +105,9 @@ export function identifier(name: string): SqlFragment {
  * literal(42)       // 42
  * literal(true)     // true
  */
-export function literal(value: string | number | bigint | boolean | null): SqlFragment {
+export function literal(
+  value: string | number | bigint | boolean | null
+): SqlFragment {
   return new SqlFragment({ parts: [new LiteralValue({ value })] });
 }
 
@@ -131,7 +132,10 @@ export function raw(sqlString: string): SqlFragment {
  * sql`${column('price')} >= ${100}`
  * sql`SELECT * FROM ${table('users')} WHERE ${column('active')} = ${true}`
  */
-export function sql(strings: TemplateStringsArray, ...values: FragmentValue[]): SqlFragment {
+export function sql(
+  strings: TemplateStringsArray,
+  ...values: FragmentValue[]
+): SqlFragment {
   const parts: FragmentPart[] = [];
 
   for (let i = 0; i < strings.length; i++) {
@@ -192,17 +196,19 @@ export function join(
   let separator: string | SqlFragment;
   let values: Iterable<FragmentValue | undefined>;
 
-  if (maybeValues !== undefined) {
-    separator = separatorOrValues as string | SqlFragment;
-    values = maybeValues;
-  } else {
+  if (maybeValues === undefined) {
     separator = ', ';
     values = separatorOrValues as Iterable<FragmentValue | undefined>;
+  } else {
+    separator = separatorOrValues as string | SqlFragment;
+    values = maybeValues;
   }
 
   // Validate separator type
   if (!(separator instanceof SqlFragment) && typeof separator !== 'string') {
-    throw new Error(`join separator must be a string or SqlFragment, got ${typeof separator}`);
+    throw new TypeError(
+      `join separator must be a string or SqlFragment, got ${typeof separator}`
+    );
   }
 
   // Convert separator to parts
@@ -253,8 +259,12 @@ export function join(
  * ])
  * // ("active" = true AND "price" > 0)
  */
-export function and(conditions: Iterable<SqlFragment | undefined>): SqlFragment {
-  const arr = Array.from(conditions).filter((c): c is SqlFragment => c !== undefined);
+export function and(
+  conditions: Iterable<SqlFragment | undefined>
+): SqlFragment {
+  const arr = Array.from(conditions).filter(
+    (c): c is SqlFragment => c !== undefined
+  );
   if (arr.length === 0) return empty;
   if (arr.length === 1) return arr[0]!;
   return sql`(${join(' AND ', arr)})`;
@@ -275,8 +285,21 @@ export function and(conditions: Iterable<SqlFragment | undefined>): SqlFragment 
  * // ("status" = 'pending' OR "status" = 'review')
  */
 export function or(conditions: Iterable<SqlFragment | undefined>): SqlFragment {
-  const arr = Array.from(conditions).filter((c): c is SqlFragment => c !== undefined);
+  const arr = Array.from(conditions).filter(
+    (c): c is SqlFragment => c !== undefined
+  );
   if (arr.length === 0) return empty;
   if (arr.length === 1) return arr[0]!;
   return sql`(${join(' OR ', arr)})`;
 }
+
+export {
+  type PartHandlers,
+  SqlFragment,
+  ColumnRef,
+  TableRef,
+  IdentifierRef,
+  LiteralValue,
+  RawSql,
+  type FragmentPart,
+} from './fragment.js';

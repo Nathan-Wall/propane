@@ -128,7 +128,10 @@ function collectLocalTypeNames(ast: t.File): Set<string> {
       for (const spec of stmt.specifiers) {
         if (t.isImportSpecifier(spec)) {
           localNames.add(spec.local.name);
-        } else if (t.isImportDefaultSpecifier(spec) || t.isImportNamespaceSpecifier(spec)) {
+        } else if (
+          t.isImportDefaultSpecifier(spec)
+          || t.isImportNamespaceSpecifier(spec)
+        ) {
           localNames.add(spec.local.name);
         }
       }
@@ -225,15 +228,7 @@ function processTypeAlias(
       const valueType = valueTypeNode
         ? parseWrapperValueType(valueTypeNode, ctx)
         : null;
-      if (!valueType) {
-        ctx.diagnostics.push({
-          filePath: ctx.filePath,
-          location,
-          severity: 'error',
-          code: 'PMT061',
-          message: 'MessageWrapper requires a single type argument.',
-        });
-      } else {
+      if (valueType) {
         properties = [{
           name: 'value',
           fieldNumber: null,
@@ -242,6 +237,14 @@ function processTypeAlias(
           type: valueType,
           location,
         }];
+      } else {
+        ctx.diagnostics.push({
+          filePath: ctx.filePath,
+          location,
+          severity: 'error',
+          code: 'PMT061',
+          message: 'MessageWrapper requires a single type argument.',
+        });
       }
     } else {
       // Extract properties from the inner object literal
@@ -265,7 +268,12 @@ function processTypeAlias(
 
     const autoCompact = decoratorInfo.compact
       && isAutoCompactMessage(properties);
-    if (decoratorInfo.compact && !decoratorInfo.extendPath && !autoCompact && !isValueWrapper) {
+    if (
+      decoratorInfo.compact
+      && !decoratorInfo.extendPath
+      && !autoCompact
+      && !isValueWrapper
+    ) {
       ctx.diagnostics.push({
         filePath: ctx.filePath,
         location,
@@ -342,13 +350,6 @@ function parseWrapperValueType(
   return parseType(node, ctx);
 }
 
-function getQualifiedTypeName(typeName: t.TSQualifiedName): string {
-  if (t.isIdentifier(typeName.left)) {
-    return `${typeName.left.name}.${typeName.right.name}`;
-  }
-  return `${getQualifiedTypeName(typeName.left)}.${typeName.right.name}`;
-}
-
 function isAllowedWrapperValueType(node: t.TSType): boolean {
   if (t.isTSParenthesizedType(node)) {
     return isAllowedWrapperValueType(node.typeAnnotation);
@@ -363,7 +364,7 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
   }
 
   if (t.isTSTupleType(node)) {
-    return node.elementTypes.every((elem) => {
+    return node.elementTypes.every(elem => {
       if (t.isTSNamedTupleMember(elem)) {
         return isAllowedWrapperValueType(elem.elementType);
       }
@@ -390,11 +391,10 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
       || t.isNumericLiteral(literal)
       || t.isBooleanLiteral(literal)
       || t.isBigIntLiteral(literal)
-      || (
-        t.isUnaryExpression(literal)
+      ||         t.isUnaryExpression(literal)
         && literal.operator === '-'
         && t.isNumericLiteral(literal.argument)
-      )
+      
     );
   }
 

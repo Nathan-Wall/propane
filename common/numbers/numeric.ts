@@ -12,7 +12,7 @@ import { gcdBigInt } from './decimal-shared.js';
 /**
  * Type for any numeric value: number, bigint, Decimal, or Rational.
  */
-export type numeric = number | bigint | Decimal<any, any> | Rational;
+export type numeric = number | bigint | Decimal<number, number> | Rational;
 
 export type ComparisonResult = -1 | 0 | 1;
 
@@ -33,10 +33,14 @@ export function numericCompare(a: numeric, b: numeric): ComparisonResult {
   }
 
   if (Decimal.isInstance(a) && Decimal.isInstance(b)) {
-    return a.compare(b);
+    const leftDecimal = a as Decimal<number, number>;
+    const rightDecimal = b as Decimal<number, number>;
+    return leftDecimal.compare(rightDecimal);
   }
   if (Rational.isInstance(a) && Rational.isInstance(b)) {
-    return a.compare(b);
+    const leftRational = a as Rational;
+    const rightRational = b as Rational;
+    return leftRational.compare(rightRational);
   }
 
   if (typeof a === 'number' || typeof b === 'number') {
@@ -69,7 +73,10 @@ function compareMixedWithNumber(a: numeric, b: numeric): ComparisonResult {
 
 function toRational(value: numeric): Rational {
   if (Rational.isInstance(value)) return value;
-  if (Decimal.isInstance(value)) return value.toRational();
+  if (Decimal.isInstance(value)) {
+    const decimalValue = value as Decimal<number, number>;
+    return decimalValue.toRational();
+  }
   if (typeof value === 'bigint') return Rational.fromInt(value);
   if (typeof value === 'number') {
     if (Number.isSafeInteger(value)) {
@@ -94,12 +101,13 @@ function fromFloatExact(value: number): Rational {
   const hi = view.getUint32(0);
   const lo = view.getUint32(4);
 
-  const sign = (hi >>> 31) ? -1n : 1n;
-  const expBits = (hi >>> 20) & 0x7FF;
-  const mantissaHi = hi & 0xFFFFF;
+  const sign = hi >>> 31 ? -1n : 1n;
+  const expBits = hi >>> 20 & 0x7_FF;
+  const mantissaHi = hi & 0xF_FF_FF;
   const mantissaLo = lo;
 
-  const mantissaBits = BigInt(mantissaHi) * 0x100000000n + BigInt(mantissaLo);
+  const mantissaBits = BigInt(mantissaHi) * 0x1_00_00_00_00n
+    + BigInt(mantissaLo);
 
   let numerator: bigint;
   let denominator: bigint;
@@ -116,7 +124,7 @@ function fromFloatExact(value: number): Rational {
       denominator = 1n;
     } else {
       numerator = sign * significand;
-      denominator = 1n << (-exp);
+      denominator = 1n << -exp;
     }
   }
 
@@ -198,7 +206,11 @@ export function inRange(value: numeric, min: numeric, max: numeric): boolean {
   return greaterThanOrEqual(value, min) && lessThanOrEqual(value, max);
 }
 
-export function inRangeExclusive(value: numeric, min: numeric, max: numeric): boolean {
+export function inRangeExclusive(
+  value: numeric,
+  min: numeric,
+  max: numeric
+): boolean {
   if (typeof value === 'number' && Number.isNaN(value)) return false;
   if (typeof min === 'number' && Number.isNaN(min)) return false;
   if (typeof max === 'number' && Number.isNaN(max)) return false;
@@ -219,7 +231,7 @@ export function isInteger(value: numeric): boolean {
   if (Rational.isInstance(value)) {
     return value.denominator === 1n;
   }
-  // Decimal
-  if (value.scale <= 0) return true;
-  return value.mantissa % pow10(value.scale) === 0n;
+  const decimalValue = value as Decimal<number, number>;
+  if (decimalValue.scale <= 0) return true;
+  return decimalValue.mantissa % pow10(decimalValue.scale) === 0n;
 }

@@ -207,7 +207,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       if (!options?.skipValidation && true && !(Alpha.isInstance(value) || Beta.isInstance(value))) throw new Error("Invalid value for property \"union\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.union)) : new Alpha()) as Alpha | Beta;
     this.#list = props ? (value => {
@@ -446,7 +446,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

@@ -30,7 +30,9 @@ export class ImmutableUrl extends ImmutableUrl$Base {
    * Returns an ImmutableUrl from the input.
    * If the input is already an ImmutableUrl, returns it as-is.
    */
-  static override from(input: ImmutableUrlTypes.Value | URL | string): ImmutableUrl {
+  static override from(
+    input: ImmutableUrlTypes.Value | URL | string
+  ): ImmutableUrl {
     return ImmutableUrl.isInstance(input) ? input : new ImmutableUrl(input);
   }
 
@@ -41,7 +43,11 @@ export class ImmutableUrl extends ImmutableUrl$Base {
   ) {
     let base: string | URL | undefined;
     let resolvedOptions = options;
-    if (baseOrOptions && typeof baseOrOptions === 'object' && 'skipValidation' in baseOrOptions) {
+    if (
+      baseOrOptions
+      && typeof baseOrOptions === 'object'
+      && 'skipValidation' in baseOrOptions
+    ) {
       resolvedOptions = baseOrOptions as { skipValidation?: boolean };
     } else {
       base = baseOrOptions as string | URL | undefined;
@@ -73,7 +79,7 @@ export class ImmutableUrl extends ImmutableUrl$Base {
     options?: { skipValidation?: boolean }
   ): ImmutableUrl {
     if (typeof value !== 'string') {
-      throw new Error('ImmutableUrl.fromCompact expects a string value.');
+      throw new TypeError('ImmutableUrl.fromCompact expects a string value.');
     }
     return new ImmutableUrl(value, undefined, options);
   }
@@ -181,7 +187,8 @@ function coerceHref(
   base?: string | URL
 ): string {
   if (ImmutableUrl.isInstance(input)) {
-    return input.href;
+    const immutableUrlInput = input as ImmutableUrl;
+    return immutableUrlInput.href;
   }
 
   if (input && typeof input === 'object') {
@@ -194,7 +201,11 @@ function coerceHref(
     }
   }
 
-  return normalizeHref(String(input), base);
+  if (typeof input === 'string') {
+    return normalizeHref(input, base);
+  }
+
+  throw new TypeError('Invalid URL value.');
 }
 
 function normalizeHref(href: string, base?: string | URL): string {

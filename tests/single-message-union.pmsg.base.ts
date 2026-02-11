@@ -81,8 +81,7 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     const dateOrStringValue = entries["dateOrString"];
     if (dateOrStringValue === undefined) throw new Error("Missing required property \"dateOrString\".");
     let dateOrStringUnionValue: any = dateOrStringValue as any;
-    if (isTaggedMessageData(dateOrStringValue)) {
-      if (dateOrStringValue.$tag === "ImmutableDate") {
+    if (isTaggedMessageData(dateOrStringValue) && dateOrStringValue.$tag === "ImmutableDate") {
         if (typeof dateOrStringValue.$data === "string") {
           if (ImmutableDate.$compact === true) {
             dateOrStringUnionValue = ImmutableDate.fromCompact(ImmutableDate.$compactTag && dateOrStringValue.$data.startsWith(ImmutableDate.$compactTag) ? dateOrStringValue.$data.slice(ImmutableDate.$compactTag.length) : dateOrStringValue.$data, options);
@@ -93,16 +92,13 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
           dateOrStringUnionValue = new ImmutableDate(ImmutableDate.prototype.$fromEntries(dateOrStringValue.$data, options), options);
         }
       }
-    }
-    if (typeof dateOrStringValue === "string") {
-      if (ImmutableDate.$compactTag && dateOrStringValue.startsWith(ImmutableDate.$compactTag)) {
+    if (typeof dateOrStringValue === "string" && ImmutableDate.$compactTag && dateOrStringValue.startsWith(ImmutableDate.$compactTag)) {
         if (ImmutableDate.$compact === true) {
           dateOrStringUnionValue = ImmutableDate.fromCompact(ImmutableDate.$compactTag && dateOrStringValue.startsWith(ImmutableDate.$compactTag) ? dateOrStringValue.slice(ImmutableDate.$compactTag.length) : dateOrStringValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"dateOrString\" (ImmutableDate).");
         }
       }
-    }
     if (!isTaggedMessageData(dateOrStringValue) && typeof dateOrStringValue === "object" && dateOrStringValue !== null) {
       let dateOrStringUnionValueMatched = false;
       if (!dateOrStringUnionValueMatched) {
@@ -120,8 +116,7 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
     const urlOrNumberValue = entries["urlOrNumber"];
     if (urlOrNumberValue === undefined) throw new Error("Missing required property \"urlOrNumber\".");
     let urlOrNumberUnionValue: any = urlOrNumberValue as any;
-    if (isTaggedMessageData(urlOrNumberValue)) {
-      if (urlOrNumberValue.$tag === "ImmutableUrl") {
+    if (isTaggedMessageData(urlOrNumberValue) && urlOrNumberValue.$tag === "ImmutableUrl") {
         if (typeof urlOrNumberValue.$data === "string") {
           if (ImmutableUrl.$compact === true) {
             urlOrNumberUnionValue = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && urlOrNumberValue.$data.startsWith(ImmutableUrl.$compactTag) ? urlOrNumberValue.$data.slice(ImmutableUrl.$compactTag.length) : urlOrNumberValue.$data, options);
@@ -132,16 +127,13 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
           urlOrNumberUnionValue = new ImmutableUrl(ImmutableUrl.prototype.$fromEntries(urlOrNumberValue.$data, options), options);
         }
       }
-    }
-    if (typeof urlOrNumberValue === "string") {
-      if (ImmutableUrl.$compactTag && urlOrNumberValue.startsWith(ImmutableUrl.$compactTag)) {
+    if (typeof urlOrNumberValue === "string" && ImmutableUrl.$compactTag && urlOrNumberValue.startsWith(ImmutableUrl.$compactTag)) {
         if (ImmutableUrl.$compact === true) {
           urlOrNumberUnionValue = ImmutableUrl.fromCompact(ImmutableUrl.$compactTag && urlOrNumberValue.startsWith(ImmutableUrl.$compactTag) ? urlOrNumberValue.slice(ImmutableUrl.$compactTag.length) : urlOrNumberValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"urlOrNumber\" (ImmutableUrl).");
         }
       }
-    }
     if (!isTaggedMessageData(urlOrNumberValue) && typeof urlOrNumberValue === "object" && urlOrNumberValue !== null) {
       let urlOrNumberUnionValueMatched = false;
       if (!urlOrNumberUnionValueMatched) {
@@ -166,10 +158,10 @@ export class SingleMessageUnion extends Message<SingleMessageUnion.Data> {
   }
   static validateAll(data: SingleMessageUnion.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

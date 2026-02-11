@@ -24,7 +24,11 @@ function cloneBuffer(input: ArrayBuffer): ArrayBuffer {
 }
 
 function bufferFromView(view: ArrayBufferView): ArrayBuffer {
-  return new Uint8Array(view.buffer, view.byteOffset, view.byteLength).slice().buffer;
+  return new Uint8Array(
+    view.buffer,
+    view.byteOffset,
+    view.byteLength,
+  ).slice().buffer;
 }
 
 function fromInput(
@@ -56,14 +60,20 @@ function fromInput(
 }
 
 function coerceBuffer(
-  input: ImmutableArrayBufferTypes.Value | ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number> | undefined
+  input:
+    | ImmutableArrayBufferTypes.Value
+    | ArrayBuffer
+    | ArrayBufferView
+    | ArrayLike<number>
+    | Iterable<number>
+    | undefined
 ): ArrayBuffer {
   if (!input) {
     return new ArrayBuffer(0);
   }
 
   if (ImmutableArrayBuffer.isInstance(input)) {
-    return input.toArrayBuffer();
+    return cloneBuffer(input.value as ArrayBuffer);
   }
 
   if (input instanceof ArrayBuffer) {
@@ -78,7 +88,7 @@ function coerceBuffer(
     const valueProp = (input as { value?: unknown }).value;
     if (valueProp !== undefined) {
       if (ImmutableArrayBuffer.isInstance(valueProp)) {
-        return valueProp.toArrayBuffer();
+        return cloneBuffer(valueProp.value as ArrayBuffer);
       }
       if (valueProp instanceof ArrayBuffer) {
         return cloneBuffer(valueProp);
@@ -86,11 +96,23 @@ function coerceBuffer(
       if (ArrayBuffer.isView(valueProp)) {
         return bufferFromView(valueProp);
       }
-      return fromInput(valueProp as ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>);
+      return fromInput(
+        valueProp as
+          | ArrayBuffer
+          | ArrayBufferView
+          | ArrayLike<number>
+          | Iterable<number>
+      );
     }
   }
 
-  return fromInput(input as ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>);
+  return fromInput(
+    input as
+      | ArrayBuffer
+      | ArrayBufferView
+      | ArrayLike<number>
+      | Iterable<number>
+  );
 }
 
 function arrayBufferEquals(a: ArrayBuffer, b: ArrayBuffer): boolean {
@@ -152,14 +174,14 @@ export class ImmutableArrayBuffer extends ImmutableArrayBuffer$Base {
 
   static override $serialize(value: ArrayBuffer): string {
     if (!(value instanceof ArrayBuffer)) {
-      throw new Error('ImmutableArrayBuffer.$serialize expects an ArrayBuffer.');
+      throw new TypeError('ImmutableArrayBuffer.$serialize expects an ArrayBuffer.');
     }
     return arrayBufferToBase64(value);
   }
 
   static override $deserialize(value: string): ArrayBuffer {
     if (typeof value !== 'string') {
-      throw new Error('ImmutableArrayBuffer.$deserialize expects a string value.');
+      throw new TypeError('ImmutableArrayBuffer.$deserialize expects a string value.');
     }
     return base64ToArrayBuffer(value);
   }
@@ -169,13 +191,25 @@ export class ImmutableArrayBuffer extends ImmutableArrayBuffer$Base {
    * If the input is already an ImmutableArrayBuffer, returns it as-is.
    */
   static override from(
-    input: ImmutableArrayBufferTypes.Value | ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number>
+    input:
+      | ImmutableArrayBufferTypes.Value
+      | ArrayBuffer
+      | ArrayBufferView
+      | ArrayLike<number>
+      | Iterable<number>
   ): ImmutableArrayBuffer {
-    return ImmutableArrayBuffer.isInstance(input) ? input : new ImmutableArrayBuffer(input);
+    return ImmutableArrayBuffer.isInstance(input)
+      ? input
+      : new ImmutableArrayBuffer(input);
   }
 
   constructor(
-    input: ImmutableArrayBufferTypes.Value | ArrayBuffer | ArrayBufferView | ArrayLike<number> | Iterable<number> = new ArrayBuffer(0),
+    input:
+      | ImmutableArrayBufferTypes.Value
+      | ArrayBuffer
+      | ArrayBufferView
+      | ArrayLike<number>
+      | Iterable<number> = new ArrayBuffer(0),
     options?: { skipValidation?: boolean }
   ) {
     const buffer = coerceBuffer(input);
@@ -189,15 +223,20 @@ export class ImmutableArrayBuffer extends ImmutableArrayBuffer$Base {
   ): { value: ArrayBuffer } {
     const valueValue = entries['value'];
     if (valueValue === undefined) {
-      throw new Error('Missing required property \"value\".');
+      throw new Error('Missing required property "value".');
     }
     if (
       !options?.skipValidation
-      && !(valueValue instanceof ArrayBuffer || ImmutableArrayBuffer.isInstance(valueValue))
+      && !(
+        valueValue instanceof ArrayBuffer
+        || ImmutableArrayBuffer.isInstance(valueValue)
+      )
     ) {
-      throw new Error('Invalid value for property \"value\".');
+      throw new Error('Invalid value for property "value".');
     }
-    return { value: coerceBuffer(valueValue as ImmutableArrayBufferTypes.Value) };
+    return {
+      value: coerceBuffer(valueValue as ImmutableArrayBufferTypes.Value),
+    };
   }
 
   get byteLength(): number {
@@ -222,7 +261,8 @@ export class ImmutableArrayBuffer extends ImmutableArrayBuffer$Base {
 
   override equals(other: unknown): boolean {
     if (ImmutableArrayBuffer.isInstance(other)) {
-      return arrayBufferEquals(this.value, other.value);
+      const otherValue = other.value as ArrayBuffer;
+      return arrayBufferEquals(this.value, otherValue);
     }
     if (other instanceof ArrayBuffer) {
       return arrayBufferEquals(this.value, other);

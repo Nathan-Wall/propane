@@ -9,7 +9,10 @@ export default function runImmutableArraySetTests() {
   const arr = new ImmutableArray([1, 2, 3]);
   const set = new ImmutableSet(['a', 'b', 'a']);
 
-  const instance: ImmutableArraySet = new ImmutableArraySet({ arr, items: set });
+  const instance: ImmutableArraySet = new ImmutableArraySet({
+    arr,
+    items: set,
+  });
 
   // toJSON normalization
   const json = JSON.parse(JSON.stringify(instance));

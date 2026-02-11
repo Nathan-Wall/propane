@@ -54,7 +54,7 @@ export function createTestPool(): Pool | null {
  */
 export function generateTestSchemaName(): string {
   const timestamp = Date.now();
-  const random = Math.random().toString(36).substring(2, 8);
+  const random = Math.random().toString(36).slice(2, 8);
   return `test_${timestamp}_${random}`;
 }
 

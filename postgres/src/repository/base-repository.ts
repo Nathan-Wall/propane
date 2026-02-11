@@ -46,7 +46,7 @@ export interface CountResult {
  * For a table with composite key `PrimaryKey<bigint>` + `PrimaryKey<bigint>`:
  *   PrimaryKeyValue = { userId: bigint; roleId: bigint }
  */
-export type PrimaryKeyValue<T> = unknown | Partial<T>;
+export type PrimaryKeyValue<T> = T[keyof T] | Partial<T>;
 
 /**
  * Base repository class for database operations.
@@ -79,7 +79,8 @@ export class BaseRepository<T extends Record<string, unknown>> {
     this.primaryKey = config.primaryKey;
     this.columns = config.columns;
     this.columnTypes = config.columnTypes;
-    this.isCompositePk = Array.isArray(config.primaryKey) && config.primaryKey.length > 1;
+    this.isCompositePk = Array.isArray(config.primaryKey)
+      && config.primaryKey.length > 1;
   }
 
   /**
@@ -130,17 +131,19 @@ export class BaseRepository<T extends Record<string, unknown>> {
         `SELECT ${columns} FROM ${this.qualifiedTableName} WHERE ${orClauses}`,
         params
       );
-      return result.map((row) => this.deserializeRow(row, select));
+      return result.map(row => this.deserializeRow(row, select));
     }
 
     // Simple single-column PK
     const placeholders = ids.map((_, i) => `$${i + 1}`).join(', ');
-    const pkCol = Array.isArray(this.primaryKey) ? this.primaryKey[0]! : this.primaryKey;
+    const pkCol = Array.isArray(this.primaryKey)
+      ? this.primaryKey[0]!
+      : this.primaryKey;
     const result = await this.connection.execute<T>(
       `SELECT ${columns} FROM ${this.qualifiedTableName} WHERE ${escapeIdentifier(pkCol)} IN (${placeholders})`,
-      ids as unknown[]
+      ids
     );
-    return result.map((row) => this.deserializeRow(row, select));
+    return result.map(row => this.deserializeRow(row, select));
   }
 
   /**
@@ -179,7 +182,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     }
 
     const result = await this.connection.execute<T>(query, params);
-    return result.map((row) => this.deserializeRow(row, options?.select));
+    return result.map(row => this.deserializeRow(row, options?.select));
   }
 
   /**
@@ -237,7 +240,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     } RETURNING *`;
     const result = await this.connection.execute<T>(query, allValues);
 
-    return result.map((row) => this.deserializeRow(row));
+    return result.map(row => this.deserializeRow(row));
   }
 
   /**
@@ -253,7 +256,10 @@ export class BaseRepository<T extends Record<string, unknown>> {
       return this.findById(id) as Promise<T | null>;
     }
 
-    const { whereClause, params: whereParams } = this.buildPkWhereClause(id, values.length + 1);
+    const {
+      whereClause,
+      params: whereParams,
+    } = this.buildPkWhereClause(id, values.length + 1);
     values.push(...whereParams);
 
     const query = `UPDATE ${this.qualifiedTableName} SET ${setClauses.join(', ')} WHERE ${whereClause} RETURNING *`;
@@ -358,17 +364,17 @@ export class BaseRepository<T extends Record<string, unknown>> {
   async upsert(data: Partial<T>, conflictKeys: (keyof T)[]): Promise<T> {
     const { columns, values, placeholders } = this.buildInsertData(data);
     const conflictCols = conflictKeys
-      .map((k) => escapeIdentifier(this.toSnakeCase(String(k))))
+      .map(k => escapeIdentifier(this.toSnakeCase(String(k))))
       .join(', ');
 
     // Build UPDATE SET clause excluding conflict keys
-    const updateCols = this.columns.filter((c) => {
+    const updateCols = this.columns.filter(c => {
       const camelKey = this.toCamelCase(c) as keyof T;
       return !conflictKeys.includes(camelKey) && data[camelKey] !== undefined;
     });
     const updateSet = updateCols
       .map(
-        (c) => `${escapeIdentifier(c)} = EXCLUDED.${escapeIdentifier(c)}`
+        c => `${escapeIdentifier(c)} = EXCLUDED.${escapeIdentifier(c)}`
       )
       .join(', ');
 
@@ -396,7 +402,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     if (!select || select.length === 0) {
       return '*';
     }
-    return select.map((col) => escapeIdentifier(this.toSnakeCase(String(col)))).join(', ');
+    return select.map(col => escapeIdentifier(this.toSnakeCase(String(col)))).join(', ');
   }
 
   /**
@@ -465,7 +471,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     const result: Record<string, unknown> = {};
 
     const columnsToProcess = select
-      ? select.map((k) => this.toSnakeCase(String(k)))
+      ? select.map(k => this.toSnakeCase(String(k)))
       : this.columns;
 
     for (const col of columnsToProcess) {
@@ -481,7 +487,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
    * Convert camelCase to snake_case.
    */
   protected toSnakeCase(str: string): string {
-    return str.replaceAll(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    return str.replaceAll(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
   }
 
   /**
@@ -529,7 +535,9 @@ export class BaseRepository<T extends Record<string, unknown>> {
     }
 
     // Single-column PK
-    const pkCol = Array.isArray(this.primaryKey) ? this.primaryKey[0]! : this.primaryKey;
+    const pkCol = Array.isArray(this.primaryKey)
+      ? this.primaryKey[0]!
+      : this.primaryKey;
     const colType = this.columnTypes[pkCol] ?? 'TEXT';
     return {
       whereClause: `${escapeIdentifier(pkCol)} = $${startIndex}`,
@@ -600,7 +608,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     targetColumnTypes: Record<string, string>
   ): Promise<Record<string, unknown> | null> {
     // Return null if any FK value is null/undefined (no relation)
-    if (values.some((v) => v === null || v === undefined)) {
+    if (values.some(v => v === null || v === undefined)) {
       return null;
     }
 
@@ -655,7 +663,7 @@ export class BaseRepository<T extends Record<string, unknown>> {
     targetColumnTypes: Record<string, string>
   ): Promise<Record<string, unknown>[]> {
     // Return empty array if any value is null/undefined
-    if (values.some((v) => v === null || v === undefined)) {
+    if (values.some(v => v === null || v === undefined)) {
       return [];
     }
 

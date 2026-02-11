@@ -17,7 +17,8 @@ import type { Decimal, Rational } from '@/common/numbers/decimal.js';
  * - `Decimal<P,S>`
  * - `Rational`
  */
-export type numeric = number | bigint | Decimal<any, any> | Rational;
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
+export type numeric = number | bigint | Decimal<number, number> | Rational;
 
 type Lengthwise = { readonly length: number };
 

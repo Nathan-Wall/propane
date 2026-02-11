@@ -157,11 +157,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected User.");
           }
         } else {
-          if (User.isInstance(value)) {
-            result = value;
-          } else {
-            result = new User(value as User.Value, options);
-          }
+          result = User.isInstance(value) ? value : new User(value as User.Value, options);
         }
       }
       return result;
@@ -189,11 +185,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected Indexed.");
           }
         } else {
-          if (Indexed.isInstance(value)) {
-            result = value;
-          } else {
-            result = new Indexed(value as Indexed.Value, options);
-          }
+          result = Indexed.isInstance(value) ? value : new Indexed(value as Indexed.Value, options);
         }
       }
       return result;
@@ -221,11 +213,7 @@ export class Compound extends Message<Compound.Data> {
             throw new Error("Tagged message type mismatch: expected Compound_Inline.");
           }
         } else {
-          if (Compound_Inline.isInstance(value)) {
-            result = value;
-          } else {
-            result = new Compound_Inline(value as Compound_Inline.Value, options);
-          }
+          result = Compound_Inline.isInstance(value) ? value : new Compound_Inline(value as Compound_Inline.Value, options);
         }
       }
       return result;

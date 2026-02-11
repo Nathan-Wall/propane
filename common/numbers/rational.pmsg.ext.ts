@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-namespace */
+
 /**
  * Rational numeric type with exact arithmetic and explicit rounding.
  */
@@ -6,6 +8,7 @@ import { Rational$Base } from './rational.pmsg.base.js';
 import type { Rational as RationalTypes } from './rational.pmsg.base.js';
 import { Decimal } from './decimal.pmsg.ext.js';
 import { memoize } from '../functions/memoize.js';
+import type { RoundingMode } from './decimal-shared.js';
 import {
   DecimalDivisionByZeroError,
   DecimalInexactError,
@@ -14,7 +17,6 @@ import {
   MAX_RATIONAL_DIGITS,
   REDUCE_INTERVAL,
   RationalOverflowError,
-  RoundingMode,
   bitLength,
   ensureValidPrecisionScale,
   gcdBigInt,
@@ -26,9 +28,6 @@ import {
   toBigIntSafeInteger,
   validateDigitLength,
 } from './decimal-shared.js';
-
-export { RationalOverflowError };
-
 export namespace Rational {
   export type Data = RationalTypes.Data;
   export type Value = RationalTypes.Value;
@@ -90,6 +89,8 @@ function normalizeRational(
 export class Rational extends Rational$Base {
   #opCount = 0;
   #hash?: number;
+  // Memoized reducer intentionally closes over class-private state.
+  // eslint-disable-next-line unicorn/consistent-function-scoping
   #reduce = memoize(function (this: Rational): Rational {
     if (this.#opCount === 0) {
       return this;
@@ -125,11 +126,20 @@ export class Rational extends Rational$Base {
     return this.#reduce().#d;
   }
 
-  private static toRationalValue(other: Rational | Decimal<any, any>): Rational {
-    return Decimal.isInstance(other) ? other.toRational() : other;
+  private static toRationalValue(
+    other: Rational | Decimal<number, number>
+  ): Rational {
+    if (Decimal.isInstance(other)) {
+      return (other as Decimal<number, number>).toRational();
+    }
+    return other;
   }
 
-  private static withOps(numerator: bigint, denominator: bigint, ops: number): Rational {
+  private static withOps(
+    numerator: bigint,
+    denominator: bigint,
+    ops: number
+  ): Rational {
     return new Rational({ numerator, denominator }, { opCount: ops });
   }
 
@@ -172,7 +182,10 @@ export class Rational extends Rational$Base {
     return new Rational({ numerator: intValue, denominator: 1n });
   }
 
-  static fromInts(numerator: number | bigint, denominator: number | bigint): Rational {
+  static fromInts(
+    numerator: number | bigint,
+    denominator: number | bigint
+  ): Rational {
     const n = toBigIntSafeInteger(numerator, { label: 'Numerator' });
     const d = toBigIntSafeInteger(denominator, { label: 'Denominator' });
     return new Rational({ numerator: n, denominator: d });
@@ -233,9 +246,15 @@ export class Rational extends Rational$Base {
 
     const digits = BigInt(parsed.digits) * parsed.sign;
     if (parsed.scale >= 0) {
-      return new Rational({ numerator: digits, denominator: pow10(parsed.scale) });
+      return new Rational({
+        numerator: digits,
+        denominator: pow10(parsed.scale),
+      });
     }
-    return new Rational({ numerator: digits * pow10(-parsed.scale), denominator: 1n });
+    return new Rational({
+      numerator: digits * pow10(-parsed.scale),
+      denominator: 1n,
+    });
   }
 
   static override fromCompact(
@@ -255,7 +274,7 @@ export class Rational extends Rational$Base {
   }
 
 
-  add(other: Rational | Decimal<any, any>): Rational {
+  add(other: Rational | Decimal<number, number>): Rational {
     const rhs = Rational.toRationalValue(other);
     const n = this.#n * rhs.#d
       + rhs.#n * this.#d;
@@ -267,7 +286,7 @@ export class Rational extends Rational$Base {
     );
   }
 
-  subtract(other: Rational | Decimal<any, any>): Rational {
+  subtract(other: Rational | Decimal<number, number>): Rational {
     const rhs = Rational.toRationalValue(other);
     const n = this.#n * rhs.#d
       - rhs.#n * this.#d;
@@ -279,7 +298,7 @@ export class Rational extends Rational$Base {
     );
   }
 
-  multiply(other: Rational | Decimal<any, any>): Rational {
+  multiply(other: Rational | Decimal<number, number>): Rational {
     const rhs = Rational.toRationalValue(other);
     const n = this.#n * rhs.#n;
     const d = this.#d * rhs.#d;
@@ -290,7 +309,7 @@ export class Rational extends Rational$Base {
     );
   }
 
-  divide(other: Rational | Decimal<any, any>): Rational {
+  divide(other: Rational | Decimal<number, number>): Rational {
     const rhs = Rational.toRationalValue(other);
     if (rhs.#n === 0n) {
       throw new DecimalDivisionByZeroError();
@@ -333,30 +352,30 @@ export class Rational extends Rational$Base {
       : this;
   }
 
-  compare(other: Rational | Decimal<any, any>): -1 | 0 | 1 {
+  compare(other: Rational | Decimal<number, number>): -1 | 0 | 1 {
     const rhs = Rational.toRationalValue(other);
     const left = this.#n * rhs.#d;
     const right = rhs.#n * this.#d;
     return left < right ? -1 : left > right ? 1 : 0;
   }
 
-  valueEquals(other: Rational | Decimal<any, any>): boolean {
+  valueEquals(other: Rational | Decimal<number, number>): boolean {
     return this.compare(other) === 0;
   }
 
-  lessThan(other: Rational | Decimal<any, any>): boolean {
+  lessThan(other: Rational | Decimal<number, number>): boolean {
     return this.compare(other) < 0;
   }
 
-  greaterThan(other: Rational | Decimal<any, any>): boolean {
+  greaterThan(other: Rational | Decimal<number, number>): boolean {
     return this.compare(other) > 0;
   }
 
-  lessThanOrEqual(other: Rational | Decimal<any, any>): boolean {
+  lessThanOrEqual(other: Rational | Decimal<number, number>): boolean {
     return this.compare(other) <= 0;
   }
 
-  greaterThanOrEqual(other: Rational | Decimal<any, any>): boolean {
+  greaterThanOrEqual(other: Rational | Decimal<number, number>): boolean {
     return this.compare(other) >= 0;
   }
 
@@ -378,13 +397,13 @@ export class Rational extends Rational$Base {
 
     const remainder = numerator % denominator;
     let mantissa: bigint;
-    if (remainder !== 0n) {
+    if (remainder === 0n) {
+      mantissa = numerator / denominator;
+    } else {
       if (mode === undefined) {
         throw new DecimalInexactError('toDecimal');
       }
       mantissa = roundBigInt(numerator, denominator, mode);
-    } else {
-      mantissa = numerator / denominator;
     }
 
     return Decimal.fromMantissa(precision, scale, mantissa);
@@ -416,13 +435,19 @@ export class Rational extends Rational$Base {
     return super.serialize(options);
   }
 
+  static #sameNormalizedValue(left: Rational, right: Rational): boolean {
+    return left.#n === right.#n
+      && left.#d === right.#d;
+  }
+
   #equals(other: unknown): boolean {
-    if (!Rational.isInstance(other)) {
-      return false;
+    if (other instanceof Rational) {
+      const rhs = other.#reduce();
+      return Rational.#sameNormalizedValue(this, rhs);
     }
-    const rhs = other.#reduce();
-    return this.#n === rhs.#n
-      && this.#d === rhs.#d;
+    // Cross-copy messages can satisfy value equality via Message.equals without
+    // sharing this class's private-field brand.
+    return super.equals(other);
   }
 
   override hashCode(): number {
@@ -438,3 +463,5 @@ export class Rational extends Rational$Base {
     return this.#hash;
   }
 }
+
+export {RationalOverflowError} from './decimal-shared.js';

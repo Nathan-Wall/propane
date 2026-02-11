@@ -1,5 +1,3 @@
-import { ensure } from '../common/assert/index.js';
-import { emsg } from '../common/strings/msg/index.js';
 import { normalizeForJson } from './common/json/stringify.js';
 import { ImmutableMap } from './common/map/immutable.js';
 import { ImmutableSet } from './common/set/immutable.js';
@@ -26,7 +24,20 @@ const RESERVED_STRINGS = new Set(['true', 'false', 'null', 'undefined']);
 const NUMERIC_STRING_RE = /^-?\d+(?:\.\d+)?$/;
 const TINY_TAG_RE = /^[A-Za-z#]$/;
 const MESSAGE_TAG = Symbol.for('propane:message');
-const ENFORCED_TYPE_TAGS = new WeakSet<Function>();
+type ConstructorFunction = abstract new (...args: unknown[]) => unknown;
+const ENFORCED_TYPE_TAGS = new WeakSet<ConstructorFunction>();
+
+/**
+ * Structural type that matches any Message instance.
+ * Use this as a type constraint instead of Message<object> to avoid
+ * TypeScript invariance issues with generic class type parameters.
+ */
+export interface AnyMessage {
+  readonly $typeName: string;
+  serialize(): string;
+  hashCode(): number;
+  equals(other: unknown): boolean;
+}
 
 export type DataPrimitive =
   | string
@@ -41,7 +52,7 @@ export type DataValue =
   | ImmutableDate
   | URL
   | ImmutableUrl
-  | Decimal<any, any>
+  | Decimal<number, number>
   | Rational
   | ArrayBuffer
   | ImmutableArrayBuffer
@@ -53,8 +64,7 @@ export type DataValue =
   | TaggedMessageData
   | DataObject
   | DataArray
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  | Message<any>;
+  | AnyMessage;
 export type DataArray = DataValue[];
 export interface DataObject {
   [key: string]: DataValue;
@@ -118,8 +128,8 @@ export interface MessagePropDescriptor<T extends object> {
 /**
  * Extract the Data type from a Message<Data> type.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type MessageData<T extends Message<any>> = T extends Message<infer D> ? D : never;
+type MessageData<T extends Message<object>> =
+  T extends Message<infer D> ? D : never;
 
 /**
  * Extract the instance type from a Message constructor.
@@ -131,8 +141,7 @@ type MessageInstance<T> = T extends { prototype: infer P } ? P : never;
  * The Value type for a Message: either the message instance or its data.
  * Exported for use in generated generic parse methods.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type MessageValue<T extends Message<any>> = T | MessageData<T>;
+export type MessageValue<T extends Message<object>> = T | MessageData<T>;
 
 /**
  * Interface for generic message constructors.
@@ -140,8 +149,7 @@ export type MessageValue<T extends Message<any>> = T | MessageData<T>;
  * Uses structural AnyMessage constraint to avoid private field compatibility issues.
  */
 export interface MessageConstructor<T extends AnyMessage> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  new (props?: any, options?: { skipValidation?: boolean }): T;
+  new (props?: unknown, options?: { skipValidation?: boolean }): T;
   deserialize(data: string, options?: { skipValidation?: boolean }): T;
   fromCompact?(...args: unknown[]): AnyMessage;
   readonly $typeName: string;
@@ -171,7 +179,7 @@ export interface SerializeOptions {
 // Intern pool for message instances, keyed by serialized form
 // Uses WeakRef to allow garbage collection of unused instances
 const internPool = new Map<string, WeakRef<Message<DataObject>>>();
-const registry = new FinalizationRegistry<string>((key) => {
+const registry = new FinalizationRegistry<string>(key => {
   const ref = internPool.get(key);
   if (ref && !ref.deref()) {
     internPool.delete(key);
@@ -193,18 +201,6 @@ interface ParentChainEntry {
 // Type for update listener callback
 type UpdateListenerCallback = (msg: Message<DataObject>) => void;
 type Unsubscribe = () => void;
-
-/**
- * Structural type that matches any Message instance.
- * Use this as a type constraint instead of Message<any> to avoid
- * TypeScript invariance issues with generic class type parameters.
- */
-export interface AnyMessage {
-  readonly $typeName: string;
-  serialize(): string;
-  hashCode(): number;
-  equals(other: unknown): boolean;
-}
 
 export abstract class Message<T extends object> {
   private [MESSAGE_TAG] = true;
@@ -230,7 +226,10 @@ export abstract class Message<T extends object> {
   readonly #listenerTokens = new Map<symbol, symbol>();
 
   protected abstract $getPropDescriptors(): MessagePropDescriptor<T>[];
-  protected abstract $fromEntries(entries: Record<string, unknown>, options?: { skipValidation?: boolean }): T;
+  protected abstract $fromEntries(
+    entries: Record<string, unknown>,
+    options?: { skipValidation?: boolean }
+  ): T;
 
   /**
    * Create a new message with a child replaced at the given key.
@@ -265,7 +264,7 @@ export abstract class Message<T extends object> {
       $typeName?: string;
       name?: string;
     };
-    if (!ENFORCED_TYPE_TAGS.has(ctor as unknown as Function)) {
+    if (!ENFORCED_TYPE_TAGS.has(ctor as unknown as ConstructorFunction)) {
       const displayName = ctor.$typeName ?? ctor.name ?? typeName;
       if (typeof ctor.$typeId !== 'string' || ctor.$typeId.length === 0) {
         throw new Error(
@@ -279,7 +278,7 @@ export abstract class Message<T extends object> {
             + ' Message subclasses must be generated by the Propane compiler.'
         );
       }
-      ENFORCED_TYPE_TAGS.add(ctor as unknown as Function);
+      ENFORCED_TYPE_TAGS.add(ctor as unknown as ConstructorFunction);
     }
     const instanceTag = ctor.$instanceTag;
     if (instanceTag && Object.isExtensible(this)) {
@@ -292,26 +291,31 @@ export abstract class Message<T extends object> {
     }
   }
 
-  static isInstance<T extends { prototype: Message<any> }>(
+  static isInstance<T extends { prototype: Message<object> }>(
     this: T,
     value: unknown
   ): value is MessageInstance<T> {
-    if (!value || (typeof value !== 'object' && typeof value !== 'function')) {
+    if (!value || typeof value !== 'object' && typeof value !== 'function') {
       return false;
     }
     const ctor = this as { $instanceTag?: symbol };
     const instanceTag = ctor.$instanceTag;
-    if (instanceTag && (value as { [key: symbol]: unknown })[instanceTag] === true) {
+    if (
+      instanceTag
+      && (value as Record<symbol, unknown>)[instanceTag] === true
+    ) {
       return true;
     }
-    return value instanceof (this as unknown as abstract new (...args: any[]) => Message<any>);
+    return value instanceof (
+      this as unknown as abstract new (...args: unknown[]) => Message<object>
+    );
   }
 
-  static isMessage(value: unknown): value is Message<any> {
-    if (!value || (typeof value !== 'object' && typeof value !== 'function')) {
+  static isMessage(value: unknown): value is AnyMessage {
+    if (!value || typeof value !== 'object' && typeof value !== 'function') {
       return false;
     }
-    if ((value as { [key: symbol]: unknown })[MESSAGE_TAG] === true) {
+    if ((value as Record<symbol, unknown>)[MESSAGE_TAG] === true) {
       return true;
     }
     return value instanceof Message;
@@ -697,9 +701,9 @@ export abstract class Message<T extends object> {
     // Only having the same data isn't enough.
     // Two messages with data `{value: 1}` may still be very different types of
     // messages with different uses.
-    const ctorA = this.constructor as MessageConstructor<any>;
+    const ctorA = this.constructor as MessageConstructor<AnyMessage>;
     const ctorB = (
-      other as unknown as { constructor?: MessageConstructor<any> }
+      other as unknown as { constructor?: MessageConstructor<AnyMessage> }
     ).constructor;
     if (!ctorA.$typeId || !ctorB?.$typeId || ctorA.$typeId !== ctorB.$typeId) {
       return false;
@@ -746,21 +750,24 @@ export abstract class Message<T extends object> {
   serialize(options?: SerializeOptions): string {
     const includeTag = options?.includeTag ?? false;
 
-    const ctor = this.constructor as { $compact?: boolean; $compactTag?: string };
+    const ctor = this.constructor as {
+      $compact?: boolean;
+      $compactTag?: string;
+    };
     if (ctor.$compact === true) {
       if (typeof (this as { toCompact?: () => string }).toCompact !== 'function') {
-        throw new Error(`${this.#typeName}.toCompact() is not implemented.`);
+        throw new TypeError(`${this.#typeName}.toCompact() is not implemented.`);
       }
       const compactValue = (this as { toCompact: () => string }).toCompact();
       if (typeof compactValue !== 'string') {
-        throw new Error(`${this.#typeName}.toCompact() must return a string.`);
+        throw new TypeError(`${this.#typeName}.toCompact() must return a string.`);
       }
       const compactTag = ctor.$compactTag;
       if (compactTag) {
         return `:${serializeCompactTaggedValue(compactTag, compactValue)}`;
       }
       if (includeTag) {
-        return `:${serializeTaggedMessage(this as Message<any>)}`;
+        return `:${serializeTaggedMessage(this as Message<object>)}`;
       }
       return `:${JSON.stringify(compactValue)}`;
     }
@@ -777,13 +784,18 @@ export abstract class Message<T extends object> {
     for (const descriptor of descriptors) {
       const value = descriptor.getValue();
       const tagMessages = (descriptor.unionMessageTypes?.length ?? 0) > 0;
-      const tagArrayElements = (descriptor.arrayElementUnionMessageTypes?.length ?? 0) > 0;
-      const tagSetElements = (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
+      const tagArrayElements =
+        (descriptor.arrayElementUnionMessageTypes?.length ?? 0) > 0;
+      const tagSetElements =
+        (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
       const tagMapKeys = (descriptor.mapKeyUnionMessageTypes?.length ?? 0) > 0;
-      const tagMapValues = (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
+      const tagMapValues =
+        (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
       const forceQuotedStrings = descriptor.unionHasString === true;
-      const forceQuotedArrayElements = descriptor.arrayElementUnionHasString === true;
-      const forceQuotedSetElements = descriptor.setElementUnionHasString === true;
+      const forceQuotedArrayElements =
+        descriptor.arrayElementUnionHasString === true;
+      const forceQuotedSetElements =
+        descriptor.setElementUnionHasString === true;
       const forceQuotedMapKeys = descriptor.mapKeyUnionHasString === true;
       const forceQuotedMapValues = descriptor.mapValueUnionHasString === true;
 
@@ -871,7 +883,9 @@ export abstract class Message<T extends object> {
       return existing as unknown as this;
     }
 
-    const ref = new WeakRef<Message<any>>(interned);
+    const ref = new WeakRef<Message<DataObject>>(
+      interned as unknown as Message<DataObject>
+    );
     internPool.set(key, ref);
     registry.register(interned, key);
     return interned;
@@ -1329,14 +1343,17 @@ function serializePrimitive(
   }
 
   if (Message.isMessage(value)) {
-    const ctor = value.constructor as { $compact?: boolean; $compactTag?: string };
+    const ctor = value.constructor as {
+      $compact?: boolean;
+      $compactTag?: string;
+    };
     if (ctor.$compact === true) {
       if (typeof (value as { toCompact?: () => string }).toCompact !== 'function') {
-        throw new Error('Compact message is missing toCompact().');
+        throw new TypeError('Compact message is missing toCompact().');
       }
       const compactValue = (value as { toCompact: () => string }).toCompact();
       if (typeof compactValue !== 'string') {
-        throw new Error('Compact message toCompact() must return a string.');
+        throw new TypeError('Compact message toCompact() must return a string.');
       }
       const compactTag = ctor.$compactTag;
       if (compactTag) {
@@ -1349,7 +1366,7 @@ function serializePrimitive(
     }
     const descriptors = (value as unknown as DescriptorGetter)
       .$getPropDescriptors();
-    const entries = descriptors.map((d) => ({
+    const entries = descriptors.map(d => ({
       key: String(d.name),
       value: d.getValue(),
       tagMessages: (d.unionMessageTypes?.length ?? 0) > 0,
@@ -1394,7 +1411,7 @@ function serializeArrayLiteral(
   }
   ancestors.add(values);
   const result = `[${values
-    .map((value) => serializePrimitive(value, ancestors, {
+    .map(value => serializePrimitive(value, ancestors, {
       tagMessage: tagMessageElements,
       forceQuotedStrings,
     }))
@@ -1447,18 +1464,21 @@ function serializeSetLiteral(
 }
 
 function serializeTaggedMessage(
-  message: Message<any>,
+  message: Message<object>,
   ancestors = new Set<object>()
 ): string {
   const typeName = message.$typeName;
-  const ctor = message.constructor as { $compact?: boolean; $compactTag?: string };
+  const ctor = message.constructor as {
+    $compact?: boolean;
+    $compactTag?: string;
+  };
   if (ctor.$compact === true) {
     if (typeof (message as { toCompact?: () => string }).toCompact !== 'function') {
-      throw new Error(`Compact message ${typeName} is missing toCompact().`);
+      throw new TypeError(`Compact message ${typeName} is missing toCompact().`);
     }
     const compactValue = (message as { toCompact: () => string }).toCompact();
     if (typeof compactValue !== 'string') {
-      throw new Error(`Compact message ${typeName} toCompact() must return a string.`);
+      throw new TypeError(`Compact message ${typeName} toCompact() must return a string.`);
     }
     const compactTag = ctor.$compactTag;
     if (compactTag) {
@@ -1467,7 +1487,7 @@ function serializeTaggedMessage(
     return `$${typeName}${JSON.stringify(compactValue)}`;
   }
   interface DescriptorGetter {
-    $getPropDescriptors(): MessagePropDescriptor<any>[];
+    $getPropDescriptors(): MessagePropDescriptor<DataObject>[];
   }
   const descriptors = (message as unknown as DescriptorGetter)
     .$getPropDescriptors();
@@ -1478,12 +1498,16 @@ function serializeTaggedMessage(
   for (const descriptor of descriptors) {
     const value = descriptor.getValue();
     const tagMessages = (descriptor.unionMessageTypes?.length ?? 0) > 0;
-    const tagArrayElements = (descriptor.arrayElementUnionMessageTypes?.length ?? 0) > 0;
-    const tagSetElements = (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
+    const tagArrayElements =
+      (descriptor.arrayElementUnionMessageTypes?.length ?? 0) > 0;
+    const tagSetElements =
+      (descriptor.setElementUnionMessageTypes?.length ?? 0) > 0;
     const tagMapKeys = (descriptor.mapKeyUnionMessageTypes?.length ?? 0) > 0;
-    const tagMapValues = (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
+    const tagMapValues =
+      (descriptor.mapValueUnionMessageTypes?.length ?? 0) > 0;
     const forceQuotedStrings = descriptor.unionHasString === true;
-    const forceQuotedArrayElements = descriptor.arrayElementUnionHasString === true;
+    const forceQuotedArrayElements =
+      descriptor.arrayElementUnionHasString === true;
     const forceQuotedSetElements = descriptor.setElementUnionHasString === true;
     const forceQuotedMapKeys = descriptor.mapKeyUnionHasString === true;
     const forceQuotedMapValues = descriptor.mapValueUnionHasString === true;

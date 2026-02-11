@@ -54,22 +54,37 @@ function getCurrentExecutionTransaction(): UpdateTransaction | null {
   if (transactionExecutionStack.length === 0) {
     return null;
   }
-  return transactionExecutionStack[transactionExecutionStack.length - 1] ?? null;
+  return transactionExecutionStack.at(-1) ?? null;
 }
 
 function withTransaction<T>(
   transaction: UpdateTransaction,
   callback: () => T
 ): T {
+  let result!: T;
+  let callbackFailed = false;
+  let callbackError: unknown;
+  let popped: UpdateTransaction | undefined;
+
   transactionExecutionStack.push(transaction);
   try {
-    return callback();
+    result = callback();
+  } catch (error) {
+    callbackFailed = true;
+    callbackError = error;
   } finally {
-    const popped = transactionExecutionStack.pop();
-    if (popped !== transaction) {
-      throw new Error('Transaction execution stack corruption detected.');
-    }
+    popped = transactionExecutionStack.pop();
   }
+
+  if (popped !== transaction) {
+    throw new Error('Transaction execution stack corruption detected.');
+  }
+
+  if (callbackFailed) {
+    throw callbackError;
+  }
+
+  return result;
 }
 
 function beginUpdate(): UpdateTransaction {
@@ -87,7 +102,7 @@ function beginUpdate(): UpdateTransaction {
 
 function removeUpdateTransaction(transaction: UpdateTransaction): void {
   const index = updateTransactions.lastIndexOf(transaction);
-  if (index >= 0) {
+  if (index !== -1) {
     updateTransactions.splice(index, 1);
   }
 }
@@ -112,8 +127,7 @@ function endUpdate(transaction: UpdateTransaction): void {
 
   const parent = transaction.parent;
   if (
-    parent
-    && parent.status === 'active'
+    parent?.status === 'active'
     && updateTransactions.includes(parent)
   ) {
     // Nested transaction: merge updates into parent (last one wins per root key).
@@ -214,13 +228,17 @@ function createBoundProxy(
 ): object {
   return new Proxy(target, {
     get(innerTarget, property) {
-      const value = Reflect.get(innerTarget, property, innerTarget);
+      const value: unknown = Reflect.get(innerTarget, property, innerTarget);
       if (typeof value === 'function') {
         return (...args: unknown[]) => {
           ensureTransactionActive(bindingContext.transaction);
-          const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
+          const unwrappedArgs = args.map(arg => unwrapBoundValue(arg));
+          const callable = value as (
+            this: object,
+            ...callArgs: unknown[]
+          ) => unknown;
           return withTransaction(bindingContext.transaction, () => {
-            const result = Reflect.apply(value, innerTarget, unwrappedArgs);
+            const result = Reflect.apply(callable, innerTarget, unwrappedArgs);
             return bindValueToTransaction(result, bindingContext);
           });
         };
@@ -235,10 +253,10 @@ function createBoundProxy(
         () => Reflect.set(innerTarget, property, unwrappedValue, innerTarget)
       );
     },
-    apply(innerTarget, thisArg, args) {
+    apply(innerTarget: object, thisArg: unknown, args: unknown[]) {
       ensureTransactionActive(bindingContext.transaction);
       const unwrappedThis = unwrapBoundValue(thisArg);
-      const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
+      const unwrappedArgs = args.map(arg => unwrapBoundValue(arg));
       return withTransaction(bindingContext.transaction, () => {
         const callable = innerTarget as (...callArgs: unknown[]) => unknown;
         const result = Reflect.apply(callable, unwrappedThis, unwrappedArgs);
@@ -254,7 +272,7 @@ function bindValueToTransaction<T>(
 ): T {
   const unwrappedValue = unwrapBoundValue(value);
   if (!shouldBindValue(unwrappedValue)) {
-    return unwrappedValue as T;
+    return unwrappedValue;
   }
 
   const existing = bindingContext.rawToBound.get(unwrappedValue);
@@ -305,7 +323,7 @@ export function update<S extends readonly unknown[], T>(
 ): T;
 export function update<T>(
   rootOrRoots: unknown,
-  callback: (value: any) => T
+  callback: (value: unknown) => T
 ): T {
 
   const transaction = beginUpdate();
@@ -319,7 +337,8 @@ export function update<T>(
 
   try {
     const boundInput = Array.isArray(rootOrRoots)
-      ? rootOrRoots.map((root) => bindValueToTransaction(root, bindingContext))
+      ? (rootOrRoots as unknown[])
+        .map(root => bindValueToTransaction(root, bindingContext))
       : bindValueToTransaction(rootOrRoots, bindingContext);
     result = withTransaction(transaction, () => callback(boundInput));
   } catch (error) {
@@ -341,7 +360,7 @@ export function update<T>(
     }
 
     return result.then(
-      (value) => {
+      value => {
         if (isTopLevelTransaction) {
           activeAsyncTopLevelTransactions.delete(transaction);
         }
@@ -449,7 +468,7 @@ export function usePropaneState<S>(
     registerPaths(root);
     const nextUnsubscribe = root[SET_UPDATE_LISTENER](
       listenerKeyRef.current,
-      (next) => {
+      next => {
         const nextTyped = next as unknown as S;
         activeRootRef.current = nextTyped;
         registerPaths(nextTyped);
@@ -497,8 +516,8 @@ export function usePropaneState<S>(
   setStateRef.current = setState;
   committedRootRef.current = state;
 
-  const setPropaneState: Dispatch<SetStateAction<S>> = useCallback((value) => {
-    setState((prev) => {
+  const setPropaneState: Dispatch<SetStateAction<S>> = useCallback(value => {
+    setState(prev => {
       const next = typeof value === 'function'
         ? (value as (prev: S) => S)(prev)
         : value;
@@ -571,7 +590,7 @@ export function usePropaneSelector<S extends object, R>(
       registerPaths(state);
       const fallbackUnsubscribe = state[SET_UPDATE_LISTENER](
         listenerKeyRef.current,
-        (next) => {
+        next => {
           if (!active) {
             return;
           }

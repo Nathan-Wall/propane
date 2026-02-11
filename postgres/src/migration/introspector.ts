@@ -6,14 +6,13 @@
  * desired schema from .pmsg files.
  */
 
-import type { Connection, QueryResult } from '../connection/connection.js';
+import type { QueryResult } from '../connection/connection.js';
 import type {
   DatabaseSchema,
   TableDefinition,
   ColumnDefinition,
   IndexDefinition,
   ForeignKeyDefinition,
-  CheckConstraint,
   ForeignKeyAction,
 } from '../schema/types.js';
 
@@ -135,7 +134,11 @@ export async function introspectDatabase(
     const columns = await getColumns(queryable, schemaName, tableName);
     const indexes = await getIndexes(queryable, schemaName, tableName);
     const foreignKeys = await getForeignKeys(queryable, schemaName, tableName);
-    const checkConstraints = await getCheckConstraints(queryable, schemaName, tableName);
+    const checkConstraints = await getCheckConstraints(
+      queryable,
+      schemaName,
+      tableName
+    );
 
     const pkColumns = primaryKeys
       .filter(pk => pk.table_name === tableName)
@@ -367,7 +370,13 @@ async function getCheckConstraints(
  * Normalize PostgreSQL data type to our standard format.
  */
 function normalizeDataType(col: ColumnRow): string {
-  const { data_type, udt_name, character_maximum_length, numeric_precision, numeric_scale } = col;
+  const {
+    data_type,
+    udt_name,
+    character_maximum_length,
+    numeric_precision,
+    numeric_scale,
+  } = col;
 
   // Handle special PostgreSQL types
   switch (udt_name) {
@@ -442,24 +451,24 @@ function parseIndexDefinition(row: IndexRow): IndexDefinition {
   const isUnique = indexdef.toUpperCase().includes('UNIQUE');
 
   // Extract method (btree, hash, gin, gist, etc.)
-  const methodMatch = indexdef.match(/USING\s+(\w+)/i);
+  const methodMatch = /USING\s+(\w+)/i.exec(indexdef);
   const method = methodMatch?.[1]?.toLowerCase() ?? 'btree';
 
   // Extract columns
-  const colMatch = indexdef.match(/\(([^)]+)\)/);
+  const colMatch = /\(([^)]+)\)/.exec(indexdef);
   const columns = colMatch?.[1]
-    ? colMatch[1].split(',').map(c => c.trim().replace(/"/g, ''))
+    ? colMatch[1].split(',').map(c => c.trim().replaceAll('"', ''))
     : [];
 
   // Extract WHERE clause for partial indexes
-  const whereMatch = indexdef.match(/WHERE\s+(.+)$/i);
+  const whereMatch = /WHERE\s+(.+)$/i.exec(indexdef);
   const where = whereMatch ? whereMatch[1] : undefined;
 
   return {
     name: indexname,
     columns,
     unique: isUnique,
-    method: method !== 'btree' ? method : undefined,
+    method: method === 'btree' ? undefined : method,
     where,
   };
 }

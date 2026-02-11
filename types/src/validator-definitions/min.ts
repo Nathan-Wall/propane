@@ -14,7 +14,7 @@ export const MinDefinition: ValidatorDefinition = {
 
     if (type.kind === 'number') {
       if (typeof min === 'string' || typeof min === 'bigint') {
-        throw new Error('Min<number> requires a numeric bound.');
+        throw new TypeError('Min<number> requires a numeric bound.');
       }
       return { condition: `${valueExpr} >= ${min}` };
     }

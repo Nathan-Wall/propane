@@ -11,13 +11,13 @@ describe('toInt32', () => {
     it('should accept positive integers', () => {
       assert.strictEqual(toInt32(1), 1);
       assert.strictEqual(toInt32(42), 42);
-      assert.strictEqual(toInt32(1000000), 1000000);
+      assert.strictEqual(toInt32(1_000_000), 1_000_000);
     });
 
     it('should accept negative integers', () => {
       assert.strictEqual(toInt32(-1), -1);
       assert.strictEqual(toInt32(-42), -42);
-      assert.strictEqual(toInt32(-1000000), -1000000);
+      assert.strictEqual(toInt32(-1_000_000), -1_000_000);
     });
 
     it('should accept minimum int32 value', () => {

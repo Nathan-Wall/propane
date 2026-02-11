@@ -59,10 +59,10 @@ export class UnionStringBool extends Message<UnionStringBool.Data> {
   }
   static validateAll(data: UnionStringBool.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

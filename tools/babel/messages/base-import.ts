@@ -12,10 +12,10 @@ export function ensureBaseImport(
   const program = programPath.node;
   const hasAnyImportBinding = (name: string) =>
     program.body.some(
-      (stmt) =>
+      stmt =>
         t.isImportDeclaration(stmt)
         && stmt.specifiers.some(
-          (spec) =>
+          spec =>
             t.isImportSpecifier(spec)
             || t.isImportDefaultSpecifier(spec)
             || t.isImportNamespaceSpecifier(spec)
@@ -25,11 +25,11 @@ export function ensureBaseImport(
     );
   const hasValueImportBinding = (name: string) =>
     program.body.some(
-      (stmt) =>
+      stmt =>
         t.isImportDeclaration(stmt)
         && stmt.importKind !== 'type'
         && stmt.specifiers.some(
-          (spec) =>
+          spec =>
             t.isImportSpecifier(spec)
             || t.isImportDefaultSpecifier(spec)
             || t.isImportNamespaceSpecifier(spec)
@@ -186,7 +186,7 @@ export function ensureBaseImport(
     for (let i = 0; i < program.body.length; i += 1) {
       const stmt = program.body[i];
       if (t.isImportDeclaration(stmt) && stmt.importKind === 'type') {
-        const filtered = stmt.specifiers.filter((spec) => {
+        const filtered = stmt.specifiers.filter(spec => {
           if (!t.isImportSpecifier(spec)) return true;
           const localName = spec.local.name;
           return !removeTypeOnlyBindings.has(localName);
@@ -262,7 +262,7 @@ export function ensureBaseImport(
         const existingSpecifiers = new Set(
           existingTypeImport.specifiers
             .filter(isImportSpec)
-            .map((spec) =>
+            .map(spec =>
               t.isIdentifier(spec.imported)
                 ? spec.imported.name
                 : spec.imported.value
@@ -277,7 +277,7 @@ export function ensureBaseImport(
         }
       } else {
         const typeImportDecl = t.importDeclaration(
-          Array.from(specifiers).map((name) =>
+          Array.from(specifiers).map(name =>
             t.importSpecifier(t.identifier(name), t.identifier(name))
           ),
           t.stringLiteral(source)
@@ -285,7 +285,7 @@ export function ensureBaseImport(
         typeImportDecl.importKind = 'type';
 
         const insertionIndex = program.body.findIndex(
-          (stmt) => !t.isImportDeclaration(stmt)
+          stmt => !t.isImportDeclaration(stmt)
         );
         if (insertionIndex === -1) {
           program.body.push(typeImportDecl);
@@ -300,7 +300,7 @@ export function ensureBaseImport(
     const existingSpecifiers = new Set(
       existingImport.specifiers
         .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
-        .map((spec) =>
+        .map(spec =>
           t.isIdentifier(spec.imported)
             ? spec.imported.name
             : spec.imported.value
@@ -315,14 +315,14 @@ export function ensureBaseImport(
     }
   } else if (requiredSpecifiers.length > 0) {
     const importDecl = t.importDeclaration(
-      requiredSpecifiers.map((name) =>
+      requiredSpecifiers.map(name =>
         t.importSpecifier(t.identifier(name), t.identifier(name))
       ),
       t.stringLiteral(runtimeSource)
     );
 
     const insertionIndex = program.body.findIndex(
-      (stmt) => !t.isImportDeclaration(stmt)
+      stmt => !t.isImportDeclaration(stmt)
     );
 
     if (insertionIndex === -1) {
@@ -344,8 +344,10 @@ export function ensureBaseImport(
       if (existingAliasImport) {
         const existingSpecifiers = new Set(
           existingAliasImport.specifiers
-            .filter((spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec))
-            .map((spec) =>
+            .filter(
+              (spec): spec is t.ImportSpecifier => t.isImportSpecifier(spec)
+            )
+            .map(spec =>
               t.isIdentifier(spec.imported)
                 ? spec.imported.name
                 : spec.imported.value
@@ -360,13 +362,13 @@ export function ensureBaseImport(
         }
       } else {
         const importDecl = t.importDeclaration(
-          Array.from(specifiers).map((name) =>
+          Array.from(specifiers).map(name =>
             t.importSpecifier(t.identifier(name), t.identifier(name))
           ),
           t.stringLiteral(source)
         );
         const insertionIndex = program.body.findIndex(
-          (stmt) => !t.isImportDeclaration(stmt)
+          stmt => !t.isImportDeclaration(stmt)
         );
         if (insertionIndex === -1) {
           program.body.push(importDecl);

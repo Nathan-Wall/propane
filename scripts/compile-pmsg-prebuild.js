@@ -80,8 +80,7 @@ function writeIfChanged(outputPath, content) {
 function generateReexportFile(filePath, messageTypes, extendedTypes) {
   const baseName = path.basename(filePath, '.pmsg');
   const relative = path.relative(projectRoot, filePath).replaceAll('\\', '/');
-  const lines = [];
-  lines.push(`// Generated from ${relative}`);
+  const lines = [`// Generated from ${relative}`];
 
   for (const typeName of messageTypes) {
     const extendInfo = extendedTypes[typeName];
@@ -95,7 +94,6 @@ function generateReexportFile(filePath, messageTypes, extendedTypes) {
 
 function compilePmsgFile(filePath) {
   const source = fs.readFileSync(filePath, 'utf8');
-  const relativePath = path.relative(projectRoot, filePath).replaceAll('\\', '/');
   const pluginOptions = {};
   if (propaneConfig.runtimeImportPath) {
     pluginOptions['runtimeImportPath'] = propaneConfig.runtimeImportPath;
@@ -136,7 +134,11 @@ function compilePmsgFile(filePath) {
   writeIfChanged(baseOutputPath, baseCode);
 
   const reexportOutputPath = filePath.replace(/\.pmsg$/, '.pmsg.ts');
-  const reexportCode = generateReexportFile(filePath, messageTypes, extendedTypes);
+  const reexportCode = generateReexportFile(
+    filePath,
+    messageTypes,
+    extendedTypes
+  );
   writeIfChanged(reexportOutputPath, reexportCode);
 
   console.log(`Compiled: ${path.relative(projectRoot, filePath)}`);

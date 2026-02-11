@@ -30,8 +30,13 @@ const distDir = path.join(projectRoot, 'dist', 'runtime');
 function getVersion(): string {
   const pkgPath = path.join(projectRoot, 'runtime', 'package.json');
   try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-    return pkg.version && pkg.version !== '0.0.0' ? pkg.version : '0.1.0';
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+      version?: unknown;
+    };
+    const version = pkg.version;
+    return typeof version === 'string' && version !== '0.0.0'
+      ? version
+      : '0.1.0';
   } catch {
     return '0.1.0';
   }

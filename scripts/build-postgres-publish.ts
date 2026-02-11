@@ -33,9 +33,13 @@ const distDir = path.join(projectRoot, 'dist', 'postgres');
 function getPackageVersion(packagePath: string, fallback: string): string {
   const pkgPath = path.join(projectRoot, packagePath, 'package.json');
   try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+      version?: unknown;
+    };
     const version = pkg.version;
-    return version && version !== '0.0.0' ? version : fallback;
+    return typeof version === 'string' && version !== '0.0.0'
+      ? version
+      : fallback;
   } catch {
     return fallback;
   }
@@ -101,7 +105,7 @@ function rewriteRuntimeImports(dir: string): void {
 
       // Rewrite runtime imports to @propane/runtime
       // After tsc-alias, they look like: '../../../runtime/...'
-      content = content.replace(
+      content = content.replaceAll(
         /from ['"](?:\.\.\/)*runtime\/[^'"]+['"]/g,
         "from '@propane/runtime'"
       );

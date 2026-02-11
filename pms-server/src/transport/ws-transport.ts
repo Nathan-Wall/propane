@@ -110,14 +110,14 @@ export class WsTransport implements Transport {
 
     // Close WebSocket server
     if (this.wss) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         this.wss!.close(() => resolve());
       });
     }
 
     // Close HTTP server
     if (this.httpServer) {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         this.httpServer!.close(() => resolve());
       });
     }

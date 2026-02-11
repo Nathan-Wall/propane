@@ -120,8 +120,8 @@ function extractSingleTypeValidation(
       // Check for unsupported Check validator
       if (validatorReg.name === 'Check') {
         throw new Error(
-          'Check<T, fn> custom validators are not yet supported. ' +
-          'Custom validation will be available in Phase 2.'
+          'Check<T, fn> custom validators are not yet supported. '
+          + 'Custom validation will be available in Phase 2.'
         );
       }
 
@@ -142,8 +142,8 @@ function extractSingleTypeValidation(
             const validatorName = getTypeName(typeNode.typeName);
             const nestedName = getTypeName(innerType.typeName);
             throw new Error(
-              `Validators cannot be nested. Found: ${validatorName}<${nestedName}<...>>. ` +
-              `Use a single validator wrapper, e.g., ${validatorName}<number>.`
+              `Validators cannot be nested. Found: ${validatorName}<${nestedName}<...>>. `
+              + `Use a single validator wrapper, e.g., ${validatorName}<number>.`
             );
           }
 
@@ -158,7 +158,11 @@ function extractSingleTypeValidation(
     }
 
     // Check for brand type (e.g., int32, int53)
-    const brandReg = resolveBrandReference(typeNode.typeName, tracker, registry);
+    const brandReg = resolveBrandReference(
+      typeNode.typeName,
+      tracker,
+      registry
+    );
     if (brandReg) {
       result.brand = extractBrandFromTypeRef(typeNode, brandReg);
       return;
@@ -224,12 +228,14 @@ function extractUnionValidation(
   }
 
   // Check for validators on union branches - not yet supported
-  const branchesWithValidators = result.unionBranches.filter(b => b.validators.length > 0);
+  const branchesWithValidators = result.unionBranches.filter(
+    b => b.validators.length > 0
+  );
   if (branchesWithValidators.length > 0) {
     throw new Error(
-      'Validators on union types are not yet supported. ' +
-      'This feature will be available in Phase 1B. ' +
-      'Consider using separate validated types or validating after type narrowing.'
+      'Validators on union types are not yet supported. '
+      + 'This feature will be available in Phase 1B. '
+      + 'Consider using separate validated types or validating after type narrowing.'
     );
   }
 
@@ -300,7 +306,11 @@ function extractValidatorFromTypeRef(
   validateValidatorParams(registration.name, params);
 
   // Normalize Decimal bounds if applicable
-  const normalizedParams = normalizeDecimalBounds(registration.name, params, innerType);
+  const normalizedParams = normalizeDecimalBounds(
+    registration.name,
+    params,
+    innerType
+  );
 
   return {
     registration,
@@ -313,7 +323,10 @@ function extractValidatorFromTypeRef(
  * Validate that a validator is compatible with its inner type.
  * Throws descriptive errors for type mismatches.
  */
-function validateValidatorTypeCompatibility(validatorName: string, innerType: TypeInfo): void {
+function validateValidatorTypeCompatibility(
+  validatorName: string,
+  innerType: TypeInfo
+): void {
   // Numeric validators: Positive, Negative, NonNegative, NonPositive, Min, Max, GreaterThan, LessThan, Range
   const numericValidators = [
     'Positive', 'Negative', 'NonNegative', 'NonPositive',
@@ -338,42 +351,46 @@ function validateValidatorTypeCompatibility(validatorName: string, innerType: Ty
     const validNumericTypes = ['number', 'bigint', 'Decimal', 'Rational'];
     if (!validNumericTypes.includes(innerType.kind)) {
       throw new Error(
-        `Type mismatch: ${validatorName}<T> requires a numeric type (number, bigint, Decimal, or Rational). ` +
-        `Found: ${validatorName}<${innerType.kind}>.`
+        `Type mismatch: ${validatorName}<T> requires a numeric type (number, bigint, Decimal, or Rational). `
+        + `Found: ${validatorName}<${innerType.kind}>.`
       );
     }
   }
 
-  if (stringValidators.includes(validatorName) && !arrayValidators.includes(validatorName)) {
-    // Pure string validators (NonEmpty for strings, Matches, CharLength variants)
-    if (validatorName === 'Matches' || validatorName.includes('Char')) {
-      if (innerType.kind !== 'string') {
-        throw new Error(
-          `Type mismatch: ${validatorName}<T> requires a string type. ` +
-          `Found: ${validatorName}<${innerType.kind}>.`
-        );
-      }
-    }
+  if (
+    stringValidators.includes(validatorName)
+    && !arrayValidators.includes(validatorName)
+    && (validatorName === 'Matches' || validatorName.includes('Char'))
+    && innerType.kind !== 'string'
+  ) {
+    throw new Error(
+      `Type mismatch: ${validatorName}<T> requires a string type. `
+      + `Found: ${validatorName}<${innerType.kind}>.`
+    );
   }
 
   // NonEmpty works with both string and array
-  if (validatorName === 'NonEmpty') {
-    if (innerType.kind !== 'string' && innerType.kind !== 'array') {
-      throw new Error(
-        `Type mismatch: NonEmpty<T> requires a string or array type. ` +
-        `Found: NonEmpty<${innerType.kind}>.`
-      );
-    }
+  if (
+    validatorName === 'NonEmpty'
+    && innerType.kind !== 'string'
+    && innerType.kind !== 'array'
+  ) {
+    throw new Error(
+      `Type mismatch: NonEmpty<T> requires a string or array type. `
+      + `Found: NonEmpty<${innerType.kind}>.`
+    );
   }
 
   // Length validators work with both string and array
-  if (['MinLength', 'MaxLength', 'Length'].includes(validatorName)) {
-    if (innerType.kind !== 'string' && innerType.kind !== 'array') {
-      throw new Error(
-        `Type mismatch: ${validatorName}<T> requires a string or array type. ` +
-        `Found: ${validatorName}<${innerType.kind}>.`
-      );
-    }
+  if (
+    ['MinLength', 'MaxLength', 'Length'].includes(validatorName)
+    && innerType.kind !== 'string'
+    && innerType.kind !== 'array'
+  ) {
+    throw new Error(
+      `Type mismatch: ${validatorName}<T> requires a string or array type. `
+      + `Found: ${validatorName}<${innerType.kind}>.`
+    );
   }
 }
 
@@ -381,7 +398,10 @@ function validateValidatorTypeCompatibility(validatorName: string, innerType: Ty
  * Validate validator parameters at compile time.
  * Throws descriptive errors for invalid configurations.
  */
-function validateValidatorParams(validatorName: string, params: unknown[]): void {
+function validateValidatorParams(
+  validatorName: string,
+  params: unknown[]
+): void {
   switch (validatorName) {
     case 'Range':
       // Range<T, min, max> - check min <= max
@@ -391,17 +411,15 @@ function validateValidatorParams(validatorName: string, params: unknown[]): void
         if (typeof min === 'number' && typeof max === 'number') {
           if (min > max) {
             throw new Error(
-              `Invalid Range bounds: min (${min}) must be <= max (${max}). ` +
-              `Use Range<T, ${max}, ${min}> to swap the order.`
+              `Invalid Range bounds: min (${min}) must be <= max (${max}). `
+              + `Use Range<T, ${max}, ${min}> to swap the order.`
             );
           }
-        } else if (typeof min === 'bigint' && typeof max === 'bigint') {
-          if (min > max) {
+        } else if (typeof min === 'bigint' && typeof max === 'bigint' && min > max) {
             throw new Error(
               `Invalid Range bounds: min (${min}n) must be <= max (${max}n).`
             );
           }
-        }
       }
       break;
 
@@ -485,8 +503,8 @@ function parseStrictDecimal(
 
   let input = raw;
   let sign: -1 | 1 = 1;
-  if (input[0] === '+' || input[0] === '-') {
-    if (input[0] === '-') sign = -1;
+  if (input.startsWith('+') || input.startsWith('-')) {
+    if (input.startsWith('-')) sign = -1;
     input = input.slice(1);
   }
 
@@ -505,7 +523,7 @@ function parseStrictDecimal(
     }
   }
 
-  if (!/^\d+$/.test(intPart) || (fracPart && !/^\d+$/.test(fracPart))) {
+  if (!/^\d+$/.test(intPart) || fracPart && !/^\d+$/.test(fracPart)) {
     throw new SyntaxError(`Invalid ${context} digits: ${raw}`);
   }
 
@@ -710,9 +728,8 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
   if (t.isTSArrayType(node) || t.isTupleTypeAnnotation(node)) {
     return { kind: 'array' };
   }
-  if (t.isTSTypeReference(node)) {
-    // Check for known types
-    if (t.isIdentifier(node.typeName)) {
+  if (t.isTSTypeReference(node) // Check for known types
+    && t.isIdentifier(node.typeName)) {
       const name = node.typeName.name;
       if (name === 'Decimal') {
         // Extract precision and scale from Decimal<P, S>
@@ -722,10 +739,16 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
         if (typeParams && typeParams.length >= 2) {
           const precisionNode = typeParams[0];
           const scaleNode = typeParams[1];
-          if (t.isTSLiteralType(precisionNode) && t.isNumericLiteral(precisionNode.literal)) {
+          if (
+            t.isTSLiteralType(precisionNode)
+            && t.isNumericLiteral(precisionNode.literal)
+          ) {
             precision = precisionNode.literal.value;
           }
-          if (t.isTSLiteralType(scaleNode) && t.isNumericLiteral(scaleNode.literal)) {
+          if (
+            t.isTSLiteralType(scaleNode)
+            && t.isNumericLiteral(scaleNode.literal)
+          ) {
             scale = scaleNode.literal.value;
           }
         }
@@ -738,10 +761,9 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
         return { kind: 'array' };
       }
     }
-  }
   if (t.isTSUnionType(node)) {
     // For unions, check if all members are the same kind
-    const memberKinds = new Set(node.types.map((t) => inferTypeInfo(t).kind));
+    const memberKinds = new Set(node.types.map(t => inferTypeInfo(t).kind));
     // Remove null/undefined from consideration
     memberKinds.delete('unknown');
     if (memberKinds.size === 1) {
@@ -755,7 +777,9 @@ function inferTypeInfo(node: t.TSType): TypeInfo {
 /**
  * Generate type guard information for a type.
  */
-function generateTypeGuard(node: t.TSType): { guardKey: string; typeGuard: string } {
+function generateTypeGuard(
+  node: t.TSType
+): { guardKey: string; typeGuard: string } {
   if (t.isTSNumberKeyword(node)) {
     return {
       guardKey: 'number',
@@ -797,10 +821,16 @@ function generateTypeGuard(node: t.TSType): { guardKey: string; typeGuard: strin
         if (typeParams && typeParams.length >= 2) {
           const precisionNode = typeParams[0];
           const scaleNode = typeParams[1];
-          if (t.isTSLiteralType(precisionNode) && t.isNumericLiteral(precisionNode.literal)) {
+          if (
+            t.isTSLiteralType(precisionNode)
+            && t.isNumericLiteral(precisionNode.literal)
+          ) {
             precision = precisionNode.literal.value;
           }
-          if (t.isTSLiteralType(scaleNode) && t.isNumericLiteral(scaleNode.literal)) {
+          if (
+            t.isTSLiteralType(scaleNode)
+            && t.isNumericLiteral(scaleNode.literal)
+          ) {
             scale = scaleNode.literal.value;
           }
         }
@@ -878,23 +908,23 @@ export function detectUnionConflicts(
     if (group.length <= 1) continue;
 
     // Multiple branches with the same guard key
-    const hasValidated = group.some((b) => b.validators.length > 0);
-    const hasUnvalidated = group.some((b) => b.validators.length === 0);
+    const hasValidated = group.some(b => b.validators.length > 0);
+    const hasUnvalidated = group.some(b => b.validators.length === 0);
 
     // Check for validator + unvalidated conflict
     if (hasValidated && hasUnvalidated) {
       return (
-        `Cannot mix validated and unvalidated '${guardKey}' types in the same union.\n` +
-        `Either apply validators to all '${guardKey}' branches or none.`
+        `Cannot mix validated and unvalidated '${guardKey}' types in the same union.\n`
+        + `Either apply validators to all '${guardKey}' branches or none.`
       );
     }
 
     // Check for multiple validators with same guard key
     if (hasValidated && group.length > 1) {
       // Get validator signatures for comparison
-      const signatures = group.map((b) => {
+      const signatures = group.map(b => {
         return b.validators
-          .map((v) => `${v.registration.package}:${v.registration.name}(${JSON.stringify(v.params)})`)
+          .map(v => `${v.registration.package}:${v.registration.name}(${JSON.stringify(v.params)})`)
           .join(',');
       });
 
@@ -902,8 +932,8 @@ export function detectUnionConflicts(
       const uniqueSignatures = new Set(signatures);
       if (uniqueSignatures.size > 1) {
         return (
-          `Multiple different validators for '${guardKey}' type in union.\n` +
-          `Each runtime-discriminable type can have at most one validator.`
+          `Multiple different validators for '${guardKey}' type in union.\n`
+          + `Each runtime-discriminable type can have at most one validator.`
         );
       }
     }

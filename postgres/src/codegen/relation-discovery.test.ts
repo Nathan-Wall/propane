@@ -333,9 +333,9 @@ describe('relation-discovery', () => {
       const relations = discoverHasManyRelations(s, 'users');
 
       assert.strictEqual(relations.length, 2);
-      const methodNames = relations.map((r) => r.methodName);
-      assert.ok(methodNames.includes('getPosts'));
-      assert.ok(methodNames.includes('getComments'));
+      const methodNames = new Set(relations.map(r => r.methodName));
+      assert.ok(methodNames.has('getPosts'));
+      assert.ok(methodNames.has('getComments'));
     });
 
     it('should handle pluralization of type ending in y', () => {
@@ -488,8 +488,8 @@ describe('relation-discovery', () => {
       // Should have both belongs-to (getParent) and has-many (getCategories)
       assert.strictEqual(relations.length, 2);
 
-      const belongsTo = relations.find((r) => r.type === 'belongs_to');
-      const hasMany = relations.find((r) => r.type === 'has_many');
+      const belongsTo = relations.find(r => r.type === 'belongs_to');
+      const hasMany = relations.find(r => r.type === 'has_many');
 
       assert.strictEqual(belongsTo?.methodName, 'getParent');
       assert.strictEqual(hasMany?.methodName, 'getCategories');
@@ -552,7 +552,7 @@ describe('relation-discovery', () => {
 
       assert.strictEqual(userRelations.length, 2);
       // Should be disambiguated: getPostsByAuthor, getPostsByReviewer
-      const methodNames = userRelations.map((r) => r.methodName).sort();
+      const methodNames = userRelations.map(r => r.methodName).toSorted();
       assert.deepStrictEqual(methodNames, [
         'getPostsByAuthor',
         'getPostsByReviewer',
@@ -592,7 +592,7 @@ describe('relation-discovery', () => {
       const userRelations = discoverHasManyRelations(s, 'users');
 
       assert.strictEqual(userRelations.length, 2);
-      const methodNames = userRelations.map((r) => r.methodName).sort();
+      const methodNames = userRelations.map(r => r.methodName).toSorted();
       assert.deepStrictEqual(methodNames, ['getComments', 'getPosts']);
     });
 

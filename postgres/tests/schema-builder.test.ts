@@ -15,10 +15,10 @@ describe('SchemaBuilder', () => {
 
   it('should add a simple table with columns', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('id', (c) => c.bigint().primaryKey());
-      t.column('name', (c) => c.text().notNull());
-      t.column('email', (c) => c.text().notNull());
+    builder.table('users', t => {
+      t.column('id', c => c.bigint().primaryKey());
+      t.column('name', c => c.text().notNull());
+      t.column('email', c => c.text().notNull());
     });
 
     const schema = builder.build();
@@ -31,15 +31,15 @@ describe('SchemaBuilder', () => {
 
   it('should set column types correctly', () => {
     const builder = createSchemaBuilder();
-    builder.table('test', (t) => {
-      t.column('int_col', (c) => c.integer());
-      t.column('big_col', (c) => c.bigint());
-      t.column('text_col', (c) => c.text());
-      t.column('bool_col', (c) => c.boolean());
-      t.column('ts_col', (c) => c.timestamptz());
-      t.column('json_col', (c) => c.jsonb());
-      t.column('num_col', (c) => c.numeric(10, 2));
-      t.column('bytes_col', (c) => c.bytea());
+    builder.table('test', t => {
+      t.column('int_col', c => c.integer());
+      t.column('big_col', c => c.bigint());
+      t.column('text_col', c => c.text());
+      t.column('bool_col', c => c.boolean());
+      t.column('ts_col', c => c.timestamptz());
+      t.column('json_col', c => c.jsonb());
+      t.column('num_col', c => c.numeric(10, 2));
+      t.column('bytes_col', c => c.bytea());
     });
 
     const schema = builder.build();
@@ -56,8 +56,8 @@ describe('SchemaBuilder', () => {
 
   it('should mark primary key', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('id', (c) => c.bigint().primaryKey());
+    builder.table('users', t => {
+      t.column('id', c => c.bigint().primaryKey());
     });
 
     const schema = builder.build();
@@ -68,9 +68,9 @@ describe('SchemaBuilder', () => {
 
   it('should handle nullable columns', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('name', (c) => c.text().nullable());
-      t.column('email', (c) => c.text().notNull());
+    builder.table('users', t => {
+      t.column('name', c => c.text().nullable());
+      t.column('email', c => c.text().notNull());
     });
 
     const schema = builder.build();
@@ -81,9 +81,9 @@ describe('SchemaBuilder', () => {
 
   it('should handle default values', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('active', (c) => c.boolean().default('TRUE'));
-      t.column('status', (c) => c.text().default("'active'"));
+    builder.table('users', t => {
+      t.column('active', c => c.boolean().default('TRUE'));
+      t.column('status', c => c.text().default("'active'"));
     });
 
     const schema = builder.build();
@@ -94,8 +94,8 @@ describe('SchemaBuilder', () => {
 
   it('should handle unique constraints', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('email', (c) => c.text().unique());
+    builder.table('users', t => {
+      t.column('email', c => c.text().unique());
     });
 
     const schema = builder.build();
@@ -104,8 +104,8 @@ describe('SchemaBuilder', () => {
 
   it('should handle serial/bigserial types', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('id', (c) => c.serial().primaryKey());
+    builder.table('users', t => {
+      t.column('id', c => c.serial().primaryKey());
     });
 
     const schema = builder.build();
@@ -116,8 +116,8 @@ describe('SchemaBuilder', () => {
 
   it('should add indexes', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('email', (c) => c.text());
+    builder.table('users', t => {
+      t.column('email', c => c.text());
       t.index('users_email_idx', ['email']);
     });
 
@@ -130,8 +130,8 @@ describe('SchemaBuilder', () => {
 
   it('should add unique indexes', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('email', (c) => c.text());
+    builder.table('users', t => {
+      t.column('email', c => c.text());
       t.uniqueIndex('users_email_unique', ['email']);
     });
 
@@ -143,9 +143,9 @@ describe('SchemaBuilder', () => {
 
   it('should add composite indexes', () => {
     const builder = createSchemaBuilder();
-    builder.table('orders', (t) => {
-      t.column('user_id', (c) => c.bigint());
-      t.column('created_at', (c) => c.timestamptz());
+    builder.table('orders', t => {
+      t.column('user_id', c => c.bigint());
+      t.column('created_at', c => c.timestamptz());
       t.index('orders_user_created_idx', ['user_id', 'created_at']);
     });
 
@@ -156,8 +156,8 @@ describe('SchemaBuilder', () => {
 
   it('should add foreign keys', () => {
     const builder = createSchemaBuilder();
-    builder.table('orders', (t) => {
-      t.column('user_id', (c) => c.bigint());
+    builder.table('orders', t => {
+      t.column('user_id', c => c.bigint());
       t.foreignKey('orders_user_fk', ['user_id'], 'users', ['id']);
     });
 
@@ -172,8 +172,8 @@ describe('SchemaBuilder', () => {
 
   it('should add foreign keys with onDelete', () => {
     const builder = createSchemaBuilder();
-    builder.table('orders', (t) => {
-      t.column('user_id', (c) => c.bigint());
+    builder.table('orders', t => {
+      t.column('user_id', c => c.bigint());
       t.foreignKey('orders_user_fk', ['user_id'], 'users', ['id'], { onDelete: 'CASCADE' });
     });
 
@@ -184,8 +184,8 @@ describe('SchemaBuilder', () => {
 
   it('should add check constraints', () => {
     const builder = createSchemaBuilder();
-    builder.table('products', (t) => {
-      t.column('price', (c) => c.numeric(10, 2));
+    builder.table('products', t => {
+      t.column('price', c => c.numeric(10, 2));
       t.check('products_price_positive', 'price >= 0');
     });
 
@@ -197,10 +197,10 @@ describe('SchemaBuilder', () => {
 
   it('should track field numbers', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('id', (c) => c.bigint().fieldNumber(1));
-      t.column('name', (c) => c.text().fieldNumber(2));
-      t.column('email', (c) => c.text().fieldNumber(3));
+    builder.table('users', t => {
+      t.column('id', c => c.bigint().fieldNumber(1));
+      t.column('name', c => c.text().fieldNumber(2));
+      t.column('email', c => c.text().fieldNumber(3));
     });
 
     const schema = builder.build();
@@ -214,8 +214,8 @@ describe('SchemaBuilder', () => {
 
   it('should handle double precision type', () => {
     const builder = createSchemaBuilder();
-    builder.table('measurements', (t) => {
-      t.column('value', (c) => c.doublePrecision());
+    builder.table('measurements', t => {
+      t.column('value', c => c.doublePrecision());
     });
 
     const schema = builder.build();
@@ -225,14 +225,14 @@ describe('SchemaBuilder', () => {
 
   it('should build multiple tables', () => {
     const builder = createSchemaBuilder();
-    builder.table('users', (t) => {
-      t.column('id', (c) => c.bigint().primaryKey());
-      t.column('name', (c) => c.text());
+    builder.table('users', t => {
+      t.column('id', c => c.bigint().primaryKey());
+      t.column('name', c => c.text());
     });
-    builder.table('posts', (t) => {
-      t.column('id', (c) => c.bigint().primaryKey());
-      t.column('title', (c) => c.text());
-      t.column('author_id', (c) => c.bigint());
+    builder.table('posts', t => {
+      t.column('id', c => c.bigint().primaryKey());
+      t.column('title', c => c.text());
+      t.column('author_id', c => c.bigint());
     });
 
     const schema = builder.build();
@@ -259,9 +259,9 @@ describe('SchemaBuilder', () => {
 
 describe('defineSchema', () => {
   it('should create schema with define helper', () => {
-    const schema = defineSchema((builder) => {
-      builder.table('users', (t) => {
-        t.column('id', (c) => c.bigint().primaryKey());
+    const schema = defineSchema(builder => {
+      builder.table('users', t => {
+        t.column('id', c => c.bigint().primaryKey());
       });
     });
 

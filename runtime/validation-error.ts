@@ -38,7 +38,7 @@ export class ValidationError extends Error {
     field: string,
     constraint: string,
     value: unknown,
-    code: string = 'VALIDATION_FAILED',
+    code = 'VALIDATION_FAILED',
   ) {
     super(tmsg`${field}: ${constraint} (got ${value})`);
     this.name = 'ValidationError';

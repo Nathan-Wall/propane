@@ -14,7 +14,13 @@ export class ColumnRef {
   readonly table: string | null;
   readonly name: string;
 
-  constructor(props: { schema: string | null; table: string | null; name: string }) {
+  constructor(
+    props: {
+      schema: string | null;
+      table: string | null;
+      name: string;
+    }
+  ) {
     this.schema = props.schema;
     this.table = props.table;
     this.name = props.name;
@@ -70,7 +76,12 @@ export class RawSql {
 /**
  * Union of all part types that can appear in a fragment.
  */
-export type FragmentPart = ColumnRef | TableRef | IdentifierRef | LiteralValue | RawSql;
+export type FragmentPart =
+  | ColumnRef
+  | TableRef
+  | IdentifierRef
+  | LiteralValue
+  | RawSql;
 
 /**
  * Handlers for transforming specific part types in mapParts().
@@ -110,20 +121,26 @@ export class SqlFragment {
   mapParts(
     arg: ((part: FragmentPart) => FragmentPart) | PartHandlers<FragmentPart>
   ): SqlFragment {
-    let mappedParts: FragmentPart[];
-
-    if (typeof arg === 'function') {
-      mappedParts = this.parts.map(arg);
-    } else {
-      mappedParts = this.parts.map((part) => {
-        if (part instanceof ColumnRef && arg.ColumnRef) return arg.ColumnRef(part);
-        if (part instanceof TableRef && arg.TableRef) return arg.TableRef(part);
-        if (part instanceof IdentifierRef && arg.IdentifierRef) return arg.IdentifierRef(part);
-        if (part instanceof LiteralValue && arg.LiteralValue) return arg.LiteralValue(part);
-        if (part instanceof RawSql && arg.RawSql) return arg.RawSql(part);
-        return part; // unchanged
-      });
-    }
+    const mappedParts = typeof arg === 'function'
+      ? this.parts.map(arg)
+      : this.parts.map(part => {
+          if (part instanceof ColumnRef && arg.ColumnRef) {
+            return arg.ColumnRef(part);
+          }
+          if (part instanceof TableRef && arg.TableRef) {
+            return arg.TableRef(part);
+          }
+          if (part instanceof IdentifierRef && arg.IdentifierRef) {
+            return arg.IdentifierRef(part);
+          }
+          if (part instanceof LiteralValue && arg.LiteralValue) {
+            return arg.LiteralValue(part);
+          }
+          if (part instanceof RawSql && arg.RawSql) {
+            return arg.RawSql(part);
+          }
+          return part; // unchanged
+        });
 
     return new SqlFragment({ parts: mappedParts });
   }

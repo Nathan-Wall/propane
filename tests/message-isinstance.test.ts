@@ -129,5 +129,7 @@ test('Message.equals supports cross-copy messages with matching type hash', () =
   const alpha = new Alpha('hello');
   const foreign = new ForeignAlpha(alpha.serialize(), alpha.hashCode());
   assert.ok(alpha.equals(foreign));
-  assert.ok(!alpha.equals(new ForeignBeta(alpha.serialize(), alpha.hashCode())));
+  assert.ok(
+    !alpha.equals(new ForeignBeta(alpha.serialize(), alpha.hashCode()))
+  );
 });

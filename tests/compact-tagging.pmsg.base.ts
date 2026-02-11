@@ -44,13 +44,13 @@ export class CompactTiny extends Message<CompactTiny.Data> {
     return this.value;
   }
   static override fromCompact(...args: unknown[]) {
-    const maybeOptions = args[args.length - 1];
+    const maybeOptions = args.at(-1);
     const options = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? maybeOptions as {
       skipValidation: boolean;
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args.at(-2) : value;
     if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     return new (this as any)({
       value: resolvedValue
@@ -152,13 +152,13 @@ export class CompactFull extends Message<CompactFull.Data> {
     return this.value;
   }
   static override fromCompact(...args: unknown[]) {
-    const maybeOptions = args[args.length - 1];
+    const maybeOptions = args.at(-1);
     const options = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? maybeOptions as {
       skipValidation: boolean;
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args.at(-2) : value;
     if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     return new (this as any)({
       value: resolvedValue
@@ -274,8 +274,7 @@ export class CompactUnion extends Message<CompactUnion.Data> {
     const valueValue = entries["1"] === undefined ? entries["value"] : entries["1"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
     let valueUnionValue: any = valueValue as any;
-    if (isTaggedMessageData(valueValue)) {
-      if (valueValue.$tag === "CompactFull") {
+    if (isTaggedMessageData(valueValue) && valueValue.$tag === "CompactFull") {
         if (typeof valueValue.$data === "string") {
           if (CompactFull.$compact === true) {
             valueUnionValue = CompactFull.fromCompact(CompactFull.$compactTag && valueValue.$data.startsWith(CompactFull.$compactTag) ? valueValue.$data.slice(CompactFull.$compactTag.length) : valueValue.$data, options);
@@ -286,16 +285,13 @@ export class CompactUnion extends Message<CompactUnion.Data> {
           valueUnionValue = new CompactFull(CompactFull.prototype.$fromEntries(valueValue.$data, options), options);
         }
       }
-    }
-    if (typeof valueValue === "string") {
-      if (CompactFull.$compactTag && valueValue.startsWith(CompactFull.$compactTag)) {
+    if (typeof valueValue === "string" && CompactFull.$compactTag && valueValue.startsWith(CompactFull.$compactTag)) {
         if (CompactFull.$compact === true) {
           valueUnionValue = CompactFull.fromCompact(CompactFull.$compactTag && valueValue.startsWith(CompactFull.$compactTag) ? valueValue.slice(CompactFull.$compactTag.length) : valueValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"value\" (CompactFull).");
         }
       }
-    }
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
@@ -320,7 +316,7 @@ export class CompactUnion extends Message<CompactUnion.Data> {
   }
   static validateAll(data: CompactUnion.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
@@ -433,8 +429,7 @@ export class CompactUnionWithString extends Message<CompactUnionWithString.Data>
     const valueValue = entries["1"] === undefined ? entries["value"] : entries["1"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
     let valueUnionValue: any = valueValue as any;
-    if (isTaggedMessageData(valueValue)) {
-      if (valueValue.$tag === "CompactTiny") {
+    if (isTaggedMessageData(valueValue) && valueValue.$tag === "CompactTiny") {
         if (typeof valueValue.$data === "string") {
           if (CompactTiny.$compact === true) {
             valueUnionValue = CompactTiny.fromCompact(CompactTiny.$compactTag && valueValue.$data.startsWith(CompactTiny.$compactTag) ? valueValue.$data.slice(CompactTiny.$compactTag.length) : valueValue.$data, options);
@@ -445,16 +440,13 @@ export class CompactUnionWithString extends Message<CompactUnionWithString.Data>
           valueUnionValue = new CompactTiny(CompactTiny.prototype.$fromEntries(valueValue.$data, options), options);
         }
       }
-    }
-    if (typeof valueValue === "string") {
-      if (CompactTiny.$compactTag && valueValue.startsWith(CompactTiny.$compactTag)) {
+    if (typeof valueValue === "string" && CompactTiny.$compactTag && valueValue.startsWith(CompactTiny.$compactTag)) {
         if (CompactTiny.$compact === true) {
           valueUnionValue = CompactTiny.fromCompact(CompactTiny.$compactTag && valueValue.startsWith(CompactTiny.$compactTag) ? valueValue.slice(CompactTiny.$compactTag.length) : valueValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"value\" (CompactTiny).");
         }
       }
-    }
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
@@ -479,7 +471,7 @@ export class CompactUnionWithString extends Message<CompactUnionWithString.Data>
   }
   static validateAll(data: CompactUnionWithString.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

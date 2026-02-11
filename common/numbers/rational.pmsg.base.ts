@@ -21,8 +21,8 @@ export class Rational$Base extends Message<Rational.Data> {
   }) {
     if (!props && Rational$Base.EMPTY) return Rational$Base.EMPTY;
     super(TYPE_TAG_Rational$Base, "Rational");
-    this.#numerator = (props ? props.numerator : 0n) as bigint;
-    this.#denominator = (props ? props.denominator : 0n) as bigint;
+    this.#numerator = (props ? props.numerator : 0n);
+    this.#denominator = (props ? props.denominator : 0n);
     if (!props) Rational$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Rational.Data>[] {
@@ -44,11 +44,11 @@ export class Rational$Base extends Message<Rational.Data> {
     const numeratorValue = entries["1"] === undefined ? entries["numerator"] : entries["1"];
     if (numeratorValue === undefined) throw new Error("Missing required property \"numerator\".");
     if (!(typeof numeratorValue === "bigint")) throw new Error("Invalid value for property \"numerator\".");
-    props.numerator = numeratorValue as bigint;
+    props.numerator = numeratorValue;
     const denominatorValue = entries["2"] === undefined ? entries["denominator"] : entries["2"];
     if (denominatorValue === undefined) throw new Error("Missing required property \"denominator\".");
     if (!(typeof denominatorValue === "bigint")) throw new Error("Invalid value for property \"denominator\".");
-    props.denominator = denominatorValue as bigint;
+    props.denominator = denominatorValue;
     return props as Rational.Data;
   }
   static from(value: Rational.Value): Rational$Base {
@@ -80,7 +80,7 @@ export class Rational$Base extends Message<Rational.Data> {
         throw new Error("Tagged message type mismatch: expected Rational.");
       }
     }
-    const payload = ensure.simpleObject(parsed) as DataObject;
+    const payload = ensure.simpleObject(parsed);
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

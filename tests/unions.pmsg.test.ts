@@ -73,7 +73,8 @@ export default function runUnionsImplicitUnionTests() {
   );
   const createdOut = createdDeserialized.metadata as Unions_Metadata_Union1;
   assert(
-    createdOut.created instanceof Date || ImmutableDate.isInstance(createdOut.created),
+    createdOut.created instanceof Date
+      || ImmutableDate.isInstance(createdOut.created),
     'created should be Date/ImmutableDate'
   );
   assert(createdOut.created.getTime() === created.getTime(), 'created value matches');
@@ -85,17 +86,21 @@ export default function runUnionsImplicitUnionTests() {
     Unions_Items_Item_Union2.isInstance(createdDeserialized.items?.[1]),
     `items[1] should be Unions_Items_Item_Union2. Got: ${createdDeserialized.items?.[1]?.constructor?.name}`
   );
-  const setValues = createdDeserialized.itemSet ? [...createdDeserialized.itemSet.values()] : [];
+  const setValues = createdDeserialized.itemSet
+    ? [...createdDeserialized.itemSet.values()]
+    : [];
   assert(
-    setValues.some((value) => Unions_ItemSet_Item_Union1.isInstance(value)),
+    setValues.some(value => Unions_ItemSet_Item_Union1.isInstance(value)),
     'itemSet should include Unions_ItemSet_Item_Union1'
   );
   assert(
-    setValues.some((value) => Unions_ItemSet_Item_Union2.isInstance(value)),
+    setValues.some(value => Unions_ItemSet_Item_Union2.isInstance(value)),
     'itemSet should include Unions_ItemSet_Item_Union2'
   );
   assert(
-    Unions_ItemMap_Value_Union1.isInstance(createdDeserialized.itemMap?.get('a')),
+    Unions_ItemMap_Value_Union1.isInstance(
+      createdDeserialized.itemMap?.get('a')
+    ),
     `itemMap['a'] should be Unions_ItemMap_Value_Union1. Got: ${createdDeserialized.itemMap?.get('a')?.constructor?.name}`
   );
   assert(
@@ -129,7 +134,8 @@ export default function runUnionsImplicitUnionTests() {
   );
   const updatedOut = updatedDeserialized.metadata as Unions_Metadata_Union2;
   assert(
-    updatedOut.updated instanceof Date || ImmutableDate.isInstance(updatedOut.updated),
+    updatedOut.updated instanceof Date
+      || ImmutableDate.isInstance(updatedOut.updated),
     'updated should be Date/ImmutableDate'
   );
   assert(updatedOut.updated.getTime() === updated.getTime(), 'updated value matches');

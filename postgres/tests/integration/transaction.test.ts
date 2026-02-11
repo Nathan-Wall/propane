@@ -52,7 +52,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should commit transaction on success', async () => {
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['Alice', 100]
@@ -68,7 +68,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
 
   it('should rollback transaction on error', async () => {
     await assert.rejects(async () => {
-      await withTransaction(schemaPool, async (tx) => {
+      await withTransaction(schemaPool, async tx => {
         await tx.execute(
           'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
           ['Bob', 100]
@@ -85,7 +85,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should support multiple operations in transaction', async () => {
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['Alice', 100]
@@ -111,7 +111,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should support savepoints', async () => {
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['Alice', 100]
@@ -143,7 +143,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should support nested savepoints', async () => {
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['A', 1]
@@ -194,7 +194,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
     );
 
     // Transfer 30 from Alice to Bob
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'UPDATE accounts SET balance = balance - $1 WHERE name = $2',
         [30, 'Alice']
@@ -223,7 +223,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
 
     // Attempt transfer that fails midway
     await assert.rejects(async () => {
-      await withTransaction(schemaPool, async (tx) => {
+      await withTransaction(schemaPool, async tx => {
         await tx.execute(
           'UPDATE accounts SET balance = balance - $1 WHERE name = $2',
           [30, 'Alice']
@@ -242,7 +242,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should return value from transaction', async () => {
-    const result = await withTransaction(schemaPool, async (tx) => {
+    const result = await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['Alice', 100]
@@ -268,7 +268,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
     // Read-only transaction should work for reads
     const result = await withTransaction(
       schemaPool,
-      async (tx) => {
+      async tx => {
         const rows = await tx.execute<{ balance: number }>(
           'SELECT balance FROM accounts WHERE name = $1',
           ['Alice']
@@ -282,7 +282,7 @@ describe('Transaction Integration', { skip: !isDatabaseAvailable() }, () => {
   });
 
   it('should query within transaction', async () => {
-    await withTransaction(schemaPool, async (tx) => {
+    await withTransaction(schemaPool, async tx => {
       await tx.execute(
         'INSERT INTO accounts (name, balance) VALUES ($1, $2)',
         ['Test', 42]

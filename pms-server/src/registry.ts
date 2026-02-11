@@ -102,7 +102,7 @@ export class HandlerRegistry {
         fromCompact?: (...args: unknown[]) => AnyMessage;
       };
       if (compactCtor.$compact === true && typeof compactCtor.fromCompact === 'function') {
-        request = compactCtor.fromCompact(parsed.$data) as AnyMessage;
+        request = compactCtor.fromCompact(parsed.$data);
       } else {
         throw new HandlerError(
           'PARSE_ERROR',
@@ -115,13 +115,13 @@ export class HandlerRegistry {
         $fromEntries: (data: Record<string, unknown>) => unknown;
       };
       const props = proto.$fromEntries(parsed.$data);
-      request = new descriptor.messageClass(props) as AnyMessage;
+      request = new descriptor.messageClass(props);
     }
 
     // Call the handler
     // Cast request to AnyMessage - type safety is ensured by the register() signature
     const result = await descriptor.handler(
-      request as AnyMessage,
+      request,
       context
     );
 
@@ -143,7 +143,9 @@ export class HandlerRegistry {
 
     // Serialize response with type tag for RPC responses
     // Cast to access the full serialize signature with options
-    const serializedBody = (response as { serialize(options?: { includeTag?: boolean }): string }).serialize({ includeTag: true });
+    const serializedBody = (
+      response as { serialize(options?: { includeTag?: boolean }): string }
+    ).serialize({ includeTag: true });
 
     return { body: serializedBody, headers };
   }

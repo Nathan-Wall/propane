@@ -39,8 +39,18 @@ export function assertSupportedMapType(
   }
 
   const [keyTypePath, valueTypePath] = typeParametersPath.get('params');
-  assertSupportedMapKeyType(keyTypePath!, declaredTypeNames, typeParamNames, typeAliases);
-  assertSupportedType(valueTypePath!, declaredTypeNames, typeParamNames, typeAliases);
+  assertSupportedMapKeyType(
+    keyTypePath!,
+    declaredTypeNames,
+    typeParamNames,
+    typeAliases
+  );
+  assertSupportedType(
+    valueTypePath!,
+    declaredTypeNames,
+    typeParamNames,
+    typeAliases
+  );
 }
 
 export function assertSupportedSetType(
@@ -64,7 +74,12 @@ export function assertSupportedSetType(
   }
 
   const elementPath = typePath.get('typeParameters').get('params')[0]!;
-  assertSupportedType(elementPath, declaredTypeNames, typeParamNames, typeAliases);
+  assertSupportedType(
+    elementPath,
+    declaredTypeNames,
+    typeParamNames,
+    typeAliases
+  );
 }
 
 export function assertSupportedMapKeyType(
@@ -93,7 +108,12 @@ export function assertSupportedMapKeyType(
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedMapKeyType(memberPath, declaredTypeNames, typeParamNames, typeAliases);
+      assertSupportedMapKeyType(
+        memberPath,
+        declaredTypeNames,
+        typeParamNames,
+        typeAliases
+      );
     }
     return;
   }
@@ -142,11 +162,16 @@ export function assertSupportedMapKeyType(
   const aliasTarget = typePath.isTSTypeReference()
     ? resolveAliasTargetName(typePath, aliases, typePath.scope)
     : null;
-  const typeName = typePath.isTSTypeReference() && t.isIdentifier(typePath.node.typeName)
+  const typeName = typePath.isTSTypeReference()
+    && t.isIdentifier(typePath.node.typeName)
     ? typePath.node.typeName.name
     : null;
   const resolvedTarget = aliasTarget
-    ?? (typeName && getAliasTargets(aliases, 'message').has(typeName) ? typeName : null);
+    ?? (
+      typeName && getAliasTargets(aliases, 'message').has(typeName)
+        ? typeName
+        : null
+    );
 
   if (resolvedTarget === 'ImmutableDate' || resolvedTarget === 'ImmutableUrl') {
     return; // Alias wrapper targets are allowed as map keys
@@ -190,7 +215,12 @@ export function assertSupportedType(
 
   if (typePath.isTSUnionType()) {
     for (const memberPath of typePath.get('types')) {
-      assertSupportedType(memberPath, declaredTypeNames, typeParamNames, typeAliases);
+      assertSupportedType(
+        memberPath,
+        declaredTypeNames,
+        typeParamNames,
+        typeAliases
+      );
     }
     return;
   }
@@ -207,13 +237,17 @@ export function assertSupportedType(
 
   if (typePath.isTSTypeReference()) {
     const aliases = typeAliases ?? {};
-    const aliasTarget = resolveAliasTargetName(typePath, aliases, typePath.scope);
+    const aliasTarget = resolveAliasTargetName(
+      typePath,
+      aliases,
+      typePath.scope
+    );
     const aliasMessageTargets = getAliasTargets(aliases, 'message');
     const typeName = t.isIdentifier(typePath.node.typeName)
       ? typePath.node.typeName.name
       : null;
 
-    if (aliasTarget || (typeName && aliasMessageTargets.has(typeName))) {
+    if (aliasTarget || typeName && aliasMessageTargets.has(typeName)) {
       return;
     }
 
@@ -222,12 +256,22 @@ export function assertSupportedType(
     }
 
     if (isMapReference(typePath.node) || aliasTarget === 'ImmutableMap') {
-      assertSupportedMapType(typePath, declaredTypeNames, typeParamNames, typeAliases);
+      assertSupportedMapType(
+        typePath,
+        declaredTypeNames,
+        typeParamNames,
+        typeAliases
+      );
       return;
     }
 
     if (isSetReference(typePath.node) || aliasTarget === 'ImmutableSet') {
-      assertSupportedSetType(typePath, declaredTypeNames, typeParamNames, typeAliases);
+      assertSupportedSetType(
+        typePath,
+        declaredTypeNames,
+        typeParamNames,
+        typeAliases
+      );
       return;
     }
 
@@ -350,7 +394,7 @@ function isPrimitiveLikeType(
     const unionTypes = typePath.get('types');
     return (
       unionTypes.length > 0
-      && unionTypes.every((member) => isPrimitiveLikeType(member))
+      && unionTypes.every(member => isPrimitiveLikeType(member))
     );
   }
 

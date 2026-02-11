@@ -153,7 +153,7 @@ function collectPropaneFiles(targetPath: string): string[] {
   if (stats.isDirectory()) {
     return fs
       .readdirSync(resolved)
-      .flatMap((entry) => collectPropaneFiles(path.join(resolved, entry)));
+      .flatMap(entry => collectPropaneFiles(path.join(resolved, entry)));
   }
 
   if (stats.isFile() && resolved.endsWith('.pmsg')) {
@@ -193,7 +193,7 @@ function transpileFile(sourcePath: string) {
 
 function compileAll() {
   const propaneFiles = [...new Set(
-    targets.flatMap((target) => collectPropaneFiles(target))
+    targets.flatMap(target => collectPropaneFiles(target))
   )];
 
   if (!propaneFiles.length) {
@@ -225,17 +225,17 @@ if (watch) {
       depth: 99, // Watch deeply
     })
     .on('ready', () => console.log('Initial scan complete. Watching for changes...'))
-    .on('add', (filePath) => {
+    .on('add', filePath => {
       if (filePath.endsWith('.pmsg')) {
         transpileFile(filePath);
       }
     })
-    .on('change', (filePath) => {
+    .on('change', filePath => {
       if (filePath.endsWith('.pmsg')) {
         transpileFile(filePath);
       }
     })
-    .on('unlink', (filePath) => {
+    .on('unlink', filePath => {
       // Optional: Delete the generated .pmsg.ts file if the original .pmsg file is deleted
       if (filePath.endsWith('.pmsg')) {
         const { baseOutputPath, reexportOutputPath } = getOutputPaths(

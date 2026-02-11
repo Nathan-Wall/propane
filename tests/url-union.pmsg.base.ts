@@ -52,11 +52,7 @@ export class UrlUnion_Value_Union1 extends Message<UrlUnion_Value_Union1.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (ImmutableUrl.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableUrl(value as ImmutableUrl.Value, options);
-          }
+          result = ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value as ImmutableUrl.Value, options);
         }
       }
       return result;
@@ -154,7 +150,7 @@ export class UrlUnion extends Message<UrlUnion.Data> {
       if (!options?.skipValidation && true && !(ImmutableUrl.isInstance(value) || UrlUnion_Value_Union1.isInstance(value))) throw new Error("Invalid value for property \"value\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.value)) : new ImmutableUrl("about:blank");
     if (!props) UrlUnion.EMPTY = this;
@@ -225,7 +221,7 @@ export class UrlUnion extends Message<UrlUnion.Data> {
   }
   static validateAll(data: UrlUnion.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

@@ -266,7 +266,9 @@ function AsyncClosureRemovalApp() {
 
 test('usePropaneState async stale closure after removal does not resurrect removed item', async () => {
   resetAsyncClosureHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(AsyncClosureRemovalApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(AsyncClosureRemovalApp)
+  );
 
   try {
     assert(latestAsyncState instanceof TodoState, 'Initial async state should be TodoState');
@@ -286,7 +288,7 @@ test('usePropaneState async stale closure after removal does not resurrect remov
     assert(latestAsyncState.todos.length === 0, 'Removed todo should be absent before delayed callback executes');
     assert(getByTestId('async-todo-count').textContent === '0', 'Rendered count should reflect removal');
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       setTimeout(() => {
         act(() => {
           runDelayedMutationFromCapturedRef!();
@@ -405,11 +407,13 @@ test('usePropaneSelector unmount retires listener while mounted selectors remain
     });
 
     assert(
-      Number(selectorPrimaryRenders) === Number(primaryRendersBeforeUnmountedUpdate),
+      Number(selectorPrimaryRenders)
+        === Number(primaryRendersBeforeUnmountedUpdate),
       `Unmounted selector should not rerender, got ${selectorPrimaryRenders}`
     );
     assert(
-      Number(selectorSecondaryRenders) > Number(secondaryRendersBeforeUnmountedUpdate),
+      Number(selectorSecondaryRenders)
+        > Number(secondaryRendersBeforeUnmountedUpdate),
       `Mounted selector should keep receiving updates, got ${selectorSecondaryRenders}`
     );
     assert(selectorSecondaryValue === false, 'Mounted selector should reflect post-unmount update');
@@ -476,7 +480,9 @@ function MultiRootTransactionApp() {
 
 test('update applies pending state updates for every root in a multi-root transaction', () => {
   resetMultiRootHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(MultiRootTransactionApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(MultiRootTransactionApp)
+  );
 
   try {
     assert(runMultiRootTransaction !== null, 'Expected multi-root transaction handler');
@@ -504,7 +510,9 @@ test('update applies pending state updates for every root in a multi-root transa
 
 test('update rolls back pending updates for all roots in a multi-root transaction failure', () => {
   resetMultiRootHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(MultiRootTransactionApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(MultiRootTransactionApp)
+  );
 
   try {
     assert(
@@ -600,7 +608,9 @@ function SyncFailureRollbackApp() {
 
 test('update rolls back pending state updates on sync failure', () => {
   resetSyncFailureHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(SyncFailureRollbackApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(SyncFailureRollbackApp)
+  );
 
   try {
     assert(runSyncFailureTransaction !== null, 'Expected sync failure transaction handler');
@@ -658,7 +668,9 @@ function AsyncFailureRollbackApp() {
 
 test('update rolls back pending state updates on async failure', async () => {
   resetAsyncFailureHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(AsyncFailureRollbackApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(AsyncFailureRollbackApp)
+  );
 
   try {
     assert(runAsyncFailureTransaction !== null, 'Expected async failure transaction handler');
@@ -698,7 +710,7 @@ function OverlapIsolationApp() {
   latestOverlapState = state;
   runOverlappingAsyncAndSyncTransactions = async () => {
     const pendingAsyncFailure = update(state, async () => {
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         setTimeout(resolve, 0);
       });
       throw new Error('outer async failure');
@@ -720,7 +732,9 @@ function OverlapIsolationApp() {
 
 test('overlapping top-level transactions isolate rollback from async failure', async () => {
   resetOverlapHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(OverlapIsolationApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(OverlapIsolationApp)
+  );
 
   try {
     assert(runOverlappingAsyncAndSyncTransactions !== null, 'Expected overlap transaction runner');
@@ -780,7 +794,9 @@ function NestedRollbackIsolationApp() {
 
 test('nested update failure rolls back inner transaction even when caught by outer transaction', () => {
   resetNestedRollbackHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(NestedRollbackIsolationApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(NestedRollbackIsolationApp)
+  );
 
   try {
     assert(runNestedFailureWithCatch !== null, 'Expected nested rollback runner');
@@ -813,7 +829,7 @@ function resetAsyncOverlapGuardHarnessState() {
 
 function createDeferred() {
   let resolve: (() => void) | null = null;
-  const promise = new Promise<void>((resolvePromise) => {
+  const promise = new Promise<void>(resolvePromise => {
     resolve = resolvePromise;
   });
   return {
@@ -887,7 +903,9 @@ function AsyncLifecycleListenerApp() {
 
 test('async update stays active through await and throws on stale mutation after commit', async () => {
   resetAsyncLifecycleHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(AsyncLifecycleListenerApp)
+  );
 
   try {
     assert(
@@ -976,7 +994,9 @@ test('async update stays active through await and throws on stale mutation after
 
 test('aborted async update retires listener ownership and throws on stale post-abort mutations', async () => {
   resetAsyncLifecycleHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(AsyncLifecycleListenerApp)
+  );
 
   try {
     assert(
@@ -1099,7 +1119,9 @@ function AsyncOverlapGuardApp() {
 
 test('overlapping top-level async update calls are rejected and do not drop first transaction updates', async () => {
   resetAsyncOverlapGuardHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(AsyncOverlapGuardApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(AsyncOverlapGuardApp)
+  );
 
   try {
     assert(runAsyncOverlapGuardFlow !== null, 'Expected async overlap guard runner');
@@ -1159,10 +1181,11 @@ function PromiseOverlapLeakApp() {
         secondGate.promise.then(() => {
           try {
             s.todos.push(new TodoItem({ text: 'From-Second-Promise', completed: false }));
-          } catch (error) {
-            caughtPromiseOverlapStaleMutationErrorMessage = error instanceof Error
-              ? error.message
-              : String(error);
+        } catch (error) {
+            caughtPromiseOverlapStaleMutationErrorMessage =
+              error instanceof Error
+                ? error.message
+                : String(error);
           }
         })
       );
@@ -1187,7 +1210,9 @@ function PromiseOverlapLeakApp() {
 
 test('overlapping Promise-returning top-level update should not leak updates into active async transaction', async () => {
   resetPromiseOverlapLeakHarnessState();
-  const { unmount, getByTestId } = render(React.createElement(PromiseOverlapLeakApp));
+  const { unmount, getByTestId } = render(
+    React.createElement(PromiseOverlapLeakApp)
+  );
 
   try {
     assert(runPromiseOverlapLeakFlow !== null, 'Expected Promise overlap leak runner');
@@ -1200,11 +1225,13 @@ test('overlapping Promise-returning top-level update should not leak updates int
     });
 
     assert(
-      caughtPromiseOverlapLeakErrorMessage === 'Cannot start a new async update() while another async update() is still in progress. Await the previous update() before starting another async update().',
+      caughtPromiseOverlapLeakErrorMessage
+        === 'Cannot start a new async update() while another async update() is still in progress. Await the previous update() before starting another async update().',
       `Expected overlapping async update guard error, got: ${String(caughtPromiseOverlapLeakErrorMessage)}`
     );
     assert(
-      caughtPromiseOverlapStaleMutationErrorMessage === STALE_TRANSACTION_MUTATION_ERROR,
+      caughtPromiseOverlapStaleMutationErrorMessage
+        === STALE_TRANSACTION_MUTATION_ERROR,
       `Expected stale Promise-overlap mutation to throw transaction-settled error, got: ${String(caughtPromiseOverlapStaleMutationErrorMessage)}`
     );
     assert(latestPromiseOverlapLeakState instanceof TodoState, 'Expected Promise overlap leak state after flow');

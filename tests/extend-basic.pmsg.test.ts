@@ -76,9 +76,18 @@ export default function runExtendBasicTests() {
   assert(deserialized.equals(person), 'deserialized and original should be equal');
 
   // Test with skipValidation option
-  const deserializedSkipValidation = Person.deserialize(serialized, { skipValidation: true });
-  assert(Person.isInstance(deserializedSkipValidation), 'skipValidation deserialize should return Person');
-  assert(deserializedSkipValidation.fullName === 'John Doe', 'skipValidation deserialize should have extension');
+  const deserializedSkipValidation = Person.deserialize(
+    serialized,
+    { skipValidation: true }
+  );
+  assert(
+    Person.isInstance(deserializedSkipValidation),
+    'skipValidation deserialize should return Person'
+  );
+  assert(
+    deserializedSkipValidation.fullName === 'John Doe',
+    'skipValidation deserialize should have extension'
+  );
 
   // Test that isInstance works
   assert(Person.isInstance(person), 'person should be instance of Person');

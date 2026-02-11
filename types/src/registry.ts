@@ -274,19 +274,19 @@ export function buildRegistry(
   options: BuildRegistryOptions = {},
 ): TypeRegistry {
   const types = new Map<RegistryKey, AnyTypeRegistration>();
-  const allowOverrides = new Set(options.allowOverrides ?? []);
+  const allowOverrides = new Set(options.allowOverrides);
 
   for (const group of registrations) {
     for (const reg of group) {
       const key: RegistryKey = `${reg.package}:${reg.name}`;
 
       if (types.has(key) && !allowOverrides.has(key)) {
-        const existing = types.get(key)!;
+        const existing = types.get(key);
         throw new Error(
-          `Duplicate registration for '${reg.name}' from '${reg.package}'.\n` +
-            `  First registered as: ${existing.category}\n` +
-            `  Duplicate registered as: ${reg.category}\n` +
-            `To intentionally override, add '${key}' to allowOverrides.`,
+          `Duplicate registration for '${reg.name}' from '${reg.package}'.\n`
+            + `  First registered as: ${existing.category}\n`
+            + `  Duplicate registered as: ${reg.category}\n`
+            + `To intentionally override, add '${key}' to allowOverrides.`,
         );
       }
 
@@ -303,7 +303,10 @@ export function buildRegistry(
       return types.has(`${pkg}:${name}`);
     },
     getByCategory(category: TypeCategory) {
-      return [...types.values()].filter((r) => r.category === category);
+      const registrations = [...types.values()] as AnyTypeRegistration[];
+      return registrations.filter(registration =>
+        registration.category === category
+      );
     },
   };
 }
@@ -460,7 +463,8 @@ export const propaneTypes: AnyTypeRegistration[] = [
     category: 'brand',
     runtimePackage: '@propane/runtime',
     definition: {
-      sqlType([precision, scale]) {
+      sqlType(params) {
+        const [precision, scale] = params as [number, number];
         return `NUMERIC(${precision},${scale})`;
       },
       generateJs({ valueExpr, params, imports }) {

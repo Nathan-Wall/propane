@@ -189,6 +189,12 @@ function isVowel(char: string): boolean {
   return 'aeiou'.includes(char.toLowerCase());
 }
 
+function startsWithUppercase(word: string): boolean {
+  const firstChar = word.at(0);
+  return firstChar !== undefined
+    && firstChar === firstChar.toUpperCase();
+}
+
 /**
  * Check if a word ends with a suffix at a PascalCase/camelCase boundary.
  * Returns the prefix if matched, or null if no match.
@@ -247,7 +253,7 @@ export function pluralize(word: string): string {
   const irregular = IRREGULARS[lower];
   if (irregular) {
     // Preserve original casing style
-    if (word[0] === word[0]?.toUpperCase()) {
+    if (startsWithUppercase(word)) {
       return irregular.charAt(0).toUpperCase() + irregular.slice(1);
     }
     return irregular;
@@ -267,18 +273,18 @@ export function pluralize(word: string): string {
 
   // Words ending in 's', 'x', 'z', 'ch', 'sh' -> add 'es'
   if (
-    lastChar === 's' ||
-    lastChar === 'x' ||
-    lastChar === 'z' ||
-    lastTwo === 'ch' ||
-    lastTwo === 'sh'
+    lastChar === 's'
+    || lastChar === 'x'
+    || lastChar === 'z'
+    || lastTwo === 'ch'
+    || lastTwo === 'sh'
   ) {
     return word + 'es';
   }
 
   // Words ending in consonant + 'y' -> change 'y' to 'ies'
   if (lastChar === 'y' && word.length > 1) {
-    const secondToLast = word.charAt(word.length - 2);
+    const secondToLast = word.at(-2) ?? '';
     if (!isVowel(secondToLast)) {
       return word.slice(0, -1) + 'ies';
     }
@@ -295,19 +301,17 @@ export function pluralize(word: string): string {
     // -fe words that just add 's'
     'safe', 'cafe', 'giraffe', 'gaffe', 'carafe', 'strafe',
   ];
-  if (lastTwo === 'fe' || lastChar === 'f') {
-    if (!fExceptions.some((e) => lower.endsWith(e))) {
+  if ((lastTwo === 'fe' || lastChar === 'f') && !fExceptions.some(e => lower.endsWith(e))) {
       if (lastTwo === 'fe') {
         return word.slice(0, -2) + 'ves';
       }
       return word.slice(0, -1) + 'ves';
     }
-  }
 
   // Words ending in 'o' preceded by consonant -> add 'es' (common cases)
   // But many modern/borrowed words just add 's'
   if (lastChar === 'o' && word.length > 1) {
-    const secondToLast = word.charAt(word.length - 2);
+    const secondToLast = word.at(-2) ?? '';
     if (!isVowel(secondToLast)) {
       // Exceptions that just add 's' (modern words, borrowings, shortened forms)
       const oExceptions = [
@@ -325,7 +329,7 @@ export function pluralize(word: string): string {
         'commando', 'grotto', 'motto', 'loco', 'taco', 'burrito',
         'avocado', 'armadillo', 'silo', 'halo',
       ];
-      if (!oExceptions.some((e) => lower.endsWith(e))) {
+      if (!oExceptions.some(e => lower.endsWith(e))) {
         return word + 'es';
       }
     }
@@ -384,7 +388,7 @@ export function singularize(word: string): string {
   for (const [singular, plural] of Object.entries(IRREGULARS)) {
     if (lower === plural) {
       // Preserve original casing style
-      if (word[0] === word[0]?.toUpperCase()) {
+      if (startsWithUppercase(word)) {
         return singular.charAt(0).toUpperCase() + singular.slice(1);
       }
       return singular;
@@ -408,7 +412,7 @@ export function singularize(word: string): string {
   if (word.endsWith('ves') && word.length > 3) {
     const base = word.slice(0, -3);
     // Common 'fe' endings
-    if (['li', 'wi', 'kni'].some((e) => base.toLowerCase().endsWith(e))) {
+    if (['li', 'wi', 'kni'].some(e => base.toLowerCase().endsWith(e))) {
       return base + 'fe';
     }
     return base + 'f';
@@ -422,18 +426,18 @@ export function singularize(word: string): string {
 
     // If base ends in s, x, z, ch, sh -> remove 'es'
     if (
-      lastChar === 's' ||
-      lastChar === 'x' ||
-      lastChar === 'z' ||
-      lastTwo === 'ch' ||
-      lastTwo === 'sh'
+      lastChar === 's'
+      || lastChar === 'x'
+      || lastChar === 'z'
+      || lastTwo === 'ch'
+      || lastTwo === 'sh'
     ) {
       return withoutEs;
     }
 
     // If base ends in consonant + 'o' -> remove 'es'
     if (lastChar === 'o' && withoutEs.length > 1) {
-      const secondToLast = withoutEs.charAt(withoutEs.length - 2);
+      const secondToLast = withoutEs.at(-2) ?? '';
       if (!isVowel(secondToLast)) {
         return withoutEs;
       }

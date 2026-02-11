@@ -146,8 +146,7 @@ export class Wrapper extends Message<Wrapper.Data> {
     const payloadValue = entries["payload"];
     if (payloadValue === undefined) throw new Error("Missing required property \"payload\".");
     let payloadUnionValue: any = payloadValue as any;
-    if (isTaggedMessageData(payloadValue)) {
-      if (payloadValue.$tag === "Wrapper_Payload_Union1") {
+    if (isTaggedMessageData(payloadValue) && payloadValue.$tag === "Wrapper_Payload_Union1") {
         if (typeof payloadValue.$data === "string") {
           if (Wrapper_Payload_Union1.$compact === true) {
             payloadUnionValue = Wrapper_Payload_Union1.fromCompact(Wrapper_Payload_Union1.$compactTag && payloadValue.$data.startsWith(Wrapper_Payload_Union1.$compactTag) ? payloadValue.$data.slice(Wrapper_Payload_Union1.$compactTag.length) : payloadValue.$data, options);
@@ -158,16 +157,13 @@ export class Wrapper extends Message<Wrapper.Data> {
           payloadUnionValue = new Wrapper_Payload_Union1(Wrapper_Payload_Union1.prototype.$fromEntries(payloadValue.$data, options), options);
         }
       }
-    }
-    if (typeof payloadValue === "string") {
-      if (Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag)) {
+    if (typeof payloadValue === "string" && Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag)) {
         if (Wrapper_Payload_Union1.$compact === true) {
           payloadUnionValue = Wrapper_Payload_Union1.fromCompact(Wrapper_Payload_Union1.$compactTag && payloadValue.startsWith(Wrapper_Payload_Union1.$compactTag) ? payloadValue.slice(Wrapper_Payload_Union1.$compactTag.length) : payloadValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"payload\" (Wrapper_Payload_Union1).");
         }
       }
-    }
     if (!isTaggedMessageData(payloadValue) && typeof payloadValue === "object" && payloadValue !== null) {
       let payloadUnionValueMatched = false;
       if (!payloadUnionValueMatched) {
@@ -192,7 +188,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

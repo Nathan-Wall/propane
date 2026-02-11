@@ -52,11 +52,7 @@ export class Wrapper_Payload_Union1 extends Message<Wrapper_Payload_Union1.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -154,7 +150,7 @@ export class Wrapper extends Message<Wrapper.Data> {
       if (!options?.skipValidation && true && !(ImmutableDate.isInstance(value) || Wrapper_Payload_Union1.isInstance(value))) throw new Error("Invalid value for property \"payload\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.payload)) : new ImmutableDate(0);
     if (!props) Wrapper.EMPTY = this;
@@ -225,7 +221,7 @@ export class Wrapper extends Message<Wrapper.Data> {
   }
   static validateAll(data: Wrapper.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

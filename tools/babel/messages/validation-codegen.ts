@@ -5,7 +5,7 @@
  */
 
 import * as t from '@babel/types';
-import type { ValidatorDefinition, ImportCollector } from '@/types/src/registry.js';
+import type { ImportCollector } from '@/types/src/registry.js';
 import type {
   FieldValidation,
   ExtractedValidator,
@@ -65,9 +65,9 @@ export function generateFieldValidation(
 
   // Skip validation if field has no validators or brands
   if (
-    validation.validators.length === 0 &&
-    !validation.brand &&
-    validation.unionBranches.length === 0
+    validation.validators.length === 0
+    && !validation.brand
+    && validation.unionBranches.length === 0
   ) {
     return { statements, imports: imports.imports };
   }
@@ -330,7 +330,8 @@ function generateBrandCheck(
   const message = definition.generateMessage?.({ params: brand.params }) ?? 'invalid brand value';
 
   // Generate error code (use brand-specific code or default to uppercased brand name)
-  const code = definition.generateCode?.() ?? brand.registration.name.toUpperCase();
+  const code = definition.generateCode?.()
+    ?? brand.registration.name.toUpperCase();
 
   // Import ValidationError
   imports.add('ValidationError', '@propane/runtime');
@@ -369,10 +370,10 @@ function parseCondition(condition: string): t.Expression {
  */
 function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
   // Replace 'value' with the actual value expression
-  const adjustedGuard = guard.replace(/\bvalue\b/g, valueExpr);
+  const adjustedGuard = guard.replaceAll(/\bvalue\b/g, valueExpr);
 
   if (adjustedGuard.includes('&&')) {
-    const parts = adjustedGuard.split('&&').map((part) => part.trim()).filter(Boolean);
+    const parts = adjustedGuard.split('&&').map(part => part.trim()).filter(Boolean);
     if (parts.length > 0) {
       let expr = parseTypeGuard(parts[0]!, valueExpr);
       for (let i = 1; i < parts.length; i += 1) {
@@ -384,7 +385,7 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
 
   // Parse common patterns
   if (adjustedGuard.startsWith("typeof ")) {
-    const match = adjustedGuard.match(/typeof (\w+) === '(\w+)'/);
+    const match = /typeof (\w+) === '(\w+)'/.exec(adjustedGuard);
     if (match) {
       return t.binaryExpression(
         '===',
@@ -395,7 +396,7 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
   }
 
   if (adjustedGuard.startsWith('Array.isArray(')) {
-    const match = adjustedGuard.match(/Array\.isArray\((\w+)\)/);
+    const match = /Array\.isArray\((\w+)\)/.exec(adjustedGuard);
     if (match) {
       return t.callExpression(
         t.memberExpression(t.identifier('Array'), t.identifier('isArray')),
@@ -405,7 +406,7 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
   }
 
   if (adjustedGuard.includes(' instanceof ')) {
-    const match = adjustedGuard.match(/(\w+) instanceof (\w+)/);
+    const match = /(\w+) instanceof (\w+)/.exec(adjustedGuard);
     if (match) {
       return t.binaryExpression(
         'instanceof',
@@ -415,15 +416,18 @@ function parseTypeGuard(guard: string, valueExpr: string): t.Expression {
     }
   }
 
-  const callMatch = adjustedGuard.match(/^(\w+)\.(\w+)\((\w+)\)$/);
+  const callMatch = /^(\w+)\.(\w+)\((\w+)\)$/.exec(adjustedGuard);
   if (callMatch) {
     return t.callExpression(
-      t.memberExpression(t.identifier(callMatch[1]!), t.identifier(callMatch[2]!)),
+      t.memberExpression(
+        t.identifier(callMatch[1]!),
+        t.identifier(callMatch[2]!)
+      ),
       [t.identifier(callMatch[3]!)]
     );
   }
 
-  const eqMatch = adjustedGuard.match(/^(\w+)\.(\w+)\s*===\s*(-?\d+)$/);
+  const eqMatch = /^(\w+)\.(\w+)\s*===\s*(-?\d+)$/.exec(adjustedGuard);
   if (eqMatch) {
     return t.binaryExpression(
       '===',

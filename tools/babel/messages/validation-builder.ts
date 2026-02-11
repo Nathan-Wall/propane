@@ -51,9 +51,9 @@ export function extractPropertyValidations(
 
     // Only store if there's actual validation to do
     if (
-      validation.validators.length > 0 ||
-      validation.brand !== null ||
-      validation.unionBranches.length > 0
+      validation.validators.length > 0
+      || validation.brand !== null
+      || validation.unionBranches.length > 0
     ) {
       validations.set(prop.name, validation);
     }
@@ -65,7 +65,9 @@ export function extractPropertyValidations(
 /**
  * Check if any property has validators.
  */
-export function hasAnyValidation(validations: Map<string, FieldValidation>): boolean {
+export function hasAnyValidation(
+  validations: Map<string, FieldValidation>
+): boolean {
   return validations.size > 0;
 }
 
@@ -89,15 +91,13 @@ export function buildValidateMethod(
     return null;
   }
 
-  const body: t.Statement[] = [];
-
-  // Early return if data is undefined (for TypeScript type narrowing)
-  body.push(
+  const body: t.Statement[] = [
+    // Early return if data is undefined (for TypeScript type narrowing)
     t.ifStatement(
       t.binaryExpression('===', t.identifier('data'), t.identifier('undefined')),
       t.returnStatement()
-    )
-  );
+    ),
+  ];
 
   // Generate validation for each property with validators
   for (const [propName, validation] of validations) {
@@ -193,20 +193,29 @@ function buildNonNullableValidation(
         valueExpr,
         params: validation.brand.params,
         imports: {
-          add: (name: string, _from: string) => {
+          add: (name: string, unused_from: string) => {
+            void unused_from;
             trackValidationImport(name, ctx.state);
           },
         },
       });
 
       if (result) {
-        const message = brandDef.generateMessage?.({ params: validation.brand.params })
+        const message = brandDef.generateMessage?.({
+          params: validation.brand.params,
+        })
           ?? 'invalid brand value';
         const code = brandDef.generateCode?.()
           ?? validation.brand.registration.name.toUpperCase();
 
         statements.push(
-          buildValidationCheck(propName, result.condition, message, code, valueExpr)
+          buildValidationCheck(
+            propName,
+            result.condition,
+            message,
+            code,
+            valueExpr
+          )
         );
       }
     }
@@ -222,7 +231,8 @@ function buildNonNullableValidation(
       type: validator.innerType,
       params: validator.params,
       imports: {
-        add: (name: string, _from: string) => {
+        add: (name: string, unused_from: string) => {
+          void unused_from;
           // Track required imports via state flags
           trackValidationImport(name, ctx.state);
         },
@@ -237,7 +247,13 @@ function buildNonNullableValidation(
       const code = definition.generateCode?.() ?? definition.name.toUpperCase();
 
       statements.push(
-        buildValidationCheck(propName, result.condition, message, code, valueExpr)
+        buildValidationCheck(
+          propName,
+          result.condition,
+          message,
+          code,
+          valueExpr
+        )
       );
     }
   }
@@ -299,15 +315,15 @@ function parseSimpleCondition(expr: string): t.Expression {
   }
 
   // Handle simple function calls like "isPositive(this.#foo)"
-  const funcCallMatch = expr.match(/^(\w+)\((.*)\)$/);
+  const funcCallMatch = /^(\w+)\((.*)\)$/.exec(expr);
   if (funcCallMatch) {
     const [, funcName, args] = funcCallMatch;
-    const argExprs = args!.split(',').map((arg) => parseSimpleCondition(arg.trim()));
+    const argExprs = args!.split(',').map(arg => parseSimpleCondition(arg.trim()));
     return t.callExpression(t.identifier(funcName!), argExprs);
   }
 
   // Handle binary comparisons
-  const binaryMatch = expr.match(/^(.+?)\s*(>=|<=|>|<|===|!==|==|!=)\s*(.+)$/);
+  const binaryMatch = /^(.+?)\s*(>=|<=|>|<|===|!==|==|!=)\s*(.+)$/.exec(expr);
   if (binaryMatch) {
     const [, left, op, right] = binaryMatch;
     return t.binaryExpression(
@@ -434,10 +450,8 @@ export function buildValidateAllMethod(
     return null;
   }
 
-  const body: t.Statement[] = [];
-
-  // const errors: ValidationError[] = [];
-  body.push(
+  const body: t.Statement[] = [
+    // const errors: ValidationError[] = [];
     t.variableDeclaration('const', [
       t.variableDeclarator(
         t.identifier('errors'),
@@ -446,8 +460,8 @@ export function buildValidateAllMethod(
           t.tsArrayType(t.tsTypeReference(t.identifier('ValidationError')))
         )
       ),
-    ])
-  );
+    ]),
+  ];
 
   // Generate try-catch block for each property with validators
   for (const [propName, validation] of validations) {
@@ -582,20 +596,29 @@ function buildNonNullableValidationForData(
         valueExpr,
         params: validation.brand.params,
         imports: {
-          add: (name: string, _from: string) => {
+          add: (name: string, unused_from: string) => {
+            void unused_from;
             trackValidationImport(name, ctx.state);
           },
         },
       });
 
       if (result) {
-        const message = brandDef.generateMessage?.({ params: validation.brand.params })
+        const message = brandDef.generateMessage?.({
+          params: validation.brand.params,
+        })
           ?? 'invalid brand value';
         const code = brandDef.generateCode?.()
           ?? validation.brand.registration.name.toUpperCase();
 
         statements.push(
-          buildValidationCheckForData(propName, result.condition, message, code, valueExpr)
+          buildValidationCheckForData(
+            propName,
+            result.condition,
+            message,
+            code,
+            valueExpr
+          )
         );
       }
     }
@@ -611,7 +634,8 @@ function buildNonNullableValidationForData(
       type: validator.innerType,
       params: validator.params,
       imports: {
-        add: (name: string, _from: string) => {
+        add: (name: string, unused_from: string) => {
+          void unused_from;
           trackValidationImport(name, ctx.state);
         },
       },
@@ -625,7 +649,13 @@ function buildNonNullableValidationForData(
       const code = definition.generateCode?.() ?? definition.name.toUpperCase();
 
       statements.push(
-        buildValidationCheckForData(propName, result.condition, message, code, valueExpr)
+        buildValidationCheckForData(
+          propName,
+          result.condition,
+          message,
+          code,
+          valueExpr
+        )
       );
     }
   }
@@ -685,15 +715,15 @@ function parseDataCondition(expr: string): t.Expression {
   }
 
   // Handle simple function calls like "isPositive(data.foo)"
-  const funcCallMatch = expr.match(/^(\w+)\((.*)\)$/);
+  const funcCallMatch = /^(\w+)\((.*)\)$/.exec(expr);
   if (funcCallMatch) {
     const [, funcName, args] = funcCallMatch;
-    const argExprs = args!.split(',').map((arg) => parseDataCondition(arg.trim()));
+    const argExprs = args!.split(',').map(arg => parseDataCondition(arg.trim()));
     return t.callExpression(t.identifier(funcName!), argExprs);
   }
 
   // Handle binary comparisons
-  const binaryMatch = expr.match(/^(.+?)\s*(>=|<=|>|<|===|!==|==|!=)\s*(.+)$/);
+  const binaryMatch = /^(.+?)\s*(>=|<=|>|<|===|!==|==|!=)\s*(.+)$/.exec(expr);
   if (binaryMatch) {
     const [, left, op, right] = binaryMatch;
     return t.binaryExpression(

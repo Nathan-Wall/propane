@@ -39,11 +39,11 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   if (isImmutableSetLike(value)) {
-    return [...value.values()].map((v) => normalizeForJson(v));
+    return [...value.values()].map(v => normalizeForJson(v));
   }
 
   if (isImmutableArrayLike(value)) {
-    return [...value.values()].map((v) => normalizeForJson(v));
+    return [...value.values()].map(v => normalizeForJson(v));
   }
 
   if (value instanceof Map) {
@@ -54,11 +54,11 @@ export function normalizeForJson(value: unknown): unknown {
   }
 
   if (value instanceof Set) {
-    return [...value.values()].map((v) => normalizeForJson(v));
+    return [...value.values()].map(v => normalizeForJson(v));
   }
 
   if (Array.isArray(value)) {
-    return value.map((item) => normalizeForJson(item));
+    return value.map(item => normalizeForJson(item));
   }
 
   if (value && typeof value === 'object') {

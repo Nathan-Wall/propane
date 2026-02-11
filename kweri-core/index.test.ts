@@ -11,7 +11,6 @@ import {
   and,
   or,
   empty,
-  SqlFragment,
   ColumnRef,
   TableRef,
   IdentifierRef,
@@ -19,13 +18,24 @@ import {
   RawSql,
 } from '@/kweri-core/index.js';
 
+function* stringPairGenerator(): Generator<string, void, void> {
+  yield 'a';
+  yield 'b';
+}
+
+function* conditionPairGenerator():
+Generator<ReturnType<typeof sql>, void, void> {
+  yield sql`a = 1`;
+  yield sql`b = 2`;
+}
+
 describe('@kweri/core', () => {
   describe('identifier()', () => {
     it('should return SqlFragment with IdentifierRef part', () => {
       const frag = identifier('idx_users_email');
       assert.strictEqual(frag.parts.length, 1);
       assert.ok(frag.parts[0] instanceof IdentifierRef);
-      assert.strictEqual((frag.parts[0] as IdentifierRef).name, 'idx_users_email');
+      assert.strictEqual(frag.parts[0].name, 'idx_users_email');
     });
   });
 
@@ -34,7 +44,7 @@ describe('@kweri/core', () => {
       const frag = column('email');
       assert.strictEqual(frag.parts.length, 1);
       assert.ok(frag.parts[0] instanceof ColumnRef);
-      const ref = frag.parts[0] as ColumnRef;
+      const ref = frag.parts[0];
       assert.strictEqual(ref.name, 'email');
       assert.strictEqual(ref.table, null);
       assert.strictEqual(ref.schema, null);
@@ -62,7 +72,7 @@ describe('@kweri/core', () => {
       const frag = table('users');
       assert.strictEqual(frag.parts.length, 1);
       assert.ok(frag.parts[0] instanceof TableRef);
-      const ref = frag.parts[0] as TableRef;
+      const ref = frag.parts[0];
       assert.strictEqual(ref.name, 'users');
       assert.strictEqual(ref.schema, null);
     });
@@ -79,7 +89,7 @@ describe('@kweri/core', () => {
     it('should wrap string value', () => {
       const frag = literal('hello');
       assert.ok(frag.parts[0] instanceof LiteralValue);
-      assert.strictEqual((frag.parts[0] as LiteralValue).value, 'hello');
+      assert.strictEqual(frag.parts[0].value, 'hello');
     });
 
     it('should wrap number value', () => {
@@ -108,7 +118,7 @@ describe('@kweri/core', () => {
       const frag = raw('ASC NULLS LAST');
       assert.strictEqual(frag.parts.length, 1);
       assert.ok(frag.parts[0] instanceof RawSql);
-      assert.strictEqual((frag.parts[0] as RawSql).sql, 'ASC NULLS LAST');
+      assert.strictEqual(frag.parts[0].sql, 'ASC NULLS LAST');
     });
   });
 
@@ -118,7 +128,7 @@ describe('@kweri/core', () => {
       assert.strictEqual(frag.parts.length, 2);
       assert.ok(frag.parts[0] instanceof RawSql);
       assert.ok(frag.parts[1] instanceof LiteralValue);
-      assert.strictEqual((frag.parts[1] as LiteralValue).value, 42);
+      assert.strictEqual(frag.parts[1].value, 42);
     });
 
     it('should flatten nested SqlFragment', () => {
@@ -173,7 +183,7 @@ describe('@kweri/core', () => {
       const frag = join(' AND ', [literal('a'), literal('b')]);
       assert.strictEqual(frag.parts.length, 3);
       assert.ok(frag.parts[1] instanceof RawSql);
-      assert.strictEqual((frag.parts[1] as RawSql).sql, ' AND ');
+      assert.strictEqual(frag.parts[1].sql, ' AND ');
     });
 
     it('should use SqlFragment separator', () => {
@@ -202,11 +212,7 @@ describe('@kweri/core', () => {
     });
 
     it('should accept generators', () => {
-      function* gen() {
-        yield 'a';
-        yield 'b';
-      }
-      const frag = join(gen());
+      const frag = join(stringPairGenerator());
       assert.strictEqual(frag.parts.length, 3);
     });
 
@@ -274,7 +280,7 @@ describe('@kweri/core', () => {
   describe('mapParts()', () => {
     it('should transform with function', () => {
       const frag = column('name');
-      const mapped = frag.mapParts((part) => {
+      const mapped = frag.mapParts(part => {
         if (part instanceof ColumnRef) {
           return new ColumnRef({ schema: 'audit', table: 'log', name: part.name });
         }
@@ -288,7 +294,7 @@ describe('@kweri/core', () => {
     it('should transform with handlers object', () => {
       const frag = column('name');
       const mapped = frag.mapParts({
-        ColumnRef: (p) => new ColumnRef({ schema: null, table: 'other', name: p.name }),
+        ColumnRef: p => new ColumnRef({ schema: null, table: 'other', name: p.name }),
       });
       const ref = mapped.parts[0] as ColumnRef;
       assert.strictEqual(ref.table, 'other');
@@ -297,10 +303,10 @@ describe('@kweri/core', () => {
     it('should pass through unhandled part types', () => {
       const frag = sql`${column('a')} = ${42}`;
       const mapped = frag.mapParts({
-        ColumnRef: (p) => new ColumnRef({ schema: null, table: 'x', name: p.name }),
+        ColumnRef: p => new ColumnRef({ schema: null, table: 'x', name: p.name }),
       });
       // LiteralValue should be unchanged
-      const lit = mapped.parts.find((p) => p instanceof LiteralValue) as LiteralValue;
+      const lit = mapped.parts.find(p => p instanceof LiteralValue)!;
       assert.strictEqual(lit.value, 42);
     });
   });
@@ -312,7 +318,7 @@ describe('@kweri/core', () => {
       const outer = sql`${inner} FROM ${table('t')}`;
       // Should flatten all parts correctly
       assert.ok(outer.parts.length > 0);
-      assert.ok(outer.parts.some((p) => p instanceof TableRef));
+      assert.ok(outer.parts.some(p => p instanceof TableRef));
     });
   });
 
@@ -343,11 +349,7 @@ describe('@kweri/core', () => {
     });
 
     it('should accept and() with generator', () => {
-      function* gen() {
-        yield sql`a = 1`;
-        yield sql`b = 2`;
-      }
-      const frag = and(gen());
+      const frag = and(conditionPairGenerator());
       assert.ok(frag.parts.length > 0);
     });
   });

@@ -314,7 +314,7 @@ export function isPrimitiveLikeType(
     const unionTypes = typePath.get('types');
     return (
       unionTypes.length > 0
-      && unionTypes.every((member) => isPrimitiveLikeType(member))
+      && unionTypes.every(member => isPrimitiveLikeType(member))
     );
   }
 

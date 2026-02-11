@@ -56,7 +56,7 @@ export default function runUrlPropaneTests() {
   const json = JSON.parse(JSON.stringify(message));
   assert(json.primary === primary.toString(), 'URL should normalize to string in JSON.');
   assert(json.secondary === secondary.toString(), 'Optional URL should normalize to string in JSON.');
-  assert(JSON.stringify(json.links) === JSON.stringify(links.map((u) => u.toString())), 'URL arrays should normalize to strings in JSON.');
+  assert(JSON.stringify(json.links) === JSON.stringify(links.map(u => u.toString())), 'URL arrays should normalize to strings in JSON.');
 }
 
 test('runUrlPropaneTests', () => {

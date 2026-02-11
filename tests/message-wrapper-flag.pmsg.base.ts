@@ -58,13 +58,13 @@ export class Flag$Base extends Message<Flag.Data> {
     return compactValue;
   }
   static override fromCompact(...args: unknown[]) {
-    const maybeOptions = args[args.length - 1];
+    const maybeOptions = args.at(-1);
     const options = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? maybeOptions as {
       skipValidation: boolean;
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args.at(-2) : value;
     if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     const deserializer = this.$deserialize;
     if (typeof deserializer !== "function") throw new Error("Flag.$deserialize() is not implemented.");

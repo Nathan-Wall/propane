@@ -48,7 +48,7 @@ export class UnionFirstNumber extends Message<UnionFirstNumber.Data> {
   }
   static validateAll(data: UnionFirstNumber.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
@@ -153,7 +153,7 @@ export class UnionFirstString extends Message<UnionFirstString.Data> {
   }
   static validateAll(data: UnionFirstString.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;
@@ -356,11 +356,7 @@ export class RequiredMessage extends Message<RequiredMessage.Data> {
             throw new Error("Tagged message type mismatch: expected UnionFirstNumber.");
           }
         } else {
-          if (UnionFirstNumber.isInstance(value)) {
-            result = value;
-          } else {
-            result = new UnionFirstNumber(value as UnionFirstNumber.Value, options);
-          }
+          result = UnionFirstNumber.isInstance(value) ? value : new UnionFirstNumber(value as UnionFirstNumber.Value, options);
         }
       }
       return result;

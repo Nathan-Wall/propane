@@ -106,13 +106,20 @@ export function resolveAliasTypeNode(
 
   if (t.isTSUnionType(node)) {
     return t.tsUnionType(
-      node.types.map((member) => resolveAliasTypeNode(member, aliases, scope, applyKind))
+      node.types.map(member =>
+        resolveAliasTypeNode(member, aliases, scope, applyKind)
+      )
     );
   }
 
   if (t.isTSArrayType(node)) {
     const alias = resolveAliasConfigForName('Array', aliases, scope);
-    const element = resolveAliasTypeNode(node.elementType, aliases, scope, applyKind);
+    const element = resolveAliasTypeNode(
+      node.elementType,
+      aliases,
+      scope,
+      applyKind
+    );
     if (alias && shouldApplyAlias(alias, applyKind)) {
       return t.tsTypeReference(
         t.identifier(alias.target),
@@ -124,12 +131,16 @@ export function resolveAliasTypeNode(
 
   if (t.isTSTypeReference(node)) {
     const typeParams = node.typeParameters?.params ?? [];
-    const resolvedParams = typeParams.map((param) =>
+    const resolvedParams = typeParams.map(param =>
       resolveAliasTypeNode(param, aliases, scope, applyKind)
     );
 
     if (t.isIdentifier(node.typeName)) {
-      const alias = resolveAliasConfigForName(node.typeName.name, aliases, scope);
+      const alias = resolveAliasConfigForName(
+        node.typeName.name,
+        aliases,
+        scope
+      );
       if (alias && shouldApplyAlias(alias, applyKind)) {
         return t.tsTypeReference(
           t.identifier(alias.target),

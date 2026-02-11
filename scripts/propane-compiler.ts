@@ -47,7 +47,7 @@ function collectPropaneFiles(targetPath: string): string[] {
   if (stats.isDirectory()) {
     return fs
       .readdirSync(targetPath)
-      .flatMap((entry) => collectPropaneFiles(path.join(targetPath, entry)));
+      .flatMap(entry => collectPropaneFiles(path.join(targetPath, entry)));
   }
 
   if (stats.isFile() && targetPath.endsWith('.pmsg')) {
@@ -97,7 +97,7 @@ function transpileFile(sourcePath: string): void {
 
 const propaneFiles = [
   ...new Set(targets.flatMap(
-    (target) => collectPropaneFiles(path.resolve(target))
+    target => collectPropaneFiles(path.resolve(target))
   )),
 ];
 

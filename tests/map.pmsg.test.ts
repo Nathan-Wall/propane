@@ -11,8 +11,8 @@ export default function runMapPropaneTests() {
     [2, 4],
   ];
   const labels = new Map<string | number, number>(labelEntries);
-  const metadata: Map<string, MapMessage_Metadata_Value.Value> = new Map([['owner', { value: 'Alice' }]]);
-  const extras: Map<string, MapMessage_Extras_Value.Value> = new Map([
+  const metadata = new Map<string, MapMessage_Metadata_Value.Value>([['owner', { value: 'Alice' }]]);
+  const extras = new Map<string, MapMessage_Extras_Value.Value>([
     ['alpha', { note: 'A' as string | null }],
     ['beta', { note: null }],
   ]);
@@ -97,17 +97,19 @@ export default function runMapPropaneTests() {
     'updateExtra should apply updater to existing entry.'
   );
 
-  const mappedLabelsInstance = mapInstance.mapLabels((value: number, key: string | number) => [
-    typeof key === 'number' ? `num-${key}` : key,
-    value * 10,
-  ]);
+  const mappedLabelsInstance = mapInstance.mapLabels(
+    (value: number, key: string | number) => [
+      typeof key === 'number' ? `num-${key}` : key,
+      value * 10,
+    ]
+  );
   assert(
     mappedLabelsInstance.labels.get('num-2') === 40,
     'mapLabels should remap keys and values.'
   );
 
-  const filteredLabelsInstance = mapInstance.filterLabels((_: number, key: string | number) =>
-    typeof key === 'string'
+  const filteredLabelsInstance = mapInstance.filterLabels(
+    (_: number, key: string | number) => typeof key === 'string'
   );
   assert(filteredLabelsInstance.labels.has('one'), 'filterLabels should retain matching entries.');
   assert(!filteredLabelsInstance.labels.has(2), 'filterLabels should remove entries that fail predicate.');

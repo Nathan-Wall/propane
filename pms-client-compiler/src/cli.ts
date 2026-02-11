@@ -141,7 +141,7 @@ function parseCliArgs(): CliOptions | null {
       return null;
     }
 
-    const positionalFiles: string[] = positionals.map((f) => path.resolve(f));
+    const positionalFiles: string[] = positionals.map(f => path.resolve(f));
     let files: string[] = [...positionalFiles];
     const dir = values.dir || pmsConfig?.inputDir;
 

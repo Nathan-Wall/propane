@@ -7,7 +7,10 @@ function hasOwn(obj: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
-function getDescriptor(obj: object | null, key: string): PropertyDescriptor | undefined {
+function getDescriptor(
+  obj: object | null,
+  key: string
+): PropertyDescriptor | undefined {
   let current = obj;
   while (current) {
     const desc = Object.getOwnPropertyDescriptor(current, key);

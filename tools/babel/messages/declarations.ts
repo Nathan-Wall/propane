@@ -4,7 +4,7 @@ import type { NodePath } from '@babel/traverse';
 import { assertSupportedTopLevelType, assertSupportedType } from './validation.js';
 import { extractProperties, type TypeParameter } from './properties.js';
 import { buildTypeNamespace } from './namespace.js';
-import { buildClassFromProperties, type WrapperInfo, type ClassValidationContext } from './class-builder.js';
+import { buildClassFromProperties, type WrapperInfo } from './class-builder.js';
 import type { PropaneState, ExtendInfo, PropanePluginOptions } from './plugin.js';
 import {
   type BrandImportTracker,
@@ -91,13 +91,14 @@ function extractWrapperInfo(
 
 function extractWrapperValueType(
   typeNode: t.TSType,
-  ctx: TypeParserContext = { filePath: 'unknown', diagnostics: [] }
+  ctx?: TypeParserContext
 ): PmtType | null {
+  const resolvedCtx = ctx ?? { filePath: 'unknown', diagnostics: [] };
   if (!t.isTSTypeReference(typeNode)) {
     return null;
   }
   const typeArgs = typeNode.typeParameters?.params;
-  if (!typeArgs || typeArgs.length !== 1) {
+  if (typeArgs?.length !== 1) {
     return null;
   }
   const valueNode = typeArgs[0];
@@ -107,7 +108,7 @@ function extractWrapperValueType(
   if (!isAllowedWrapperValueType(valueNode)) {
     return null;
   }
-  return parseType(valueNode, ctx);
+  return parseType(valueNode, resolvedCtx);
 }
 
 function isAllowedWrapperValueType(node: t.TSType): boolean {
@@ -124,7 +125,7 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
   }
 
   if (t.isTSTupleType(node)) {
-    return node.elementTypes.every((elem) => {
+    return node.elementTypes.every(elem => {
       if (t.isTSNamedTupleMember(elem)) {
         return isAllowedWrapperValueType(elem.elementType);
       }
@@ -151,11 +152,10 @@ function isAllowedWrapperValueType(node: t.TSType): boolean {
       || t.isNumericLiteral(literal)
       || t.isBooleanLiteral(literal)
       || t.isBigIntLiteral(literal)
-      || (
-        t.isUnaryExpression(literal)
+      ||         t.isUnaryExpression(literal)
         && literal.operator === '-'
         && t.isNumericLiteral(literal.argument)
-      )
+      
     );
   }
 
@@ -182,7 +182,7 @@ function extractTypeParameters(
     return [];
   }
 
-  return typeParams.params.map((param) => {
+  return typeParams.params.map(param => {
     const name = param.name;
 
     // Validate that the type parameter has a constraint
@@ -269,7 +269,9 @@ function computeTypeId(
   }
 
   const filename = getSourceFilename(typeAliasPath);
-  const root = opts?.messageTypeIdRoot ?? opts?.runtimeImportBase ?? process.cwd();
+  const root = opts?.messageTypeIdRoot
+    ?? opts?.runtimeImportBase
+    ?? process.cwd();
   let pathPart = filename;
 
   if (filename && root) {
@@ -294,7 +296,10 @@ function computeImplicitTypeHash(
   compact: boolean,
   compactTag?: string | null
 ): string | undefined {
-  if (!actualTypeLiteralPath.isTSTypeLiteral() && !wrapperInfo?.isValueWrapper) {
+  if (
+    !actualTypeLiteralPath.isTSTypeLiteral()
+    && !wrapperInfo?.isValueWrapper
+  ) {
     return undefined;
   }
 
@@ -331,7 +336,7 @@ function computeImplicitTypeHash(
     let responseType = null;
     if (wrapperInfo.wrapperName === 'Endpoint' && typeLiteralPath.isTSTypeReference()) {
       const params = typeLiteralPath.node.typeParameters?.params;
-      if (params && params[1]) {
+      if (params?.[1]) {
         responseType = parseType(params[1], ctx);
       }
     }
@@ -409,7 +414,11 @@ export function buildDeclarations(
   }
 
   // If there's a wrapper, extract the payload type literal from the first type argument
-  if (wrapperInfo && !wrapperInfo.isValueWrapper && typeLiteralPath.isTSTypeReference()) {
+  if (
+    wrapperInfo
+    && !wrapperInfo.isValueWrapper
+    && typeLiteralPath.isTSTypeReference()
+  ) {
     const typeParamsPath = typeLiteralPath.get('typeParameters');
     if (!Array.isArray(typeParamsPath) && typeParamsPath.node) {
       const paramsPath = typeParamsPath.get('params');
@@ -419,12 +428,13 @@ export function buildDeclarations(
     }
   }
 
-  if (!actualTypeLiteralPath.isTSTypeLiteral()) {
-    if (!wrapperInfo?.isValueWrapper) {
-      assertSupportedTopLevelType(typeLiteralPath, state.typeAliases);
-      insertPrimitiveTypeAlias(typeAliasPath, exported);
-      return null;
-    }
+  if (
+    !actualTypeLiteralPath.isTSTypeLiteral()
+    && !wrapperInfo?.isValueWrapper
+  ) {
+    assertSupportedTopLevelType(typeLiteralPath, state.typeAliases);
+    insertPrimitiveTypeAlias(typeAliasPath, exported);
+    return null;
   }
 
   // Transform Brand usages in property types (auto-namespace transformation)
@@ -473,7 +483,9 @@ export function buildDeclarations(
         }
 
         // Generate unique symbol name
-        const symbolName = `_${typeName}_${propName}_brand${usages.length > 1 ? `_${brandIndex}` : ''}`;
+        const symbolName = `_${typeName}_${propName}_brand${
+          usages.length > 1 ? `_${brandIndex}` : ''
+        }`;
         brandIndex++;
 
         // Create symbol declaration and transform Brand
@@ -484,25 +496,20 @@ export function buildDeclarations(
   }
 
   // Extract type parameters (e.g., T, U from Container<T extends Message, U extends Message>)
-  let typeParameters: TypeParameter[];
-  if (pmtMessage) {
-    // Use PMT type parameters
-    typeParameters = pmtTypeParametersToTypeParameters(
-      pmtMessage.typeParameters,
-      declaredMessageTypeNames,
-      pmtMessage.isWrapperValue
-    );
-  } else {
-    // Fallback to AST-based extraction (for non-PMT paths)
-    typeParameters = extractTypeParameters(
-      typeAlias.typeParameters,
-      declaredMessageTypeNames,
-      Boolean(wrapperInfo?.isValueWrapper)
-    );
-  }
+  const typeParameters: TypeParameter[] = pmtMessage
+    ? pmtTypeParametersToTypeParameters(
+        pmtMessage.typeParameters,
+        declaredMessageTypeNames,
+        pmtMessage.isWrapperValue
+      )
+    : extractTypeParameters(
+        typeAlias.typeParameters,
+        declaredMessageTypeNames,
+        Boolean(wrapperInfo?.isValueWrapper)
+      );
 
   // Create a set of type parameter names for validation
-  const typeParamNames = new Set(typeParameters.map((p) => p.name));
+  const typeParamNames = new Set(typeParameters.map(p => p.name));
 
   // Create a wrapper for assertSupportedType that includes type parameters
   const assertSupportedTypeWithGenerics = (
@@ -538,7 +545,7 @@ export function buildDeclarations(
       }];
     }
 
-    properties = pmtProps.map((prop) => {
+    properties = pmtProps.map(prop => {
       const descriptor = pmtPropertyToDescriptor(
         prop,
         declaredMessageTypeNames,
@@ -601,20 +608,20 @@ export function buildDeclarations(
       typeParameters
     );
   }
-  if (properties.some((prop) => prop.isMap)) {
+  if (properties.some(prop => prop.isMap)) {
     state.usesImmutableMap = true;
     state.usesEquals = true;
   }
-  if (properties.some((prop) => prop.isSet)) {
+  if (properties.some(prop => prop.isSet)) {
     state.usesImmutableSet = true;
   }
-  if (properties.some((prop) => prop.isArray)) {
+  if (properties.some(prop => prop.isArray)) {
     state.usesImmutableArray = true;
   }
   declaredMessageTypeNames.add(typeAlias.id.name);
 
   const generatedTypeNames = generatedTypes
-    .map((node) => 
+    .map(node => 
       t.isTSTypeAliasDeclaration(node) && t.isIdentifier(node.id)
         ? node.id.name
         : null
@@ -682,7 +689,7 @@ export function buildDeclarations(
 
   state.usesPropaneBase = true;
 
-  const generatedStatements: t.Statement[] = generatedTypes.map((alias) => {
+  const generatedStatements: t.Statement[] = generatedTypes.map(alias => {
     // Mark as implicit message so the visitor bypasses @message check
     (alias as t.TSTypeAliasDeclaration & {
       [IMPLICIT_MESSAGE]?: boolean;

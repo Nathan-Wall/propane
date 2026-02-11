@@ -10,6 +10,48 @@ const distDir = path.join(projectRoot, 'dist');
 
 const packages = ['runtime', 'types', 'pms-core', 'pms-server', 'pms-client', 'pms-client-compiler', 'tools/babel/messages', 'cli', 'react', 'postgres'];
 
+function rewriteDirectorySpecifier(specifier, fileDir) {
+  if (!specifier.startsWith('.')) return specifier;
+  if (path.extname(specifier)) return specifier;
+  const resolved = path.resolve(fileDir, specifier);
+  if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
+    return specifier;
+  }
+  const indexPath = path.join(resolved, 'index.js');
+  if (!fs.existsSync(indexPath)) {
+    return specifier;
+  }
+  return `${specifier.replace(/\/+$/, '')}/index.js`;
+}
+
+function rewriteDirectoryImportFile(filePath) {
+  let content = fs.readFileSync(filePath, 'utf8');
+  let changed = false;
+  const fileDir = path.dirname(filePath);
+
+  const replaceWith = (match, specifier) => {
+    const next = rewriteDirectorySpecifier(specifier, fileDir);
+    if (next !== specifier) {
+      changed = true;
+      return match.replace(specifier, next);
+    }
+    return match;
+  };
+
+  content = content.replaceAll(
+    /\b(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g,
+    replaceWith
+  );
+  content = content.replaceAll(
+    /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
+    replaceWith
+  );
+
+  if (changed) {
+    fs.writeFileSync(filePath, content);
+  }
+}
+
 // 0. Fix tsc-alias incorrect transformation of 'react' import
 // tsc-alias transforms 'react' to a relative path to @types/react, but at runtime
 // we need the actual 'react' package from node_modules
@@ -29,7 +71,7 @@ if (fs.existsSync(reactIndexPath)) {
 // but we need the bare 'postgres' specifier for proper ESM resolution
 const postgresDir = path.join(buildDir, 'postgres');
 if (fs.existsSync(postgresDir)) {
-  const fixPostgresImports = (dir) => {
+  const fixPostgresImports = dir => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
@@ -53,56 +95,14 @@ if (fs.existsSync(postgresDir)) {
 
 // 0c. Fix directory imports (e.g. ../common/assert -> ../common/assert/index.js)
 // Node ESM does not allow directory imports without an explicit file target.
-const fixDirectoryImports = (dir) => {
-  const rewriteSpecifier = (specifier, fileDir) => {
-    if (!specifier.startsWith('.')) return specifier;
-    if (path.extname(specifier)) return specifier;
-    const resolved = path.resolve(fileDir, specifier);
-    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) {
-      return specifier;
-    }
-    const indexPath = path.join(resolved, 'index.js');
-    if (!fs.existsSync(indexPath)) {
-      return specifier;
-    }
-    return `${specifier.replace(/\/+$/, '')}/index.js`;
-  };
-
-  const rewriteFile = (filePath) => {
-    let content = fs.readFileSync(filePath, 'utf8');
-    let changed = false;
-    const fileDir = path.dirname(filePath);
-
-    const replaceWith = (match, specifier) => {
-      const next = rewriteSpecifier(specifier, fileDir);
-      if (next !== specifier) {
-        changed = true;
-        return match.replace(specifier, next);
-      }
-      return match;
-    };
-
-    content = content.replaceAll(
-      /\b(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"]([^'"]+)['"]/g,
-      replaceWith
-    );
-    content = content.replaceAll(
-      /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,
-      replaceWith
-    );
-
-    if (changed) {
-      fs.writeFileSync(filePath, content);
-    }
-  };
-
-  const walk = (currentDir) => {
+const fixDirectoryImports = dir => {
+  const walk = currentDir => {
     for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
       const fullPath = path.join(currentDir, entry.name);
       if (entry.isDirectory()) {
         walk(fullPath);
       } else if (entry.name.endsWith('.js')) {
-        rewriteFile(fullPath);
+        rewriteDirectoryImportFile(fullPath);
       }
     }
   };

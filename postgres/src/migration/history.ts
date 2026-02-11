@@ -65,7 +65,7 @@ export class MigrationHistory {
     const result = await this.connection.execute<{ version: string }>(
       `SELECT version FROM ${this.qualifiedTableName} ORDER BY applied_at ASC`
     );
-    return result.map((row) => row.version);
+    return result.map(row => row.version);
   }
 
   /**
@@ -78,7 +78,7 @@ export class MigrationHistory {
       applied_at: Date;
     }>(`SELECT version, description, applied_at FROM ${this.qualifiedTableName} ORDER BY applied_at ASC`);
 
-    return result.map((row) => ({
+    return result.map(row => ({
       version: row.version,
       description: row.description,
       appliedAt: row.applied_at,

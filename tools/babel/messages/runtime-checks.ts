@@ -83,7 +83,7 @@ export function buildRuntimeTypeCheckExpression(
 
   if (t.isTSUnionType(typeNode)) {
     const checks = typeNode.types
-      .map((subType) =>
+      .map(subType =>
         buildRuntimeTypeCheckExpression(subType, valueId)
       )
       .filter(Boolean);
@@ -410,7 +410,7 @@ export function typeAllowsNull(typeNode: t.TSType | null): boolean {
   }
 
   if (t.isTSUnionType(typeNode)) {
-    return typeNode.types.some((subType) => typeAllowsNull(subType));
+    return typeNode.types.some(subType => typeAllowsNull(subType));
   }
 
   return false;
@@ -438,11 +438,14 @@ export function buildTypeLiteralCheckExpression(
     t.cloneNode(valueId),
     t.tsTypeReference(
       t.identifier('Record'),
-      t.tsTypeParameterInstantiation([t.tsStringKeyword(), t.tsUnknownKeyword()])
+      t.tsTypeParameterInstantiation([
+        t.tsStringKeyword(),
+        t.tsUnknownKeyword(),
+      ])
     )
   );
 
-  const propertyChecks = typeLiteral.members.map((member) => {
+  const propertyChecks = typeLiteral.members.map(member => {
     if (
       !t.isTSPropertySignature(member)
       || !member.typeAnnotation

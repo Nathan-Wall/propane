@@ -148,7 +148,10 @@ function generateCreateTable(
  * @param col - Column definition
  * @param isCompositePk - Whether the table has a composite primary key
  */
-function generateColumnDef(col: ColumnDefinition, isCompositePk = false): string {
+function generateColumnDef(
+  col: ColumnDefinition,
+  isCompositePk = false
+): string {
   const parts: string[] = [escapeIdentifier(col.name)];
 
   // Type (use SERIAL/BIGSERIAL for auto-increment)

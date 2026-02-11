@@ -130,7 +130,7 @@ function testArrayDeepUpdate() {
     }
     const nextUnsubscribe = (arr as unknown as Listenable)[SET_UPDATE_LISTENER](
       REACT_LISTENER_KEY,
-      (newArray) => {
+      newArray => {
         currentArray = newArray as ImmutableArray<TestMessage>;
         // Re-setup listener on new array (like usePropaneState does)
         setupListener(currentArray);

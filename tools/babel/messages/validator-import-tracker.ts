@@ -102,8 +102,8 @@ export function trackValidatorImport(
       const validators = registry.getByCategory('validator');
       const brands = registry.getByCategory('brand');
       const hasValidatorsOrBrands =
-        validators.some((r) => r.package === source) ||
-        brands.some((r) => r.package === source);
+        validators.some(r => r.package === source)
+        || brands.some(r => r.package === source);
 
       if (hasValidatorsOrBrands) {
         tracker.namespaceImports.set(specifier.local.name, source);
@@ -135,7 +135,7 @@ export function resolveValidatorReference(
     if (info) {
       const reg = registry.get(info.package, info.name);
       if (reg?.category === 'validator') {
-        return reg as ValidatorRegistration;
+        return reg;
       }
     }
   } else if (t.isTSQualifiedName(typeName)) {
@@ -147,7 +147,7 @@ export function resolveValidatorReference(
         const validatorName = typeName.right.name;
         const reg = registry.get(pkg, validatorName);
         if (reg?.category === 'validator') {
-          return reg as ValidatorRegistration;
+          return reg;
         }
       }
     }
@@ -179,7 +179,7 @@ export function resolveBrandReference(
     if (info) {
       const reg = registry.get(info.package, info.name);
       if (reg?.category === 'brand') {
-        return reg as BrandRegistration;
+        return reg;
       }
     }
   } else if (t.isTSQualifiedName(typeName)) {
@@ -191,7 +191,7 @@ export function resolveBrandReference(
         const brandName = typeName.right.name;
         const reg = registry.get(pkg, brandName);
         if (reg?.category === 'brand') {
-          return reg as BrandRegistration;
+          return reg;
         }
       }
     }
@@ -208,7 +208,11 @@ export function isValidatorReference(
   tracker: ValidatorImportTracker,
   registry: TypeRegistry | undefined
 ): boolean {
-  return resolveValidatorReference(typeRef.typeName, tracker, registry) !== null;
+  return resolveValidatorReference(
+    typeRef.typeName,
+    tracker,
+    registry
+  ) !== null;
 }
 
 /**

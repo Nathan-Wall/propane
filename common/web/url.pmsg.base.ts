@@ -20,7 +20,7 @@ export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
   }) {
     if (!props && ImmutableUrl$Base.EMPTY) return ImmutableUrl$Base.EMPTY;
     super(TYPE_TAG_ImmutableUrl$Base, "ImmutableUrl");
-    this.#href = (props ? props.href : "") as string;
+    this.#href = (props ? props.href : "");
     if (!props) ImmutableUrl$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableUrl.Data>[] {
@@ -38,20 +38,20 @@ export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
     const hrefValue = entries["1"] === undefined ? entries["href"] : entries["1"];
     if (hrefValue === undefined) throw new Error("Missing required property \"href\".");
     if (!(typeof hrefValue === "string")) throw new Error("Invalid value for property \"href\".");
-    props.href = hrefValue as string;
+    props.href = hrefValue;
     return props as ImmutableUrl.Data;
   }
   override toCompact(): string {
     return this.href;
   }
   static override fromCompact(...args: unknown[]) {
-    const maybeOptions = args[args.length - 1];
+    const maybeOptions = args.at(-1);
     const options = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? maybeOptions as {
       skipValidation: boolean;
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args.at(-2) : value;
     if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     return new (this as any)({
       href: resolvedValue
@@ -86,7 +86,7 @@ export class ImmutableUrl$Base extends Message<ImmutableUrl.Data> {
         throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
       }
     }
-    const payload = ensure.simpleObject(parsed) as DataObject;
+    const payload = ensure.simpleObject(parsed);
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -14,7 +14,7 @@ export const MaxDefinition: ValidatorDefinition = {
 
     if (type.kind === 'number') {
       if (typeof max === 'string' || typeof max === 'bigint') {
-        throw new Error('Max<number> requires a numeric bound.');
+        throw new TypeError('Max<number> requires a numeric bound.');
       }
       return { condition: `${valueExpr} <= ${max}` };
     }

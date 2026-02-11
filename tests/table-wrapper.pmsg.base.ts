@@ -98,11 +98,7 @@ export class User extends Message<User.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -346,11 +342,7 @@ export class Post extends Message<Post.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -378,11 +370,7 @@ export class Post extends Message<Post.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;

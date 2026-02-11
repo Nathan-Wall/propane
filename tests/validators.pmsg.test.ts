@@ -259,7 +259,7 @@ describe('BigintValidators', () => {
     const msg = new BigintValidators({
       positiveBigint: 1n as Positive<bigint>,
       minBigint: 0n as Min<bigint, 0n>,
-      maxBigint: 1000n as Max<bigint, 1000000n>,
+      maxBigint: 1000n as Max<bigint, 1_000_000n>,
       rangeBigint: 50n as Range<bigint, 0n, 100n>,
     });
     assert.strictEqual(msg.positiveBigint, 1n);
@@ -270,7 +270,7 @@ describe('BigintValidators', () => {
       () => new BigintValidators({
         positiveBigint: 0n as Positive<bigint>,
         minBigint: 0n as Min<bigint, 0n>,
-        maxBigint: 1000n as Max<bigint, 1000000n>,
+        maxBigint: 1000n as Max<bigint, 1_000_000n>,
         rangeBigint: 50n as Range<bigint, 0n, 100n>,
       }),
       ValidationError

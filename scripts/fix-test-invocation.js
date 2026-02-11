@@ -43,15 +43,10 @@ for (const file of testFiles) {
     lastImportEnd = importMatch.index + importMatch[0].length;
   }
 
-  if (lastImportEnd > 0) {
-    // Insert after last import
-    newContent = content.slice(0, lastImportEnd) +
-      "\nimport { test } from 'node:test';" +
-      content.slice(lastImportEnd);
-  } else {
-    // No imports, add at top
-    newContent = "import { test } from 'node:test';\n" + content;
-  }
+  // Insert after last import, or at top when no imports exist.
+  newContent = lastImportEnd > 0
+    ? `${content.slice(0, lastImportEnd)}\nimport { test } from 'node:test';${content.slice(lastImportEnd)}`
+    : `import { test } from 'node:test';\n${content}`;
 
   // Add test wrapper at the end
   newContent = newContent.trimEnd() + `\n\ntest('${funcName}', () => {\n  ${funcName}();\n});\n`;

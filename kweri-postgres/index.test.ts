@@ -10,7 +10,6 @@ import {
   raw,
   join,
   and,
-  ColumnRef,
 } from '@/kweri-core/index.js';
 
 describe('@kweri/postgres', () => {
@@ -59,7 +58,7 @@ describe('@kweri/postgres', () => {
       });
 
       it('should render bigint literal', () => {
-        const frag = literal(9007199254740993n);
+        const frag = literal(9_007_199_254_740_993n);
         assert.strictEqual(pg.render(frag), '9007199254740993');
       });
 
@@ -165,8 +164,8 @@ describe('@kweri/postgres', () => {
         });
 
         it('should escape backslashes', () => {
-          const frag = literal('path\\to\\file');
-          assert.strictEqual(pgEscape.render(frag), "E'path\\\\to\\\\file'");
+          const frag = literal(String.raw`path\to\file`);
+          assert.strictEqual(pgEscape.render(frag), String.raw`E'path\\to\\file'`);
         });
 
         it('should escape single quotes', () => {

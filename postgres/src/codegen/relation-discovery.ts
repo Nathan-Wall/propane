@@ -25,7 +25,7 @@ function fkColumnToMethodName(column: string): string {
   // Remove _id suffix
   const base = column.replace(/_id$/, '');
   // Convert snake_case to camelCase
-  const camel = base.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  const camel = base.replaceAll(/_([a-z])/g, (_, c: string) => c.toUpperCase());
   // Capitalize first letter and prefix with 'get'
   return `get${camel.charAt(0).toUpperCase()}${camel.slice(1)}`;
 }
@@ -56,7 +56,7 @@ function fkColumnToSuffix(column: string): string {
   // Convert snake_case to PascalCase
   const pascal = base
     .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join('');
   return `By${pascal}`;
 }
@@ -131,11 +131,11 @@ export function discoverHasManyRelations(
   // First pass: collect all FKs pointing to this table, grouped by source table
   const fksBySourceTable = new Map<
     string,
-    Array<{
+    {
       fk: ForeignKeyDefinition;
       sourceTable: TableDefinition;
       sourceTableName: string;
-    }>
+    }[]
   >();
 
   for (const [otherTableName, otherTable] of Object.entries(schema.tables)) {
@@ -192,7 +192,7 @@ export function discoverHasManyRelations(
   const selfTable = schema.tables[tableName];
   if (selfTable?.sourceType) {
     const selfFks = selfTable.foreignKeys.filter(
-      (fk) => fk.referencedTable === tableName
+      fk => fk.referencedTable === tableName
     );
     const needsDisambiguation = selfFks.length > 1;
 

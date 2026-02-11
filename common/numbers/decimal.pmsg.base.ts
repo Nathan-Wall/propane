@@ -22,9 +22,9 @@ export class Decimal$Base<P extends number, S extends number> extends Message<De
   }) {
     if (!props && Decimal$Base.EMPTY) return Decimal$Base.EMPTY;
     super(TYPE_TAG_Decimal$Base, "Decimal");
-    this.#mantissa = (props ? props.mantissa : 0n) as bigint;
-    this.#precision = (props ? props.precision : 0) as number;
-    this.#scale = (props ? props.scale : 0) as number;
+    this.#mantissa = (props ? props.mantissa : 0n);
+    this.#precision = (props ? props.precision : 0);
+    this.#scale = (props ? props.scale : 0);
     if (!props) Decimal$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<Decimal.Data<P, S>>[] {
@@ -50,15 +50,15 @@ export class Decimal$Base<P extends number, S extends number> extends Message<De
     const mantissaValue = entries["1"] === undefined ? entries["mantissa"] : entries["1"];
     if (mantissaValue === undefined) throw new Error("Missing required property \"mantissa\".");
     if (!(typeof mantissaValue === "bigint")) throw new Error("Invalid value for property \"mantissa\".");
-    props.mantissa = mantissaValue as bigint;
+    props.mantissa = mantissaValue;
     const precisionValue = entries["2"] === undefined ? entries["precision"] : entries["2"];
     if (precisionValue === undefined) throw new Error("Missing required property \"precision\".");
     if (!(typeof precisionValue === "number")) throw new Error("Invalid value for property \"precision\".");
-    props.precision = precisionValue as number;
+    props.precision = precisionValue;
     const scaleValue = entries["3"] === undefined ? entries["scale"] : entries["3"];
     if (scaleValue === undefined) throw new Error("Missing required property \"scale\".");
     if (!(typeof scaleValue === "number")) throw new Error("Invalid value for property \"scale\".");
-    props.scale = scaleValue as number;
+    props.scale = scaleValue;
     return props as Decimal.Data<P, S>;
   }
   static deserialize<T extends typeof Decimal$Base>(this: T, P: number, S: number, data: string, options?: {
@@ -87,7 +87,7 @@ export class Decimal$Base<P extends number, S extends number> extends Message<De
         throw new Error("Tagged message type mismatch: expected Decimal.");
       }
     }
-    const payload = ensure.simpleObject(parsed) as DataObject;
+    const payload = ensure.simpleObject(parsed);
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

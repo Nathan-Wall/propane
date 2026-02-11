@@ -1,7 +1,7 @@
 import type { Message, DataObject, AnyMessage } from '@/runtime/index.js';
 
 // Re-export AnyMessage from runtime for consumers
-export type { AnyMessage };
+
 
 /**
  * Endpoint type for .pmsg source files.
@@ -68,5 +68,10 @@ export type ResponseOf<T> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface MessageClass<T = any> {
   new (props?: T, options?: { skipValidation?: boolean }): AnyMessage;
-  deserialize(message: string, options?: { skipValidation?: boolean }): AnyMessage;
+  deserialize(
+    message: string,
+    options?: { skipValidation?: boolean }
+  ): AnyMessage;
 }
+
+export {type AnyMessage} from '@/runtime/index.js';

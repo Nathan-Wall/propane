@@ -570,11 +570,7 @@ export class ToJson extends Message<ToJson.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -610,11 +606,7 @@ export class ToJson extends Message<ToJson.Data> {
             throw new Error("Tagged message type mismatch: expected ToJson_Nested.");
           }
         } else {
-          if (ToJson_Nested.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ToJson_Nested(value as ToJson_Nested.Value, options);
-          }
+          result = ToJson_Nested.isInstance(value) ? value : new ToJson_Nested(value as ToJson_Nested.Value, options);
         }
       }
       return result;

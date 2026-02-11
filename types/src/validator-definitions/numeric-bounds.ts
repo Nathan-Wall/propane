@@ -12,7 +12,7 @@ function parseStrictDecimal(
   }
 
   let input = raw;
-  if (input[0] === '+' || input[0] === '-') {
+  if (input.startsWith('+') || input.startsWith('-')) {
     input = input.slice(1);
   }
 
@@ -31,7 +31,7 @@ function parseStrictDecimal(
     }
   }
 
-  if (!/^\d+$/.test(intPart) || (fracPart && !/^\d+$/.test(fracPart))) {
+  if (!/^\d+$/.test(intPart) || fracPart && !/^\d+$/.test(fracPart)) {
     throw new SyntaxError(`Invalid ${context} digits: ${raw}`);
   }
 
@@ -111,7 +111,7 @@ function validateRationalBound(value: string, context: string): void {
     }
   }
 
-  if (base[0] === '+' || base[0] === '-') {
+  if (base.startsWith('+') || base.startsWith('-')) {
     base = base.slice(1);
   }
   if (base.length === 0) {
@@ -129,9 +129,12 @@ function validateRationalBound(value: string, context: string): void {
     }
   }
 
-  const cleanedInt = intPart.replace(/[ _]/g, '');
-  const cleanedFrac = fracPart.replace(/[ _]/g, '');
-  if (!/^\d+$/.test(cleanedInt) || (cleanedFrac && !/^\d+$/.test(cleanedFrac))) {
+  const cleanedInt: string = intPart.replaceAll(/[ _]/g, '');
+  const cleanedFrac: string = fracPart.replaceAll(/[ _]/g, '');
+  const hasValidInt = /^\d+$/.test(cleanedInt);
+  const hasValidFrac =
+    cleanedFrac.length === 0 || /^\d+$/.test(cleanedFrac);
+  if (!hasValidInt || !hasValidFrac) {
     throw new SyntaxError(`Invalid rational bound in ${context}`);
   }
 }
@@ -175,7 +178,7 @@ export function formatNumericBound(
 
   if (type.kind === 'bigint') {
     if (!Number.isInteger(bound)) {
-      throw new Error(`Bigint bound must be an integer in ${context}.`);
+      throw new TypeError(`Bigint bound must be an integer in ${context}.`);
     }
     return `${bound}n`;
   }

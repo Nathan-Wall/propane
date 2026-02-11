@@ -14,7 +14,9 @@ type ImmutableArrayBufferLike = {
 
 type BufferLike = ArrayBuffer | ImmutableArrayBufferLike;
 
-function isImmutableArrayBufferLike(buf: BufferLike): buf is ImmutableArrayBufferLike {
+function isImmutableArrayBufferLike(
+  buf: BufferLike
+): buf is ImmutableArrayBufferLike {
   return typeof (buf as ImmutableArrayBufferLike).toArrayBuffer === 'function';
 }
 
@@ -67,7 +69,7 @@ export default function runArrayBufferTests() {
   });
 
   const serialized = message.serialize();
-  const expectedChunks = [chunkA, chunkB].map((chunk) => `B${toBase64(chunk)}`).join(',');
+  const expectedChunks = [chunkA, chunkB].map(chunk => `B${toBase64(chunk)}`).join(',');
   const expected = `:{42,B${toBase64(data)},B${toBase64(extra)},[${expectedChunks}]}`;
 
   assert(serialized === expected, 'ArrayBuffer should serialize using B<base64> tokens.');

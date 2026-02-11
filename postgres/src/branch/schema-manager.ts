@@ -189,7 +189,7 @@ export class SchemaManager {
       ORDER BY s.schema_name
     `);
 
-    return result.map((row) => ({
+    return result.map(row => ({
       schemaName: row.schema_name,
       branchName: row.schema_name, // Best guess - we don't store the original name
       tableCount: Number.parseInt(row.table_count, 10),
@@ -245,7 +245,7 @@ export class SchemaManager {
       'SHOW search_path'
     );
     const searchPath = result[0]?.search_path;
-    return searchPath ? searchPath.split(',').map((s) => s.trim()) : ['public'];
+    return searchPath ? searchPath.split(',').map(s => s.trim()) : ['public'];
   }
 
   /**

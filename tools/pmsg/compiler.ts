@@ -52,8 +52,7 @@ function generateReexportFile(
 ): string {
   const baseName = path.basename(sourcePath, '.pmsg');
   const relative = path.relative(rootDir, sourcePath).replaceAll('\\', '/');
-  const lines: string[] = [];
-  lines.push(`// Generated from ${relative}`);
+  const lines: string[] = [ `// Generated from ${relative}`];
 
   for (const typeName of messageTypes) {
     const extendInfo = extendedTypes[typeName];
@@ -126,7 +125,9 @@ export function compilePmsgFile(
     ast: options.ast,
   } as Parameters<typeof transformSync>[1];
   if (options.generatorOpts) {
-    (transformOptions as { generatorOpts?: Record<string, unknown> }).generatorOpts = options.generatorOpts;
+    (
+      transformOptions as { generatorOpts?: Record<string, unknown> }
+    ).generatorOpts = options.generatorOpts;
   }
 
   const result = transformSync(sourceCode, transformOptions);

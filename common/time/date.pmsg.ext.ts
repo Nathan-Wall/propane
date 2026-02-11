@@ -66,7 +66,7 @@ export class ImmutableDate extends ImmutableDate$Base {
     options?: { skipValidation?: boolean }
   ): ImmutableDate {
     if (typeof value !== 'string') {
-      throw new Error('ImmutableDate.fromCompact expects a string value.');
+      throw new TypeError('ImmutableDate.fromCompact expects a string value.');
     }
     return new ImmutableDate(value, options);
   }
@@ -131,7 +131,8 @@ function coerceEpochMs(
   input: ImmutableDateTypes.Value | Date | string | number
 ): number {
   if (ImmutableDate.isInstance(input)) {
-    return input.epochMs;
+    const immutableDateInput = input as ImmutableDate;
+    return immutableDateInput.epochMs;
   }
 
   if (input && typeof input === 'object') {

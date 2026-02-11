@@ -1,4 +1,4 @@
-export interface PropaneMessageInstance<Props> {
+export interface PropaneMessageInstance<unused_Props> {
   serialize(): string;
 }
 

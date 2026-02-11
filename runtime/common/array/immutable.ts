@@ -106,8 +106,14 @@ function isListenable(value: unknown): value is {
   );
 }
 
-function hasParentChainSetter(value: unknown): value is {
-  $setParentChain: (key: symbol, parent: ParentType, parentKey: unknown) => void;
+function hasParentChainSetter(
+  value: unknown
+): value is {
+  $setParentChain: (
+    key: symbol,
+    parent: ParentType,
+    parentKey: unknown
+  ) => void;
 } {
   return Boolean(
     value
@@ -138,7 +144,9 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
    * Returns an ImmutableArray from the input.
    * If the input is already an ImmutableArray, returns it as-is.
    */
-  static from<T>(input: ImmutableArray<T> | Iterable<T> | ArrayLike<T>): ImmutableArray<T> {
+  static from<T>(
+    input: ImmutableArray<T> | Iterable<T> | ArrayLike<T>
+  ): ImmutableArray<T> {
     return ImmutableArray.isInstance(input) ? input : new ImmutableArray(input);
   }
 
@@ -439,7 +447,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   [n: number]: T;
-  readonly [Symbol.unscopables]: { [K in keyof any[]]?: boolean } = {};
+  readonly [Symbol.unscopables]: { [K in keyof unknown[]]?: boolean } = {};
 
   at(index: number): T | undefined {
     return this.#items.at(index);
@@ -871,7 +879,7 @@ export class ImmutableArray<T> implements ReadonlyArray<T> {
   }
 
   toJSON(): unknown {
-    return this.#items.map((v) => normalizeForJson(v));
+    return this.#items.map(v => normalizeForJson(v));
   }
 
   #defineIndexProps() {

@@ -341,7 +341,7 @@ export class HttpTransport implements Transport {
   }
 
   async stop(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (this.server) {
         // Close all existing connections immediately to allow clean shutdown
         this.server.closeAllConnections();

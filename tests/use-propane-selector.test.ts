@@ -90,16 +90,19 @@ function simulateSelector<S extends object, R>(
   // Subscribe if state is listenable using hybrid approach
   const setupListener = (state: S) => {
     if (hasHybridListener(state)) {
-      const nextUnsubscribe = state[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
-        currentState = next as unknown as S;
-        setupListener(currentState);
-        const nextSelected = selector(currentState);
-        // Only trigger update if selected value changed (using structural equality)
-        if (!equals(selectedValue, nextSelected)) {
-          selectedValue = nextSelected;
-          updateCount++;
+      const nextUnsubscribe = state[SET_UPDATE_LISTENER](
+        REACT_LISTENER_KEY,
+        next => {
+          currentState = next as unknown as S;
+          setupListener(currentState);
+          const nextSelected = selector(currentState);
+          // Only trigger update if selected value changed (using structural equality)
+          if (!equals(selectedValue, nextSelected)) {
+            selectedValue = nextSelected;
+            updateCount++;
+          }
         }
-      });
+      );
       const previousUnsubscribe = currentUnsubscribe;
       currentUnsubscribe = nextUnsubscribe;
       previousUnsubscribe?.();
@@ -129,7 +132,7 @@ function testSelectorBasicSelection() {
   console.log('Testing basic selection...');
 
   const user = new UserState({ name: 'Alice', age: 30 });
-  const { getSelectedValue } = simulateSelector(user, (s) => s.name);
+  const { getSelectedValue } = simulateSelector(user, s => s.name);
 
   assert(getSelectedValue() === 'Alice', 'Selector should return the name');
   console.log('Basic selection passed.');
@@ -139,7 +142,7 @@ function testSelectorOnlyUpdatesOnChange() {
   console.log('Testing selector only updates on relevant changes...');
 
   const user = new UserState({ name: 'Alice', age: 30 });
-  const result = simulateSelector(user, (s) => s.name);
+  const result = simulateSelector(user, s => s.name);
   const { getSelectedValue, getUpdateCount, getCurrentState } = result;
 
   assert(getSelectedValue() === 'Alice', 'Initial name should be Alice');
@@ -192,7 +195,7 @@ function testSelectorComputedValues() {
   console.log('Testing computed selector values...');
 
   const user = new UserState({ name: 'Alice', age: 30 });
-  const result = simulateSelector(user, (s) => s.age >= 18);
+  const result = simulateSelector(user, s => s.age >= 18);
   const { getSelectedValue, getUpdateCount, getCurrentState } = result;
 
   assert(getSelectedValue() === true, 'Initial isAdult should be true');
@@ -223,7 +226,7 @@ function testSelectorWithNonListenable() {
   const plainState = { name: 'Alice', age: 30 };
   const { getSelectedValue, getUpdateCount } = simulateSelector(
     plainState,
-    (s) => s.name
+    s => s.name
   );
 
   assert(getSelectedValue() === 'Alice', 'Selector should work with plain objects');

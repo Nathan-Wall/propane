@@ -66,7 +66,7 @@ export class PmsServer {
         host: options.host ?? '0.0.0.0',
       });
 
-    await this.transport.start(async (request) => {
+    await this.transport.start(async request => {
       const requestId = generateRequestId();
       const context: HandlerContext = {
         requestId,

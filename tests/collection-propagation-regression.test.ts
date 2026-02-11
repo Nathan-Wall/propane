@@ -20,6 +20,35 @@ import type { ImmutableSet as ImmutableSetType } from '../runtime/common/set/imm
 import { test } from 'node:test';
 
 type Unsubscribe = () => void;
+type AnyMessage = Message<object>;
+type ArrayItemsInput =
+  CollectionRegressionItem[] | Iterable<CollectionRegressionItem>;
+type MapItemsInput =
+  Map<string, CollectionRegressionItem>
+  | Iterable<[string, CollectionRegressionItem]>;
+type CollisionMapItemsInput =
+  Map<unknown, CollectionRegressionItem>
+  | Iterable<[unknown, CollectionRegressionItem]>;
+type SetItemsInput =
+  Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>;
+type ParentChild =
+  Message<DataObject>
+  | ImmutableArrayType<unknown>
+  | ImmutableMapType<unknown, unknown>
+  | ImmutableSetType<unknown>;
+type SetUpdateListener = (
+  listenerKey: symbol,
+  cb: (next: AnyMessage) => void
+) => Unsubscribe;
+type Listenable = {
+  [SET_UPDATE_LISTENER]: SetUpdateListener;
+};
+type Propagator = {
+  [PROPAGATE_UPDATE]: (listenerKey: symbol, replacement: AnyMessage) => void;
+};
+type Retirable = {
+  [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
+};
 
 const ITEM_TAG = Symbol('CollectionRegressionItem');
 const ARRAY_ROOT_TAG = Symbol('CollectionRegressionArrayRoot');
@@ -57,7 +86,7 @@ class CollectionRegressionItem extends Message<{ value: string }> {
 }
 
 class ArrayRoot extends Message<{
-  items: CollectionRegressionItem[] | Iterable<CollectionRegressionItem>;
+  items: ArrayItemsInput;
   revision: number;
 }> {
   static readonly $typeId = 'tests/collection-propagation-regression#ArrayRoot';
@@ -66,10 +95,7 @@ class ArrayRoot extends Message<{
   #items: ImmutableArrayType<CollectionRegressionItem>;
   #revision: number;
 
-  constructor(props: {
-    items: CollectionRegressionItem[] | Iterable<CollectionRegressionItem>;
-    revision: number;
-  }) {
+  constructor(props: { items: ArrayItemsInput; revision: number }) {
     super(ARRAY_ROOT_TAG, 'ArrayRoot');
     this.#items = new ImmutableArray(props.items);
     this.#revision = props.revision;
@@ -80,7 +106,7 @@ class ArrayRoot extends Message<{
       {
         name: 'items' as const,
         fieldNumber: 1,
-        getValue: () => this.#items as CollectionRegressionItem[] | Iterable<CollectionRegressionItem>,
+        getValue: () => this.#items as ArrayItemsInput,
       },
       {
         name: 'revision' as const,
@@ -92,7 +118,7 @@ class ArrayRoot extends Message<{
 
   protected $fromEntries(entries: Record<string, unknown>) {
     return {
-      items: entries['items'] as CollectionRegressionItem[] | Iterable<CollectionRegressionItem>,
+      items: entries['items'] as ArrayItemsInput,
       revision: entries['revision'] as number,
     };
   }
@@ -101,7 +127,7 @@ class ArrayRoot extends Message<{
     switch (key) {
       case 'items':
         return new ArrayRoot({
-          items: child as CollectionRegressionItem[] | Iterable<CollectionRegressionItem>,
+          items: child as ArrayItemsInput,
           revision: this.#revision,
         }) as this;
       default:
@@ -112,10 +138,7 @@ class ArrayRoot extends Message<{
   override *[GET_MESSAGE_CHILDREN]() {
     yield ['items', this.#items] as unknown as [
       string,
-      Message<DataObject>
-      | ImmutableArrayType<unknown>
-      | ImmutableMapType<unknown, unknown>
-      | ImmutableSetType<unknown>,
+      ParentChild,
     ];
   }
 
@@ -129,7 +152,7 @@ class ArrayRoot extends Message<{
 }
 
 class MapRoot extends Message<{
-  items: Map<string, CollectionRegressionItem> | Iterable<[string, CollectionRegressionItem]>;
+  items: MapItemsInput;
   revision: number;
 }> {
   static readonly $typeId = 'tests/collection-propagation-regression#MapRoot';
@@ -138,10 +161,7 @@ class MapRoot extends Message<{
   #items: ImmutableMapType<string, CollectionRegressionItem>;
   #revision: number;
 
-  constructor(props: {
-    items: Map<string, CollectionRegressionItem> | Iterable<[string, CollectionRegressionItem]>;
-    revision: number;
-  }) {
+  constructor(props: { items: MapItemsInput; revision: number }) {
     super(MAP_ROOT_TAG, 'MapRoot');
     this.#items = new ImmutableMap(props.items);
     this.#revision = props.revision;
@@ -152,7 +172,7 @@ class MapRoot extends Message<{
       {
         name: 'items' as const,
         fieldNumber: 1,
-        getValue: () => this.#items as Map<string, CollectionRegressionItem> | Iterable<[string, CollectionRegressionItem]>,
+        getValue: () => this.#items as MapItemsInput,
       },
       {
         name: 'revision' as const,
@@ -164,7 +184,7 @@ class MapRoot extends Message<{
 
   protected $fromEntries(entries: Record<string, unknown>) {
     return {
-      items: entries['items'] as Map<string, CollectionRegressionItem> | Iterable<[string, CollectionRegressionItem]>,
+      items: entries['items'] as MapItemsInput,
       revision: entries['revision'] as number,
     };
   }
@@ -173,7 +193,7 @@ class MapRoot extends Message<{
     switch (key) {
       case 'items':
         return new MapRoot({
-          items: child as Map<string, CollectionRegressionItem> | Iterable<[string, CollectionRegressionItem]>,
+          items: child as MapItemsInput,
           revision: this.#revision,
         }) as this;
       default:
@@ -184,10 +204,7 @@ class MapRoot extends Message<{
   override *[GET_MESSAGE_CHILDREN]() {
     yield ['items', this.#items] as unknown as [
       string,
-      Message<DataObject>
-      | ImmutableArrayType<unknown>
-      | ImmutableMapType<unknown, unknown>
-      | ImmutableSetType<unknown>,
+      ParentChild,
     ];
   }
 
@@ -201,7 +218,7 @@ class MapRoot extends Message<{
 }
 
 class CollisionMapRoot extends Message<{
-  items: Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>;
+  items: CollisionMapItemsInput;
   revision: number;
 }> {
   static readonly $typeId = 'tests/collection-propagation-regression#CollisionMapRoot';
@@ -210,10 +227,7 @@ class CollisionMapRoot extends Message<{
   #items: ImmutableMapType<unknown, CollectionRegressionItem>;
   #revision: number;
 
-  constructor(props: {
-    items: Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>;
-    revision: number;
-  }) {
+  constructor(props: { items: CollisionMapItemsInput; revision: number }) {
     super(MAP_ROOT_TAG, 'CollisionMapRoot');
     this.#items = new ImmutableMap(props.items);
     this.#revision = props.revision;
@@ -224,7 +238,7 @@ class CollisionMapRoot extends Message<{
       {
         name: 'items' as const,
         fieldNumber: 1,
-        getValue: () => this.#items as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+        getValue: () => this.#items as CollisionMapItemsInput,
       },
       {
         name: 'revision' as const,
@@ -236,7 +250,7 @@ class CollisionMapRoot extends Message<{
 
   protected $fromEntries(entries: Record<string, unknown>) {
     return {
-      items: entries['items'] as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+      items: entries['items'] as CollisionMapItemsInput,
       revision: entries['revision'] as number,
     };
   }
@@ -245,7 +259,7 @@ class CollisionMapRoot extends Message<{
     switch (key) {
       case 'items':
         return new CollisionMapRoot({
-          items: child as Map<unknown, CollectionRegressionItem> | Iterable<[unknown, CollectionRegressionItem]>,
+          items: child as CollisionMapItemsInput,
           revision: this.#revision,
         }) as this;
       default:
@@ -256,10 +270,7 @@ class CollisionMapRoot extends Message<{
   override *[GET_MESSAGE_CHILDREN]() {
     yield ['items', this.#items] as unknown as [
       string,
-      Message<DataObject>
-      | ImmutableArrayType<unknown>
-      | ImmutableMapType<unknown, unknown>
-      | ImmutableSetType<unknown>,
+      ParentChild,
     ];
   }
 
@@ -273,7 +284,7 @@ class CollisionMapRoot extends Message<{
 }
 
 class SetRoot extends Message<{
-  items: Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>;
+  items: SetItemsInput;
   revision: number;
 }> {
   static readonly $typeId = 'tests/collection-propagation-regression#SetRoot';
@@ -282,10 +293,7 @@ class SetRoot extends Message<{
   #items: ImmutableSetType<CollectionRegressionItem>;
   #revision: number;
 
-  constructor(props: {
-    items: Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>;
-    revision: number;
-  }) {
+  constructor(props: { items: SetItemsInput; revision: number }) {
     super(SET_ROOT_TAG, 'SetRoot');
     this.#items = new ImmutableSet(props.items);
     this.#revision = props.revision;
@@ -296,7 +304,7 @@ class SetRoot extends Message<{
       {
         name: 'items' as const,
         fieldNumber: 1,
-        getValue: () => this.#items as Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>,
+        getValue: () => this.#items as SetItemsInput,
       },
       {
         name: 'revision' as const,
@@ -308,7 +316,7 @@ class SetRoot extends Message<{
 
   protected $fromEntries(entries: Record<string, unknown>) {
     return {
-      items: entries['items'] as Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>,
+      items: entries['items'] as SetItemsInput,
       revision: entries['revision'] as number,
     };
   }
@@ -317,7 +325,7 @@ class SetRoot extends Message<{
     switch (key) {
       case 'items':
         return new SetRoot({
-          items: child as Set<CollectionRegressionItem> | Iterable<CollectionRegressionItem>,
+          items: child as SetItemsInput,
           revision: this.#revision,
         }) as this;
       default:
@@ -328,10 +336,7 @@ class SetRoot extends Message<{
   override *[GET_MESSAGE_CHILDREN]() {
     yield ['items', this.#items] as unknown as [
       string,
-      Message<DataObject>
-      | ImmutableArrayType<unknown>
-      | ImmutableMapType<unknown, unknown>
-      | ImmutableSetType<unknown>,
+      ParentChild,
     ];
   }
 
@@ -344,14 +349,11 @@ class SetRoot extends Message<{
   }
 }
 
-function collectUpdates<T extends Message<any>>(state: T): Message<any>[] {
-  const updates: Message<any>[] = [];
-  type Listenable = {
-    [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  };
+function collectUpdates<T extends AnyMessage>(state: T): AnyMessage[] {
+  const updates: AnyMessage[] = [];
   (state as unknown as Listenable)[SET_UPDATE_LISTENER](
     REACT_LISTENER_KEY,
-    (next) => updates.push(next)
+    next => updates.push(next)
   );
   return updates;
 }
@@ -362,10 +364,8 @@ test('set update listener returns unsubscribe and stops updates after cleanup', 
     revision: 29,
   });
 
-  const updates: Message<any>[] = [];
-  const unsubscribe = (state as unknown as {
-    [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](Symbol('unsubscribe-test'), (next) => updates.push(next));
+  const updates: AnyMessage[] = [];
+  const unsubscribe = (state as unknown as Listenable)[SET_UPDATE_LISTENER](Symbol('unsubscribe-test'), next => updates.push(next));
 
   state.items.get(0)!.setValue('first');
   assert(updates.length === 1, `Expected 1 update before unsubscribe, got ${updates.length}`);
@@ -384,20 +384,22 @@ test('stale unsubscribe does not retire newer listener registration for same key
   });
 
   const key = Symbol('shared-key');
-  const updatesA: Message<any>[] = [];
-  const updatesB: Message<any>[] = [];
+  const updatesA: AnyMessage[] = [];
+  const updatesB: AnyMessage[] = [];
   let currentState = state;
 
-  const unsubscribeA = (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => updatesA.push(next));
+  const unsubscribeA = (state as unknown as Listenable)[SET_UPDATE_LISTENER](
+    key,
+    next => updatesA.push(next)
+  );
 
-  const unsubscribeB = (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => {
-    updatesB.push(next);
-    currentState = next as ArrayRoot;
-  });
+  const unsubscribeB = (state as unknown as Listenable)[SET_UPDATE_LISTENER](
+    key,
+    next => {
+      updatesB.push(next);
+      currentState = next as ArrayRoot;
+    }
+  );
 
   // Stale unsubscribe should not affect active registration for this key.
   unsubscribeA();
@@ -410,9 +412,7 @@ test('stale unsubscribe does not retire newer listener registration for same key
   currentState.items.get(0)!.setValue('second');
   assert(Number(updatesB.length) === 2, `Expected listener B to remain active after stale unsubscribe, got ${updatesB.length}`);
 
-  (currentState as unknown as {
-    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
-  })[RETIRE_UPDATE_LISTENER](key);
+  (currentState as unknown as Retirable)[RETIRE_UPDATE_LISTENER](key);
   currentState.items.get(0)!.setValue('third');
   assert(Number(updatesB.length) === 2, `Expected listener B updates to stop after unsubscribe, got ${updatesB.length}`);
 
@@ -429,9 +429,7 @@ test('retire update listener key stops callbacks on latest root after handoff', 
   let callbackCount = 0;
   let currentState = state;
 
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](key, next => {
     callbackCount += 1;
     currentState = next as ArrayRoot;
   });
@@ -439,9 +437,7 @@ test('retire update listener key stops callbacks on latest root after handoff', 
   currentState.items.get(0)!.setValue('first');
   assert(callbackCount === 1, `Expected callback after first mutation, got ${callbackCount}`);
 
-  (currentState as unknown as {
-    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
-  })[RETIRE_UPDATE_LISTENER](key);
+  (currentState as unknown as Retirable)[RETIRE_UPDATE_LISTENER](key);
 
   currentState.items.get(0)!.setValue('second');
   assert(callbackCount === 1, `Expected callbacks to stop after retiring key, got ${callbackCount}`);
@@ -459,9 +455,7 @@ test('stale ref for still-present child continues to update latest root', () => 
   let callbackCount = 0;
   let currentState = state;
 
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](key, next => {
     callbackCount += 1;
     currentState = next as ArrayRoot;
   });
@@ -488,15 +482,11 @@ test('key-specific handoff and retirement do not affect other active listener ke
   let callbacksA = 0;
   let callbacksB = 0;
 
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](keyA, () => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](keyA, () => {
     callbacksA += 1;
   });
 
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](keyB, () => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](keyB, () => {
     callbacksB += 1;
   });
 
@@ -505,9 +495,10 @@ test('key-specific handoff and retirement do not affect other active listener ke
     revision: 40,
   });
 
-  (state as unknown as {
-    [PROPAGATE_UPDATE]: (listenerKey: symbol, replacement: Message<any>) => void;
-  })[PROPAGATE_UPDATE](keyA, replacementForA as unknown as Message<any>);
+  (state as unknown as Propagator)[PROPAGATE_UPDATE](
+    keyA,
+    replacementForA as unknown as AnyMessage
+  );
 
   assert(Number(callbacksA) === 1, `Expected key A handoff to dispatch once, got ${callbacksA}`);
   assert(Number(callbacksB) === 0, `Key B should remain untouched by key A handoff, got ${callbacksB}`);
@@ -536,16 +527,12 @@ test('shared initial node with distinct keys remains isolated across roots', () 
   let currentA = rootA;
   let currentB = rootB;
 
-  (rootA as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](keyA, (next) => {
+  (rootA as unknown as Listenable)[SET_UPDATE_LISTENER](keyA, next => {
     callbacksA += 1;
     currentA = next as ArrayRoot;
   });
 
-  (rootB as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](keyB, (next) => {
+  (rootB as unknown as Listenable)[SET_UPDATE_LISTENER](keyB, next => {
     callbacksB += 1;
     currentB = next as ArrayRoot;
   });
@@ -563,9 +550,7 @@ test('shared initial node with distinct keys remains isolated across roots', () 
   assert(Number(callbacksA) === 1, `Root A should not receive root B isolated child updates, got ${callbacksA}`);
   assert(Number(callbacksB) === 3, `Root B should continue receiving isolated keyed updates, got ${callbacksB}`);
 
-  (currentA as unknown as {
-    [RETIRE_UPDATE_LISTENER]: (listenerKey: symbol) => void;
-  })[RETIRE_UPDATE_LISTENER](keyA);
+  (currentA as unknown as Retirable)[RETIRE_UPDATE_LISTENER](keyA);
 
   currentB.items.get(0)!.setValue('four-b-only');
   assert(Number(callbacksA) === 1, `Retired root A key should remain silent, got ${callbacksA}`);
@@ -581,9 +566,7 @@ test('root handoff binds replacement before callback dispatch', () => {
 
   let currentState = state;
   let callbackCount = 0;
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, (next) => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](key, next => {
     callbackCount += 1;
     currentState = next as ArrayRoot;
     if (callbackCount === 1) {
@@ -604,15 +587,14 @@ test('propagate update ignores no-op replacement and keeps listener active', () 
   });
   const key = Symbol('noop-replacement');
   let callbackCount = 0;
-  (state as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, () => {
+  (state as unknown as Listenable)[SET_UPDATE_LISTENER](key, () => {
     callbackCount += 1;
   });
 
-  (state as unknown as {
-    [PROPAGATE_UPDATE]: (listenerKey: symbol, replacement: Message<any>) => void;
-  })[PROPAGATE_UPDATE](key, state as unknown as Message<any>);
+  (state as unknown as Propagator)[PROPAGATE_UPDATE](
+    key,
+    state as unknown as AnyMessage
+  );
   const callbacksAfterNoop = callbackCount;
   assert(callbacksAfterNoop === 0, `No-op replacement should not dispatch callback, got ${callbacksAfterNoop}`);
 
@@ -625,9 +607,7 @@ test('parent-chain entry suppresses callback fallback when propagation cannot co
   const key = Symbol('parent-chain-fallback');
   let callbackCount = 0;
 
-  (item as unknown as {
-    [SET_UPDATE_LISTENER]: (listenerKey: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-  })[SET_UPDATE_LISTENER](key, () => {
+  (item as unknown as Listenable)[SET_UPDATE_LISTENER](key, () => {
     callbackCount += 1;
   });
 
@@ -846,7 +826,7 @@ test('set child message update bubbles to root once', () => {
   assert(next instanceof SetRoot, 'Set child update payload should be SetRoot');
   assert((next as SetRoot).revision === 17, 'Sibling fields should be preserved');
   assert(
-    [...(next as SetRoot).items].some((item) => item.value === 'after'),
+    [...(next as SetRoot).items].some(item => item.value === 'after'),
     'Nested set value update should be applied'
   );
 });
@@ -858,9 +838,10 @@ test('array listener setup should support nested collection children', () => {
 
   let thrown: unknown;
   try {
-    (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+    (state as unknown as Listenable)[SET_UPDATE_LISTENER](
+      REACT_LISTENER_KEY,
+      () => undefined
+    );
   } catch (error) {
     thrown = error;
   }
@@ -878,9 +859,10 @@ test('map listener setup should support nested collection children', () => {
 
   let thrown: unknown;
   try {
-    (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+    (state as unknown as Listenable)[SET_UPDATE_LISTENER](
+      REACT_LISTENER_KEY,
+      () => undefined
+    );
   } catch (error) {
     thrown = error;
   }
@@ -898,9 +880,10 @@ test('set listener setup should support nested collection children', () => {
 
   let thrown: unknown;
   try {
-    (state as unknown as {
-      [SET_UPDATE_LISTENER]: (key: symbol, cb: (next: Message<any>) => void) => Unsubscribe;
-    })[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, () => {});
+    (state as unknown as Listenable)[SET_UPDATE_LISTENER](
+      REACT_LISTENER_KEY,
+      () => undefined
+    );
   } catch (error) {
     thrown = error;
   }

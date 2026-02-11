@@ -249,14 +249,14 @@ export class PetOwner extends Message<PetOwner.Data> {
       if (!options?.skipValidation && true && !(Cat.isInstance(value) || Dog.isInstance(value))) throw new Error("Invalid value for property \"pet\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.pet)) : new Cat()) as Cat | Dog;
     this.#optionalPet = (props ? (value => {
       if (!options?.skipValidation && value !== undefined && !(Cat.isInstance(value) || Dog.isInstance(value))) throw new Error("Invalid value for property \"optionalPet\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.optionalPet)) : undefined) as Cat | Dog;
     if (!props) PetOwner.EMPTY = this;
@@ -383,10 +383,10 @@ export class PetOwner extends Message<PetOwner.Data> {
   }
   static validateAll(data: PetOwner.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

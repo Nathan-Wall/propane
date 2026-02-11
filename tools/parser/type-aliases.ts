@@ -50,9 +50,9 @@ export function normalizeTypeAliases(
       continue;
     }
 
-    const target = (config as TypeAliasConfig).target;
-    const kind = (config as TypeAliasConfig).kind;
-    const importFrom = (config as TypeAliasConfig).importFrom;
+    const target = config.target;
+    const kind = config.kind;
+    const importFrom = config.importFrom;
 
     if (typeof target !== 'string' || target.length === 0) {
       errors.push({

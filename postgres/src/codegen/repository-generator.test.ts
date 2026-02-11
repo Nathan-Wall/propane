@@ -18,7 +18,7 @@ const dummyLocation: SourceLocation = {
  */
 function createMessage(
   name: string,
-  properties: Array<{ name: string; fieldNumber?: number | null }> = []
+  properties: { name: string; fieldNumber?: number | null }[] = []
 ): PmtMessage {
   return {
     name,
@@ -47,7 +47,10 @@ function createMessage(
  */
 function createTable(
   tableName: string,
-  columns: Record<string, { type: string; isPrimaryKey?: boolean; nullable?: boolean }>
+  columns: Record<
+    string,
+    { type: string; isPrimaryKey?: boolean; nullable?: boolean }
+  >
 ): TableDefinition {
   const cols: Record<string, ColumnDefinition> = {};
   for (const [colName, col] of Object.entries(columns)) {
@@ -64,7 +67,10 @@ function createTable(
     name: tableName,
     columns: cols,
     primaryKey: Object.entries(columns)
-      .filter(([_, c]) => c.isPrimaryKey)
+      .filter(([unused_colName, c]) => {
+        void unused_colName;
+        return c.isPrimaryKey;
+      })
       .map(([name]) => name),
     indexes: [],
     foreignKeys: [],
@@ -280,9 +286,9 @@ describe('Repository Generator', () => {
 
       assert.strictEqual(result.repositories.length, 2);
 
-      const classNames = result.repositories.map(r => r.className);
-      assert.ok(classNames.includes('UserRepository'));
-      assert.ok(classNames.includes('PostRepository'));
+      const classNames = new Set(result.repositories.map(r => r.className));
+      assert.ok(classNames.has('UserRepository'));
+      assert.ok(classNames.has('PostRepository'));
     });
 
     it('should skip non-Table types', () => {
@@ -369,7 +375,11 @@ describe('Repository Generator', () => {
         users: createTable('users', { id: { type: 'BIGINT', isPrimaryKey: true } }),
       });
 
-      const result = generateRepositories(files, schema, { generateBarrel: false });
+      const result = generateRepositories(
+        files,
+        schema,
+        { generateBarrel: false }
+      );
 
       assert.strictEqual(result.barrelExport, undefined);
     });
@@ -454,7 +464,10 @@ describe('Repository Generator', () => {
       const props = Array.from({ length: 20 }, (_, i) => ({ name: `col${i}` }));
       const message = createMessage('BigTable', props);
 
-      const columns: Record<string, { type: string; isPrimaryKey?: boolean }> = {};
+      const columns: Record<
+        string,
+        { type: string; isPrimaryKey?: boolean }
+      > = {};
       for (let i = 0; i < 20; i++) {
         columns[`col${i}`] = { type: 'TEXT', isPrimaryKey: i === 0 };
       }
@@ -541,6 +554,7 @@ describe('Repository Generator', () => {
     /**
      * Helper to create a schema with foreign keys.
      */
+    // eslint-disable-next-line unicorn/consistent-function-scoping
     function createSchemaWithFk(): DatabaseSchema {
       return {
         schemaName: 'public',
@@ -700,11 +714,17 @@ describe('Repository Generator', () => {
       });
 
       // Should have a value import for Category (for instantiation in deserialize helper)
-      const categoryValueImports = (result.source.match(/import \{ Category \}/g) || []).length;
+      const categoryValueImports = (
+        result.source.match(/import \{ Category \}/g)
+        || []
+      ).length;
       assert.strictEqual(categoryValueImports, 1);
 
       // Should NOT have a type import (we use value import instead)
-      const categoryTypeImports = (result.source.match(/import type \{ Category \}/g) || []).length;
+      const categoryTypeImports = (
+        result.source.match(/import type \{ Category \}/g)
+        || []
+      ).length;
       assert.strictEqual(categoryTypeImports, 0);
 
       // Should have both getParent and getCategories
@@ -775,7 +795,10 @@ describe('Repository Generator', () => {
       assert.ok(result.source.includes('getEditor'));
 
       // Should only have one deserializeAsUser helper (not duplicated)
-      const deserializeCount = (result.source.match(/private deserializeAsUser/g) || []).length;
+      const deserializeCount = (
+        result.source.match(/private deserializeAsUser/g)
+        || []
+      ).length;
       assert.strictEqual(deserializeCount, 1);
     });
 
@@ -855,7 +878,7 @@ describe('Repository Generator', () => {
       assert.ok(result.source.includes('getPostsByReviewer'));
 
       // Should NOT have simple getPosts (would be ambiguous)
-      assert.ok(!result.source.match(/\bgetPosts\s*\(/));
+      assert.ok(!/\bgetPosts\s*\(/.test(result.source));
     });
   });
 });

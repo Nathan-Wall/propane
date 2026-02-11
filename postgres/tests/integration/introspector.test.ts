@@ -263,7 +263,7 @@ describe('Introspector Integration', { skip: !isDatabaseAvailable() }, () => {
       const table = schema.tables['composite_pk']!;
 
       assert.ok(table);
-      assert.deepStrictEqual(table.primaryKey.sort(), ['a', 'b']);
+      assert.deepStrictEqual(table.primaryKey.toSorted(), ['a', 'b']);
     } finally {
       await schemaPool.execute('DROP TABLE composite_pk');
     }
@@ -293,8 +293,8 @@ describe('Introspector Integration', { skip: !isDatabaseAvailable() }, () => {
 
       assert.strictEqual(child.foreignKeys.length, 1);
       const fk = child.foreignKeys[0]!;
-      assert.deepStrictEqual(fk.columns.sort(), ['parent_a', 'parent_b']);
-      assert.deepStrictEqual(fk.referencedColumns.sort(), ['a', 'b']);
+      assert.deepStrictEqual(fk.columns.toSorted(), ['parent_a', 'parent_b']);
+      assert.deepStrictEqual(fk.referencedColumns.toSorted(), ['a', 'b']);
     } finally {
       await schemaPool.execute('DROP TABLE child_composite');
       await schemaPool.execute('DROP TABLE parent_composite');

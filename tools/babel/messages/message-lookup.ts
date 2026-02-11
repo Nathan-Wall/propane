@@ -45,7 +45,7 @@ export function createMessageReferenceResolver(
     const name = typeName.name;
 
     const alias = resolveAliasConfigForName(name, aliases, typePath.scope);
-    if (alias && alias.kind === 'message' && !COLLECTION_ALIAS_TARGETS.has(alias.target)) {
+    if (alias?.kind === 'message' && !COLLECTION_ALIAS_TARGETS.has(alias.target)) {
       return alias.target;
     }
 

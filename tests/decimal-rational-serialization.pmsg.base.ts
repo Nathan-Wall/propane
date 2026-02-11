@@ -58,11 +58,7 @@ export class NumericPair extends Message<NumericPair.Data> {
             throw new Error("Tagged message type mismatch: expected Decimal.");
           }
         } else {
-          if (Decimal.isInstance(value)) {
-            result = value;
-          } else {
-            result = new Decimal(value as Decimal.Value<10, 2>, options);
-          }
+          result = Decimal.isInstance(value) ? value : new Decimal(value as Decimal.Value<10, 2>, options);
         }
       }
       return result;
@@ -91,11 +87,7 @@ export class NumericPair extends Message<NumericPair.Data> {
             throw new Error("Tagged message type mismatch: expected Rational.");
           }
         } else {
-          if (Rational.isInstance(value)) {
-            result = value;
-          } else {
-            result = new Rational(value as Rational.Value, options);
-          }
+          result = Rational.isInstance(value) ? value : new Rational(value as Rational.Value, options);
         }
       }
       return result;
@@ -212,7 +204,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
       if (!options?.skipValidation && true && !(Decimal.isInstance(value) || Rational.isInstance(value))) throw new Error("Invalid value for property \"value\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.value)) : undefined) as Decimal<10, 2> | Rational;
     if (!props) NumericUnion.EMPTY = this;
@@ -283,7 +275,7 @@ export class NumericUnion extends Message<NumericUnion.Data> {
   }
   static validateAll(data: NumericUnion.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

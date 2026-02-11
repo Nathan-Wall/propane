@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { createRequire } from 'node:module';
-import * as t from '@babel/types';
+import type * as t from '@babel/types';
 import type { NodePath } from '@babel/traverse';
 import { codeFrameColumns } from '@babel/code-frame';
 import { pathTransform, computeRelativePath } from './utils.js';
@@ -217,7 +217,11 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
 
   // Check if we can use the cached registry
   const cacheKey = JSON.stringify(typePaths);
-  if (cachedRegistry && cachedRegistryOptions && JSON.stringify(cachedRegistryOptions) === cacheKey) {
+  if (
+    cachedRegistry
+    && cachedRegistryOptions
+    && JSON.stringify(cachedRegistryOptions) === cacheKey
+  ) {
     return cachedRegistry;
   }
 
@@ -234,7 +238,7 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
     }
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const module = requireModule(typePath);
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (module.propaneTypes) {
@@ -244,9 +248,9 @@ function loadRegistry(options?: PropanePluginOptions): TypeRegistry {
     } catch (err) {
       // For custom type modules, throw an error
       throw new Error(
-        `Failed to load type registry from '${typePath}'.\n` +
-        `Ensure the module exports a 'propaneTypes' array and has a CommonJS entry point.\n` +
-        `Original error: ${err instanceof Error ? err.message : String(err)}`
+        `Failed to load type registry from '${typePath}'.\n`
+        + `Ensure the module exports a 'propaneTypes' array and has a CommonJS entry point.\n`
+        + `Original error: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }
@@ -274,7 +278,6 @@ const MAX_SUGGESTION_DISTANCE = 3;
  */
 const EXTEND_PATTERN = /(?:^|\s)@extend\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 const TYPE_ID_PATTERN = /(?:^|\s)@typeId\s*\(\s*['"]([^'"]+)['"]\s*\)/;
-const COMPACT_PATTERN = /(?:^|\s)@compact(?!\w)/;
 const COMPACT_TAG_PATTERN = /(?:^|\s)@compact\s*\(\s*['"]([^'"]+)['"]\s*\)/;
 
 /**
@@ -305,7 +308,7 @@ function findClosestDecorator(unknown: string): string | null {
 }
 
 function isValidCompactTag(tag: string): boolean {
-  return (tag.length === 1 && /[A-Za-z]/.test(tag)) || tag === '#';
+  return tag.length === 1 && /[A-Za-z]/.test(tag) || tag === '#';
 }
 
 /**
@@ -631,7 +634,9 @@ export default function propanePlugin() {
           state.extendedTypes = new Map();
           state.brandTracker = createBrandImportTracker();
           state.validatorTracker = createValidatorImportTracker();
-          state.typeAliases = normalizeTypeAliases(state.opts?.typeAliases).aliases;
+          state.typeAliases = normalizeTypeAliases(
+            state.opts?.typeAliases
+          ).aliases;
           state.aliasTargetsUsed = new Set<string>();
           state.getMessageReferenceName = createMessageReferenceResolver(
             declaredMessageTypeNames,
@@ -654,11 +659,11 @@ export default function propanePlugin() {
           );
 
           // Check for errors from the shared parser
-          const errors = diagnostics.filter((d) => d.severity === 'error');
+          const errors = diagnostics.filter(d => d.severity === 'error');
           if (errors.length > 0 && sourceCode) {
             // Format errors with code frames
             const formatted = errors
-              .map((e) => {
+              .map(e => {
                 const frame = codeFrameColumns(
                   sourceCode,
                   { start: e.location.start, end: e.location.end },
@@ -674,17 +679,17 @@ export default function propanePlugin() {
           // Store PMT for use in type alias visitors
           state.pmtFile = pmtFile;
           state.pmtMessages = new Map(
-            pmtFile.messages.map((m) => [m.name, m])
+            pmtFile.messages.map(m => [m.name, m])
           );
           state.messageTagsByName = new Map(
-            pmtFile.messages.map((m) => [m.name, m.compactTag ?? m.name])
+            pmtFile.messages.map(m => [m.name, m.compactTag ?? m.name])
           );
 
           const relative = filename ? pathTransform(filename) : 'unknown';
           const commentText = `Generated from ${relative}`;
 
           const existing = (path.node.leadingComments ?? []).some(
-            (comment) => comment.value.trim() === commentText
+            comment => comment.value.trim() === commentText
           );
 
           if (!existing) {
@@ -696,7 +701,7 @@ export default function propanePlugin() {
             ensureBaseImport(path, state);
           }
 
-          const messageTypes = state.pmtFile?.messages.map((m) => m.name) ?? [];
+          const messageTypes = state.pmtFile?.messages.map(m => m.name) ?? [];
           const extendedTypes: Record<string, ExtendInfo> = {};
           for (const [name, info] of state.extendedTypes) {
             extendedTypes[name] = info;
@@ -717,7 +722,7 @@ export default function propanePlugin() {
 
           const eslintComment = ` eslint-disable ${eslintDisables.join(',')}`;
           const hasEslintComment = (path.node.leadingComments ?? []).some(
-            (comment) => comment.value.includes('eslint-disable')
+            comment => comment.value.includes('eslint-disable')
           );
 
           if (!hasEslintComment) {
@@ -732,7 +737,11 @@ export default function propanePlugin() {
         // Track Brand imports for auto-namespace transformation
         trackBrandImport(path.node, state.brandTracker);
         // Track validator imports for type extraction
-        trackValidatorImport(path.node, state.validatorTracker, state.typeRegistry);
+        trackValidatorImport(
+          path.node,
+          state.validatorTracker,
+          state.typeRegistry
+        );
       },
       ExportNamedDeclaration(
         path: NodePath<t.ExportNamedDeclaration>,
@@ -759,7 +768,11 @@ export default function propanePlugin() {
         }
 
         // Register the type alias for reference tracking (even if not a message)
-        registerTypeAlias(declarationPath.node, declaredTypeNames, typeAliasDefinitions);
+        registerTypeAlias(
+          declarationPath.node,
+          declaredTypeNames,
+          typeAliasDefinitions
+        );
 
         // Check if this is a message type using PMT (parsed by shared parser in Program.enter)
         type ImplicitNode = t.TSTypeAliasDeclaration & {
@@ -769,7 +782,8 @@ export default function propanePlugin() {
           (declarationPath.node as ImplicitNode)[IMPLICIT_MESSAGE];
         const typeName = declarationPath.node.id.name;
         const pmtMessage = state.pmtMessages?.get(typeName);
-        const isMessage = isImplicitMessage || (pmtMessage?.isMessageType ?? false);
+        const isMessage = isImplicitMessage
+          || (pmtMessage?.isMessageType ?? false);
 
         // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
@@ -813,7 +827,8 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           typeAliasDefinitions,
-          getMessageReferenceName: state.getMessageReferenceName ?? getMessageReferenceName!,
+          getMessageReferenceName: state.getMessageReferenceName
+            ?? getMessageReferenceName!,
           extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,
@@ -852,7 +867,8 @@ export default function propanePlugin() {
         })[IMPLICIT_MESSAGE];
         const typeName = path.node.id.name;
         const pmtMessage = state.pmtMessages?.get(typeName);
-        const isMessage = isImplicitMessage || (pmtMessage?.isMessageType ?? false);
+        const isMessage = isImplicitMessage
+          || (pmtMessage?.isMessageType ?? false);
 
         // If not a message wrapper, skip transformation but still validate decorators
         // and apply Brand auto-namespace transformation
@@ -862,7 +878,8 @@ export default function propanePlugin() {
 
           // Apply Brand auto-namespace transformation for non-message types
           const brandResult = transformBrandInTypeAlias(
-            path, state.brandTracker
+            path,
+            state.brandTracker
           );
 
           if (brandResult.transformed) {
@@ -879,7 +896,12 @@ export default function propanePlugin() {
         }
 
         // Extract @extend decorator if present
-        const decoratorInfo = extractDecoratorInfo(path, path, true, state.opts);
+        const decoratorInfo = extractDecoratorInfo(
+          path,
+          path,
+          true,
+          state.opts
+        );
 
         // Track extended types for re-export generation
         if (decoratorInfo.extendInfo) {
@@ -892,7 +914,8 @@ export default function propanePlugin() {
           declaredTypeNames,
           declaredMessageTypeNames,
           typeAliasDefinitions,
-          getMessageReferenceName: state.getMessageReferenceName ?? getMessageReferenceName!,
+          getMessageReferenceName: state.getMessageReferenceName
+            ?? getMessageReferenceName!,
           extendInfo: decoratorInfo.extendInfo ?? undefined,
           brandTracker: state.brandTracker,
           pmtMessage,

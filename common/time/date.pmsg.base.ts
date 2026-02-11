@@ -20,7 +20,7 @@ export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
   }) {
     if (!props && ImmutableDate$Base.EMPTY) return ImmutableDate$Base.EMPTY;
     super(TYPE_TAG_ImmutableDate$Base, "ImmutableDate");
-    this.#epochMs = (props ? props.epochMs : 0) as number;
+    this.#epochMs = (props ? props.epochMs : 0);
     if (!props) ImmutableDate$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableDate.Data>[] {
@@ -38,7 +38,7 @@ export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
     const epochMsValue = entries["1"] === undefined ? entries["epochMs"] : entries["1"];
     if (epochMsValue === undefined) throw new Error("Missing required property \"epochMs\".");
     if (!(typeof epochMsValue === "number")) throw new Error("Invalid value for property \"epochMs\".");
-    props.epochMs = epochMsValue as number;
+    props.epochMs = epochMsValue;
     return props as ImmutableDate.Data;
   }
   static from(value: ImmutableDate.Value): ImmutableDate$Base {
@@ -70,7 +70,7 @@ export class ImmutableDate$Base extends Message<ImmutableDate.Data> {
         throw new Error("Tagged message type mismatch: expected ImmutableDate.");
       }
     }
-    const payload = ensure.simpleObject(parsed) as DataObject;
+    const payload = ensure.simpleObject(parsed);
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

@@ -93,13 +93,13 @@ describe('ImmutableArray', () => {
     const strs = new ImmutableArray(['apple', 'banana', 'cherry']);
 
     it('map() returns ImmutableArray with transformed values', () => {
-      const doubled = nums.map((n) => n * 2);
+      const doubled = nums.map(n => n * 2);
       assert.ok(ImmutableArray.isInstance(doubled));
       assert.deepStrictEqual([...doubled], [2, 4, 6, 8, 10]);
     });
 
     it('filter() returns ImmutableArray with filtered values', () => {
-      const evens = nums.filter((n) => n % 2 === 0);
+      const evens = nums.filter(n => n % 2 === 0);
       assert.ok(ImmutableArray.isInstance(evens));
       assert.deepStrictEqual([...evens], [2, 4]);
     });
@@ -111,31 +111,31 @@ describe('ImmutableArray', () => {
     });
 
     it('every() tests all elements', () => {
-      assert.ok(nums.every((n) => n > 0));
-      assert.ok(!nums.every((n) => n > 3));
+      assert.ok(nums.every(n => n > 0));
+      assert.ok(!nums.every(n => n > 3));
     });
 
     it('some() tests for any match', () => {
-      assert.ok(nums.some((n) => n > 4));
-      assert.ok(!nums.some((n) => n > 10));
+      assert.ok(nums.some(n => n > 4));
+      assert.ok(!nums.some(n => n > 10));
     });
 
     it('find() returns first match', () => {
-      assert.strictEqual(nums.find((n) => n > 3), 4);
-      assert.strictEqual(nums.find((n) => n > 10), undefined);
+      assert.strictEqual(nums.find(n => n > 3), 4);
+      assert.strictEqual(nums.find(n => n > 10), undefined);
     });
 
     it('findIndex() returns index of first match', () => {
-      assert.strictEqual(nums.findIndex((n) => n > 3), 3);
-      assert.strictEqual(nums.findIndex((n) => n > 10), -1);
+      assert.strictEqual(nums.findIndex(n => n > 3), 3);
+      assert.strictEqual(nums.findIndex(n => n > 10), -1);
     });
 
     it('findLast() returns last match', () => {
-      assert.strictEqual(nums.findLast((n) => n < 4), 3);
+      assert.strictEqual(nums.findLast(n => n < 4), 3);
     });
 
     it('findLastIndex() returns index of last match', () => {
-      assert.strictEqual(nums.findLastIndex((n) => n < 4), 2);
+      assert.strictEqual(nums.findLastIndex(n => n < 4), 2);
     });
 
     it('flat() flattens nested arrays', () => {
@@ -145,7 +145,7 @@ describe('ImmutableArray', () => {
     });
 
     it('flatMap() maps and flattens', () => {
-      const flatMapped = nums.flatMap((n) => [n, n * 10]);
+      const flatMapped = nums.flatMap(n => [n, n * 10]);
       assert.strictEqual(flatMapped.length, 10);
     });
 

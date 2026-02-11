@@ -155,11 +155,7 @@ export class OuterMessage extends Message<OuterMessage.Data> {
             throw new Error("Tagged message type mismatch: expected InnerMessage.");
           }
         } else {
-          if (InnerMessage.isInstance(value)) {
-            result = value;
-          } else {
-            result = new InnerMessage(value as InnerMessage.Value, options);
-          }
+          result = InnerMessage.isInstance(value) ? value : new InnerMessage(value as InnerMessage.Value, options);
         }
       }
       return result;

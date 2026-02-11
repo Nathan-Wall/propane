@@ -148,8 +148,8 @@ export function mapScalarType(scalarType: ScalarType, options?: {
 
     default:
       throw new Error(
-        `Unknown scalar type: ${String(scalarType)}. ` +
-        `Supported types: string, number, bigint, boolean, int32, decimal, Date, URL, ArrayBuffer, object, array, map, set, union`
+        `Unknown scalar type: ${String(scalarType)}. `
+        + `Supported types: string, number, bigint, boolean, int32, decimal, Date, URL, ArrayBuffer, object, array, map, set, union`
       );
   }
 }
@@ -337,7 +337,10 @@ export function analyzeUnionType(
 
   // Case: T | null | undefined - need JSONB to distinguish null from undefined
   if (hasNull && hasUndefined && otherTypes.length > 0) {
-    const { hasMessages, hasScalars } = classifyTypes(otherTypes, messageTypeNames);
+    const { hasMessages, hasScalars } = classifyTypes(
+      otherTypes,
+      messageTypeNames
+    );
     return {
       strategy: 'jsonb',
       hasNull,
@@ -351,7 +354,8 @@ export function analyzeUnionType(
   // Case: All literals (possibly + null or undefined, but not both)
   if (literals.length > 0 && otherTypes.every(t => t.kind === 'literal')) {
     const firstLiteral = otherTypes[0];
-    const isNumeric = firstLiteral?.kind === 'literal' && typeof firstLiteral.value === 'number';
+    const isNumeric = firstLiteral?.kind === 'literal'
+      && typeof firstLiteral.value === 'number';
     return {
       strategy: 'native',
       baseType: isNumeric ? 'int32' : 'string',
@@ -379,7 +383,10 @@ export function analyzeUnionType(
   }
 
   // Case: Multiple different types - need JSONB
-  const { hasMessages, hasScalars } = classifyTypes(otherTypes, messageTypeNames);
+  const { hasMessages, hasScalars } = classifyTypes(
+    otherTypes,
+    messageTypeNames
+  );
   return {
     strategy: 'jsonb',
     hasNull,

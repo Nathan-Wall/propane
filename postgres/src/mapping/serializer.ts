@@ -301,7 +301,7 @@ export function serializeUnionValue(
 
   // Check if value is a Propane message (has $typeName and serialize)
   if (isMessage(value)) {
-    const message = value as MessageLike;
+    const message = value;
     return {
       $t: 'message',
       $v: message.serialize({ includeTag: true }),
@@ -313,7 +313,8 @@ export function serializeUnionValue(
   const serializedValue = serializeScalarForJsonb(value);
 
   // If there's only one possible type (single scalar with null/undefined), skip $t
-  const needsTypeTag = unionAnalysis.unionMembers && unionAnalysis.unionMembers.length > 1;
+  const needsTypeTag = unionAnalysis.unionMembers
+    && unionAnalysis.unionMembers.length > 1;
   if (!needsTypeTag) {
     return { $v: serializedValue } satisfies JsonbUnionWrapper;
   }
@@ -346,7 +347,11 @@ export function deserializeUnionValue(
   if (unionAnalysis.strategy === 'native') {
     const result = deserializeValue(value, sqlType);
     // Convert null to undefined for T | undefined types
-    if (result === null && unionAnalysis.hasUndefined && !unionAnalysis.hasNull) {
+    if (
+      result === null
+      && unionAnalysis.hasUndefined
+      && !unionAnalysis.hasNull
+    ) {
       return undefined;
     }
     return result;
@@ -373,7 +378,7 @@ export function deserializeUnionValue(
   if ('$t' in obj && '$v' in obj) {
     // Validate $t is a string (could be corrupted data)
     if (typeof obj.$t !== 'string') {
-      throw new Error(
+      throw new TypeError(
         `Invalid union wrapper: $t must be a string, got ${typeof obj.$t}`
       );
     }
@@ -383,7 +388,7 @@ export function deserializeUnionValue(
     if (typeTag === 'message') {
       // Validate $v is a string for message type
       if (typeof obj.$v !== 'string') {
-        throw new Error(
+        throw new TypeError(
           `Invalid message union: $v must be a string, got ${typeof obj.$v}`
         );
       }
@@ -423,11 +428,11 @@ interface MessageLike {
  */
 function isMessage(value: unknown): value is MessageLike {
   return (
-    typeof value === 'object' &&
-    value !== null &&
-    '$typeName' in value &&
-    'serialize' in value &&
-    typeof (value as MessageLike).serialize === 'function'
+    typeof value === 'object'
+    && value !== null
+    && '$typeName' in value
+    && 'serialize' in value
+    && typeof (value as MessageLike).serialize === 'function'
   );
 }
 

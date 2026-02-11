@@ -22,7 +22,7 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     super(TYPE_TAG_ImmutableArrayBuffer$Base, "ImmutableArrayBuffer");
     this.#value = (props ? (typeof props === "object" && props !== null && "value" in props ? props as ImmutableArrayBuffer.Data : {
       value: props
-    }).value : undefined) as ArrayBuffer;
+    }).value : undefined)!;
     if (!props) ImmutableArrayBuffer$Base.EMPTY = this;
   }
   protected $getPropDescriptors(): MessagePropDescriptor<ImmutableArrayBuffer.Data>[] {
@@ -57,13 +57,13 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
     return compactValue;
   }
   static override fromCompact(...args: unknown[]) {
-    const maybeOptions = args[args.length - 1];
+    const maybeOptions = args.at(-1);
     const options = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? maybeOptions as {
       skipValidation: boolean;
     } : undefined;
     const valueIndex = typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions ? args.length - 2 : args.length - 1;
     const value = args[valueIndex];
-    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args[args.length - 2] : value;
+    const resolvedValue = value === undefined && !(typeof maybeOptions === "object" && maybeOptions !== null && "skipValidation" in maybeOptions) && args.length > 1 ? args.at(-2) : value;
     if (typeof resolvedValue !== "string") throw new Error("Compact message fromCompact expects a string value.");
     const deserializer = this.$deserialize;
     if (typeof deserializer !== "function") throw new Error("ImmutableArrayBuffer.$deserialize() is not implemented.");
@@ -101,7 +101,7 @@ export class ImmutableArrayBuffer$Base extends Message<ImmutableArrayBuffer.Data
         throw new Error("Tagged message type mismatch: expected ImmutableArrayBuffer.");
       }
     }
-    const payload = ensure.simpleObject(parsed) as DataObject;
+    const payload = ensure.simpleObject(parsed);
     const props = this.prototype.$fromEntries(payload, options);
     return new this(props, options) as InstanceType<T>;
   }

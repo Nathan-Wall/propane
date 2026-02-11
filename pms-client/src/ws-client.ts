@@ -169,7 +169,7 @@ export class PmwsClient {
         resolve();
       });
 
-      ws.addEventListener('message', (event) => {
+      ws.addEventListener('message', event => {
         // Handle both browser (event.data is string) and Node.js (event.data is Buffer)
         const data = (event as MessageEvent<unknown>).data;
         const message = typeof data === 'string' ? data : String(data);
@@ -180,7 +180,7 @@ export class PmwsClient {
         this.handleDisconnect();
       });
 
-      ws.addEventListener('error', (event) => {
+      ws.addEventListener('error', event => {
         if (!connected) {
           clearTimeout(connectTimer);
           const message = event && typeof event === 'object' && 'message' in event
@@ -326,7 +326,7 @@ export class PmwsClient {
           fromCompact?: (...args: unknown[]) => TResponse;
         };
         if (compactCtor.$compact === true && typeof compactCtor.fromCompact === 'function') {
-          return compactCtor.fromCompact(parsed.$data) as TResponse;
+          return compactCtor.fromCompact(parsed.$data);
         }
         throw new Error('Invalid compact tagged response payload.');
       }

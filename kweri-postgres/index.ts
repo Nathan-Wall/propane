@@ -2,8 +2,8 @@
  * @kweri/postgres - PostgreSQL adapter for SQL fragments
  */
 
+import type { SqlFragment } from '@/kweri-core/index.js';
 import {
-  SqlFragment,
   ColumnRef,
   TableRef,
   IdentifierRef,
@@ -72,7 +72,7 @@ export class PostgresAdapter {
     if (name.includes('\u0000')) {
       throw new Error('Identifier contains NUL byte');
     }
-    return `"${name.replace(/"/g, '""')}"`;
+    return `"${name.replaceAll('"', '""')}"`;
   }
 
   /**
@@ -81,10 +81,10 @@ export class PostgresAdapter {
    */
   quoteString(value: string): string {
     if (this.config.strings === 'escape') {
-      const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "''");
+      const escaped = value.replaceAll('\\', '\\\\').replaceAll('\'', "''");
       return `E'${escaped}'`;
     }
-    return `'${value.replace(/'/g, "''")}'`;
+    return `'${value.replaceAll('\'', "''")}'`;
   }
 
   /**
@@ -135,7 +135,7 @@ export class PostgresAdapter {
         : this.quoteIdentifier(part.name);
     }
     if (part instanceof IdentifierRef) return this.quoteIdentifier(part.name);
-    throw new Error(`Unknown part type: ${part}`);
+    throw new Error('Unknown part type');
   }
 
   /**
@@ -156,18 +156,26 @@ export class PostgresAdapter {
    */
   render(fragment: SqlFragment, handlers?: PartHandlers<string>): string {
     if (!handlers) {
-      return fragment.parts.map((part) => this.renderPart(part)).join('');
+      return fragment.parts.map(part => this.renderPart(part)).join('');
     }
 
     return fragment.parts
-      .map((part) => {
-        if (part instanceof ColumnRef && handlers.ColumnRef) return handlers.ColumnRef(part);
-        if (part instanceof TableRef && handlers.TableRef) return handlers.TableRef(part);
-        if (part instanceof IdentifierRef && handlers.IdentifierRef)
+      .map(part => {
+        if (part instanceof ColumnRef && handlers.ColumnRef) {
+          return handlers.ColumnRef(part);
+        }
+        if (part instanceof TableRef && handlers.TableRef) {
+          return handlers.TableRef(part);
+        }
+        if (part instanceof IdentifierRef && handlers.IdentifierRef) {
           return handlers.IdentifierRef(part);
-        if (part instanceof LiteralValue && handlers.LiteralValue)
+        }
+        if (part instanceof LiteralValue && handlers.LiteralValue) {
           return handlers.LiteralValue(part);
-        if (part instanceof RawSql && handlers.RawSql) return handlers.RawSql(part);
+        }
+        if (part instanceof RawSql && handlers.RawSql) {
+          return handlers.RawSql(part);
+        }
         return this.renderPart(part);
       })
       .join('');
@@ -188,7 +196,7 @@ export class PostgresAdapter {
     let paramIndex = 1;
 
     const text = fragment.parts
-      .map((part) => {
+      .map(part => {
         if (part instanceof LiteralValue) {
           values.push(part.value);
           return `$${paramIndex++}`;

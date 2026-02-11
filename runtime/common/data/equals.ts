@@ -51,7 +51,7 @@ export const equals: EqualsFn = (a, b): boolean => {
   if (isSetLike(a) && isSetLike(b)) {
     if (a.size !== b.size) return false;
     for (const val of a) {
-      if (![...b].some((entry) => equals(entry, val))) return false;
+      if (![...b].some(entry => equals(entry, val))) return false;
     }
     return true;
   }

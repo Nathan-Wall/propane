@@ -82,7 +82,7 @@ export function containsIntersection(node: t.TSType): boolean {
 
   // Check tuple types
   if (t.isTSTupleType(node)) {
-    return node.elementTypes.some((elem) => {
+    return node.elementTypes.some(elem => {
       if (t.isTSNamedTupleMember(elem)) {
         return containsIntersection(elem.elementType);
       }
@@ -113,7 +113,7 @@ export function containsIntersection(node: t.TSType): boolean {
 
   // Check function types
   if (t.isTSFunctionType(node) || t.isTSConstructorType(node)) {
-    const hasIntersectionInParams = node.parameters.some((param) => {
+    const hasIntersectionInParams = node.parameters.some(param => {
       if (
         t.isIdentifier(param)
         && param.typeAnnotation
@@ -131,7 +131,7 @@ export function containsIntersection(node: t.TSType): boolean {
 
   // Check object literal types
   if (t.isTSTypeLiteral(node)) {
-    return node.members.some((member) => {
+    return node.members.some(member => {
       if (
         t.isTSPropertySignature(member)
         && member.typeAnnotation

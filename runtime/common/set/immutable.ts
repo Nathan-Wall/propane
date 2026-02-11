@@ -50,8 +50,14 @@ function isListenable(value: unknown): value is {
   );
 }
 
-function hasParentChainSetter(value: unknown): value is {
-  $setParentChain: (key: symbol, parent: ParentType, parentKey: unknown) => void;
+function hasParentChainSetter(
+  value: unknown
+): value is {
+  $setParentChain: (
+    key: symbol,
+    parent: ParentType,
+    parentKey: unknown
+  ) => void;
 } {
   return Boolean(
     value
@@ -137,7 +143,9 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
    * Returns an ImmutableSet from the input.
    * If the input is already an ImmutableSet, returns it as-is.
    */
-  static from<T>(input: ImmutableSet<T> | ReadonlySet<T> | Iterable<T>): ImmutableSet<T> {
+  static from<T>(
+    input: ImmutableSet<T> | ReadonlySet<T> | Iterable<T>
+  ): ImmutableSet<T> {
     return ImmutableSet.isInstance(input) ? input : new ImmutableSet(input);
   }
 
@@ -176,7 +184,7 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
           this.#size += 1;
           continue;
         }
-        const exists = bucket.some((v) => equalValues(v, value));
+        const exists = bucket.some(v => equalValues(v, value));
         if (!exists) {
           bucket.push(value);
           this.#size += 1;
@@ -467,7 +475,7 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   has(value: T): boolean {
     const bucket = this.#buckets.get(hashValue(value));
     if (!bucket) return false;
-    return bucket.some((v) => equalValues(v, value));
+    return bucket.some(v => equalValues(v, value));
   }
 
   entries(): IterableIterator<[T, T]> {
@@ -536,6 +544,6 @@ export class ImmutableSet<T> implements ReadonlySet<T> {
   }
 
   toJSON(): unknown {
-    return [...this].map((v) => normalizeForJson(v));
+    return [...this].map(v => normalizeForJson(v));
   }
 }

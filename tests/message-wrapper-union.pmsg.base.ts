@@ -57,8 +57,7 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
     const valueValue = entries["1"] === undefined ? entries["value"] : entries["1"];
     if (valueValue === undefined) throw new Error("Missing required property \"value\".");
     let valueUnionValue: any = valueValue as any;
-    if (isTaggedMessageData(valueValue)) {
-      if (valueValue.$tag === "Flag") {
+    if (isTaggedMessageData(valueValue) && valueValue.$tag === "Flag") {
         if (typeof valueValue.$data === "string") {
           if (Flag.$compact === true) {
             valueUnionValue = Flag.fromCompact(Flag.$compactTag && valueValue.$data.startsWith(Flag.$compactTag) ? valueValue.$data.slice(Flag.$compactTag.length) : valueValue.$data, options);
@@ -69,16 +68,13 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
           valueUnionValue = new Flag(Flag.prototype.$fromEntries(valueValue.$data, options), options);
         }
       }
-    }
-    if (typeof valueValue === "string") {
-      if (Flag.$compactTag && valueValue.startsWith(Flag.$compactTag)) {
+    if (typeof valueValue === "string" && Flag.$compactTag && valueValue.startsWith(Flag.$compactTag)) {
         if (Flag.$compact === true) {
           valueUnionValue = Flag.fromCompact(Flag.$compactTag && valueValue.startsWith(Flag.$compactTag) ? valueValue.slice(Flag.$compactTag.length) : valueValue, options);
         } else {
           throw new Error("Invalid compact tagged value for property \"value\" (Flag).");
         }
       }
-    }
     if (!isTaggedMessageData(valueValue) && typeof valueValue === "object" && valueValue !== null) {
       let valueUnionValueMatched = false;
       if (!valueUnionValueMatched) {
@@ -103,7 +99,7 @@ export class WrapperUnion extends Message<WrapperUnion.Data> {
   }
   static validateAll(data: WrapperUnion.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

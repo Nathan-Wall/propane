@@ -7,13 +7,13 @@
 
 import type { PmtFile, PmtMessage, PmtProperty, PmtType } from '@/tools/parser/types.js';
 import type { DatabaseSchema, TableDefinition, IndexDefinition } from '../schema/types.js';
-import { SchemaBuilder, TableBuilder, ColumnBuilder } from '../schema/builder.js';
+import type { ColumnBuilder } from '../schema/builder.js';
+import { SchemaBuilder, TableBuilder } from '../schema/builder.js';
 import {
   mapScalarType,
   analyzeUnionType,
   generateUnionCheckConstraint,
   type ScalarType,
-  type UnionAnalysis,
 } from '../mapping/type-mapper.js';
 
 /**
@@ -191,8 +191,14 @@ function toScalarType(type: PmtType): ScalarType {
  *
  * @throws Error if precision or scale are out of PostgreSQL bounds
  */
-function extractDecimalOptions(type: PmtType): { precision?: number; scale?: number } {
-  if (type.kind === 'reference' && type.name === 'Decimal' && type.typeArguments.length >= 2) {
+function extractDecimalOptions(
+  type: PmtType
+): { precision?: number; scale?: number } {
+  if (
+    type.kind === 'reference'
+    && type.name === 'Decimal'
+    && type.typeArguments.length >= 2
+  ) {
     const precArg = type.typeArguments[0];
     const scaleArg = type.typeArguments[1];
 
@@ -238,8 +244,8 @@ function isNullable(type: PmtType): boolean {
  */
 function toSnakeCase(name: string): string {
   return name
-    .replace(/([a-z])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replaceAll(/([a-z])([A-Z])/g, '$1_$2')
+    .replaceAll(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
     .toLowerCase();
 }
 
@@ -335,7 +341,9 @@ function configureColumn(
   // - prop.optional is true (declared as optional via '?')
   // - union includes null (T | null)
   // - union includes undefined (T | undefined)
-  const nullable = prop.optional || unionAnalysis.hasNull || unionAnalysis.hasUndefined;
+  const nullable = prop.optional
+    || unionAnalysis.hasNull
+    || unionAnalysis.hasUndefined;
   if (nullable) {
     builder.nullable();
   } else {
@@ -357,7 +365,10 @@ function configureColumn(
   let checkConstraint: { name: string; expression: string } | undefined;
   if (unionAnalysis.literalValues && unionAnalysis.literalValues.length > 0) {
     const constraintName = `${tableName}_${columnName}_check`;
-    const expression = generateUnionCheckConstraint(columnName, unionAnalysis.literalValues.map(String));
+    const expression = generateUnionCheckConstraint(
+      columnName,
+      unionAnalysis.literalValues.map(String)
+    );
     checkConstraint = { name: constraintName, expression };
   }
 
@@ -466,7 +477,14 @@ function generateTable(
     // Regular column - configureColumn handles union analysis and CHECK constraints
     let checkConstraint: { name: string; expression: string } | undefined;
     tableBuilder.column(columnName, col => {
-      const result = configureColumn(col, prop, unwrapped, isCompositePk, msgTypeNames, tableName);
+      const result = configureColumn(
+        col,
+        prop,
+        unwrapped,
+        isCompositePk,
+        msgTypeNames,
+        tableName
+      );
       checkConstraint = result.checkConstraint;
     });
 
@@ -503,7 +521,9 @@ function generateTable(
 /**
  * Build a set of message type names from the type registry.
  */
-function buildMessageTypeNames(typeRegistry?: Map<string, PmtMessage>): Set<string> {
+function buildMessageTypeNames(
+  typeRegistry?: Map<string, PmtMessage>
+): Set<string> {
   const names = new Set<string>();
   if (typeRegistry) {
     for (const message of typeRegistry.values()) {
@@ -932,17 +952,10 @@ export function validateTableMessage(
     if (unwrapped.foreignKey && typeRegistry) {
       const refMessage = typeRegistry.get(unwrapped.foreignKey.referencedType);
       if (refMessage) {
-        if (!refMessage.isTableType) {
-          errors.push({
-            code: 'REFERENCES_NOT_TABLE',
-            message: `References<T> requires a Table type, got Message type: ${unwrapped.foreignKey.referencedType}`,
-            table: message.name,
-            field: prop.name,
-          });
-        } else {
+        if (refMessage.isTableType) {
           // Check if referenced table has composite PK
           const refPkInfo = findPrimaryKeyInfo(refMessage);
-          if (refPkInfo && refPkInfo.isComposite) {
+          if (refPkInfo?.isComposite) {
             errors.push({
               code: 'REFERENCES_COMPOSITE_PK',
               message: `Cannot use References<T> to reference table '${refMessage.name}' which has a composite primary key. Define separate FK columns instead.`,
@@ -950,6 +963,13 @@ export function validateTableMessage(
               field: prop.name,
             });
           }
+        } else {
+          errors.push({
+            code: 'REFERENCES_NOT_TABLE',
+            message: `References<T> requires a Table type, got Message type: ${unwrapped.foreignKey.referencedType}`,
+            table: message.name,
+            field: prop.name,
+          });
         }
       }
     }
@@ -1001,7 +1021,9 @@ export function validateTableMessage(
 
     // Validate explicit ordering (only if all explicit)
     if (withOrder.length === pkFields.length && withOrder.length > 0) {
-      const orders = withOrder.map(f => f.primaryKeyOrder!).sort((a, b) => a - b);
+      const orders = withOrder
+        .map(f => f.primaryKeyOrder!)
+        .toSorted((a, b) => a - b);
 
       // Must start with 1
       if (orders[0] !== 1) {

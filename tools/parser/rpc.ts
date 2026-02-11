@@ -36,7 +36,7 @@ export function isTransformableMessage(
 
   // Check if there are any error diagnostics for this message
   const messageErrors = file.diagnostics.filter(
-    (d) =>
+    d =>
       d.severity === 'error'
       && d.location.start.line >= message.location.start.line
       && d.location.end.line <= message.location.end.line
@@ -78,12 +78,12 @@ export function getEndpointInfo(
 
   // Find an import that maps this local name to Endpoint from @propane/pms-core
   // Also support internal paths like @/pms-core/src/index.js
-  const isEndpoint = file.imports.some((imp) => {
+  const isEndpoint = file.imports.some(imp => {
     if (imp.source !== PROPANE_CORE_MODULE && !imp.source.startsWith('@/pms-core')) {
       return false;
     }
     return imp.specifiers.some(
-      (spec) => spec.imported === ENDPOINT_TYPE_NAME && spec.local === localName
+      spec => spec.imported === ENDPOINT_TYPE_NAME && spec.local === localName
     );
   });
 

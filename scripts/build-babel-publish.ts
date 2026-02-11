@@ -33,9 +33,13 @@ const distDir = path.join(projectRoot, 'dist', 'babel-messages');
 function getPackageVersion(packagePath: string, fallback: string): string {
   const pkgPath = path.join(projectRoot, packagePath, 'package.json');
   try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as {
+      version?: unknown;
+    };
     const version = pkg.version;
-    return version && version !== '0.0.0' ? version : fallback;
+    return typeof version === 'string' && version !== '0.0.0'
+      ? version
+      : fallback;
   } catch {
     return fallback;
   }

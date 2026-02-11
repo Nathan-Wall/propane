@@ -196,7 +196,10 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   // Hybrid approach: create new OuterState with a child replaced
   public override [WITH_CHILD](
     key: string | number,
-    child: Message<DataObject> | ImmutableArray<unknown> | ImmutableMap<unknown, unknown> | ImmutableSet<unknown>
+    child: Message<DataObject>
+      | ImmutableArray<unknown>
+      | ImmutableMap<unknown, unknown>
+      | ImmutableSet<unknown>
   ): this {
     switch (key) {
       case 'inner':
@@ -257,7 +260,10 @@ class OuterState extends Message<{ counter: number; inner: InnerState }> {
   }
 
   // Hybrid approach: propagate update
-  public override [PROPAGATE_UPDATE](key: symbol, replacement: Message<DataObject>): void {
+  public override [PROPAGATE_UPDATE](
+    key: symbol,
+    replacement: Message<DataObject>
+  ): void {
     const chain = this.#parentChains.get(key);
 
     if (chain?.parent.deref()) {
@@ -334,12 +340,15 @@ function simulateUsePropaneState<S extends object>(initialState: S): {
   // Setup listener recursively using hybrid approach
   const setupListener = (root: S) => {
     if (hasHybridListener(root)) {
-      const unsubscribeNext = root[SET_UPDATE_LISTENER](REACT_LISTENER_KEY, (next) => {
+      const unsubscribeNext = root[SET_UPDATE_LISTENER](
+        REACT_LISTENER_KEY,
+        next => {
         const nextTyped = next as unknown as S;
         setupListener(nextTyped);
         currentState = nextTyped;
         renderCount++; // Simulates React re-render
-      });
+        }
+      );
       const previous = currentUnsubscribe;
       currentUnsubscribe = unsubscribeNext;
       previous?.();

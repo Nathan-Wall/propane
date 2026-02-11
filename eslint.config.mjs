@@ -205,13 +205,15 @@ export default defineConfig(
   // 9) Suppress "Unused eslint-disable directive" for generated propane files
   {
     name: 'overrides/generated-propane-files',
-    files: ['**/*.pmsg.ts'],
+    files: ['**/*.pmsg.ts', '**/*.pmsg.base.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
     linterOptions: {
       reportUnusedDisableDirectives: 'off',
     },
     rules: {
       // Generated code style constraints are relaxed.
       '@typescript-eslint/array-type': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'unicorn/prefer-spread': 'off',
       'max-len': 'off',

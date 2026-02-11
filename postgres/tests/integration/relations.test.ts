@@ -105,7 +105,7 @@ class UserRepository extends BaseRepository<User & Record<string, unknown>> {
       [entity.id],
       { id: 'INTEGER', title: 'TEXT', author_id: 'INTEGER', editor_id: 'INTEGER' }
     );
-    return rows.map((row) => this.deserializeAsPost(row));
+    return rows.map(row => this.deserializeAsPost(row));
   }
 
   /**
@@ -119,7 +119,7 @@ class UserRepository extends BaseRepository<User & Record<string, unknown>> {
       [entity.id],
       { id: 'INTEGER', title: 'TEXT', author_id: 'INTEGER', editor_id: 'INTEGER' }
     );
-    return rows.map((row) => this.deserializeAsPost(row));
+    return rows.map(row => this.deserializeAsPost(row));
   }
 
   private deserializeAsPost(row: Record<string, unknown>): Post {
@@ -235,7 +235,7 @@ class CategoryRepository extends BaseRepository<
       [entity.id],
       { id: 'INTEGER', name: 'TEXT', parent_id: 'INTEGER' }
     );
-    return rows.map((row) => this.deserializeAsCategory(row));
+    return rows.map(row => this.deserializeAsCategory(row));
   }
 
   private deserializeAsCategory(row: Record<string, unknown>): Category {
@@ -447,7 +447,7 @@ describe(
         const posts = await userRepo.getPostsByAuthor(alice);
 
         assert.strictEqual(posts.length, 3);
-        const titles = posts.map((p) => p.title).sort();
+        const titles = posts.map(p => p.title).toSorted();
         assert.deepStrictEqual(titles, ['Post 1', 'Post 2', 'Post 3']);
       });
 
@@ -590,7 +590,7 @@ describe(
         const children = await categoryRepo.getChildren(parent);
 
         assert.strictEqual(children.length, 3);
-        const names = children.map((c) => c.name).sort();
+        const names = children.map(c => c.name).toSorted();
         assert.deepStrictEqual(names, ['Laptops', 'Smartphones', 'Tablets']);
       });
 
@@ -666,7 +666,7 @@ describe(
           email: 'test@example.com',
         });
 
-        const post = await postRepo.create({
+        await postRepo.create({
           title: 'Test',
           authorId: user.id,
           editorId: null,

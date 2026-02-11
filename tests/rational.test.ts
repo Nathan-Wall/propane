@@ -10,7 +10,10 @@ describe('Rational construction', () => {
     const reduced = new Rational({ numerator: 2n, denominator: 4n });
     assert.strictEqual(reduced.toString(), '1/2');
 
-    const negativeDenominator = new Rational({ numerator: 2n, denominator: -4n });
+    const negativeDenominator = new Rational({
+      numerator: 2n,
+      denominator: -4n,
+    });
     assert.strictEqual(negativeDenominator.toString(), '-1/2');
 
     const doubleNegative = new Rational({ numerator: -2n, denominator: -4n });
@@ -61,5 +64,41 @@ describe('Rational value equality and canonical outputs', () => {
     assert.strictEqual(unreduced.serialize(), ':Q1/3');
     assert.strictEqual(unreduced.serialize({ includeTag: true }), ':Q1/3');
     assert.strictEqual(unreduced.hashCode(), reduced.hashCode());
+  });
+
+  it('supports cross-copy equality without private field access errors', () => {
+    const half = Rational.fromInts(1, 2);
+
+    class ForeignRational {
+      static readonly $typeId = Rational.$typeId;
+      static readonly $typeHash = Rational.$typeHash;
+      readonly [Symbol.for('propane:message')] = true;
+      readonly [Symbol.for(`propane:message:${Rational.$typeId}`)] = true;
+
+      #serialized: string;
+      #hash: number;
+
+      constructor(serialized: string, hash: number) {
+        this.#serialized = serialized;
+        this.#hash = hash;
+      }
+
+      serialize() {
+        return this.#serialized;
+      }
+
+      hashCode() {
+        return this.#hash;
+      }
+
+      equals() {
+        return false;
+      }
+    }
+
+    const foreign = new ForeignRational(half.serialize(), half.hashCode());
+
+    assert.doesNotThrow(() => half.equals(foreign));
+    assert.strictEqual(half.equals(foreign), true);
   });
 });

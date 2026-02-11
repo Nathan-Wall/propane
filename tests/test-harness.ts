@@ -163,7 +163,7 @@ function loadPropaneModule({
   const js = transpileTs(transformed, `${relative}.ts`);
   const dir = path.dirname(normalized);
 
-  const moduleExports = evaluateModule(js, (id) => {
+  const moduleExports = evaluateModule(js, id => {
     if (id === '@propane/runtime') {
       return runtimeExports;
     }

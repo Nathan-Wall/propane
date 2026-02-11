@@ -23,7 +23,7 @@ describe('bigint utils', () => {
     assert.strictEqual(countBigIntDigits(0n), 1);
     assert.strictEqual(countBigIntDigits(9n), 1);
     assert.strictEqual(countBigIntDigits(10n), 2);
-    assert.strictEqual(countBigIntDigits(12345n), 5);
+    assert.strictEqual(countBigIntDigits(12_345n), 5);
     assert.strictEqual(countBigIntDigits(-123n), 3);
   });
 });

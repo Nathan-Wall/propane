@@ -116,22 +116,22 @@ describe('generateSchema', () => {
     assert.strictEqual(schema.schemaName, 'public');
     assert.ok(schema.tables['users']);
 
-    const users = schema.tables['users']!;
+    const users = schema.tables['users'];
     assert.strictEqual(users.name, 'users');
     assert.strictEqual(users.sourceType, 'User');
 
     // Check columns
     assert.ok(users.columns['id']);
-    assert.strictEqual(users.columns['id']!.type, 'BIGSERIAL');
-    assert.strictEqual(users.columns['id']!.isPrimaryKey, true);
-    assert.strictEqual(users.columns['id']!.fieldNumber, 1);
+    assert.strictEqual(users.columns['id'].type, 'BIGSERIAL');
+    assert.strictEqual(users.columns['id'].isPrimaryKey, true);
+    assert.strictEqual(users.columns['id'].fieldNumber, 1);
 
     assert.ok(users.columns['email']);
-    assert.strictEqual(users.columns['email']!.type, 'TEXT');
-    assert.strictEqual(users.columns['email']!.isUnique, true);
+    assert.strictEqual(users.columns['email'].type, 'TEXT');
+    assert.strictEqual(users.columns['email'].isUnique, true);
 
     assert.ok(users.columns['name']);
-    assert.strictEqual(users.columns['name']!.type, 'TEXT');
+    assert.strictEqual(users.columns['name'].type, 'TEXT');
   });
 
   it('should convert camelCase to snake_case', () => {
@@ -426,14 +426,14 @@ describe('Normalize<T[]> child tables', () => {
 
     // Child table should exist (parent_table + column_name = users_tags)
     assert.ok(schema.tables['users_tags']);
-    const child = schema.tables['users_tags']!;
+    const child = schema.tables['users_tags'];
 
     assert.ok(child.columns['id']);
     assert.ok(child.columns['user_id']);
     assert.ok(child.columns['array_index']);
     assert.ok(child.columns['value']);
 
-    assert.strictEqual(child.columns['value']!.type, 'TEXT');
+    assert.strictEqual(child.columns['value'].type, 'TEXT');
     assert.strictEqual(child.foreignKeys.length, 1);
     assert.strictEqual(child.foreignKeys[0]!.referencedTable, 'users');
   });

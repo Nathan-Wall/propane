@@ -53,11 +53,7 @@ export class Unions_Metadata_Union1 extends Message<Unions_Metadata_Union1.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -185,11 +181,7 @@ export class Unions_Metadata_Union2 extends Message<Unions_Metadata_Union2.Data>
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -317,11 +309,7 @@ export class Unions_Items_Item_Union1 extends Message<Unions_Items_Item_Union1.D
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -449,11 +437,7 @@ export class Unions_Items_Item_Union2 extends Message<Unions_Items_Item_Union2.D
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -581,11 +565,7 @@ export class Unions_ItemSet_Item_Union1 extends Message<Unions_ItemSet_Item_Unio
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -713,11 +693,7 @@ export class Unions_ItemSet_Item_Union2 extends Message<Unions_ItemSet_Item_Unio
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -845,11 +821,7 @@ export class Unions_ItemMap_Value_Union1 extends Message<Unions_ItemMap_Value_Un
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -977,11 +949,7 @@ export class Unions_ItemMap_Value_Union2 extends Message<Unions_ItemMap_Value_Un
             throw new Error("Tagged message type mismatch: expected ImmutableDate.");
           }
         } else {
-          if (ImmutableDate.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableDate(value as ImmutableDate.Value, options);
-          }
+          result = ImmutableDate.isInstance(value) ? value : new ImmutableDate(value as ImmutableDate.Value, options);
         }
       }
       return result;
@@ -1086,7 +1054,7 @@ export class Unions extends Message<Unions.Data> {
       if (!options?.skipValidation && true && !(Unions_Metadata_Union1.isInstance(value) || Unions_Metadata_Union2.isInstance(value))) throw new Error("Invalid value for property \"metadata\".");
       return value;
     })((value => {
-      let result = value as any;
+      const result = value as any;
       return result;
     })(props.metadata)) : new Unions_Metadata_Union1()) as Unions_Metadata_Union1 | Unions_Metadata_Union2;
     this.#items = props ? (value => {
@@ -1342,7 +1310,7 @@ export class Unions extends Message<Unions.Data> {
   }
   static validateAll(data: Unions.Data): ValidationError[] {
     const errors = [] as ValidationError[];
-    try {} catch (e) {
+    try { /* noop */ } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     return errors;

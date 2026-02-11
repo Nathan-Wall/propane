@@ -94,7 +94,7 @@ function canonicalizeType(type: PmtType): CanonicalType {
 function canonicalizeTypeParameters(
   params: PmtTypeParameter[]
 ): CanonicalTypeParam[] {
-  return params.map((param) => [
+  return params.map(param => [
     param.name,
     param.constraint ? canonicalizeType(param.constraint) : null,
   ]);
@@ -110,7 +110,7 @@ export function computeMessageTypeHash(message: PmtMessage): string {
     ]
     : null;
 
-  const properties: CanonicalProperty[] = message.properties.map((prop) => [
+  const properties: CanonicalProperty[] = message.properties.map(prop => [
     prop.name,
     prop.fieldNumber,
     prop.optional,

@@ -91,11 +91,13 @@ export default function runDecimalRationalSerializationTests() {
   const pairExpandedA = NumericPair.deserialize(pairExpandedNumeric);
   const pairExpandedB = NumericPair.deserialize(pairExpandedNamed);
   assert(
-    Decimal.isInstance(pairExpandedA.amount) && Rational.isInstance(pairExpandedA.ratio),
+    Decimal.isInstance(pairExpandedA.amount)
+      && Rational.isInstance(pairExpandedA.ratio),
     'NumericPair numeric-key deserialize should coerce Decimal/Rational.'
   );
   assert(
-    Decimal.isInstance(pairExpandedB.amount) && Rational.isInstance(pairExpandedB.ratio),
+    Decimal.isInstance(pairExpandedB.amount)
+      && Rational.isInstance(pairExpandedB.ratio),
     'NumericPair named-key deserialize should coerce Decimal/Rational.'
   );
 
@@ -106,7 +108,9 @@ export default function runDecimalRationalSerializationTests() {
     unionDecimalSerialized === ':{#123.45}',
     `NumericUnion Decimal serialization mismatch: ${unionDecimalSerialized}`
   );
-  const unionDecimalRoundTrip = NumericUnion.deserialize(unionDecimalSerialized);
+  const unionDecimalRoundTrip = NumericUnion.deserialize(
+    unionDecimalSerialized
+  );
   assert(
     Decimal.isInstance(unionDecimalRoundTrip.value),
     'NumericUnion Decimal should deserialize as Decimal.'
@@ -118,7 +122,9 @@ export default function runDecimalRationalSerializationTests() {
     unionRationalSerialized === ':{Q1/3}',
     `NumericUnion Rational serialization mismatch: ${unionRationalSerialized}`
   );
-  const unionRationalRoundTrip = NumericUnion.deserialize(unionRationalSerialized);
+  const unionRationalRoundTrip = NumericUnion.deserialize(
+    unionRationalSerialized
+  );
   assert(
     Rational.isInstance(unionRationalRoundTrip.value),
     'NumericUnion Rational should deserialize as Rational.'

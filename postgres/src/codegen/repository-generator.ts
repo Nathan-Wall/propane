@@ -67,8 +67,8 @@ interface TableInfo {
  */
 function toKebabCase(str: string): string {
   return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+    .replaceAll(/([a-z])([A-Z])/g, '$1-$2')
+    .replaceAll(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
     .toLowerCase();
 }
 
@@ -92,7 +92,9 @@ function toRepositoryFilename(typeName: string): string {
  * Find the primary key column(s) for a table.
  * Returns string for single-column PK, string[] for composite PK, null if no PK.
  */
-function findPrimaryKeyColumns(table: TableDefinition): string | string[] | null {
+function findPrimaryKeyColumns(
+  table: TableDefinition
+): string | string[] | null {
   // First check the table.primaryKey array (most reliable source)
   if (table.primaryKey && table.primaryKey.length > 0) {
     if (table.primaryKey.length === 1) {
@@ -143,7 +145,7 @@ function buildColumnTypes(table: TableDefinition): Record<string, string> {
  * Convert snake_case to camelCase.
  */
 function toCamelCase(str: string): string {
-  return str.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+  return str.replaceAll(/_([a-z])/g, (_, c: string) => c.toUpperCase());
 }
 
 /**
@@ -152,8 +154,9 @@ function toCamelCase(str: string): string {
 function generateRelationMethods(
   info: TableInfo,
   schema: DatabaseSchema,
-  _options: RepositoryGeneratorOptions
+  unused_options: RepositoryGeneratorOptions
 ): { methods: string; imports: Set<string>; needsDeserializeValue: boolean } {
+  void unused_options;
   const relations = discoverRelations(schema, info.tableName);
   const imports = new Set<string>();
   const methods: string[] = [];
@@ -189,10 +192,10 @@ function generateBelongsToMethod(
 ): string {
   // Convert local columns to camelCase for entity access
   const localColumnsCamel = rel.localColumns.map(toCamelCase);
-  const valuesExpr = localColumnsCamel.map((c) => `entity.${c}`).join(', ');
+  const valuesExpr = localColumnsCamel.map(c => `entity.${c}`).join(', ');
 
   // Format target columns as array literal
-  const targetColsLiteral = rel.targetColumns.map((c) => `'${c}'`).join(', ');
+  const targetColsLiteral = rel.targetColumns.map(c => `'${c}'`).join(', ');
 
   // Format column types as object literal
   const columnTypesLiteral = JSON.stringify(targetColumnTypes);
@@ -223,10 +226,10 @@ function generateHasManyMethod(
 ): string {
   // Convert local columns to camelCase for entity access
   const localColumnsCamel = rel.localColumns.map(toCamelCase);
-  const valuesExpr = localColumnsCamel.map((c) => `entity.${c}`).join(', ');
+  const valuesExpr = localColumnsCamel.map(c => `entity.${c}`).join(', ');
 
   // Format target columns as array literal
-  const targetColsLiteral = rel.targetColumns.map((c) => `'${c}'`).join(', ');
+  const targetColsLiteral = rel.targetColumns.map(c => `'${c}'`).join(', ');
 
   // Format column types as object literal
   const columnTypesLiteral = JSON.stringify(targetColumnTypes);
@@ -269,7 +272,7 @@ function generateDeserializeHelpers(
     const columnTypes = buildColumnTypes(targetTable);
 
     // Generate property assignments
-    const assignments = columns.map((col) => {
+    const assignments = columns.map(col => {
       const camelKey = toCamelCase(col);
       const colType = columnTypes[col] ?? 'TEXT';
       return `      ${camelKey}: deserializeValue(row['${col}'], '${colType}'),`;
@@ -375,7 +378,7 @@ function generateRepositorySource(
     .join('\n');
 
   // Build columns array literal
-  const columnsLiteral = columns.map((c) => `'${c}'`).join(', ');
+  const columnsLiteral = columns.map(c => `'${c}'`).join(', ');
 
   // Generate warning comment if no primary key
   const pkWarning = primaryKey
@@ -391,7 +394,7 @@ function generateRepositorySource(
   if (primaryKey === null) {
     primaryKeyLiteral = "''";
   } else if (Array.isArray(primaryKey)) {
-    primaryKeyLiteral = `[${primaryKey.map((k) => `'${k}'`).join(', ')}]`;
+    primaryKeyLiteral = `[${primaryKey.map(k => `'${k}'`).join(', ')}]`;
   } else {
     primaryKeyLiteral = `'${primaryKey}'`;
   }
@@ -454,8 +457,8 @@ function toTableName(typeName: string): string {
   // First pluralize, then convert to snake_case
   const plural = pluralize(typeName);
   return plural
-    .replace(/([a-z])([A-Z])/g, '$1_$2')
-    .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
+    .replaceAll(/([a-z])([A-Z])/g, '$1_$2')
+    .replaceAll(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')
     .toLowerCase();
 }
 

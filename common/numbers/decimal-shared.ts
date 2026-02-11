@@ -87,7 +87,7 @@ const POW10_PRECOMPUTED: bigint[] = [];
 for (let i = 0; i <= PRECOMPUTED_LIMIT; i += 1) {
   POW10_PRECOMPUTED[i] = 10n ** BigInt(i);
 }
-const POW10_LAZY: Map<number, bigint> = new Map();
+const POW10_LAZY = new Map<number, bigint>();
 
 /**
  * Compute 10^k with caching.
@@ -132,14 +132,20 @@ export function scaleByPow10(
  * Validate precision and scale constraints.
  * Precision is total significant digits, scale is digits after the decimal point.
  */
-export function ensureValidPrecisionScale(precision: number, scale: number): void {
+export function ensureValidPrecisionScale(
+  precision: number,
+  scale: number
+): void {
   if (!Number.isInteger(precision)) {
     throw new RangeError(`Precision must be an integer, got ${precision}`);
   }
   if (!Number.isInteger(scale)) {
     throw new RangeError(`Scale must be an integer, got ${scale}`);
   }
-  if (precision < ABSOLUTE_MIN_PRECISION || precision > ABSOLUTE_MAX_PRECISION) {
+  if (
+    precision < ABSOLUTE_MIN_PRECISION
+    || precision > ABSOLUTE_MAX_PRECISION
+  ) {
     throw new RangeError(
       `Precision ${precision} out of range [${ABSOLUTE_MIN_PRECISION}, ${ABSOLUTE_MAX_PRECISION}]`
     );
@@ -213,11 +219,11 @@ export function bitLength(value: bigint): number {
   if (value === 0n) return 0;
   let n = value < 0n ? -value : value;
   let bits = 0;
-  while (n >= 0x10000000000000000n) {
+  while (n >= 0x1_00_00_00_00_00_00_00_00n) {
     n >>= 64n;
     bits += 64;
   }
-  while (n >= 0x100000000n) {
+  while (n >= 0x1_00_00_00_00n) {
     n >>= 32n;
     bits += 32;
   }
@@ -270,9 +276,9 @@ export class DecimalOverflowError extends RangeError {
   ) {
     const digits = options?.actualDigits;
     const message = options?.message ?? (
-      digits !== undefined
-        ? `Value has ${digits} digits, exceeds precision ${precision}`
-        : `Value exceeds precision ${precision}`
+      digits === undefined
+        ? `Value exceeds precision ${precision}`
+        : `Value has ${digits} digits, exceeds precision ${precision}`
     );
     super(message);
     this.precision = precision;
@@ -300,8 +306,8 @@ export class DecimalInexactError extends RangeError {
       sourceDescription?: string;
     }
   ) {
-    const message = options?.message ??
-      `Inexact result: rounding mode required for ${operation}`;
+    const message = options?.message
+      ?? `Inexact result: rounding mode required for ${operation}`;
     super(message);
     this.operation = operation;
     this.targetPrecision = options?.targetPrecision;
@@ -317,7 +323,7 @@ export class DecimalDivisionByZeroError extends RangeError {
   override readonly name = 'DecimalDivisionByZeroError';
   readonly operation: string;
 
-  constructor(operation: string = 'divide', message?: string) {
+  constructor(operation = 'divide', message?: string) {
     super(message ?? `Division by zero in ${operation}`);
     this.operation = operation;
   }
@@ -335,9 +341,9 @@ export class RationalOverflowError extends RangeError {
   constructor(numeratorBits: number, denominatorBits: number) {
     const maxBits = Math.max(numeratorBits, denominatorBits);
     super(
-      `Rational overflow: max component has ${maxBits} bits ` +
-      `(numerator: ${numeratorBits}, denominator: ${denominatorBits}), ` +
-      `exceeds limit ${HARD_CAP_BITS}`
+      `Rational overflow: max component has ${maxBits} bits `
+      + `(numerator: ${numeratorBits}, denominator: ${denominatorBits}), `
+      + `exceeds limit ${HARD_CAP_BITS}`
     );
     this.numeratorBits = numeratorBits;
     this.denominatorBits = denominatorBits;
@@ -348,7 +354,11 @@ export class RationalOverflowError extends RangeError {
 /**
  * Validate that a string input does not exceed a digit limit.
  */
-export function validateDigitLength(input: string, max: number, context: string): void {
+export function validateDigitLength(
+  input: string,
+  max: number,
+  context: string
+): void {
   const digitCount = countDigits(input);
   if (digitCount > max) {
     throw new RangeError(
@@ -361,22 +371,26 @@ export function validateDigitLength(input: string, max: number, context: string)
  * Count ASCII digits in a string (0-9 only).
  */
 export function countDigits(input: string): number {
-  return input.replace(/[^0-9]/g, '').length;
+  return input.replaceAll(/[^0-9]/g, '').length;
 }
 
 /**
  * Count decimal digits in a bigint.
  */
 export function countBigIntDigits(value: bigint): number {
-  let n = value < 0n ? -value : value;
+  const n = value < 0n ? -value : value;
   if (n === 0n) return 1;
   return n.toString().length;
 }
 
-function normalizeDigits(part: string, allowGrouping: boolean, context: string): string {
+function normalizeDigits(
+  part: string,
+  allowGrouping: boolean,
+  context: string
+): string {
   if (!part) return '';
   if (allowGrouping) {
-    const cleaned = part.replace(/[ _]/g, '');
+    const cleaned = part.replaceAll(/[ _]/g, '');
     if (!/^[0-9]+$/.test(cleaned)) {
       throw new SyntaxError(`Invalid ${context} digits: ${part}`);
     }
@@ -401,7 +415,9 @@ export function parseDecimalInput(
   const allowExponent = options.allowExponent ?? true;
   const allowGrouping = options.allowGrouping ?? true;
   const allowWhitespace = options.allowWhitespace ?? true;
-  const allowPositiveSign = options.allowPositiveSign ?? options.allowPlusSign ?? true;
+  const allowPositiveSign = options.allowPositiveSign
+    ?? options.allowPlusSign
+    ?? true;
   const allowLeadingZeros = options.allowLeadingZeros ?? true;
 
   let input = raw;
@@ -425,7 +441,11 @@ export function parseDecimalInput(
     throw new SyntaxError(`Invalid ${context} format: non-finite value`);
   }
 
-  validateDigitLength(input, ABSOLUTE_MAX_PRECISION + ABSOLUTE_MAX_SCALE + 2, context);
+  validateDigitLength(
+    input,
+    ABSOLUTE_MAX_PRECISION + ABSOLUTE_MAX_SCALE + 2,
+    context
+  );
 
   let exponent = 0;
   const expIndex = input.search(/e|E/);
@@ -451,8 +471,8 @@ export function parseDecimalInput(
   }
 
   let sign = 1n;
-  if (input[0] === '+' || input[0] === '-') {
-    if (input[0] === '+') {
+  if (input.startsWith('+') || input.startsWith('-')) {
+    if (input.startsWith('+')) {
       if (!allowPositiveSign) {
         throw new SyntaxError(`Invalid ${context} format: '+' not allowed`);
       }
@@ -508,7 +528,7 @@ export function roundBigInt(
 
   const absRemainder = remainder < 0n ? -remainder : remainder;
   const absDenominator = denominator < 0n ? -denominator : denominator;
-  const isNegative = (numerator < 0n) !== (denominator < 0n);
+  const isNegative = numerator < 0n !== denominator < 0n;
   const isExactlyHalf = absRemainder * 2n === absDenominator;
   const isMoreThanHalf = absRemainder * 2n > absDenominator;
 
@@ -541,18 +561,10 @@ export function roundBigInt(
       }
       break;
     case RoundingMode.HALF_CEIL:
-      if (isExactlyHalf) {
-        roundUp = !isNegative;
-      } else {
-        roundUp = isMoreThanHalf;
-      }
+      roundUp = isExactlyHalf ? !isNegative : isMoreThanHalf;
       break;
     case RoundingMode.HALF_FLOOR:
-      if (isExactlyHalf) {
-        roundUp = isNegative;
-      } else {
-        roundUp = isMoreThanHalf;
-      }
+      roundUp = isExactlyHalf ? isNegative : isMoreThanHalf;
       break;
   }
 
@@ -571,7 +583,7 @@ export function hashBigInt(value: bigint): number {
   const isNegative = n < 0n;
   if (isNegative) n = -n;
   while (n > 0n) {
-    hash = ((hash * 31) + Number(n & 0xffffffffn)) | 0;
+    hash = hash * 31 + Number(n & 0xff_ff_ff_ffn) | 0;
     n >>= 32n;
   }
   return isNegative ? ~hash : hash;
@@ -581,5 +593,5 @@ export function hashBigInt(value: bigint): number {
  * Combine two 32-bit hashes using a 31x multiplier.
  */
 export function hashCombine(hash: number, value: number): number {
-  return ((hash * 31) + value) | 0;
+  return hash * 31 + value | 0;
 }

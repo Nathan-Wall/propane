@@ -984,21 +984,15 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
     if (!(data.requiredPositive > 0)) {
       throw new ValidationError("requiredPositive", "must be positive", data.requiredPositive, "POSITIVE");
     }
-    if (data.optionalPositive != null) {
-      if (!(data.optionalPositive > 0)) {
+    if (data.optionalPositive != null && !(data.optionalPositive > 0)) {
         throw new ValidationError("optionalPositive", "must be positive", data.optionalPositive, "POSITIVE");
       }
-    }
-    if (data.nullablePositive != null) {
-      if (!(data.nullablePositive > 0)) {
+    if (data.nullablePositive != null && !(data.nullablePositive > 0)) {
         throw new ValidationError("nullablePositive", "must be positive", data.nullablePositive, "POSITIVE");
       }
-    }
-    if (data.optionalNullablePositive != null) {
-      if (!(data.optionalNullablePositive > 0)) {
+    if (data.optionalNullablePositive != null && !(data.optionalNullablePositive > 0)) {
         throw new ValidationError("optionalNullablePositive", "must be positive", data.optionalNullablePositive, "POSITIVE");
       }
-    }
   }
   static validateAll(data: OptionalValidators.Data): ValidationError[] {
     const errors = [] as ValidationError[];
@@ -1010,29 +1004,23 @@ export class OptionalValidators extends Message<OptionalValidators.Data> {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     try {
-      if (data.optionalPositive != null) {
-        if (!(data.optionalPositive > 0)) {
+      if (data.optionalPositive != null && !(data.optionalPositive > 0)) {
           throw new ValidationError("optionalPositive", "must be positive", data.optionalPositive, "POSITIVE");
         }
-      }
     } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     try {
-      if (data.nullablePositive != null) {
-        if (!(data.nullablePositive > 0)) {
+      if (data.nullablePositive != null && !(data.nullablePositive > 0)) {
           throw new ValidationError("nullablePositive", "must be positive", data.nullablePositive, "POSITIVE");
         }
-      }
     } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     try {
-      if (data.optionalNullablePositive != null) {
-        if (!(data.optionalNullablePositive > 0)) {
+      if (data.optionalNullablePositive != null && !(data.optionalNullablePositive > 0)) {
           throw new ValidationError("optionalNullablePositive", "must be positive", data.optionalNullablePositive, "POSITIVE");
         }
-      }
     } catch (e) {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
@@ -1326,7 +1314,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
   static EMPTY: BigintValidators;
   #positiveBigint!: Positive<bigint>;
   #minBigint!: Min<bigint, 0n>;
-  #maxBigint!: Max<bigint, 1000000n>;
+  #maxBigint!: Max<bigint, 1_000_000n>;
   #rangeBigint!: Range<bigint, 0n, 100n>;
   constructor(props?: BigintValidators.Value, options?: {
     skipValidation?: boolean;
@@ -1338,7 +1326,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     }
     this.#positiveBigint = (props ? props.positiveBigint : undefined) as Positive<bigint>;
     this.#minBigint = (props ? props.minBigint : undefined) as Min<bigint, 0n>;
-    this.#maxBigint = (props ? props.maxBigint : undefined) as Max<bigint, 1000000n>;
+    this.#maxBigint = (props ? props.maxBigint : undefined) as Max<bigint, 1_000_000n>;
     this.#rangeBigint = (props ? props.rangeBigint : undefined) as Range<bigint, 0n, 100n>;
     if (!props) BigintValidators.EMPTY = this;
   }
@@ -1354,7 +1342,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     }, {
       name: "maxBigint",
       fieldNumber: 3,
-      getValue: () => this.#maxBigint as Max<bigint, 1000000n>
+      getValue: () => this.#maxBigint as Max<bigint, 1_000_000n>
     }, {
       name: "rangeBigint",
       fieldNumber: 4,
@@ -1374,7 +1362,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     props.minBigint = minBigintValue as Min<bigint, 0n>;
     const maxBigintValue = entries["3"] === undefined ? entries["maxBigint"] : entries["3"];
     if (maxBigintValue === undefined) throw new Error("Missing required property \"maxBigint\".");
-    props.maxBigint = maxBigintValue as Max<bigint, 1000000n>;
+    props.maxBigint = maxBigintValue as Max<bigint, 1_000_000n>;
     const rangeBigintValue = entries["4"] === undefined ? entries["rangeBigint"] : entries["4"];
     if (rangeBigintValue === undefined) throw new Error("Missing required property \"rangeBigint\".");
     props.rangeBigint = rangeBigintValue as Range<bigint, 0n, 100n>;
@@ -1391,7 +1379,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     if (!(data.minBigint >= 0n)) {
       throw new ValidationError("minBigint", "must be at least 0", data.minBigint, "MIN");
     }
-    if (!(data.maxBigint <= 1000000n)) {
+    if (!(data.maxBigint <= 1_000_000n)) {
       throw new ValidationError("maxBigint", "must be at most 1000000", data.maxBigint, "MAX");
     }
     if (!(data.rangeBigint >= 0n && data.rangeBigint <= 100n)) {
@@ -1415,7 +1403,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
       if (e instanceof ValidationError) errors.push(e);else throw e;
     }
     try {
-      if (!(data.maxBigint <= 1000000n)) {
+      if (!(data.maxBigint <= 1_000_000n)) {
         throw new ValidationError("maxBigint", "must be at most 1000000", data.maxBigint, "MAX");
       }
     } catch (e) {
@@ -1466,7 +1454,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
   get minBigint(): Min<bigint, 0n> {
     return this.#minBigint;
   }
-  get maxBigint(): Max<bigint, 1000000n> {
+  get maxBigint(): Max<bigint, 1_000_000n> {
     return this.#maxBigint;
   }
   get rangeBigint(): Range<bigint, 0n, 100n> {
@@ -1481,11 +1469,11 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     }
     return this.$update(new (this.constructor as typeof BigintValidators)(data) as this);
   }
-  setMaxBigint(value: Max<bigint, 1000000n>) {
+  setMaxBigint(value: Max<bigint, 1_000_000n>) {
     return this.$update(new (this.constructor as typeof BigintValidators)({
       positiveBigint: this.#positiveBigint as Positive<bigint>,
       minBigint: this.#minBigint as Min<bigint, 0n>,
-      maxBigint: value as Max<bigint, 1000000n>,
+      maxBigint: value as Max<bigint, 1_000_000n>,
       rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
     }) as this);
   }
@@ -1493,7 +1481,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     return this.$update(new (this.constructor as typeof BigintValidators)({
       positiveBigint: this.#positiveBigint as Positive<bigint>,
       minBigint: value as Min<bigint, 0n>,
-      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1_000_000n>,
       rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
     }) as this);
   }
@@ -1501,7 +1489,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     return this.$update(new (this.constructor as typeof BigintValidators)({
       positiveBigint: value as Positive<bigint>,
       minBigint: this.#minBigint as Min<bigint, 0n>,
-      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1_000_000n>,
       rangeBigint: this.#rangeBigint as Range<bigint, 0n, 100n>
     }) as this);
   }
@@ -1509,7 +1497,7 @@ export class BigintValidators extends Message<BigintValidators.Data> {
     return this.$update(new (this.constructor as typeof BigintValidators)({
       positiveBigint: this.#positiveBigint as Positive<bigint>,
       minBigint: this.#minBigint as Min<bigint, 0n>,
-      maxBigint: this.#maxBigint as Max<bigint, 1000000n>,
+      maxBigint: this.#maxBigint as Max<bigint, 1_000_000n>,
       rangeBigint: value as Range<bigint, 0n, 100n>
     }) as this);
   }
@@ -1518,7 +1506,7 @@ export namespace BigintValidators {
   export type Data = {
     positiveBigint: Positive<bigint>;
     minBigint: Min<bigint, 0n>;
-    maxBigint: Max<bigint, 1000000n>;
+    maxBigint: Max<bigint, 1_000_000n>;
     rangeBigint: Range<bigint, 0n, 100n>;
   };
   export type Value = BigintValidators | BigintValidators.Data;

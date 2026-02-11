@@ -36,7 +36,7 @@ function fileNameToClassName(outputPath: string): string {
 
   // Convert each part to PascalCase
   return parts
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
     .join('');
 }
 

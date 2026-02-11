@@ -14,8 +14,8 @@ export default function runNestedTypesTest() {
   const w1 = new Wrapper({ payload: new ImmutableDate(date) });
   const w1Serialized = w1.serialize();
   assert(
-    w1Serialized === `:{payload:D\"${date.toISOString()}\"}`,
-    `Union Date branch should serialize with D\"...\". Got: ${w1Serialized}`
+    w1Serialized === `:{payload:D"${date.toISOString()}"}`,
+    `Union Date branch should serialize with D"...". Got: ${w1Serialized}`
   );
   assert(
     w1.payload instanceof Date || ImmutableDate.isInstance(w1.payload),

@@ -82,7 +82,7 @@ class WhereBuilder {
 
     // Handle AND conditions
     if (condition.AND) {
-      const andParts = condition.AND.map((c) => `(${this.build(c)})`);
+      const andParts = condition.AND.map(c => `(${this.build(c)})`);
       if (andParts.length > 0) {
         parts.push(`(${andParts.join(' AND ')})`);
       }
@@ -90,7 +90,7 @@ class WhereBuilder {
 
     // Handle OR conditions
     if (condition.OR) {
-      const orParts = condition.OR.map((c) => `(${this.build(c)})`);
+      const orParts = condition.OR.map(c => `(${this.build(c)})`);
       if (orParts.length > 0) {
         parts.push(`(${orParts.join(' OR ')})`);
       }
@@ -176,7 +176,7 @@ class WhereBuilder {
       if (op.in.length === 0) {
         return 'FALSE'; // Empty IN is always false
       }
-      const placeholders = op.in.map((v) => {
+      const placeholders = op.in.map(v => {
         this.params.push(v);
         return `$${this.paramIndex++}`;
       });
@@ -187,7 +187,7 @@ class WhereBuilder {
       if (op.notIn.length === 0) {
         return 'TRUE'; // Empty NOT IN is always true
       }
-      const placeholders = op.notIn.map((v) => {
+      const placeholders = op.notIn.map(v => {
         this.params.push(v);
         return `$${this.paramIndex++}`;
       });
@@ -275,7 +275,7 @@ class WhereBuilder {
       if (op.jsonbValueIn.length === 0) {
         return 'FALSE'; // Empty IN is always false
       }
-      const placeholders = op.jsonbValueIn.map((v) => {
+      const placeholders = op.jsonbValueIn.map(v => {
         this.params.push(v);
         return `$${this.paramIndex++}`;
       });
@@ -300,7 +300,7 @@ class WhereBuilder {
    * Convert camelCase to snake_case.
    */
   private toSnakeCase(str: string): string {
-    return str.replaceAll(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    return str.replaceAll(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
   }
 }
 
@@ -342,7 +342,7 @@ export function buildOrderBy<T>(orderBy: OrderBy<T>): string {
  * Convert camelCase to snake_case.
  */
 function toSnakeCase(str: string): string {
-  return str.replaceAll(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+  return str.replaceAll(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
 }
 
 // ============================================================================

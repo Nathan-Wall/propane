@@ -11,13 +11,13 @@ describe('toInt53', () => {
     it('should accept positive integers', () => {
       assert.strictEqual(toInt53(1), 1);
       assert.strictEqual(toInt53(42), 42);
-      assert.strictEqual(toInt53(1000000), 1000000);
+      assert.strictEqual(toInt53(1_000_000), 1_000_000);
     });
 
     it('should accept negative integers', () => {
       assert.strictEqual(toInt53(-1), -1);
       assert.strictEqual(toInt53(-42), -42);
-      assert.strictEqual(toInt53(-1000000), -1000000);
+      assert.strictEqual(toInt53(-1_000_000), -1_000_000);
     });
 
     it('should accept values larger than int32 range', () => {
@@ -26,11 +26,17 @@ describe('toInt53', () => {
     });
 
     it('should accept minimum safe integer', () => {
-      assert.strictEqual(toInt53(Number.MIN_SAFE_INTEGER), Number.MIN_SAFE_INTEGER);
+      assert.strictEqual(
+        toInt53(Number.MIN_SAFE_INTEGER),
+        Number.MIN_SAFE_INTEGER
+      );
     });
 
     it('should accept maximum safe integer', () => {
-      assert.strictEqual(toInt53(Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER);
+      assert.strictEqual(
+        toInt53(Number.MAX_SAFE_INTEGER),
+        Number.MAX_SAFE_INTEGER
+      );
     });
   });
 

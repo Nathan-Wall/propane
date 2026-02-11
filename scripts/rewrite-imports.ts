@@ -134,7 +134,10 @@ function processFile(
   }
 
   stats.filesProcessed++;
-  const { content: rewritten, changed } = rewriteContent(content, stats.appliedRewrites);
+  const {
+    content: rewritten,
+    changed,
+  } = rewriteContent(content, stats.appliedRewrites);
 
   if (changed) {
     stats.filesChanged++;
@@ -229,17 +232,23 @@ function parseArgs(args: string[]): { targetDir: string; options: Options } {
   const positionalArgs: string[] = [];
 
   for (const arg of args) {
-    if (arg === '--delete-rewritten') {
-      options.deleteRewritten = true;
-    } else if (arg === '--dry-run') {
-      options.dryRun = true;
-    } else if (arg === '--verbose') {
-      options.verbose = true;
-    } else if (!arg.startsWith('--')) {
-      positionalArgs.push(arg);
-    } else {
-      console.error(`Unknown option: ${arg}`);
-      process.exit(1);
+    switch (arg) {
+      case '--delete-rewritten':
+        options.deleteRewritten = true;
+        break;
+      case '--dry-run':
+        options.dryRun = true;
+        break;
+      case '--verbose':
+        options.verbose = true;
+        break;
+      default:
+        if (arg.startsWith('--')) {
+          console.error(`Unknown option: ${arg}`);
+          process.exit(1);
+        } else {
+          positionalArgs.push(arg);
+        }
     }
   }
 

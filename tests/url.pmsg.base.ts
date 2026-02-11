@@ -74,11 +74,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (ImmutableUrl.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableUrl(value as ImmutableUrl.Value, options);
-          }
+          result = ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value as ImmutableUrl.Value, options);
         }
       }
       return result;
@@ -106,11 +102,7 @@ export class UrlMessage extends Message<UrlMessage.Data> {
             throw new Error("Tagged message type mismatch: expected ImmutableUrl.");
           }
         } else {
-          if (ImmutableUrl.isInstance(value)) {
-            result = value;
-          } else {
-            result = new ImmutableUrl(value as ImmutableUrl.Value, options);
-          }
+          result = ImmutableUrl.isInstance(value) ? value : new ImmutableUrl(value as ImmutableUrl.Value, options);
         }
       }
       if (value === undefined) {

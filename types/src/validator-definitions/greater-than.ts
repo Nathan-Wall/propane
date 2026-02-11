@@ -14,7 +14,7 @@ export const GreaterThanDefinition: ValidatorDefinition = {
 
     if (type.kind === 'number') {
       if (typeof bound === 'string' || typeof bound === 'bigint') {
-        throw new Error('GreaterThan<number> requires a numeric bound.');
+        throw new TypeError('GreaterThan<number> requires a numeric bound.');
       }
       return { condition: `${valueExpr} > ${bound}` };
     }

@@ -3,7 +3,7 @@ import { Flag$Base } from './message-wrapper-flag.pmsg.base.js';
 export class Flag extends Flag$Base {
   static override $serialize(value: boolean): string {
     if (typeof value !== 'boolean') {
-      throw new Error('Flag.$serialize expects a boolean.');
+      throw new TypeError('Flag.$serialize expects a boolean.');
     }
     return value ? '1' : '0';
   }
