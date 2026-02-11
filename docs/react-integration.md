@@ -126,7 +126,7 @@ await update(profile, async p => {
 In this example, both setters are part of one transaction. If anything throws
 before resolve, neither update is committed.
 Captured callback refs are transaction-bound, so late writes after the
-transaction settles are ignored.
+transaction settles throw.
 
 ### When to Fetch Outside `update(...)`
 

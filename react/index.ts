@@ -35,9 +35,19 @@ const OVERLAPPING_ASYNC_UPDATE_ERROR =
   'Cannot start a new async update() while another async update() is still in progress. '
   + 'Await the previous update() before starting another async update().';
 
+const STALE_TRANSACTION_MUTATION_ERROR =
+  'Cannot mutate transaction-bound state after update() transaction has settled. '
+  + 'Do not retain transaction-bound references outside update().';
+
 interface TransactionBindingContext {
   transaction: UpdateTransaction;
   rawToBound: WeakMap<object, object>;
+}
+
+function ensureTransactionActive(transaction: UpdateTransaction): void {
+  if (transaction.status !== 'active') {
+    throw new Error(STALE_TRANSACTION_MUTATION_ERROR);
+  }
 }
 
 function getCurrentExecutionTransaction(): UpdateTransaction | null {
@@ -207,9 +217,7 @@ function createBoundProxy(
       const value = Reflect.get(innerTarget, property, innerTarget);
       if (typeof value === 'function') {
         return (...args: unknown[]) => {
-          if (bindingContext.transaction.status !== 'active') {
-            return undefined;
-          }
+          ensureTransactionActive(bindingContext.transaction);
           const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
           return withTransaction(bindingContext.transaction, () => {
             const result = Reflect.apply(value, innerTarget, unwrappedArgs);
@@ -220,9 +228,7 @@ function createBoundProxy(
       return bindValueToTransaction(value, bindingContext);
     },
     set(innerTarget, property, value) {
-      if (bindingContext.transaction.status !== 'active') {
-        return true;
-      }
+      ensureTransactionActive(bindingContext.transaction);
       const unwrappedValue = unwrapBoundValue(value);
       return withTransaction(
         bindingContext.transaction,
@@ -230,9 +236,7 @@ function createBoundProxy(
       );
     },
     apply(innerTarget, thisArg, args) {
-      if (bindingContext.transaction.status !== 'active') {
-        return undefined;
-      }
+      ensureTransactionActive(bindingContext.transaction);
       const unwrappedThis = unwrapBoundValue(thisArg);
       const unwrappedArgs = args.map((arg) => unwrapBoundValue(arg));
       return withTransaction(bindingContext.transaction, () => {

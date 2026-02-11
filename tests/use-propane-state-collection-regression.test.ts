@@ -18,6 +18,9 @@ import { test } from 'node:test';
 
 const TODO_ITEM_TAG = Symbol('UsePropaneStateRegressionTodoItem');
 const TODO_STATE_TAG = Symbol('UsePropaneStateRegressionTodoState');
+const STALE_TRANSACTION_MUTATION_ERROR =
+  'Cannot mutate transaction-bound state after update() transaction has settled. '
+  + 'Do not retain transaction-bound references outside update().';
 
 class TodoItem extends Message<{ text: string; completed: boolean }> {
   static readonly $typeId = 'tests/use-propane-state-collection-regression#TodoItem';
@@ -882,7 +885,7 @@ function AsyncLifecycleListenerApp() {
   );
 }
 
-test('async update stays active through await and retires listener ownership on commit', async () => {
+test('async update stays active through await and throws on stale mutation after commit', async () => {
   resetAsyncLifecycleHarnessState();
   const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
 
@@ -933,11 +936,29 @@ test('async update stays active through await and retires listener ownership on 
       'Rendered async lifecycle count should reflect committed transaction'
     );
 
+    assert(
+      capturedCommittedTransactionState instanceof TodoState,
+      'Expected captured tx-bound commit state'
+    );
+    const committedState = capturedCommittedTransactionState;
+
+    let stalePostCommitErrorMessage: string | null = null;
     act(() => {
-      capturedCommittedTransactionState?.todos.push(
-        new TodoItem({ text: 'Stale-After-Commit', completed: false })
-      );
+      try {
+        committedState.todos.push(
+          new TodoItem({ text: 'Stale-After-Commit', completed: false })
+        );
+      } catch (error) {
+        stalePostCommitErrorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+      }
     });
+
+    assert(
+      stalePostCommitErrorMessage === STALE_TRANSACTION_MUTATION_ERROR,
+      `Expected stale post-commit mutation to throw transaction-settled error, got: ${String(stalePostCommitErrorMessage)}`
+    );
 
     assert(
       Number(latestAsyncLifecycleState.todos.length) === 2,
@@ -953,7 +974,7 @@ test('async update stays active through await and retires listener ownership on 
   }
 });
 
-test('aborted async update retires listener ownership and blocks stale post-abort mutations', async () => {
+test('aborted async update retires listener ownership and throws on stale post-abort mutations', async () => {
   resetAsyncLifecycleHarnessState();
   const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
 
@@ -1000,11 +1021,29 @@ test('aborted async update retires listener ownership and blocks stale post-abor
       'Rendered async lifecycle count should remain unchanged after abort'
     );
 
+    assert(
+      capturedAbortedTransactionState instanceof TodoState,
+      'Expected captured tx-bound abort state'
+    );
+    const abortedState = capturedAbortedTransactionState;
+
+    let stalePostAbortErrorMessage: string | null = null;
     act(() => {
-      capturedAbortedTransactionState?.todos.push(
-        new TodoItem({ text: 'Stale-After-Abort', completed: false })
-      );
+      try {
+        abortedState.todos.push(
+          new TodoItem({ text: 'Stale-After-Abort', completed: false })
+        );
+      } catch (error) {
+        stalePostAbortErrorMessage = error instanceof Error
+          ? error.message
+          : String(error);
+      }
     });
+
+    assert(
+      stalePostAbortErrorMessage === STALE_TRANSACTION_MUTATION_ERROR,
+      `Expected stale post-abort mutation to throw transaction-settled error, got: ${String(stalePostAbortErrorMessage)}`
+    );
 
     assert(
       latestAsyncLifecycleState.todos.length === 1,
@@ -1088,11 +1127,13 @@ test('overlapping top-level async update calls are rejected and do not drop firs
 let latestPromiseOverlapLeakState: TodoState | null = null;
 let runPromiseOverlapLeakFlow: (() => Promise<void>) | null = null;
 let caughtPromiseOverlapLeakErrorMessage: string | null = null;
+let caughtPromiseOverlapStaleMutationErrorMessage: string | null = null;
 
 function resetPromiseOverlapLeakHarnessState() {
   latestPromiseOverlapLeakState = null;
   runPromiseOverlapLeakFlow = null;
   caughtPromiseOverlapLeakErrorMessage = null;
+  caughtPromiseOverlapStaleMutationErrorMessage = null;
 }
 
 function PromiseOverlapLeakApp() {
@@ -1116,7 +1157,13 @@ function PromiseOverlapLeakApp() {
     try {
       update(state, s =>
         secondGate.promise.then(() => {
-          s.todos.push(new TodoItem({ text: 'From-Second-Promise', completed: false }));
+          try {
+            s.todos.push(new TodoItem({ text: 'From-Second-Promise', completed: false }));
+          } catch (error) {
+            caughtPromiseOverlapStaleMutationErrorMessage = error instanceof Error
+              ? error.message
+              : String(error);
+          }
         })
       );
     } catch (error) {
@@ -1155,6 +1202,10 @@ test('overlapping Promise-returning top-level update should not leak updates int
     assert(
       caughtPromiseOverlapLeakErrorMessage === 'Cannot start a new async update() while another async update() is still in progress. Await the previous update() before starting another async update().',
       `Expected overlapping async update guard error, got: ${String(caughtPromiseOverlapLeakErrorMessage)}`
+    );
+    assert(
+      caughtPromiseOverlapStaleMutationErrorMessage === STALE_TRANSACTION_MUTATION_ERROR,
+      `Expected stale Promise-overlap mutation to throw transaction-settled error, got: ${String(caughtPromiseOverlapStaleMutationErrorMessage)}`
     );
     assert(latestPromiseOverlapLeakState instanceof TodoState, 'Expected Promise overlap leak state after flow');
     assert(Number(latestPromiseOverlapLeakState.todos.length) === 2, 'Promise overlap leak state should have exactly two todos');
