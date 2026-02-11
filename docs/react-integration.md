@@ -80,6 +80,32 @@ transaction.
 - Multi-root form (`update([a, b], ...)`) commits or rolls back both roots
 together.
 
+### Multi-Root Transactions
+
+Use one transaction to update multiple roots atomically from the React update
+perspective:
+
+```typescript
+update([leftState, rightState] as const, ([l, r]) => {
+  l.todos.push(new TodoItem({ text: 'Left added', completed: false }));
+  r.todos.push(new TodoItem({ text: 'Right added', completed: false }));
+});
+```
+
+If the callback throws, both roots roll back:
+
+```typescript
+try {
+  update([leftState, rightState] as const, ([l, r]) => {
+    l.todos.push(new TodoItem({ text: 'left', completed: false }));
+    r.todos.push(new TodoItem({ text: 'right', completed: false }));
+    throw new Error('abort both roots');
+  });
+} catch {
+  // leftState and rightState remain unchanged
+}
+```
+
 ### Async Transactions
 
 When you pass an async callback (or any callback that returns a Promise), the

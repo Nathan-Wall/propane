@@ -419,11 +419,13 @@ test('usePropaneSelector unmount retires listener while mounted selectors remain
 let latestMultiRootLeftState: TodoState | null = null;
 let latestMultiRootRightState: TodoState | null = null;
 let runMultiRootTransaction: (() => void) | null = null;
+let runMultiRootRollbackTransaction: (() => void) | null = null;
 
 function resetMultiRootHarnessState() {
   latestMultiRootLeftState = null;
   latestMultiRootRightState = null;
   runMultiRootTransaction = null;
+  runMultiRootRollbackTransaction = null;
 }
 
 function MultiRootTransactionApp() {
@@ -448,6 +450,17 @@ function MultiRootTransactionApp() {
       l.todos.push(new TodoItem({ text: 'Left+1', completed: false }));
       r.todos.push(new TodoItem({ text: 'Right+1', completed: false }));
     });
+  };
+  runMultiRootRollbackTransaction = () => {
+    try {
+      update([left, right] as const, ([l, r]) => {
+        l.todos.push(new TodoItem({ text: 'Left-Rollback', completed: false }));
+        r.todos.push(new TodoItem({ text: 'Right-Rollback', completed: false }));
+        throw new Error('multi-root rollback test');
+      });
+    } catch {
+      // Expected in regression harness.
+    }
   };
 
   return React.createElement(
@@ -480,6 +493,67 @@ test('update applies pending state updates for every root in a multi-root transa
     assert(latestMultiRootRightState.todos.length === 2, 'Right root should apply the transaction update');
     assert(getByTestId('multi-root-left-count').textContent === '2', 'Rendered left count should update');
     assert(getByTestId('multi-root-right-count').textContent === '2', 'Rendered right count should update');
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+test('update rolls back pending updates for all roots in a multi-root transaction failure', () => {
+  resetMultiRootHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(MultiRootTransactionApp));
+
+  try {
+    assert(
+      runMultiRootRollbackTransaction !== null,
+      'Expected multi-root rollback transaction handler'
+    );
+    assert(
+      latestMultiRootLeftState instanceof TodoState,
+      'Expected left state to initialize'
+    );
+    assert(
+      latestMultiRootRightState instanceof TodoState,
+      'Expected right state to initialize'
+    );
+
+    assert(
+      getByTestId('multi-root-left-count').textContent === '1',
+      'Left count should start at 1'
+    );
+    assert(
+      getByTestId('multi-root-right-count').textContent === '1',
+      'Right count should start at 1'
+    );
+
+    act(() => {
+      runMultiRootRollbackTransaction!();
+    });
+
+    assert(
+      latestMultiRootLeftState instanceof TodoState,
+      'Expected left state after rollback transaction'
+    );
+    assert(
+      latestMultiRootRightState instanceof TodoState,
+      'Expected right state after rollback transaction'
+    );
+    assert(
+      latestMultiRootLeftState.todos.length === 1,
+      'Left root should roll back pending updates on failure'
+    );
+    assert(
+      latestMultiRootRightState.todos.length === 1,
+      'Right root should roll back pending updates on failure'
+    );
+    assert(
+      getByTestId('multi-root-left-count').textContent === '1',
+      'Rendered left count should remain unchanged after rollback'
+    );
+    assert(
+      getByTestId('multi-root-right-count').textContent === '1',
+      'Rendered right count should remain unchanged after rollback'
+    );
   } finally {
     unmount();
     cleanup();
@@ -744,6 +818,207 @@ function createDeferred() {
     resolve: () => resolve?.(),
   };
 }
+
+type AsyncLifecycleControl = {
+  resume: () => void;
+  done: Promise<void>;
+};
+
+let latestAsyncLifecycleState: TodoState | null = null;
+let startAsyncLifecycleCommitFlow: (() => AsyncLifecycleControl) | null = null;
+let startAsyncLifecycleAbortFlow: (() => AsyncLifecycleControl) | null = null;
+let capturedCommittedTransactionState: TodoState | null = null;
+let capturedAbortedTransactionState: TodoState | null = null;
+
+function resetAsyncLifecycleHarnessState() {
+  latestAsyncLifecycleState = null;
+  startAsyncLifecycleCommitFlow = null;
+  startAsyncLifecycleAbortFlow = null;
+  capturedCommittedTransactionState = null;
+  capturedAbortedTransactionState = null;
+}
+
+function AsyncLifecycleListenerApp() {
+  const [state] = usePropaneState<TodoState>(() =>
+    new TodoState({
+      todos: [new TodoItem({ text: 'Initial', completed: false })],
+      filter: 'all',
+    })
+  );
+
+  latestAsyncLifecycleState = state;
+  startAsyncLifecycleCommitFlow = () => {
+    const gate = createDeferred();
+    const done = update(state, async s => {
+      capturedCommittedTransactionState = s;
+      await gate.promise;
+      s.todos.push(new TodoItem({ text: 'Committed-After-Await', completed: false }));
+    }).then(() => undefined);
+
+    return {
+      resume: gate.resolve,
+      done,
+    };
+  };
+  startAsyncLifecycleAbortFlow = () => {
+    const gate = createDeferred();
+    const done = update(state, async s => {
+      capturedAbortedTransactionState = s;
+      await gate.promise;
+      s.todos.push(new TodoItem({ text: 'Should-Rollback-After-Await', completed: false }));
+      throw new Error('async lifecycle abort');
+    }).then(() => undefined);
+
+    return {
+      resume: gate.resolve,
+      done,
+    };
+  };
+
+  return React.createElement(
+    'span',
+    { 'data-testid': 'async-lifecycle-count' },
+    String(state.todos.length)
+  );
+}
+
+test('async update stays active through await and retires listener ownership on commit', async () => {
+  resetAsyncLifecycleHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
+
+  try {
+    assert(
+      startAsyncLifecycleCommitFlow !== null,
+      'Expected async lifecycle commit flow starter'
+    );
+    assert(
+      latestAsyncLifecycleState instanceof TodoState,
+      'Expected async lifecycle state to initialize'
+    );
+    assert(
+      latestAsyncLifecycleState.todos.length === 1,
+      'Initial async lifecycle state should have one todo'
+    );
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '1',
+      'Rendered async lifecycle count should start at 1'
+    );
+
+    const controls = startAsyncLifecycleCommitFlow!();
+    await Promise.resolve();
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '1',
+      'No commit should occur while async transaction is awaiting'
+    );
+
+    await act(async () => {
+      controls.resume();
+      await controls.done;
+    });
+
+    assert(
+      latestAsyncLifecycleState instanceof TodoState,
+      'Expected async lifecycle state after commit'
+    );
+    assert(
+      Number(latestAsyncLifecycleState.todos.length) === 2,
+      'Mutation after await should commit inside the same transaction'
+    );
+    assert(
+      latestAsyncLifecycleState.todos.get(1)?.text === 'Committed-After-Await',
+      'Committed async transaction should publish post-await mutation'
+    );
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '2',
+      'Rendered async lifecycle count should reflect committed transaction'
+    );
+
+    act(() => {
+      capturedCommittedTransactionState?.todos.push(
+        new TodoItem({ text: 'Stale-After-Commit', completed: false })
+      );
+    });
+
+    assert(
+      Number(latestAsyncLifecycleState.todos.length) === 2,
+      'Captured tx-bound state should stop publishing once transaction is committed'
+    );
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '2',
+      'Rendered async lifecycle count should remain unchanged after stale post-commit mutation'
+    );
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
+
+test('aborted async update retires listener ownership and blocks stale post-abort mutations', async () => {
+  resetAsyncLifecycleHarnessState();
+  const { unmount, getByTestId } = render(React.createElement(AsyncLifecycleListenerApp));
+
+  try {
+    assert(
+      startAsyncLifecycleAbortFlow !== null,
+      'Expected async lifecycle abort flow starter'
+    );
+    assert(
+      latestAsyncLifecycleState instanceof TodoState,
+      'Expected async lifecycle state to initialize'
+    );
+    assert(
+      latestAsyncLifecycleState.todos.length === 1,
+      'Initial async lifecycle state should have one todo'
+    );
+
+    const controls = startAsyncLifecycleAbortFlow!();
+    await Promise.resolve();
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '1',
+      'No commit should occur while aborting async transaction is awaiting'
+    );
+
+    await act(async () => {
+      controls.resume();
+      try {
+        await controls.done;
+      } catch {
+        // Expected in regression harness.
+      }
+    });
+
+    assert(
+      latestAsyncLifecycleState instanceof TodoState,
+      'Expected async lifecycle state after abort'
+    );
+    assert(
+      latestAsyncLifecycleState.todos.length === 1,
+      'Aborted async transaction should roll back post-await mutation'
+    );
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '1',
+      'Rendered async lifecycle count should remain unchanged after abort'
+    );
+
+    act(() => {
+      capturedAbortedTransactionState?.todos.push(
+        new TodoItem({ text: 'Stale-After-Abort', completed: false })
+      );
+    });
+
+    assert(
+      latestAsyncLifecycleState.todos.length === 1,
+      'Captured tx-bound state should stop publishing once transaction is aborted'
+    );
+    assert(
+      getByTestId('async-lifecycle-count').textContent === '1',
+      'Rendered async lifecycle count should remain unchanged after stale post-abort mutation'
+    );
+  } finally {
+    unmount();
+    cleanup();
+  }
+});
 
 function AsyncOverlapGuardApp() {
   const [state] = usePropaneState<TodoState>(() =>
