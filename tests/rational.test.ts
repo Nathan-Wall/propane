@@ -1,9 +1,72 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import {
+  Decimal,
   DecimalDivisionByZeroError,
   Rational,
 } from '@/common/numbers/decimal.js';
+
+class ForeignRational {
+  static readonly $typeId = Rational.$typeId;
+  static readonly $typeHash = Rational.$typeHash;
+  readonly [Symbol.for('propane:message')] = true;
+  readonly [Symbol.for(`propane:message:${Rational.$typeId}`)] = true;
+
+  readonly numerator: bigint;
+  readonly denominator: bigint;
+  #serialized: string;
+  #hash: number;
+  #equalsResult: boolean;
+
+  constructor(value: Rational, equalsResult = false) {
+    this.numerator = value.numerator;
+    this.denominator = value.denominator;
+    this.#serialized = value.serialize();
+    this.#hash = value.hashCode();
+    this.#equalsResult = equalsResult;
+  }
+
+  serialize() {
+    return this.#serialized;
+  }
+
+  hashCode() {
+    return this.#hash;
+  }
+
+  equals() {
+    return this.#equalsResult;
+  }
+}
+
+function toForeignRational(
+  value: Rational,
+  equalsResult = false
+): Rational {
+  return new ForeignRational(value, equalsResult) as unknown as Rational;
+}
+
+class ForeignDecimal {
+  static readonly $typeId = Decimal.$typeId;
+  static readonly $typeHash = Decimal.$typeHash;
+  readonly [Symbol.for('propane:message')] = true;
+  readonly [Symbol.for(`propane:message:${Decimal.$typeId}`)] = true;
+  #rational: Rational;
+
+  constructor(rational: Rational) {
+    this.#rational = rational;
+  }
+
+  toRational() {
+    return toForeignRational(this.#rational);
+  }
+}
+
+function toForeignDecimal(
+  rational: Rational
+): Decimal<number, number> {
+  return new ForeignDecimal(rational) as unknown as Decimal<number, number>;
+}
 
 describe('Rational construction', () => {
   it('normalizes sign and reduces fractions', () => {
@@ -68,37 +131,53 @@ describe('Rational value equality and canonical outputs', () => {
 
   it('supports cross-copy equality without private field access errors', () => {
     const half = Rational.fromInts(1, 2);
-
-    class ForeignRational {
-      static readonly $typeId = Rational.$typeId;
-      static readonly $typeHash = Rational.$typeHash;
-      readonly [Symbol.for('propane:message')] = true;
-      readonly [Symbol.for(`propane:message:${Rational.$typeId}`)] = true;
-
-      #serialized: string;
-      #hash: number;
-
-      constructor(serialized: string, hash: number) {
-        this.#serialized = serialized;
-        this.#hash = hash;
-      }
-
-      serialize() {
-        return this.#serialized;
-      }
-
-      hashCode() {
-        return this.#hash;
-      }
-
-      equals() {
-        return false;
-      }
-    }
-
-    const foreign = new ForeignRational(half.serialize(), half.hashCode());
+    const foreign = toForeignRational(half);
 
     assert.doesNotThrow(() => half.equals(foreign));
     assert.strictEqual(half.equals(foreign), true);
+  });
+
+  it('supports cross-copy arithmetic without private field access errors', () => {
+    const half = Rational.fromInts(1, 2);
+    const third = toForeignRational(Rational.fromInts(1, 3));
+
+    assert.doesNotThrow(() => half.add(third));
+    assert.strictEqual(half.add(third).toString(), '5/6');
+    assert.strictEqual(half.subtract(third).toString(), '1/6');
+    assert.strictEqual(half.multiply(third).toString(), '1/6');
+    assert.strictEqual(half.divide(third).toString(), '3/2');
+  });
+
+  it('supports cross-copy Decimal operands without private field access errors', () => {
+    const half = Rational.fromInts(1, 2);
+    const thirdAsDecimal = toForeignDecimal(Rational.fromInts(1, 3));
+
+    assert.doesNotThrow(() => half.add(thirdAsDecimal));
+    assert.strictEqual(half.add(thirdAsDecimal).toString(), '5/6');
+    assert.strictEqual(half.subtract(thirdAsDecimal).toString(), '1/6');
+    assert.strictEqual(half.multiply(thirdAsDecimal).toString(), '1/6');
+    assert.strictEqual(half.divide(thirdAsDecimal).toString(), '3/2');
+  });
+
+  it('supports cross-copy comparisons and relation helpers', () => {
+    const half = Rational.fromInts(1, 2);
+    const twoThirds = toForeignRational(Rational.fromInts(2, 3));
+    const alsoHalf = toForeignRational(Rational.fromInts(1, 2));
+
+    assert.doesNotThrow(() => half.compare(twoThirds));
+    assert.strictEqual(half.compare(twoThirds), -1);
+    assert.strictEqual(half.compare(alsoHalf), 0);
+    assert.strictEqual(half.valueEquals(alsoHalf), true);
+    assert.strictEqual(half.lessThan(twoThirds), true);
+    assert.strictEqual(half.greaterThan(twoThirds), false);
+    assert.strictEqual(half.lessThanOrEqual(alsoHalf), true);
+    assert.strictEqual(half.greaterThanOrEqual(alsoHalf), true);
+  });
+
+  it('preserves divide-by-zero behavior for cross-copy operands', () => {
+    const half = Rational.fromInts(1, 2);
+    const zero = toForeignRational(Rational.zero());
+
+    assert.throws(() => half.divide(zero), DecimalDivisionByZeroError);
   });
 });

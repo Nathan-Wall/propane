@@ -38,6 +38,12 @@ type RationalConstructorOptions = {
   opCount?: number;
 };
 
+type RationalOperand = {
+  numerator: bigint;
+  denominator: bigint;
+  opCount: number;
+};
+
 function normalizeRational(
   numerator: bigint,
   denominator: bigint,
@@ -126,13 +132,47 @@ export class Rational extends Rational$Base {
     return this.#reduce().#d;
   }
 
-  private static toRationalValue(
+  private static toRationalOperand(
     other: Rational | Decimal<number, number>
-  ): Rational {
+  ): RationalOperand {
     if (Decimal.isInstance(other)) {
-      return (other as Decimal<number, number>).toRational();
+      const rational = (other as Decimal<number, number>).toRational();
+      if (!(rational instanceof Rational)) {
+        // Cross-copy messages can satisfy Decimal.isInstance but do not share
+        // this class's private-field brand.
+        return {
+          numerator: rational.numerator,
+          denominator: rational.denominator,
+          opCount: 0,
+        };
+      }
+      return {
+        numerator: rational.#n,
+        denominator: rational.#d,
+        opCount: rational.#opCount,
+      };
     }
-    return other;
+    if (other instanceof Rational) {
+      return {
+        numerator: other.#n,
+        denominator: other.#d,
+        opCount: other.#opCount,
+      };
+    }
+
+    const numerator = (other as { numerator: unknown }).numerator;
+    const denominator = (other as { denominator: unknown }).denominator;
+    if (typeof numerator !== 'bigint' || typeof denominator !== 'bigint') {
+      throw new TypeError(
+        'Rational operations require Rational or Decimal operands'
+      );
+    }
+    // Keep reduction cadence conservative when we cannot read internal opCount.
+    return {
+      numerator,
+      denominator,
+      opCount: 0,
+    };
   }
 
   private static withOps(
@@ -275,51 +315,51 @@ export class Rational extends Rational$Base {
 
 
   add(other: Rational | Decimal<number, number>): Rational {
-    const rhs = Rational.toRationalValue(other);
-    const n = this.#n * rhs.#d
-      + rhs.#n * this.#d;
-    const d = this.#d * rhs.#d;
+    const rhs = Rational.toRationalOperand(other);
+    const n = this.#n * rhs.denominator
+      + rhs.numerator * this.#d;
+    const d = this.#d * rhs.denominator;
     return Rational.withOps(
       n,
       d,
-      Math.max(this.#opCount, rhs.#opCount) + 1
+      Math.max(this.#opCount, rhs.opCount) + 1
     );
   }
 
   subtract(other: Rational | Decimal<number, number>): Rational {
-    const rhs = Rational.toRationalValue(other);
-    const n = this.#n * rhs.#d
-      - rhs.#n * this.#d;
-    const d = this.#d * rhs.#d;
+    const rhs = Rational.toRationalOperand(other);
+    const n = this.#n * rhs.denominator
+      - rhs.numerator * this.#d;
+    const d = this.#d * rhs.denominator;
     return Rational.withOps(
       n,
       d,
-      Math.max(this.#opCount, rhs.#opCount) + 1
+      Math.max(this.#opCount, rhs.opCount) + 1
     );
   }
 
   multiply(other: Rational | Decimal<number, number>): Rational {
-    const rhs = Rational.toRationalValue(other);
-    const n = this.#n * rhs.#n;
-    const d = this.#d * rhs.#d;
+    const rhs = Rational.toRationalOperand(other);
+    const n = this.#n * rhs.numerator;
+    const d = this.#d * rhs.denominator;
     return Rational.withOps(
       n,
       d,
-      Math.max(this.#opCount, rhs.#opCount) + 1
+      Math.max(this.#opCount, rhs.opCount) + 1
     );
   }
 
   divide(other: Rational | Decimal<number, number>): Rational {
-    const rhs = Rational.toRationalValue(other);
-    if (rhs.#n === 0n) {
+    const rhs = Rational.toRationalOperand(other);
+    if (rhs.numerator === 0n) {
       throw new DecimalDivisionByZeroError();
     }
-    const n = this.#n * rhs.#d;
-    const d = this.#d * rhs.#n;
+    const n = this.#n * rhs.denominator;
+    const d = this.#d * rhs.numerator;
     return Rational.withOps(
       n,
       d,
-      Math.max(this.#opCount, rhs.#opCount) + 1
+      Math.max(this.#opCount, rhs.opCount) + 1
     );
   }
 
@@ -353,9 +393,9 @@ export class Rational extends Rational$Base {
   }
 
   compare(other: Rational | Decimal<number, number>): -1 | 0 | 1 {
-    const rhs = Rational.toRationalValue(other);
-    const left = this.#n * rhs.#d;
-    const right = rhs.#n * this.#d;
+    const rhs = Rational.toRationalOperand(other);
+    const left = this.#n * rhs.denominator;
+    const right = rhs.numerator * this.#d;
     return left < right ? -1 : left > right ? 1 : 0;
   }
 
